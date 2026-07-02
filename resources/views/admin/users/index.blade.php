@@ -8,6 +8,9 @@
     @if($errors->any())
         <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
     @endif
+    @if(session('status'))
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>
+    @endif
 
     <div class="flex flex-col gap-3 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 lg:flex-row lg:items-end lg:justify-between">
         <form method="GET" class="grid flex-1 gap-3 md:grid-cols-[1.4fr_1fr_1fr_auto]">
@@ -34,7 +37,13 @@
             </div>
             <button class="self-end rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Filter</button>
         </form>
-        <a href="{{ route('admin.users.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-teal-700">Tambah User</a>
+        <div class="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+            <form method="POST" action="{{ route('admin.users.sync-core') }}" onsubmit="return confirm('Sync semua user Core yang punya akses kp-farmasi ke lokal KP? Password Core tidak akan disalin.')">
+                @csrf
+                <button class="w-full rounded-lg border border-cyan-200 px-4 py-2 text-center text-sm font-semibold text-cyan-700 hover:bg-cyan-50">Sync Semua Core</button>
+            </form>
+            <a href="{{ route('admin.users.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-teal-700">Tambah User</a>
+        </div>
     </div>
 
     <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -75,6 +84,10 @@
                                 <div class="flex flex-wrap justify-end gap-2">
                                     <a href="{{ route('admin.users.show', $user) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Detail</a>
                                     <a href="{{ route('admin.users.edit', $user) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Edit</a>
+                                    <form method="POST" action="{{ route('admin.users.sync-core.single', $user) }}" onsubmit="return confirm('Sync data user ini dari Core?')">
+                                        @csrf
+                                        <button class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Sync Core</button>
+                                    </form>
                                     <form method="POST" action="{{ route('admin.users.reset-password', $user) }}" onsubmit="return confirm('Reset password user ini ke password development?')">
                                         @csrf
                                         <button class="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700">Reset</button>

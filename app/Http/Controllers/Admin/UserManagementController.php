@@ -8,6 +8,7 @@ use App\Models\Lecturer;
 use App\Models\Role;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\KpCoreBridgeProvisioningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -138,6 +139,37 @@ class UserManagementController extends Controller
         ]);
 
         return back()->with('status', 'Status akun berhasil diperbarui.');
+    }
+
+    public function syncFromCore(User $user, KpCoreBridgeProvisioningService $service): RedirectResponse
+    {
+        $report = $service->execute($user->email);
+
+        if ($report['blockers'] !== []) {
+            return back()->withErrors(['core_sync' => implode(' ', $report['blockers'])]);
+        }
+
+        return back()->with('status', 'User berhasil disinkronkan dari Core. Aksi: '.$report['action'].'.');
+    }
+
+    public function bulkSyncFromCore(Request $request, KpCoreBridgeProvisioningService $service): RedirectResponse
+    {
+        $validated = $request->validate([
+            'limit' => ['nullable', 'integer', 'min:0', 'max:1000'],
+        ]);
+
+        $summary = $service->syncAll(true, (int) ($validated['limit'] ?? 0));
+        $message = 'Sync Core selesai. Total: '.$summary['total']
+            .', created: '.$summary['created']
+            .', synced: '.$summary['synced']
+            .', skipped: '.$summary['skipped']
+            .', blocked: '.$summary['blocked'].'.';
+
+        if ($summary['blocked'] > 0) {
+            return back()->withErrors(['core_sync' => $message.' Cek Core app access/role untuk user yang blocked.']);
+        }
+
+        return back()->with('status', $message);
     }
 
     private function validateUser(Request $request, ?User $user = null): array

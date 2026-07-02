@@ -7,6 +7,9 @@
 @if($errors->any())
     <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
 @endif
+@if(session('status'))
+    <div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>
+@endif
 
 <div class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
     <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -29,6 +32,10 @@
         </dl>
         <div class="mt-6 flex flex-wrap gap-2">
             <a href="{{ route('admin.users.edit', $user) }}" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Edit</a>
+            <form method="POST" action="{{ route('admin.users.sync-core.single', $user) }}" onsubmit="return confirm('Sync data user ini dari Core? Password Core tidak akan disalin.')">
+                @csrf
+                <button class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Sync dari Core</button>
+            </form>
             <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}" onsubmit="return confirm('Ubah status akun ini?')">
                 @csrf
                 <button class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">{{ $user->status === 'active' ? 'Nonaktifkan' : 'Aktifkan' }}</button>

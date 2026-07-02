@@ -80,10 +80,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
         Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar'])->name('profile.avatar.delete');
         Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::post('/profile/sync-core', [ProfileController::class, 'syncCore'])->name('profile.sync-core');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
         Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
+            Route::post('users/sync-core', [UserManagementController::class, 'bulkSyncFromCore'])->name('users.sync-core');
             Route::resource('users', UserManagementController::class);
+            Route::post('users/{user}/sync-core', [UserManagementController::class, 'syncFromCore'])->name('users.sync-core.single');
             Route::post('users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
             Route::post('users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
 

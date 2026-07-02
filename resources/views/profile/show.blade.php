@@ -4,6 +4,13 @@
 @section('page_title', 'Profil Akademik')
 
 @section('content')
+@if($errors->any())
+    <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
+@endif
+@if(session('status'))
+    <div class="mb-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>
+@endif
+
 <div class="grid gap-6 lg:grid-cols-[300px_1fr] items-start">
     
     <!-- LEFT COLUMN: Sticky Profile Sidebar -->
@@ -65,6 +72,15 @@
             </div>
 
             <div class="mt-6 space-y-2.5">
+                <form method="POST" action="{{ route('profile.sync-core') }}" onsubmit="return confirm('Refresh data profil dan role dari Core?')">
+                    @csrf
+                    <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-center text-xs font-bold text-cyan-800 transition-all hover:-translate-y-[1px] hover:bg-cyan-100">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Refresh dari Core
+                    </button>
+                </form>
                 <a href="{{ route('profile.edit') }}" class="flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-cyan-700 to-cyan-800 px-4 py-2.5 text-center text-xs font-bold text-white shadow-lg shadow-cyan-700/20 hover:from-cyan-800 hover:to-cyan-900 transition-all hover:shadow-cyan-800/20 hover:-translate-y-[1px]">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>

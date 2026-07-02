@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Core\CoreUser;
 use App\Services\KpCoreBridgeProvisioningService;
 use Illuminate\Console\Command;
 use Throwable;
@@ -27,47 +26,28 @@ class ProvisionCoreBridgeUsersCommand extends Command
         }
 
         try {
-            $emails = $this->emailsToProcess();
+            $summary = $service->syncAll($execute, (int) $this->option('limit'));
         } catch (Throwable $exception) {
             $this->error('Core lookup failed safely: '.$exception->getMessage());
 
             return self::FAILURE;
         }
 
-        $summary = [
-            'mode' => $execute ? 'execute KP bridge write' : 'dry-run only; no writes performed',
-            'total' => count($emails),
-            'created' => 0,
-            'synced' => 0,
-            'skipped' => 0,
-            'blocked' => 0,
-        ];
-
         $this->info('KP Core bridge bulk provisioning');
         $this->line('Mode: '.$summary['mode']);
         $this->line('Core users with active kp-farmasi access: '.$summary['total']);
 
-        foreach ($emails as $email) {
-            $report = $execute ? $service->execute($email) : $service->plan($email);
-            $action = (string) $report['action'];
-
-            if ($report['blockers'] !== []) {
-                $summary['blocked']++;
-                $this->warn("  - {$email}: blocked");
-                foreach ($report['blockers'] as $blocker) {
+        foreach ($summary['rows'] as $row) {
+            if ($row['blockers'] !== []) {
+                $this->warn("  - {$row['email']}: blocked");
+                foreach ($row['blockers'] as $blocker) {
                     $this->warn("    {$blocker}");
                 }
 
                 continue;
             }
 
-            match ($action) {
-                'create', 'created' => $summary['created']++,
-                'link', 'update', 'synced' => $summary['synced']++,
-                default => $summary['skipped']++,
-            };
-
-            $this->line("  - {$email}: {$action}; roles=".implode(',', $report['kp_roles']));
+            $this->line("  - {$row['email']}: {$row['action']}; roles=".implode(',', $row['roles']));
         }
 
         $this->newLine();
@@ -79,32 +59,5 @@ class ProvisionCoreBridgeUsersCommand extends Command
         $this->line('  blocked: '.$summary['blocked']);
 
         return $summary['blocked'] > 0 ? self::FAILURE : self::SUCCESS;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function emailsToProcess(): array
-    {
-        $query = CoreUser::query()
-            ->whereHas('appAccesses', function ($query): void {
-                $query
-                    ->where('app_code', 'kp-farmasi')
-                    ->where('is_active', true);
-            })
-            ->whereNotNull('email')
-            ->orderBy('id');
-
-        $limit = (int) $this->option('limit');
-        if ($limit > 0) {
-            $query->limit($limit);
-        }
-
-        return $query
-            ->pluck('email')
-            ->map(fn ($email) => strtolower(trim((string) $email)))
-            ->filter()
-            ->values()
-            ->all();
     }
 }

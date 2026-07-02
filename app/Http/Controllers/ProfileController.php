@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CoreFarmasiClient;
 use App\Services\CoreProfileReadService;
+use App\Services\KpCoreBridgeProvisioningService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
@@ -127,6 +128,26 @@ class ProfileController extends Controller
         $user->update(['profile_completed' => $complete]);
 
         return redirect()->route('profile.show')->with('status', 'Profil berhasil diperbarui.');
+    }
+
+    public function syncCore(Request $request, KpCoreBridgeProvisioningService $service): RedirectResponse
+    {
+        $report = $service->execute($request->user()->email);
+
+        if ($report['blockers'] !== []) {
+            return back()->withErrors(['core_sync' => implode(' ', $report['blockers'])]);
+        }
+
+        $user = $request->user()->fresh('roles');
+        $activeRole = $request->session()->get('active_role');
+
+        if ($activeRole && ! $user->roles->contains('name', $activeRole)) {
+            $request->session()->forget('active_role');
+
+            return redirect()->route('role.select')->with('status', 'Profil berhasil disinkronkan dari Core. Pilih ulang role karena akses berubah.');
+        }
+
+        return redirect()->route('profile.show')->with('status', 'Profil berhasil disinkronkan dari Core.');
     }
 
     /**

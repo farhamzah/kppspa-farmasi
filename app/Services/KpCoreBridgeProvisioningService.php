@@ -16,6 +16,73 @@ use Illuminate\Support\Str;
 class KpCoreBridgeProvisioningService
 {
     /**
+     * @return list<string>
+     */
+    public function emailsWithKpAccess(int $limit = 0): array
+    {
+        $query = CoreUser::query()
+            ->whereHas('appAccesses', function ($query): void {
+                $query
+                    ->where('app_code', 'kp-farmasi')
+                    ->where('is_active', true);
+            })
+            ->whereNotNull('email')
+            ->orderBy('id');
+
+        if ($limit > 0) {
+            $query->limit($limit);
+        }
+
+        return $query
+            ->pluck('email')
+            ->map(fn ($email) => $this->normalize((string) $email))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function syncAll(bool $execute = false, int $limit = 0): array
+    {
+        $emails = $this->emailsWithKpAccess($limit);
+        $summary = [
+            'mode' => $execute ? 'execute KP bridge write' : 'dry-run only; no writes performed',
+            'total' => count($emails),
+            'created' => 0,
+            'synced' => 0,
+            'skipped' => 0,
+            'blocked' => 0,
+            'rows' => [],
+        ];
+
+        foreach ($emails as $email) {
+            $report = $execute ? $this->execute($email) : $this->plan($email);
+            $action = (string) $report['action'];
+
+            if ($report['blockers'] !== []) {
+                $summary['blocked']++;
+            } else {
+                match ($action) {
+                    'create', 'created' => $summary['created']++,
+                    'link', 'update', 'synced' => $summary['synced']++,
+                    default => $summary['skipped']++,
+                };
+            }
+
+            $summary['rows'][] = [
+                'email' => $email,
+                'action' => $action,
+                'roles' => $report['kp_roles'],
+                'blockers' => $report['blockers'],
+            ];
+        }
+
+        return $summary;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function plan(string $email): array
