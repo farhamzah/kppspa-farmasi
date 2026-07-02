@@ -146,6 +146,35 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
         ], 'core');
     }
 
+    public function test_titled_core_lecturer_name_is_used_for_admin_and_field_supervisor_context(): void
+    {
+        $this->coreLecturerProfile();
+
+        $user = User::create([
+            'name' => 'Legacy Plain',
+            'email' => 'multi-profile@sikp.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'profile_completed' => true,
+            'core_user_id' => 10,
+        ]);
+        $user->roles()->sync(Role::whereIn('name', ['admin', 'pembimbing_lapangan'])->pluck('id'));
+        $user->lecturer()->create(['nidn_nip' => '0012345601', 'core_lecturer_id' => 20]);
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'admin'])
+            ->get('/profil-saya')
+            ->assertOk()
+            ->assertSee('Dr. Dosen Core, M.Farm.');
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/profil-saya')
+            ->assertOk()
+            ->assertSee('Dr. Dosen Core, M.Farm.')
+            ->assertSee('Profil Dosen');
+    }
+
     private function createCoreSchema(): void
     {
         Schema::connection('core')->create('users', function ($table): void {

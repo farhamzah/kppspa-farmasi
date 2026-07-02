@@ -13,9 +13,11 @@ class CompetencyController extends Controller
 {
     public function index(Request $request): View
     {
+        $fieldSupervisorId = $request->user()->fieldSupervisor?->id ?: 0;
+
         $assignments = KpAssignment::query()
             ->with(['period', 'student.user', 'place', 'competencyAchievements'])
-            ->where('field_supervisor_id', $request->user()->fieldSupervisor?->id)
+            ->where('field_supervisor_id', $fieldSupervisorId)
             ->latest()
             ->paginate(10);
 

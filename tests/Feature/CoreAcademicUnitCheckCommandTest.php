@@ -7,11 +7,33 @@ use App\Models\Student;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class CoreAcademicUnitCheckCommandTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('database.connections.core', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => false,
+        ]);
+
+        DB::purge('core');
+
+        foreach (['faculties', 'study_programs', 'departments'] as $tableName) {
+            Schema::connection('core')->create($tableName, function ($table): void {
+                $table->id();
+                $table->string('name');
+            });
+        }
+    }
 
     public function test_core_academic_unit_check_is_read_only_and_flags_faculty_as_department(): void
     {

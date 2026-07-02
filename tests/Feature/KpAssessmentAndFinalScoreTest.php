@@ -105,6 +105,19 @@ class KpAssessmentAndFinalScoreTest extends TestCase
     public function test_field_supervisor_and_examiner_can_score_assigned_records_only(): void
     {
         [, $fieldComponent, $examinerComponent] = $this->components();
+        $otherStudentUser = $this->makeUser('other-field-score-student@test.local', ['mahasiswa']);
+        $otherStudentUser->update(['name' => 'Mahasiswa Nilai Lain']);
+        $otherStudent = Student::create(['user_id' => $otherStudentUser->id, 'nim' => '2210631231888', 'study_program' => 'Farmasi', 'semester' => 6, 'phone' => '081234567890', 'status' => 'active']);
+        $otherStudentUser->forceFill(['profile_completed' => true])->save();
+        $otherAssignment = $this->makeAssignment($otherStudent);
+        $otherAssignment->update(['field_supervisor_id' => null, 'status' => 'menunggu_pembimbing']);
+
+        $this->actingAs($this->fieldUser)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/penilaian')
+            ->assertOk()
+            ->assertSee($this->mahasiswa->name)
+            ->assertDontSee('Mahasiswa Nilai Lain');
 
         $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->post('/pembimbing-lapangan/penilaian/'.$this->assignment->id.'/save', ['scores' => [['component_id' => $fieldComponent->id, 'score' => 80]]])

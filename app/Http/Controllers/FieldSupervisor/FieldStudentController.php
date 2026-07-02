@@ -11,9 +11,9 @@ class FieldStudentController extends Controller
 {
     public function index(Request $request): View
     {
-        $fieldSupervisor = $request->user()->fieldSupervisor;
+        $fieldSupervisorId = $request->user()->fieldSupervisor?->id ?: 0;
         $assignments = KpAssignment::with(['student.user', 'period', 'place', 'internalSupervisor.user'])
-            ->where('field_supervisor_id', $fieldSupervisor?->id)
+            ->where('field_supervisor_id', $fieldSupervisorId)
             ->paginate(10);
 
         return view('field-supervisor.assignments.index', compact('assignments'));

@@ -26,14 +26,15 @@ class CoreProfileReadService
                 return null;
             }
 
-            $linkedProfile = match ($profileType) {
+            $coreProfileType = $this->coreProfileTypeFor($profileType, $user);
+            $linkedProfile = match ($coreProfileType) {
                 'mahasiswa' => $this->studentProfileFor($user, $coreUser),
                 'dosen' => $this->lecturerProfileFor($user, $coreUser),
                 default => null,
             };
 
             $profilePhotoUrl = $this->profilePhotoUrl($coreUser->profile_photo_path ?? null);
-            $displayName = $this->displayNameFor($coreUser, $linkedProfile, $profileType) ?? $user->name;
+            $displayName = $this->displayNameFor($coreUser, $linkedProfile, $coreProfileType ?? $profileType) ?? $user->name;
 
             return [
                 'available' => true,
@@ -51,7 +52,7 @@ class CoreProfileReadService
                     'active' => (bool) ($coreUser->active ?? true),
                 ],
                 'linked_profile' => $linkedProfile,
-                'sections' => $this->sectionsFor($coreUser, $linkedProfile, $profileType, $displayName),
+                'sections' => $this->sectionsFor($coreUser, $linkedProfile, $coreProfileType ?? $profileType, $displayName),
                 'notice' => $linkedProfile
                     ? 'Data resmi dibaca dari Core Farmasi dan ditampilkan read-only di KP.'
                     : 'Akun Core terbaca, tetapi profil resmi untuk role aktif ini belum tertaut.',
@@ -119,6 +120,23 @@ class CoreProfileReadService
         }
 
         return $query->first();
+    }
+
+    private function coreProfileTypeFor(string $profileType, User $user): ?string
+    {
+        if ($profileType === 'mahasiswa') {
+            return 'mahasiswa';
+        }
+
+        if ($profileType === 'dosen') {
+            return 'dosen';
+        }
+
+        $user->loadMissing('lecturer');
+
+        return $user->lecturer || in_array($profileType, ['admin', 'koordinator_kp', 'pembimbing_dalam', 'pembimbing_lapangan', 'penguji'], true)
+            ? 'dosen'
+            : null;
     }
 
     private function studentProfileFor(User $user, object $coreUser): ?object

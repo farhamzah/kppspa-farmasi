@@ -36,12 +36,17 @@ if (! function_exists('lecturer_display_label')) {
 if (! function_exists('user_display_name')) {
     function user_display_name(User $user, ?string $role = null): string
     {
-        if ($user->profileTypeForRole($role ?? session('active_role')) !== 'dosen') {
+        $user->loadMissing('lecturer');
+
+        if (! $user->lecturer) {
             return $user->name;
         }
 
-        $user->loadMissing('lecturer');
+        $role ??= session('active_role');
+        $lecturerBackedRoles = ['admin', 'koordinator_kp', 'pembimbing_dalam', 'pembimbing_lapangan', 'penguji'];
 
-        return $user->lecturer ? lecturer_display_name($user->lecturer) : $user->name;
+        return in_array($role, $lecturerBackedRoles, true) || $user->profileTypeForRole($role) === 'dosen'
+            ? lecturer_display_name($user->lecturer)
+            : $user->name;
     }
 }

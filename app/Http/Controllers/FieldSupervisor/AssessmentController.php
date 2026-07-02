@@ -14,9 +14,9 @@ class AssessmentController extends Controller
 {
     public function index(): View
     {
-        $field = request()->user()->fieldSupervisor;
+        $fieldSupervisorId = request()->user()->fieldSupervisor?->id ?: 0;
         $assignments = KpAssignment::with(['student.user', 'period', 'place', 'scores'])
-            ->where('field_supervisor_id', $field?->id)
+            ->where('field_supervisor_id', $fieldSupervisorId)
             ->latest()->paginate(10);
 
         return view('field-supervisor.assessments.index', ['assignments' => $assignments]);

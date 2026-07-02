@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\UserImportService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +20,14 @@ class UserImportAndProfileTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        config()->set('database.connections.core', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => false,
+        ]);
+        DB::purge('core');
 
         $this->seed(RoleSeeder::class);
     }

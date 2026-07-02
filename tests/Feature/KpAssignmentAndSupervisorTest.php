@@ -133,10 +133,16 @@ class KpAssignmentAndSupervisorTest extends TestCase
     public function test_student_and_supervisors_only_see_their_own_assignments_and_cancel_logs(): void
     {
         $assignment = $this->assignment($this->lecturer, $this->fieldSupervisor);
+        $unassignedStudentUser = $this->makeUser('unassigned-field-student@test.local', ['mahasiswa']);
+        $unassignedStudentUser->update(['name' => 'Mahasiswa Belum Ada Pembimbing Lapangan']);
+        $unassignedStudent = $this->makeStudent($unassignedStudentUser, '2210631230777');
+        $unassignedAssignment = $this->assignment($this->lecturer, null, $unassignedStudent);
+        $orphanFieldUser = $this->makeUser('orphan-field@test.local', ['pembimbing_lapangan']);
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])->get('/mahasiswa/penempatan-kp')->assertOk()->assertSee($assignment->place->name);
         $this->actingAs($this->lecturerUser)->withSession(['active_role' => 'pembimbing_dalam'])->get('/pembimbing-dalam/mahasiswa-bimbingan')->assertOk()->assertSee($this->student->user->name);
-        $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])->get('/pembimbing-lapangan/mahasiswa-kp')->assertOk()->assertSee($this->student->user->name);
+        $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])->get('/pembimbing-lapangan/mahasiswa-kp')->assertOk()->assertSee($this->student->user->name)->assertDontSee($unassignedStudent->user->name);
+        $this->actingAs($orphanFieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])->get('/pembimbing-lapangan/mahasiswa-kp')->assertOk()->assertDontSee($unassignedStudent->user->name);
 
         $otherLecturerUser = $this->makeUser('other-dosen@test.local', ['pembimbing_dalam']);
         Lecturer::create(['user_id' => $otherLecturerUser->id, 'nidn_nip' => '0099', 'status' => 'active']);

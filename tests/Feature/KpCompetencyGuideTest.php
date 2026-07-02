@@ -109,6 +109,18 @@ class KpCompetencyGuideTest extends TestCase
             'title' => 'Komunikasi pasien',
             'status' => 'aktif',
         ]);
+        $unassignedUser = $this->makeUser('unassigned-competency@test.local', ['mahasiswa']);
+        $unassignedUser->update(['name' => 'Mahasiswa Kompetensi Tanpa Pembimbing Lapangan']);
+        $unassignedStudent = $this->makeStudent($unassignedUser, '2210631250777');
+        $unassignedAssignment = $this->assignment($unassignedStudent, $this->lecturer, $this->fieldSupervisor);
+        $unassignedAssignment->update(['field_supervisor_id' => null, 'status' => 'menunggu_pembimbing']);
+
+        $this->actingAs($this->fieldUser)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/kompetensi')
+            ->assertOk()
+            ->assertSee($this->assignment->student->user->name)
+            ->assertDontSee($unassignedStudent->user->name);
 
         $this->actingAs($this->fieldUser)
             ->withSession(['active_role' => 'pembimbing_lapangan'])

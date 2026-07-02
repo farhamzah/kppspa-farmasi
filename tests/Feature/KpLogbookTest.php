@@ -144,6 +144,20 @@ class KpLogbookTest extends TestCase
 
     public function test_field_supervisor_logbook_index_groups_by_student_and_opens_assignment_detail(): void
     {
+        $otherFieldUser = $this->makeUser('other-index-field@test.local', ['pembimbing_lapangan']);
+        $otherField = FieldSupervisor::create(['user_id' => $otherFieldUser->id, 'institution_name' => 'RS Lain', 'position' => 'Supervisor', 'status' => 'active']);
+        $otherStudentUser = $this->makeUser('other-logbook-student@test.local', ['mahasiswa']);
+        $otherStudentUser->update(['name' => 'Mahasiswa Logbook Lain']);
+        $otherAssignment = $this->makeAssignment($this->makeStudent($otherStudentUser, '2210631230199'), $this->lecturer, $otherField);
+        KpLogbook::create([
+            'kp_assignment_id' => $otherAssignment->id,
+            'student_id' => $otherAssignment->student_id,
+            'activity_date' => now()->toDateString(),
+            'activity_title' => 'Logbook mahasiswa lain',
+            'activity_description' => 'Kegiatan bukan bimbingan user aktif.',
+            'status' => 'menunggu_validasi',
+            'submitted_at' => now(),
+        ]);
         KpLogbook::create($this->logbookAttributes([
             'activity_title' => 'Kegiatan pelayanan resep',
             'status' => 'menunggu_validasi',
@@ -166,6 +180,7 @@ class KpLogbookTest extends TestCase
             ->assertSee('2 total')
             ->assertSee('1 menunggu')
             ->assertSee('Lihat Logbook')
+            ->assertDontSee('Mahasiswa Logbook Lain')
             ->assertDontSee('Kegiatan pelayanan resep');
 
         $this->actingAs($this->fieldUser)
