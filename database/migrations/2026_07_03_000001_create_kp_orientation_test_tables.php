@@ -23,7 +23,7 @@ return new class extends Migration
 
         Schema::create('kp_orientation_test_questions', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('kp_orientation_test_id')->constrained('kp_orientation_tests')->cascadeOnDelete();
+            $table->unsignedBigInteger('kp_orientation_test_id');
             $table->text('question_text');
             $table->json('choices');
             $table->unsignedTinyInteger('correct_choice_index');
@@ -32,13 +32,19 @@ return new class extends Migration
             $table->unsignedInteger('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
+
+            $table->index('kp_orientation_test_id', 'kp_orient_questions_test_id_idx');
+            $table->foreign('kp_orientation_test_id', 'kp_orient_questions_test_id_fk')
+                ->references('id')
+                ->on('kp_orientation_tests')
+                ->cascadeOnDelete();
         });
 
         Schema::create('kp_orientation_test_attempts', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('kp_orientation_test_id')->constrained('kp_orientation_tests')->cascadeOnDelete();
-            $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('kp_orientation_test_id');
+            $table->unsignedBigInteger('student_id');
+            $table->unsignedBigInteger('user_id');
             $table->enum('status', ['submitted'])->default('submitted');
             $table->unsignedInteger('score')->default(0);
             $table->unsignedInteger('max_score')->default(0);
@@ -46,19 +52,44 @@ return new class extends Migration
             $table->timestamp('submitted_at')->nullable();
             $table->timestamps();
 
-            $table->unique(['kp_orientation_test_id', 'student_id']);
+            $table->index('kp_orientation_test_id', 'kp_orient_attempts_test_id_idx');
+            $table->index('student_id', 'kp_orient_attempts_student_id_idx');
+            $table->index('user_id', 'kp_orient_attempts_user_id_idx');
+            $table->unique(['kp_orientation_test_id', 'student_id'], 'kp_orient_attempt_test_student_unique');
+            $table->foreign('kp_orientation_test_id', 'kp_orient_attempts_test_id_fk')
+                ->references('id')
+                ->on('kp_orientation_tests')
+                ->cascadeOnDelete();
+            $table->foreign('student_id', 'kp_orient_attempts_student_id_fk')
+                ->references('id')
+                ->on('students')
+                ->cascadeOnDelete();
+            $table->foreign('user_id', 'kp_orient_attempts_user_id_fk')
+                ->references('id')
+                ->on('users')
+                ->cascadeOnDelete();
         });
 
         Schema::create('kp_orientation_test_answers', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('kp_orientation_test_attempt_id')->constrained('kp_orientation_test_attempts')->cascadeOnDelete();
-            $table->foreignId('kp_orientation_test_question_id')->constrained('kp_orientation_test_questions')->cascadeOnDelete();
+            $table->unsignedBigInteger('kp_orientation_test_attempt_id');
+            $table->unsignedBigInteger('kp_orientation_test_question_id');
             $table->unsignedTinyInteger('selected_choice_index');
             $table->boolean('is_correct')->default(false);
             $table->unsignedInteger('points_awarded')->default(0);
             $table->timestamps();
 
+            $table->index('kp_orientation_test_attempt_id', 'kp_orient_answers_attempt_id_idx');
+            $table->index('kp_orientation_test_question_id', 'kp_orient_answers_question_id_idx');
             $table->unique(['kp_orientation_test_attempt_id', 'kp_orientation_test_question_id'], 'kp_orientation_answer_unique');
+            $table->foreign('kp_orientation_test_attempt_id', 'kp_orient_answers_attempt_id_fk')
+                ->references('id')
+                ->on('kp_orientation_test_attempts')
+                ->cascadeOnDelete();
+            $table->foreign('kp_orientation_test_question_id', 'kp_orient_answers_question_id_fk')
+                ->references('id')
+                ->on('kp_orientation_test_questions')
+                ->cascadeOnDelete();
         });
 
         $this->seedDefaultTests();
