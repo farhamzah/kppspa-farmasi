@@ -80,6 +80,19 @@ class KpOrientationTestFeatureTest extends TestCase
             ->assertSee('Mahasiswa Monitor');
     }
 
+    public function test_student_role_without_student_profile_sees_guidance_instead_of_forbidden(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $user = $this->user('Mahasiswa Tanpa Profil', 'student-no-profile@test.local', ['mahasiswa']);
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('student.orientation-tests.index'))
+            ->assertOk()
+            ->assertSee('Profil mahasiswa belum tersedia')
+            ->assertSee('Menunggu profil mahasiswa');
+    }
+
     private function user(string $name, string $email, array $roles): User
     {
         $user = User::create([

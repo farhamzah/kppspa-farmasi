@@ -14,9 +14,11 @@ class OrientationTestController extends Controller
 {
     public function index(Request $request)
     {
-        $student = $this->student($request);
+        $student = $request->user()->student;
         $tests = KpOrientationTest::query()
-            ->with(['attempts' => fn ($query) => $query->where('student_id', $student->id)])
+            ->with(['attempts' => fn ($query) => $student
+                ? $query->where('student_id', $student->id)
+                : $query->whereRaw('1 = 0')])
             ->where('status', 'aktif')
             ->orderByRaw("case when type = 'pre' then 1 else 2 end")
             ->get();
