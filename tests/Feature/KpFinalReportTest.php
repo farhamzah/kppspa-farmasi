@@ -29,6 +29,8 @@ class KpFinalReportTest extends TestCase
     private Student $student;
     private User $lecturerUser;
     private Lecturer $lecturer;
+    private User $fieldUser;
+    private FieldSupervisor $field;
     private KpAssignment $assignment;
 
     protected function setUp(): void
@@ -43,9 +45,9 @@ class KpFinalReportTest extends TestCase
         $this->student = $this->makeStudent($this->mahasiswa, '2210631230201');
         $this->lecturerUser = $this->makeUser('dosen-final@test.local', ['pembimbing_dalam']);
         $this->lecturer = Lecturer::create(['user_id' => $this->lecturerUser->id, 'nidn_nip' => '552211', 'status' => 'active']);
-        $fieldUser = $this->makeUser('field-final@test.local', ['pembimbing_lapangan']);
-        $field = FieldSupervisor::create(['user_id' => $fieldUser->id, 'institution_name' => 'Apotek Sehat', 'position' => 'Supervisor', 'status' => 'active']);
-        $this->assignment = $this->makeAssignment($this->student, $this->lecturer, $field);
+        $this->fieldUser = $this->makeUser('field-final@test.local', ['pembimbing_lapangan']);
+        $this->field = FieldSupervisor::create(['user_id' => $this->fieldUser->id, 'institution_name' => 'Apotek Sehat', 'position' => 'Supervisor', 'status' => 'active']);
+        $this->assignment = $this->makeAssignment($this->student, $this->lecturer, $this->field);
     }
 
     public function test_student_with_active_assignment_can_open_final_report_and_without_assignment_sees_empty_state(): void
@@ -130,9 +132,48 @@ class KpFinalReportTest extends TestCase
             ->assertRedirect();
 
         $report->refresh();
+        $this->assertSame('menunggu_review', $report->status);
+        $this->assertSame('disetujui', $report->internal_review_status);
+        $this->assertNull($report->approved_at);
+
+        $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post('/pembimbing-lapangan/laporan-akhir/'.$report->id.'/approve', ['review_note' => 'Sesuai lapangan.'])
+            ->assertRedirect();
+
+        $report->refresh();
         $this->assertSame('disetujui', $report->status);
+        $this->assertSame('disetujui', $report->field_review_status);
         $this->assertNotNull($report->approved_at);
-        $this->assertDatabaseHas('kp_final_report_logs', ['kp_final_report_id' => $report->id, 'action' => 'approved']);
+        $this->assertDatabaseHas('kp_final_report_logs', ['kp_final_report_id' => $report->id, 'action' => 'internal_approved']);
+        $this->assertDatabaseHas('kp_final_report_logs', ['kp_final_report_id' => $report->id, 'action' => 'field_approved']);
+    }
+
+    public function test_student_can_save_final_link_and_internal_supervisor_validates_guidance_logs(): void
+    {
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/laporan-akhir/link-final', [
+                'final_document_url' => 'https://docs.google.com/document/d/final-report',
+                'final_document_label' => 'Laporan Final KP',
+            ])->assertRedirect();
+
+        $report = KpFinalReport::first();
+        $this->assertSame('https://docs.google.com/document/d/final-report', $report->final_document_url);
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/laporan-akhir/bimbingan', [
+                'guidance_date' => now()->toDateString(),
+                'topic' => 'Review bab hasil',
+                'student_note' => 'Sudah revisi pembahasan.',
+            ])->assertRedirect();
+
+        $guidance = $this->assignment->reportGuidanceLogs()->first();
+        $this->assertSame('menunggu_validasi', $guidance->status);
+
+        $this->actingAs($this->lecturerUser)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->post('/pembimbing-dalam/laporan-akhir/'.$report->id.'/bimbingan/'.$guidance->id.'/approve', ['review_note' => 'OK.'])
+            ->assertRedirect();
+
+        $this->assertSame('disetujui', $guidance->fresh()->status);
     }
 
     public function test_internal_supervisor_can_reject_with_note_and_admin_koordinator_can_monitor(): void

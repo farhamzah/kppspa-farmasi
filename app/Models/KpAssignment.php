@@ -32,6 +32,7 @@ class KpAssignment extends Model
     public function logs() { return $this->hasMany(KpAssignmentLog::class, 'kp_assignment_id'); }
     public function logbooks() { return $this->hasMany(KpLogbook::class, 'kp_assignment_id'); }
     public function finalReport() { return $this->hasOne(KpFinalReport::class, 'kp_assignment_id'); }
+    public function reportGuidanceLogs() { return $this->hasMany(KpReportGuidanceLog::class, 'kp_assignment_id'); }
     public function examRequest() { return $this->hasOne(KpExamRequest::class, 'kp_assignment_id'); }
     public function exam() { return $this->hasOne(KpExam::class, 'kp_assignment_id'); }
     public function scores() { return $this->hasMany(KpScore::class, 'kp_assignment_id'); }
@@ -90,9 +91,62 @@ class KpAssignment extends Model
 
     public function isEligibleForExamRequest(): bool
     {
+        return collect($this->examEligibility()['items'])->every(fn (array $item): bool => $item['ready']);
+    }
+
+    public function examEligibility(): array
+    {
         $this->loadMissing('finalReport');
 
-        return $this->isActive() && $this->finalReport?->isApproved();
+        $approvedLogbooks = $this->logbooks()->where('status', 'disetujui')->count();
+        $openLogbooks = $this->logbooks()->whereIn('status', ['menunggu_validasi', 'revisi', 'ditolak'])->count();
+        $approvedGuidance = $this->reportGuidanceLogs()->where('status', 'disetujui')->count();
+        $openGuidance = $this->reportGuidanceLogs()->whereIn('status', ['menunggu_validasi', 'revisi', 'ditolak'])->count();
+        $report = $this->finalReport;
+
+        $items = [
+            [
+                'key' => 'assignment_active',
+                'label' => 'Penempatan KP aktif',
+                'ready' => $this->isActive(),
+                'description' => $this->statusLabel(),
+            ],
+            [
+                'key' => 'field_logbook_validated',
+                'label' => 'Logbook KP tervalidasi pembimbing lapangan',
+                'ready' => $approvedLogbooks > 0 && $openLogbooks === 0,
+                'description' => $approvedLogbooks.' disetujui, '.$openLogbooks.' perlu tindak lanjut',
+            ],
+            [
+                'key' => 'report_guidance_minimum',
+                'label' => 'Bimbingan laporan minimal 8 kali',
+                'ready' => $approvedGuidance >= 8 && $openGuidance === 0,
+                'description' => $approvedGuidance.'/8 disetujui, '.$openGuidance.' perlu tindak lanjut',
+            ],
+            [
+                'key' => 'final_report_submitted',
+                'label' => 'Link/file laporan final tersedia',
+                'ready' => $report && ($report->files()->exists() || filled($report->final_document_url)),
+                'description' => $report?->latestFile?->original_filename ?? ($report?->final_document_label ?: ($report?->final_document_url ? 'Link final tersedia' : 'Belum tersedia')),
+            ],
+            [
+                'key' => 'internal_report_approved',
+                'label' => 'Laporan disetujui pembimbing dalam',
+                'ready' => $report?->internal_review_status === 'disetujui',
+                'description' => $report?->internalReviewStatusLabel() ?? 'Belum review',
+            ],
+            [
+                'key' => 'field_report_approved',
+                'label' => 'Laporan disetujui pembimbing lapangan',
+                'ready' => $report?->field_review_status === 'disetujui',
+                'description' => $report?->fieldReviewStatusLabel() ?? 'Belum review',
+            ],
+        ];
+
+        return [
+            'ready' => collect($items)->every(fn (array $item): bool => $item['ready']),
+            'items' => $items,
+        ];
     }
 
     public function scoresCompletionPercentage(): int

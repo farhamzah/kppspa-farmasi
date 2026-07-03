@@ -7,6 +7,8 @@ use App\Models\KpAssignment;
 use App\Models\KpExam;
 use App\Models\KpExamRequest;
 use App\Models\KpFinalReport;
+use App\Models\KpLogbook;
+use App\Models\KpReportGuidanceLog;
 use App\Models\KpPeriod;
 use App\Models\KpPlace;
 use App\Models\KpRegistration;
@@ -249,9 +251,52 @@ class KpExamSchedulingTest extends TestCase
 
     private function approvedFinalReport(): KpFinalReport
     {
+        if (! $this->assignment->logbooks()->where('status', 'disetujui')->exists()) {
+            KpLogbook::create([
+                'kp_assignment_id' => $this->assignment->id,
+                'activity_date' => now()->toDateString(),
+                'activity_title' => 'Kegiatan KP',
+                'start_time' => '08:00',
+                'end_time' => '12:00',
+                'activity_description' => 'Kegiatan lapangan.',
+                'learning_outcome' => 'Memahami kegiatan lapangan.',
+                'status' => 'disetujui',
+                'submitted_at' => now(),
+                'validated_by' => $this->fieldUser->id,
+                'validated_at' => now(),
+            ]);
+        }
+
+        for ($i = 1; $i <= 8; $i++) {
+            KpReportGuidanceLog::firstOrCreate(
+                [
+                    'kp_assignment_id' => $this->assignment->id,
+                    'guidance_date' => now()->subDays($i)->toDateString(),
+                    'topic' => 'Bimbingan laporan '.$i,
+                ],
+                [
+                    'status' => 'disetujui',
+                    'submitted_at' => now()->subDays($i),
+                    'validated_by' => $this->supervisorUser->id,
+                    'validated_at' => now()->subDays($i),
+                ]
+            );
+        }
+
         return KpFinalReport::firstOrCreate(
             ['kp_assignment_id' => $this->assignment->id],
-            ['current_version' => 1, 'status' => 'disetujui', 'approved_at' => now()]
+            [
+                'current_version' => 1,
+                'status' => 'disetujui',
+                'final_document_url' => 'https://docs.google.com/document/d/final',
+                'internal_review_status' => 'disetujui',
+                'internal_reviewed_by' => $this->supervisorUser->id,
+                'internal_reviewed_at' => now(),
+                'field_review_status' => 'disetujui',
+                'field_reviewed_by' => $this->fieldUser->id,
+                'field_reviewed_at' => now(),
+                'approved_at' => now(),
+            ]
         );
     }
 

@@ -8,7 +8,7 @@ class ReviewFinalReportRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasRole('pembimbing_dalam') ?? false;
+        return $this->user()?->hasAnyRole(['pembimbing_dalam', 'pembimbing_lapangan']) ?? false;
     }
 
     public function rules(): array

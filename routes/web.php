@@ -8,6 +8,7 @@ use App\Http\Controllers\Examiner\ExamScheduleController as ExaminerExamSchedule
 use App\Http\Controllers\Examiner\AssessmentController as ExaminerAssessmentController;
 use App\Http\Controllers\FieldSupervisor\AssessmentController as FieldAssessmentController;
 use App\Http\Controllers\FieldSupervisor\CompetencyController as FieldCompetencyController;
+use App\Http\Controllers\FieldSupervisor\FinalReportReviewController as FieldFinalReportReviewController;
 use App\Http\Controllers\FieldSupervisor\FieldStudentController;
 use App\Http\Controllers\FieldSupervisor\LogbookValidationController;
 use App\Http\Controllers\InternalSupervisor\ExamScheduleController as InternalExamScheduleController;
@@ -217,6 +218,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::delete('logbook/{logbook}', [LogbookController::class, 'destroy'])->name('logbooks.destroy');
             Route::get('laporan-akhir', [FinalReportController::class, 'show'])->name('final-reports.show');
             Route::post('laporan-akhir/upload', [FinalReportController::class, 'upload'])->name('final-reports.upload');
+            Route::post('laporan-akhir/link-final', [FinalReportController::class, 'saveFinalLink'])->name('final-reports.final-link');
+            Route::post('laporan-akhir/bimbingan', [FinalReportController::class, 'storeGuidance'])->name('final-reports.guidance.store');
             Route::post('laporan-akhir/submit', [FinalReportController::class, 'submit'])->name('final-reports.submit');
             Route::get('laporan-akhir/files/{file}/download', [FinalReportController::class, 'download'])->name('final-reports.files.download');
             Route::get('sidang', [StudentExamRequestController::class, 'index'])->name('exams.index');
@@ -241,6 +244,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('laporan-akhir/{report}/approve', [FinalReportReviewController::class, 'approve'])->name('final-reports.approve');
             Route::post('laporan-akhir/{report}/revision', [FinalReportReviewController::class, 'revision'])->name('final-reports.revision');
             Route::post('laporan-akhir/{report}/reject', [FinalReportReviewController::class, 'reject'])->name('final-reports.reject');
+            Route::post('laporan-akhir/{report}/bimbingan/{guidance}/approve', [FinalReportReviewController::class, 'approveGuidance'])->name('final-reports.guidance.approve');
+            Route::post('laporan-akhir/{report}/bimbingan/{guidance}/revision', [FinalReportReviewController::class, 'revisionGuidance'])->name('final-reports.guidance.revision');
             Route::get('laporan-akhir/files/{file}/download', [FinalReportReviewController::class, 'download'])->name('final-reports.files.download');
             Route::get('jadwal-sidang', [InternalExamScheduleController::class, 'index'])->name('exams.index');
             Route::get('jadwal-sidang/{exam}', [InternalExamScheduleController::class, 'show'])->name('exams.show');
@@ -261,6 +266,12 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('logbook/{logbook}/revision', [LogbookValidationController::class, 'revision'])->name('logbooks.revision');
             Route::post('logbook/{logbook}/reject', [LogbookValidationController::class, 'reject'])->name('logbooks.reject');
             Route::get('logbook/{logbook}/evidence/download', [LogbookValidationController::class, 'download'])->name('logbooks.evidence.download');
+            Route::get('laporan-akhir', [FieldFinalReportReviewController::class, 'index'])->name('final-reports.index');
+            Route::get('laporan-akhir/{report}', [FieldFinalReportReviewController::class, 'show'])->name('final-reports.show');
+            Route::post('laporan-akhir/{report}/approve', [FieldFinalReportReviewController::class, 'approve'])->name('final-reports.approve');
+            Route::post('laporan-akhir/{report}/revision', [FieldFinalReportReviewController::class, 'revision'])->name('final-reports.revision');
+            Route::post('laporan-akhir/{report}/reject', [FieldFinalReportReviewController::class, 'reject'])->name('final-reports.reject');
+            Route::get('laporan-akhir/files/{file}/download', [FieldFinalReportReviewController::class, 'download'])->name('final-reports.files.download');
             Route::get('penilaian', [FieldAssessmentController::class, 'index'])->name('assessments.index');
             Route::get('penilaian/{assignment}', [FieldAssessmentController::class, 'show'])->name('assessments.show');
             Route::post('penilaian/{assignment}/save', [FieldAssessmentController::class, 'save'])->name('assessments.save');

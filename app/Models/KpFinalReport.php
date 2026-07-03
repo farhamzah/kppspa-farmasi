@@ -6,7 +6,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class KpFinalReport extends Model
 {
-    protected $fillable = ['kp_assignment_id', 'current_version', 'status', 'submitted_at', 'reviewed_by', 'reviewed_at', 'review_note', 'approved_at'];
+    protected $fillable = [
+        'kp_assignment_id',
+        'current_version',
+        'status',
+        'submitted_at',
+        'reviewed_by',
+        'reviewed_at',
+        'review_note',
+        'final_document_url',
+        'final_document_label',
+        'approved_at',
+        'internal_review_status',
+        'internal_reviewed_by',
+        'internal_reviewed_at',
+        'internal_review_note',
+        'field_review_status',
+        'field_reviewed_by',
+        'field_reviewed_at',
+        'field_review_note',
+    ];
 
     protected function casts(): array
     {
@@ -14,11 +33,15 @@ class KpFinalReport extends Model
             'submitted_at' => 'datetime',
             'reviewed_at' => 'datetime',
             'approved_at' => 'datetime',
+            'internal_reviewed_at' => 'datetime',
+            'field_reviewed_at' => 'datetime',
         ];
     }
 
     public function assignment() { return $this->belongsTo(KpAssignment::class, 'kp_assignment_id'); }
     public function reviewedBy() { return $this->belongsTo(User::class, 'reviewed_by'); }
+    public function internalReviewedBy() { return $this->belongsTo(User::class, 'internal_reviewed_by'); }
+    public function fieldReviewedBy() { return $this->belongsTo(User::class, 'field_reviewed_by'); }
     public function files() { return $this->hasMany(KpFinalReportFile::class, 'kp_final_report_id'); }
     public function logs() { return $this->hasMany(KpFinalReportLog::class, 'kp_final_report_id'); }
     public function latestFile() { return $this->hasOne(KpFinalReportFile::class, 'kp_final_report_id')->latestOfMany('version'); }
@@ -52,22 +75,44 @@ class KpFinalReport extends Model
 
     public function canBeSubmitted(): bool
     {
-        return $this->canBeEditedByStudent() && $this->files()->exists();
+        return $this->canBeEditedByStudent() && ($this->files()->exists() || filled($this->final_document_url));
     }
 
     public function isApproved(): bool
     {
-        return $this->status === 'disetujui';
+        return $this->status === 'disetujui'
+            && $this->internal_review_status === 'disetujui'
+            && $this->field_review_status === 'disetujui';
+    }
+
+    public function internalReviewStatusLabel(): string
+    {
+        return $this->reviewStatusLabel($this->internal_review_status);
+    }
+
+    public function fieldReviewStatusLabel(): string
+    {
+        return $this->reviewStatusLabel($this->field_review_status);
     }
 
     public function progressLabel(): string
     {
         return match ($this->status) {
-            'menunggu_review' => 'Menunggu review pembimbing dalam',
+            'menunggu_review' => 'Menunggu review pembimbing',
             'revisi' => 'Perlu revisi laporan',
             'disetujui' => 'Siap pengajuan sidang',
             'ditolak' => 'Laporan ditolak',
             default => 'Draft laporan',
         };
+    }
+
+    private function reviewStatusLabel(?string $status): string
+    {
+        return [
+            'pending' => 'Belum Review',
+            'disetujui' => 'Disetujui',
+            'revisi' => 'Revisi',
+            'ditolak' => 'Ditolak',
+        ][$status ?: 'pending'] ?? ucfirst((string) $status);
     }
 }

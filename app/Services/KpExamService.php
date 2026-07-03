@@ -18,7 +18,10 @@ class KpExamService
         $assignment->loadMissing('finalReport');
 
         if (! $assignment->isEligibleForExamRequest()) {
-            throw ValidationException::withMessages(['exam' => 'Pengajuan sidang hanya bisa dilakukan setelah laporan akhir disetujui.']);
+            $pending = collect($assignment->examEligibility()['items'])->first(fn (array $item): bool => ! $item['ready']);
+            throw ValidationException::withMessages([
+                'exam' => 'Pengajuan sidang belum bisa dilakukan. Lengkapi: '.($pending['label'] ?? 'syarat sidang').'.',
+            ]);
         }
         if ($assignment->examRequest()->whereNotIn('status', ['ditolak', 'dibatalkan'])->exists()) {
             throw ValidationException::withMessages(['exam' => 'Pengajuan sidang untuk penempatan ini sudah ada.']);

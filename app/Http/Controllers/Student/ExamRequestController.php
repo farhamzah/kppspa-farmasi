@@ -19,6 +19,7 @@ class ExamRequestController extends Controller
             'assignment' => $assignment?->load(['place', 'internalSupervisor.user', 'finalReport', 'examRequest.exam.examiner.user', 'examRequest.exam.supervisor.user']),
             'examRequest' => $assignment?->examRequest,
             'exam' => $assignment?->exam,
+            'examEligibility' => $assignment?->examEligibility(),
         ]);
     }
 
