@@ -11,6 +11,18 @@
 
     $formatLabel = fn (string $label): string => str($label)->replace('_', ' ')->headline()->toString();
     $formatValue = fn ($value): string => is_numeric($value) ? number_format((int) $value, 0, ',', '.') : (string) ($value ?: '-');
+    $dashboardValue = function ($value) use ($formatValue): string {
+        $formatted = $formatValue($value);
+
+        return match (strtolower($formatted)) {
+            'published' => 'Dipublikasi',
+            'verified' => 'Terverifikasi',
+            'approved' => 'Disetujui',
+            'submitted' => 'Terkirim',
+            'belum tersedia' => 'Belum ada',
+            default => $formatted,
+        };
+    };
 
     $featureDescriptions = [
         'Pendaftaran KP' => 'Pengajuan dan status verifikasi pendaftaran.',
@@ -219,8 +231,8 @@
                         @endphp
                         <div class="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 {{ $tone['ring'] }}">
                             <p class="text-[11px] font-black uppercase tracking-widest text-slate-500">{{ $stat['label'] }}</p>
-                            <p class="mt-2 truncate text-2xl font-black {{ $tone['text'] }}">{{ $formatValue($stat['value']) }}</p>
-                            <p class="mt-1 truncate text-xs text-slate-500">{{ $stat['section'] }}</p>
+                            <p class="mt-2 min-h-14 break-words text-[1.45rem] font-black leading-tight {{ $tone['text'] }} sm:text-2xl">{{ $dashboardValue($stat['value']) }}</p>
+                            <p class="mt-1 line-clamp-2 text-xs leading-snug text-slate-500">{{ $stat['section'] }}</p>
                         </div>
                     @endforeach
                 </div>
@@ -398,7 +410,7 @@
                     @foreach($section['stats'] as $label => $value)
                         <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
                             <p class="text-[11px] font-black uppercase tracking-widest text-slate-500">{{ $formatLabel($label) }}</p>
-                            <p class="mt-2 truncate text-2xl font-black {{ $tone['text'] }}">{{ $formatValue($value) }}</p>
+                            <p class="mt-2 min-h-8 break-words text-xl font-black leading-tight {{ $tone['text'] }} sm:text-2xl">{{ $dashboardValue($value) }}</p>
                         </div>
                     @endforeach
                 </div>
