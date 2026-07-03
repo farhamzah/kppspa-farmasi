@@ -36,6 +36,7 @@ use App\Http\Controllers\Management\IntegrationReviewController;
 use App\Http\Controllers\Management\AssessmentComponentController;
 use App\Http\Controllers\Management\LogbookLogController;
 use App\Http\Controllers\Management\LogbookMonitoringController;
+use App\Http\Controllers\Management\OrientationTestResultController;
 use App\Http\Controllers\Management\PlaceSelectionMonitoringController;
 use App\Http\Controllers\Management\SelectionLogController;
 use App\Http\Controllers\Management\ScoreLogController;
@@ -51,6 +52,7 @@ use App\Http\Controllers\Student\AssignmentController;
 use App\Http\Controllers\Student\ExamRequestController as StudentExamRequestController;
 use App\Http\Controllers\Student\FinalReportController;
 use App\Http\Controllers\Student\LogbookController;
+use App\Http\Controllers\Student\OrientationTestController;
 use App\Http\Controllers\Student\PlaceSelectionController;
 use App\Http\Controllers\Student\ScoreController;
 use Illuminate\Http\Request;
@@ -161,6 +163,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('exam-logs', [ExamLogController::class, 'index'])->name('exam-logs.index');
             Route::resource('assessment-components', AssessmentComponentController::class)->except(['show'])->parameters(['assessment-components' => 'component']);
             Route::resource('competencies', KpCompetencyController::class)->except(['show', 'create', 'edit'])->parameters(['competencies' => 'competency']);
+            Route::get('orientation-tests', [OrientationTestResultController::class, 'index'])->name('orientation-tests.index');
+            Route::get('orientation-tests/{attempt}', [OrientationTestResultController::class, 'show'])->name('orientation-tests.show');
             Route::get('scores', [ScoreMonitoringController::class, 'index'])->name('scores.index');
             Route::get('scores/{assignment}', [ScoreMonitoringController::class, 'show'])->name('scores.show');
             Route::post('scores/{assignment}/calculate', [ScoreMonitoringController::class, 'calculate'])->name('scores.calculate');
@@ -218,6 +222,10 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('sidang', [StudentExamRequestController::class, 'index'])->name('exams.index');
             Route::post('sidang/ajukan', [StudentExamRequestController::class, 'submit'])->name('exams.submit');
             Route::post('sidang/batalkan-pengajuan', [StudentExamRequestController::class, 'cancel'])->name('exams.cancel');
+            Route::get('pre-post-test', [OrientationTestController::class, 'index'])->name('orientation-tests.index');
+            Route::get('pre-post-test/hasil/{attempt}', [OrientationTestController::class, 'result'])->name('orientation-tests.result');
+            Route::get('pre-post-test/{test}', [OrientationTestController::class, 'show'])->name('orientation-tests.show');
+            Route::post('pre-post-test/{test}', [OrientationTestController::class, 'submit'])->name('orientation-tests.submit');
             Route::get('nilai', [ScoreController::class, 'show'])->name('scores.show');
         });
 

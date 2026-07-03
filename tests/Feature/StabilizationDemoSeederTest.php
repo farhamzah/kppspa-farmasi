@@ -6,6 +6,7 @@ use App\Models\KpFinalScore;
 use App\Models\KpPeriod;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CoreProfileReadService;
 use Database\Seeders\DemoEndToEndSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,6 +100,44 @@ class StabilizationDemoSeederTest extends TestCase
             ->get('/mahasiswa/nilai')
             ->assertOk()
             ->assertSee('Nilai sedang diproses');
+    }
+
+    public function test_legacy_demo_mode_does_not_require_core_profile_connection(): void
+    {
+        config()->set('kp_master_data.read_mode', 'legacy');
+        config()->set('core_farmasi.read_mode', 'legacy');
+        config()->set('core_farmasi.enabled', false);
+        config()->set('core_farmasi.base_url', null);
+        config()->set('core_farmasi.profile_url', null);
+        config()->set('core_farmasi.storage_public_path', null);
+        config()->set('database.connections.core', [
+            'driver' => 'mysql',
+            'host' => '192.0.2.1',
+            'port' => 3306,
+            'database' => 'missing_core',
+            'username' => 'missing',
+            'password' => 'missing',
+        ]);
+
+        $this->seed(RoleSeeder::class);
+        $student = User::create([
+            'name' => 'Mahasiswa Demo',
+            'email' => 'mahasiswa-demo@test.local',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'profile_completed' => true,
+            'core_user_id' => 999,
+        ]);
+        $student->roles()->sync(Role::where('name', 'mahasiswa')->pluck('id'));
+        $student->student()->create(['nim' => '240001']);
+
+        $this->assertNull(app(CoreProfileReadService::class)->profilePhotoUrlFor($student));
+
+        $this->actingAs($student)
+            ->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/dashboard')
+            ->assertOk()
+            ->assertSee('Dashboard Mahasiswa');
     }
 
     public function test_friendly_error_pages_and_management_permission(): void

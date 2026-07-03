@@ -16,6 +16,10 @@ class CoreProfileReadService
     public function officialProfileFor(User $user, string $profileType): ?array
     {
         try {
+            if (! $this->shouldReadCore()) {
+                return null;
+            }
+
             if (! Schema::connection('core')->hasTable('users')) {
                 return null;
             }
@@ -65,6 +69,10 @@ class CoreProfileReadService
     public function profilePhotoUrlFor(User $user): ?string
     {
         try {
+            if (! $this->shouldReadCore()) {
+                return null;
+            }
+
             if (! Schema::connection('core')->hasTable('users')) {
                 return null;
             }
@@ -84,6 +92,10 @@ class CoreProfileReadService
     public function profilePhotoResponseFor(User $user): ?BinaryFileResponse
     {
         try {
+            if (! $this->shouldReadCore()) {
+                return null;
+            }
+
             if (! Schema::connection('core')->hasTable('users')) {
                 return null;
             }
@@ -120,6 +132,16 @@ class CoreProfileReadService
         }
 
         return $query->first();
+    }
+
+    private function shouldReadCore(): bool
+    {
+        return config('kp_master_data.read_mode', 'legacy') !== 'legacy'
+            || config('core_farmasi.read_mode', 'legacy') !== 'legacy'
+            || (bool) config('core_farmasi.enabled', false)
+            || filled(config('core_farmasi.base_url'))
+            || filled(config('core_farmasi.profile_url'))
+            || filled(config('core_farmasi.storage_public_path'));
     }
 
     private function coreProfileTypeFor(string $profileType, User $user): ?string
