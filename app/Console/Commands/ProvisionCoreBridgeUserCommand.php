@@ -89,6 +89,14 @@ class ProvisionCoreBridgeUserCommand extends Command
         }
 
         $this->newLine();
+        $this->line('Legacy KP field supervisor profile: '.($report['legacy_field_supervisor_id'] ? 'found/synced' : (in_array('pembimbing_lapangan', $report['kp_roles'], true) ? 'will be created' : 'not applicable')));
+        if ($report['core_external_person']) {
+            $this->line('  core_external_person_id: '.$report['core_external_person']['id']);
+            $this->line('  institution: '.($report['core_external_person']['institution_name'] ?: 'n/a'));
+            $this->line('  position: '.($report['core_external_person']['position_title'] ?: 'n/a'));
+        }
+
+        $this->newLine();
         $this->line('Warnings:');
         $report['warnings']
             ? collect($report['warnings'])->each(fn (string $warning) => $this->warn("  - {$warning}"))

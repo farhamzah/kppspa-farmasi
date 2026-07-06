@@ -15,13 +15,16 @@ use App\Models\KpPlaceSelection;
 use App\Models\Lecturer;
 use App\Services\KpAssignmentReportService;
 use App\Services\KpAssignmentService;
+use App\Services\KpCoreBridgeProvisioningService;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Throwable;
 
 class KpAssignmentController extends Controller
 {
@@ -175,6 +178,8 @@ class KpAssignmentController extends Controller
 
     private function formData(): array
     {
+        $this->syncCoreFieldSupervisorsForDropdown();
+
         return [
             'selections' => KpPlaceSelection::query()
                 ->with(['period', 'student.user', 'place'])
@@ -183,8 +188,24 @@ class KpAssignmentController extends Controller
                 ->latest('selected_at')
                 ->get(),
             'lecturers' => Lecturer::with('user')->whereHas('user.roles', fn ($q) => $q->where('name', 'pembimbing_dalam'))->orderBy('nidn_nip')->get(),
-            'fieldSupervisors' => FieldSupervisor::with('user')->whereHas('user.roles', fn ($q) => $q->where('name', 'pembimbing_lapangan'))->orderBy('institution_name')->get(),
+            'fieldSupervisors' => FieldSupervisor::with('user')
+                ->where('status', 'active')
+                ->whereHas('user.roles', fn ($q) => $q->where('name', 'pembimbing_lapangan'))
+                ->orderBy('institution_name')
+                ->get(),
         ];
+    }
+
+    private function syncCoreFieldSupervisorsForDropdown(): void
+    {
+        try {
+            app(KpCoreBridgeProvisioningService::class)->syncFieldSupervisors(execute: true);
+        } catch (Throwable $exception) {
+            Log::warning('Failed to sync Core field supervisors for KP assignment dropdown.', [
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     private function safeAssignmentBackUrl(?string $returnUrl): string

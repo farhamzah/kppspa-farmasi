@@ -128,6 +128,29 @@ class CoreBridgeProvisioningCommandTest extends TestCase
         ]);
     }
 
+    public function test_execute_creates_legacy_field_supervisor_profile_when_core_external_person_exists(): void
+    {
+        $this->coreUser(23, 'field.supervisor@example.test', ['pembimbing-lapangan']);
+        $this->coreExternalPerson(5, 23, 'field.supervisor@example.test');
+
+        $this->artisan('kp:provision-core-bridge-user --email=field.supervisor@example.test --execute --confirm-execute')
+            ->expectsOutputToContain('Legacy KP field supervisor profile: found/synced')
+            ->assertSuccessful();
+
+        $user = User::where('email', 'field.supervisor@example.test')->firstOrFail();
+
+        $this->assertDatabaseHas('field_supervisors', [
+            'user_id' => $user->id,
+            'core_user_id' => 23,
+            'institution_name' => 'Apotek Sehat Core',
+            'position' => 'Preseptor KP',
+            'phone' => '081300000001',
+            'status' => 'active',
+            'core_sync_status' => 'synced',
+        ]);
+        $this->assertTrue($user->hasRole('pembimbing_lapangan'));
+    }
+
 
     public function test_admin_core_is_not_translated_to_kp_role(): void
     {
@@ -276,6 +299,25 @@ class CoreBridgeProvisioningCommandTest extends TestCase
             $table->boolean('active')->default(true);
             $table->timestamps();
         });
+
+        Schema::connection('core')->create('external_people', function ($table): void {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('external_number')->nullable();
+            $table->string('name');
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('institution_name')->nullable();
+            $table->string('institution_type')->nullable();
+            $table->string('position_title')->nullable();
+            $table->string('profession')->nullable();
+            $table->string('identity_number')->nullable();
+            $table->text('address')->nullable();
+            $table->string('status')->default('active');
+            $table->text('notes')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     private function coreUser(int $id, string $email, array $accessRoles, bool $mustChangePassword = false): void
@@ -345,6 +387,27 @@ class CoreBridgeProvisioningCommandTest extends TestCase
             'nip' => '416200165',
             'email' => $email,
             'active' => true,
+        ]);
+    }
+
+    private function coreExternalPerson(int $id, int $userId, string $email): void
+    {
+        DB::connection('core')->table('external_people')->insert([
+            'id' => $id,
+            'user_id' => $userId,
+            'external_number' => 'EXT-001',
+            'name' => 'Field Supervisor Core',
+            'email' => $email,
+            'phone' => '081300000001',
+            'institution_name' => 'Apotek Sehat Core',
+            'institution_type' => 'apotek',
+            'position_title' => 'Preseptor KP',
+            'profession' => 'Apoteker',
+            'identity_number' => '3276000000000001',
+            'address' => 'Karawang',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

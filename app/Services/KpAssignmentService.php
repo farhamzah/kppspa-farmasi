@@ -173,6 +173,10 @@ class KpAssignmentService
         if (! $fieldSupervisor->user?->hasRole('pembimbing_lapangan')) {
             throw ValidationException::withMessages(['field_supervisor_id' => 'Pembimbing lapangan harus memiliki role Pembimbing Lapangan.']);
         }
+
+        if ($fieldSupervisor->status !== 'active') {
+            throw ValidationException::withMessages(['field_supervisor_id' => 'Pembimbing lapangan harus aktif.']);
+        }
     }
 
     private function syncPlaceFieldSupervisor(KpAssignment $assignment, FieldSupervisor $fieldSupervisor, User $actor): void

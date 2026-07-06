@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Core\CoreUser;
+use App\Models\FieldSupervisor;
 use App\Models\Lecturer;
 use App\Models\Role;
 use App\Models\Student;
@@ -83,6 +84,56 @@ class KpCoreBridgeProvisioningService
     }
 
     /**
+     * Sync only Core users that can act as KP field supervisors into local KP profiles.
+     *
+     * @return array<string, mixed>
+     */
+    public function syncFieldSupervisors(bool $execute = false, int $limit = 0): array
+    {
+        $emails = $this->emailsWithKpAccess($limit);
+        $summary = [
+            'mode' => $execute ? 'execute KP field supervisor bridge write' : 'dry-run only; no writes performed',
+            'total' => 0,
+            'created' => 0,
+            'synced' => 0,
+            'skipped' => 0,
+            'blocked' => 0,
+            'rows' => [],
+        ];
+
+        foreach ($emails as $email) {
+            $plan = $this->plan($email);
+
+            if (! in_array('pembimbing_lapangan', $plan['kp_roles'], true)) {
+                continue;
+            }
+
+            $summary['total']++;
+            $report = $execute ? $this->execute($email) : $plan;
+            $action = (string) $report['action'];
+
+            if ($report['blockers'] !== []) {
+                $summary['blocked']++;
+            } else {
+                match ($action) {
+                    'create', 'created' => $summary['created']++,
+                    'link', 'update', 'synced' => $summary['synced']++,
+                    default => $summary['skipped']++,
+                };
+            }
+
+            $summary['rows'][] = [
+                'email' => $email,
+                'action' => $action,
+                'legacy_field_supervisor_id' => $report['legacy_field_supervisor_id'] ?? null,
+                'blockers' => $report['blockers'],
+            ];
+        }
+
+        return $summary;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function plan(string $email): array
@@ -152,8 +203,14 @@ class KpCoreBridgeProvisioningService
         $legacyUser = $legacyByCore ?: $legacyByEmail;
         $coreStudent = $this->coreStudentFor($coreUser->id, $email);
         $coreLecturer = $this->coreLecturerFor($coreUser->id, $email);
+        $coreExternalPerson = $this->coreExternalPersonFor($coreUser->id, $email);
         $legacyStudent = $this->legacyStudentFor($legacyUser, $coreStudent);
         $legacyLecturer = $this->legacyLecturerFor($legacyUser, $coreLecturer);
+        $legacyFieldSupervisor = $this->legacyFieldSupervisorFor($legacyUser, $coreExternalPerson, (int) $coreUser->id);
+
+        if (in_array('pembimbing_lapangan', $kpRoles, true) && ! $coreExternalPerson) {
+            $warnings[] = "Core user {$email} punya akses pembimbing lapangan, tetapi profil mitra eksternal belum lengkap. KP akan membuat profil pembimbing lapangan minimal dari user Core.";
+        }
 
         if ($legacyByCore && $legacyByEmail && ! $legacyByCore->is($legacyByEmail)) {
             $blockers[] = "Ada dua legacy KP user berbeda untuk core_user_id {$coreUser->id} dan email {$email}.";
@@ -168,6 +225,7 @@ class KpCoreBridgeProvisioningService
             ! $legacyUser => 'create',
             (int) ($legacyUser->core_user_id ?? 0) !== (int) $coreUser->id => 'link',
             $this->rolesNeedSync($legacyUser, $kpRoles) || $legacyUser->status !== 'active' => 'update',
+            in_array('pembimbing_lapangan', $kpRoles, true) && ! $legacyFieldSupervisor => 'update',
             default => 'skip',
         };
 
@@ -175,7 +233,7 @@ class KpCoreBridgeProvisioningService
             $warnings[] = "Legacy KP user {$email} tidak aktif dan akan diaktifkan saat execute.";
         }
 
-        return $this->result($email, $coreUser, $legacyUser, $coreAccessRoles, $kpRoles, $action, $warnings, $blockers, $coreStudent, $legacyStudent, $coreLecturer, $legacyLecturer);
+        return $this->result($email, $coreUser, $legacyUser, $coreAccessRoles, $kpRoles, $action, $warnings, $blockers, $coreStudent, $legacyStudent, $coreLecturer, $legacyLecturer, $coreExternalPerson, $legacyFieldSupervisor);
     }
 
     /**
@@ -221,11 +279,13 @@ class KpCoreBridgeProvisioningService
             $legacyUser->roles()->sync($roleIds);
             $this->syncLegacyStudentProfile($legacyUser, $plan);
             $this->syncLegacyLecturerProfile($legacyUser, $plan);
+            $this->syncLegacyFieldSupervisorProfile($legacyUser, $plan);
 
             $plan['legacy_user_id'] = $legacyUser->id;
             $plan['legacy_status'] = $legacyUser->status;
             $plan['legacy_student_id'] = $legacyUser->student?->id;
             $plan['legacy_lecturer_id'] = $legacyUser->lecturer?->id;
+            $plan['legacy_field_supervisor_id'] = $legacyUser->fieldSupervisor?->id;
             $plan['action'] = $plan['action'] === 'create' ? 'created' : 'synced';
         });
 
@@ -247,7 +307,7 @@ class KpCoreBridgeProvisioningService
     /**
      * @return array<string, mixed>
      */
-    private function result(string $email, ?CoreUser $coreUser, ?User $legacyUser, array $coreAccessRoles, array $kpRoles, string $action, array $warnings, array $blockers, ?object $coreStudent = null, ?Student $legacyStudent = null, ?object $coreLecturer = null, ?Lecturer $legacyLecturer = null): array
+    private function result(string $email, ?CoreUser $coreUser, ?User $legacyUser, array $coreAccessRoles, array $kpRoles, string $action, array $warnings, array $blockers, ?object $coreStudent = null, ?Student $legacyStudent = null, ?object $coreLecturer = null, ?Lecturer $legacyLecturer = null, ?object $coreExternalPerson = null, ?FieldSupervisor $legacyFieldSupervisor = null): array
     {
         return [
             'email' => $email,
@@ -278,6 +338,18 @@ class KpCoreBridgeProvisioningService
                 'study_program_name' => $coreLecturer->study_program_name ?? null,
             ] : null,
             'legacy_lecturer_id' => $legacyLecturer?->id,
+            'core_external_person' => $coreExternalPerson ? [
+                'id' => $coreExternalPerson->id,
+                'name' => $coreExternalPerson->name ?? null,
+                'email' => $coreExternalPerson->email ?? null,
+                'phone' => $coreExternalPerson->phone ?? null,
+                'institution_name' => $coreExternalPerson->institution_name ?? null,
+                'position_title' => $coreExternalPerson->position_title ?? null,
+                'profession' => $coreExternalPerson->profession ?? null,
+                'address' => $coreExternalPerson->address ?? null,
+                'status' => $coreExternalPerson->status ?? null,
+            ] : null,
+            'legacy_field_supervisor_id' => $legacyFieldSupervisor?->id,
             'core_app_access_roles' => $coreAccessRoles,
             'kp_roles' => $kpRoles,
             'warnings' => array_values(array_unique($warnings)),
@@ -393,6 +465,43 @@ class KpCoreBridgeProvisioningService
         return $query->first();
     }
 
+    private function coreExternalPersonFor(int $coreUserId, string $email): ?object
+    {
+        if (! Schema::connection('core')->hasTable('external_people')) {
+            return null;
+        }
+
+        $query = DB::connection('core')
+            ->table('external_people')
+            ->where(function ($query) use ($coreUserId, $email): void {
+                $query
+                    ->where('user_id', $coreUserId)
+                    ->orWhereRaw('LOWER(TRIM(email)) = ?', [$email]);
+            });
+
+        if (Schema::connection('core')->hasColumn('external_people', 'deleted_at')) {
+            $query->whereNull('deleted_at');
+        }
+
+        return $query->first();
+    }
+
+    private function legacyFieldSupervisorFor(?User $legacyUser, ?object $coreExternalPerson, int $coreUserId): ?FieldSupervisor
+    {
+        $query = FieldSupervisor::query()
+            ->where('core_user_id', $coreUserId);
+
+        if ($legacyUser) {
+            $query->orWhere('user_id', $legacyUser->id);
+        }
+
+        if ($coreExternalPerson && filled($coreExternalPerson->id ?? null)) {
+            $query->orWhere('core_user_id', $coreUserId);
+        }
+
+        return $query->first();
+    }
+
     private function syncLegacyStudentProfile(User $legacyUser, array $plan): void
     {
         if (! $plan['core_student']) {
@@ -467,5 +576,50 @@ class KpCoreBridgeProvisioningService
         }
 
         Lecturer::query()->create($attributes);
+    }
+
+    private function syncLegacyFieldSupervisorProfile(User $legacyUser, array $plan): void
+    {
+        if (! in_array('pembimbing_lapangan', $plan['kp_roles'], true)) {
+            return;
+        }
+
+        $coreExternalPerson = $plan['core_external_person'] ? (object) $plan['core_external_person'] : null;
+        $legacyFieldSupervisor = FieldSupervisor::query()
+            ->where('core_user_id', $plan['core_user']['id'])
+            ->orWhere('user_id', $legacyUser->id)
+            ->first();
+
+        $institutionName = $coreExternalPerson?->institution_name
+            ?: $legacyFieldSupervisor?->institution_name
+            ?: 'Instansi belum dilengkapi';
+        $position = $coreExternalPerson?->position_title
+            ?: $coreExternalPerson?->profession
+            ?: $legacyFieldSupervisor?->position
+            ?: 'Pembimbing Lapangan';
+        $phone = $coreExternalPerson?->phone ?: $legacyFieldSupervisor?->phone;
+        $address = $coreExternalPerson?->address ?: $legacyFieldSupervisor?->address;
+
+        $attributes = [
+            'user_id' => $legacyUser->id,
+            'institution_name' => $institutionName,
+            'position' => $position,
+            'phone' => $phone,
+            'address' => $address,
+            'status' => ($coreExternalPerson?->status ?? 'active') === 'inactive' ? 'inactive' : 'active',
+            'core_user_id' => $plan['core_user']['id'],
+            'core_synced_at' => now(),
+            'core_sync_status' => 'synced',
+            'core_sync_note' => 'Provisioned from Core external person/user for KP field supervisor bridge.',
+            'profile_completed_at' => filled($institutionName) && filled($phone) ? now() : null,
+        ];
+
+        if ($legacyFieldSupervisor) {
+            $legacyFieldSupervisor->forceFill($attributes)->save();
+
+            return;
+        }
+
+        FieldSupervisor::query()->create($attributes);
     }
 }
