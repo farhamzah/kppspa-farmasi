@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\KpPlace;
 use App\Services\UserImportService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -216,5 +217,68 @@ class UserImportAndProfileTest extends TestCase
             ->get('/admin/import-users')
             ->assertOk()
             ->assertSee('Import User');
+    }
+
+    public function test_multi_role_lecturer_can_manage_field_partner_places_from_profile(): void
+    {
+        $user = User::create([
+            'name' => 'Dosen Mitra',
+            'email' => 'dosen-mitra@test.local',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'profile_completed' => true,
+        ]);
+        $user->roles()->sync(Role::whereIn('name', ['pembimbing_dalam', 'pembimbing_lapangan'])->pluck('id'));
+        $user->lecturer()->create(['nidn_nip' => '0429000001', 'study_program' => 'Farmasi S1']);
+        $fieldSupervisor = $user->fieldSupervisor()->create([
+            'institution_name' => 'Apotek Dosen Mitra',
+            'position' => 'Apoteker Penanggung Jawab',
+            'phone' => '081200001111',
+            'status' => 'active',
+        ]);
+        $apotek = KpPlace::create(['name' => 'Apotek Mitra A', 'type' => 'apotek', 'city' => 'Karawang', 'status' => 'aktif']);
+        $klinik = KpPlace::create(['name' => 'Klinik Mitra B', 'type' => 'klinik', 'city' => 'Bekasi', 'status' => 'aktif']);
+        KpPlace::create(['name' => 'Industri Nonaktif', 'type' => 'industri', 'status' => 'nonaktif']);
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/profile/edit')
+            ->assertOk()
+            ->assertSee('Tempat KP / Mitra Terkait')
+            ->assertSee('Apotek Mitra A')
+            ->assertSee('Klinik Mitra B')
+            ->assertDontSee('Industri Nonaktif');
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->put('/profile', [
+                'institution_name' => 'Apotek Dosen Mitra',
+                'position' => 'Apoteker Penanggung Jawab',
+                'phone' => '081200001111',
+                'address' => 'Karawang',
+                'place_ids' => [$apotek->id, $klinik->id],
+            ])
+            ->assertRedirect('/profil-saya');
+
+        $this->assertDatabaseHas('kp_place_field_supervisors', [
+            'kp_place_id' => $apotek->id,
+            'field_supervisor_id' => $fieldSupervisor->id,
+            'status' => 'aktif',
+            'created_by' => $user->id,
+        ]);
+        $this->assertDatabaseHas('kp_place_field_supervisors', [
+            'kp_place_id' => $klinik->id,
+            'field_supervisor_id' => $fieldSupervisor->id,
+            'status' => 'aktif',
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/profil-saya')
+            ->assertOk()
+            ->assertSee('Tempat KP Terkait')
+            ->assertSee('Apotek Mitra A')
+            ->assertSee('Klinik Mitra B');
     }
 }

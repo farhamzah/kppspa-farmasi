@@ -74,7 +74,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="font-semibold text-slate-800">{{ $assignment->place->name }}</div>
-                                <div class="mt-1 text-xs text-slate-500">{{ $assignment->fieldSupervisor?->user?->name ?? 'Pembimbing lapangan belum ada' }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Pembimbing lapangan belum ada' }}</div>
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex flex-wrap gap-2">

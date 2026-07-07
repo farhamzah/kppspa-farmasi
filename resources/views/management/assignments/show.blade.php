@@ -40,7 +40,7 @@
             </div>
             <div class="rounded-lg bg-slate-50 p-3">
                 <p class="text-xs text-slate-500">Pembimbing Lapangan</p>
-                <p class="font-bold">{{ $assignment->fieldSupervisor?->user?->name ?? 'Belum ada' }}</p>
+                <p class="font-bold">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Belum ada' }}</p>
             </div>
         </div>
         <div class="mt-5 space-y-3">

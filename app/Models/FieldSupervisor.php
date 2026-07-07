@@ -47,4 +47,22 @@ class FieldSupervisor extends Model
     {
         return $this->belongsToMany(KpPlace::class, 'kp_place_field_supervisors')->withPivot(['status'])->withTimestamps();
     }
+
+    public function partnerPlacesLabel(): ?string
+    {
+        $this->loadMissing('places');
+
+        $names = $this->places
+            ->where('pivot.status', 'aktif')
+            ->pluck('name')
+            ->filter()
+            ->values();
+
+        return $names->isNotEmpty() ? $names->implode(', ') : null;
+    }
+
+    public function getPartnerPlacesLabelAttribute(): ?string
+    {
+        return $this->partnerPlacesLabel();
+    }
 }

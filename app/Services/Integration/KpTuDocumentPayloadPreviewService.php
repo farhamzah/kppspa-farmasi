@@ -205,7 +205,7 @@ class KpTuDocumentPayloadPreviewService
         return [
             'kp_lecturer_id' => $lecturer->id,
             'core_lecturer_id' => $lecturer->core_lecturer_id,
-            'name' => $lecturer->user?->name,
+            'name' => lecturer_display_name($lecturer),
             'nidn_nip' => $lecturer->nidn_nip,
             'department' => $lecturer->department,
             'study_program' => $lecturer->study_program,
@@ -221,7 +221,7 @@ class KpTuDocumentPayloadPreviewService
         return [
             'kp_field_supervisor_id' => $fieldSupervisor->id,
             'core_user_id' => $fieldSupervisor->core_user_id,
-            'name' => $fieldSupervisor->user?->name,
+            'name' => field_supervisor_display_name($fieldSupervisor),
             'institution_name' => $fieldSupervisor->institution_name,
             'position' => $fieldSupervisor->position,
         ];
@@ -275,4 +275,3 @@ class KpTuDocumentPayloadPreviewService
         return $value ? substr((string) $value, 0, 5) : null;
     }
 }
-

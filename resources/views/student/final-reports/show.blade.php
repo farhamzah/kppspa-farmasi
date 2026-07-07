@@ -25,7 +25,7 @@
                     <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $assignment->place->name }}</h2>
                     <div class="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                         <p>Pembimbing Dalam: <span class="font-bold text-slate-900">{{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }}</span></p>
-                        <p>Pembimbing Lapangan: <span class="font-bold text-slate-900">{{ $assignment->fieldSupervisor?->user?->name ?? '-' }}</span></p>
+                        <p>Pembimbing Lapangan: <span class="font-bold text-slate-900">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</span></p>
                     </div>
                 </div>
                 @if($report)

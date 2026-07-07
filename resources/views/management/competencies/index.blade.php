@@ -139,7 +139,7 @@
                         <tr>
                             <td class="px-4 py-4"><div class="font-semibold text-slate-950">{{ $assignment->student->user->name }}</div><div class="text-xs text-slate-500">{{ $assignment->student->nim ?: '-' }}</div></td>
                             <td class="px-4 py-4"><div>{{ $assignment->place->name }}</div><div class="text-xs text-slate-500">{{ $assignment->place->typeLabel() }}</div></td>
-                            <td class="px-4 py-4"><div>{{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }}</div><div class="text-xs text-slate-500">{{ $assignment->fieldSupervisor?->user?->name ?? '-' }}</div></td>
+                            <td class="px-4 py-4"><div>{{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }}</div><div class="text-xs text-slate-500">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</div></td>
                             <td class="px-4 py-4 font-bold text-cyan-700">{{ $done }} / {{ $total }}</td>
                         </tr>
                     @empty

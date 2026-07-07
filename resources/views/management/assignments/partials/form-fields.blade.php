@@ -29,7 +29,7 @@
     <select name="field_supervisor_id" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
         <option value="">Belum ditentukan</option>
         @foreach($fieldSupervisors as $supervisor)
-            <option value="{{ $supervisor->id }}" @selected(old('field_supervisor_id',$assignment?->field_supervisor_id) == $supervisor->id)>{{ $supervisor->user->name }} - {{ $supervisor->institution_name }}</option>
+            <option value="{{ $supervisor->id }}" @selected(old('field_supervisor_id',$assignment?->field_supervisor_id) == $supervisor->id)>{{ field_supervisor_display_label($supervisor) }}</option>
         @endforeach
     </select>
 </div>

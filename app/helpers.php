@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Lecturer;
+use App\Models\FieldSupervisor;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\KpMasterDataReadService;
@@ -30,6 +31,29 @@ if (! function_exists('lecturer_display_label')) {
     function lecturer_display_label(Lecturer $lecturer): string
     {
         return app(KpMasterDataReadService::class)->getLecturerDisplayData($lecturer)->label();
+    }
+}
+
+if (! function_exists('field_supervisor_display_name')) {
+    function field_supervisor_display_name(FieldSupervisor $fieldSupervisor): string
+    {
+        $fieldSupervisor->loadMissing('user.lecturer');
+
+        if ($fieldSupervisor->user?->lecturer) {
+            return lecturer_display_name($fieldSupervisor->user->lecturer);
+        }
+
+        return $fieldSupervisor->user?->name ?? 'Pembimbing lapangan';
+    }
+}
+
+if (! function_exists('field_supervisor_display_label')) {
+    function field_supervisor_display_label(FieldSupervisor $fieldSupervisor): string
+    {
+        $name = field_supervisor_display_name($fieldSupervisor);
+        $institution = $fieldSupervisor->institution_name;
+
+        return filled($institution) ? $name.' - '.$institution : $name;
     }
 }
 

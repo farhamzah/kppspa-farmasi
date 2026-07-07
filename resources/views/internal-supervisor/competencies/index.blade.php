@@ -16,7 +16,7 @@
                         <td class="px-4 py-4"><div class="font-semibold text-slate-950">{{ $assignment->student->user->name }}</div><div class="text-xs text-slate-500">{{ $assignment->student->nim ?: '-' }}</div></td>
                         <td class="px-4 py-4">{{ $assignment->period->name }}</td>
                         <td class="px-4 py-4">{{ $assignment->place->name }}</td>
-                        <td class="px-4 py-4">{{ $assignment->fieldSupervisor?->user?->name ?? '-' }}</td>
+                        <td class="px-4 py-4">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</td>
                         <td class="px-4 py-4 font-bold text-cyan-700">{{ $assignment->competencyAchievements->count() }} checklist</td>
                         <td class="px-4 py-4 text-right"><a href="{{ route('internal-supervisor.competencies.show', $assignment) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Lihat</a></td>
                     </tr>

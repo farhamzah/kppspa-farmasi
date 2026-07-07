@@ -281,6 +281,9 @@
                             </div>
                         @endunless
                     @elseif($profileType === 'pembimbing_lapangan')
+                        <div class="md:col-span-2 rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-relaxed text-cyan-900 ring-1 ring-cyan-100">
+                            Jika akun ini juga dosen, data dosen resmi tetap dibaca dari Core. Bagian ini hanya mencatat peran operasional sebagai mitra/pembimbing lapangan di tempat KP tertentu.
+                        </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Nomor Telepon Aktif</label>
                             <input name="phone" value="{{ old('phone', $profile?->phone) }}" placeholder="+62..." class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-xs focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100/50 outline-none transition">
@@ -296,6 +299,24 @@
                         <div class="md:col-span-2">
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Alamat Lengkap</label>
                             <textarea name="address" rows="3" placeholder="Jl. ... No. ... Kelurahan ... Kecamatan ..." class="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-xs focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100/50 outline-none transition resize-none">{{ old('address', $profile?->address) }}</textarea>
+                        </div>
+                        <div class="md:col-span-2">
+                            @php($selectedPlaceIds = collect(old('place_ids', $profile?->places?->pluck('id')->all() ?? []))->map(fn ($id) => (int) $id)->all())
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Tempat KP / Mitra Terkait</label>
+                            <div class="max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+                                @forelse($availablePlaces as $place)
+                                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs shadow-sm transition hover:border-cyan-200 hover:bg-cyan-50/30">
+                                        <input type="checkbox" name="place_ids[]" value="{{ $place->id }}" @checked(in_array($place->id, $selectedPlaceIds, true)) class="mt-1 rounded border-slate-300 text-cyan-700 focus:ring-cyan-500">
+                                        <span class="min-w-0">
+                                            <span class="block font-black text-slate-900">{{ $place->name }}</span>
+                                            <span class="mt-0.5 block text-[11px] text-slate-500">{{ $place->typeLabel() }}{{ $place->city ? ' - '.$place->city : '' }}</span>
+                                        </span>
+                                    </label>
+                                @empty
+                                    <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">Belum ada tempat KP aktif untuk ditautkan.</div>
+                                @endforelse
+                            </div>
+                            <p class="mt-2 text-[11px] leading-relaxed text-slate-500">Centang satu atau beberapa tempat KP yang terkait dengan peran mitra/pembimbing lapangan akun ini.</p>
                         </div>
                     @else
                         @if($coreManaged)

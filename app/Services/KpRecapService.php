@@ -40,7 +40,7 @@ class KpRecapService
                 'Status Dokumen' => $assignment->registration?->allRequiredDocumentsApproved() ? 'Lengkap disetujui' : 'Belum lengkap',
                 'Tempat KP' => $assignment->place->name,
                 'Pembimbing Dalam' => $this->lecturerName($assignment->internalSupervisor),
-                'Pembimbing Lapangan' => $assignment->fieldSupervisor?->user?->name ?? '-',
+                'Pembimbing Lapangan' => $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-',
                 'Status Assignment' => $assignment->statusLabel(),
                 'Status Laporan' => $assignment->finalReport?->statusLabel() ?? '-',
                 'Status Sidang' => $assignment->exam?->statusLabel() ?? '-',
@@ -62,7 +62,7 @@ class KpRecapService
                 'Tipe Tempat' => $assignment->place->typeLabel(),
                 'Kuota' => $assignment->place->quotas->firstWhere('kp_period_id', $assignment->kp_period_id)?->quota ?? '-',
                 'Pembimbing Dalam' => $this->lecturerName($assignment->internalSupervisor),
-                'Pembimbing Lapangan' => $assignment->fieldSupervisor?->user?->name ?? '-',
+                'Pembimbing Lapangan' => $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-',
                 'Status Penempatan' => $assignment->statusLabel(),
                 'Tanggal Assignment' => $assignment->assigned_at?->format('d/m/Y H:i') ?? '-',
             ]);

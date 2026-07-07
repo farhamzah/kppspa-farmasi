@@ -64,7 +64,7 @@ class KpAssignmentReportService
                     'Periode' => $assignment->period?->name ?? '-',
                     'Tempat KP' => $assignment->place?->name ?? '-',
                     'Pembimbing Dalam' => $internalSupervisorDisplay?->name ?? '-',
-                    'Pembimbing Lapangan' => $assignment->fieldSupervisor?->user?->name ?? '-',
+                    'Pembimbing Lapangan' => $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-',
                     'Status' => $assignment->statusLabel(),
                     'Tanggal Penempatan' => $assignment->assigned_at?->format('d/m/Y H:i') ?? '-',
                     'Catatan' => $assignment->note ?: '-',

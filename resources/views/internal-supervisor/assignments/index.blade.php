@@ -31,7 +31,7 @@
                     </td>
                     <td class="whitespace-nowrap">{{ $assignment->period->name }}</td>
                     <td>{{ $assignment->place->name }}</td>
-                    <td>{{ $assignment->fieldSupervisor?->user?->name ?? '-' }}</td>
+                    <td>{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</td>
                     <td class="text-center">
                         <span class="rounded-full {{ $assignment->statusBadgeClass() }}">
                             {{ $assignment->statusLabel() }}

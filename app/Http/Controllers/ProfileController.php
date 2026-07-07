@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\CoreFarmasiClient;
 use App\Services\CoreProfileReadService;
 use App\Services\KpCoreBridgeProvisioningService;
+use App\Models\KpPlace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +26,7 @@ class ProfileController extends Controller
 
     public function show(Request $request): View
     {
-        $user = $request->user()->load(['roles', 'student', 'lecturer', 'fieldSupervisor']);
+        $user = $request->user()->load(['roles', 'student', 'lecturer', 'fieldSupervisor.places']);
         $profileType = $user->activeProfileType();
         $profile = $user->profileModelForType($profileType);
         $coreOfficialProfile = $this->coreProfiles->officialProfileFor($user, $profileType);
@@ -42,7 +43,7 @@ class ProfileController extends Controller
 
     public function edit(Request $request): View
     {
-        $user = $request->user()->load(['roles', 'student', 'lecturer', 'fieldSupervisor']);
+        $user = $request->user()->load(['roles', 'student', 'lecturer', 'fieldSupervisor.places']);
         $profileType = $user->activeProfileType();
 
         return view('profile.edit', [
@@ -51,6 +52,9 @@ class ProfileController extends Controller
             'profile' => $user->profileModelForType($profileType),
             'coreProfileUrl' => $this->coreFarmasi->profileEditUrl(),
             'coreOfficialProfile' => $this->coreProfiles->officialProfileFor($user, $profileType),
+            'availablePlaces' => $profileType === 'pembimbing_lapangan'
+                ? KpPlace::query()->where('status', 'aktif')->orderBy('name')->get()
+                : collect(),
         ]);
     }
 
@@ -92,6 +96,8 @@ class ProfileController extends Controller
                 'address' => ['nullable', 'string', 'max:1000'],
                 'institution_name' => ['nullable', 'string', 'max:255'],
                 'position' => ['nullable', 'string', 'max:255'],
+                'place_ids' => ['nullable', 'array'],
+                'place_ids.*' => ['integer', 'exists:kp_places,id'],
             ]),
             default => $coreManaged
                 ? []
@@ -114,7 +120,23 @@ class ProfileController extends Controller
                 };
             }
 
+            $placeIds = $validated['place_ids'] ?? [];
+            unset($validated['place_ids']);
+
             $profile->update($validated);
+
+            if ($type === 'pembimbing_lapangan') {
+                $placeIds = collect($placeIds)
+                    ->map(fn ($id) => (int) $id)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $profile->places()->syncWithPivotValues($placeIds, [
+                    'status' => 'aktif',
+                    'created_by' => $user->id,
+                ]);
+            }
         }
 
         $user->refresh()->load(['roles', 'student', 'lecturer', 'fieldSupervisor']);
@@ -173,9 +195,20 @@ class ProfileController extends Controller
                     'position' => 'Jabatan',
                     'phone' => 'Telepon Operasional',
                     'address' => 'Alamat Operasional',
+                    'partner_places_label' => 'Tempat KP Terkait',
                 ]),
                 default => [],
             };
+        }
+
+        if ($profileType === 'pembimbing_lapangan') {
+            return $this->onlyFilled($profile, [
+                'institution_name' => 'Institusi Tempat KP',
+                'position' => 'Jabatan',
+                'phone' => 'Telepon Operasional',
+                'address' => 'Alamat Operasional',
+                'partner_places_label' => 'Tempat KP Terkait',
+            ]);
         }
 
         return collect($profile->getAttributes())
@@ -198,6 +231,10 @@ class ProfileController extends Controller
 
     private function displayValue(mixed $value): ?string
     {
+        if (is_array($value)) {
+            return collect($value)->filter()->implode(', ');
+        }
+
         if ($value instanceof \DateTimeInterface) {
             return $value->format('Y-m-d');
         }
