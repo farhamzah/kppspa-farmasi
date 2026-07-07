@@ -91,6 +91,24 @@ class KpLogbookTest extends TestCase
             ->assertSessionHasErrors('activity_date');
     }
 
+    public function test_student_can_upload_mobile_photo_evidence_for_logbook(): void
+    {
+        $payload = $this->logbookPayload([
+            'activity_date' => now()->addDays(2)->toDateString(),
+            'evidence' => UploadedFile::fake()->create('foto-kegiatan.webp', 512, 'image/webp'),
+        ]);
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/logbook', $payload)
+            ->assertRedirect();
+
+        $logbook = KpLogbook::latest('id')->first();
+
+        $this->assertSame('foto-kegiatan.webp', $logbook->evidence_original_filename);
+        $this->assertSame('image/webp', $logbook->evidence_mime);
+        Storage::disk('local')->assertExists($logbook->evidence_path);
+    }
+
     public function test_student_cannot_edit_approved_logbook_and_invalid_upload_is_rejected(): void
     {
         $approved = KpLogbook::create($this->logbookAttributes(['status' => 'disetujui']));

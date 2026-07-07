@@ -40,8 +40,8 @@
     </div>
     <div>
         <label class="text-sm font-semibold text-slate-700">Bukti Kegiatan Opsional</label>
-        <input type="file" name="evidence" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-        <p class="mt-1 text-xs text-slate-500">Format: PDF, JPG, JPEG, PNG. Maksimal 5MB.</p>
+        <input type="file" name="evidence" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <p class="mt-1 text-xs text-slate-500">Format: PDF, JPG, JPEG, PNG, WebP, HEIC, HEIF. Maksimal 5MB.</p>
         @if($logbook?->hasEvidence())
             <p class="mt-1 text-xs text-teal-700">Bukti saat ini: {{ $logbook->evidence_original_filename }}</p>
         @endif
