@@ -263,8 +263,8 @@ class DashboardController extends Controller
             }
 
             return [
-                'sidang_ditugaskan' => KpExam::where('examiner_id', $lecturerId)->count(),
-                'sidang_mendatang' => KpExam::where('examiner_id', $lecturerId)->where('status', 'dijadwalkan')->count(),
+                'sidang_ditugaskan' => KpExam::query()->forExaminer($lecturerId)->count(),
+                'sidang_mendatang' => KpExam::query()->forExaminer($lecturerId)->where('status', 'dijadwalkan')->count(),
             ];
         }
 
@@ -313,7 +313,7 @@ class DashboardController extends Controller
                 return ['sidang_belum_submit' => 0];
             }
 
-            return ['sidang_belum_submit' => KpExam::where('examiner_id', $lecturerId)->whereDoesntHave('scores', fn ($q) => $q->where('assessor_type', 'penguji')->whereIn('status', ['submitted', 'locked']))->count()];
+            return ['sidang_belum_submit' => KpExam::query()->forExaminer($lecturerId)->whereDoesntHave('scores', fn ($q) => $q->where('assessor_type', 'penguji')->where('assessor_user_id', $request->user()->id)->whereIn('status', ['submitted', 'locked']))->count()];
         }
 
         return null;

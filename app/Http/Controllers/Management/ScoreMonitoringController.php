@@ -19,7 +19,7 @@ class ScoreMonitoringController extends Controller
 {
     public function index(Request $request): View
     {
-        $assignments = KpAssignment::with(['period', 'student.user', 'place', 'internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'scores.component', 'finalScore'])
+        $assignments = KpAssignment::with(['period', 'student.user', 'place', 'internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'exam.examiners.user', 'scores.component', 'finalScore'])
             ->when($request->filled('period'), fn ($q) => $q->where('kp_period_id', $request->period))
             ->when($request->filled('q'), fn ($q) => $q->whereHas('student', fn ($s) => $s->where('nim', 'like', "%{$request->q}%")->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$request->q}%"))))
             ->latest()
@@ -35,7 +35,7 @@ class ScoreMonitoringController extends Controller
         $assignment->refresh();
 
         return view('management.scores.show', [
-            'assignment' => $assignment->load(['period.assessmentComponents', 'student.user', 'place', 'internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'scores.component', 'scores.assessor', 'logbooks', 'finalScore']),
+            'assignment' => $assignment->load(['period.assessmentComponents', 'student.user', 'place', 'internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'exam.examiners.user', 'scores.component', 'scores.assessor', 'logbooks', 'finalScore']),
             'breakdown' => $calculator->breakdown($assignment),
         ]);
     }

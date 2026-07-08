@@ -30,7 +30,7 @@ class ExamRequestController extends Controller
 
     public function show(KpExamRequest $examRequest): View
     {
-        return view('management.exam-requests.show', ['examRequest' => $examRequest->load(['assignment.student.user', 'assignment.period', 'assignment.place', 'assignment.internalSupervisor.user', 'assignment.finalReport.latestFile', 'exam.examiner.user', 'logs.user'])]);
+        return view('management.exam-requests.show', ['examRequest' => $examRequest->load(['assignment.student.user', 'assignment.period', 'assignment.place', 'assignment.internalSupervisor.user', 'assignment.finalReport.latestFile', 'exam.examiner.user', 'exam.examiners.user', 'logs.user'])]);
     }
 
     public function approve(ReviewExamRequestRequest $request, KpExamRequest $examRequest, KpExamService $service): RedirectResponse

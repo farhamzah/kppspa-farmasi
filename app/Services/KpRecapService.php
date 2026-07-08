@@ -101,7 +101,7 @@ class KpRecapService
     public function examRows(Request $request): Collection
     {
         return KpExam::query()
-            ->with(['assignment.student.user', 'assignment.period', 'assignment.place', 'supervisor.user', 'examiner.user'])
+            ->with(['assignment.student.user', 'assignment.period', 'assignment.place', 'supervisor.user', 'examiner.user', 'examiners.user'])
             ->when($request->filled('period'), fn ($q) => $q->whereHas('assignment', fn ($a) => $a->where('kp_period_id', $request->period)))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->get()
@@ -111,7 +111,7 @@ class KpRecapService
                 'NIM' => $exam->assignment->student->nim,
                 'Tempat KP' => $exam->assignment->place->name,
                 'Pembimbing Dalam' => $this->lecturerName($exam->supervisor),
-                'Penguji' => $this->lecturerName($exam->examiner),
+                'Penguji' => $exam->examinerNamesLabel(),
                 'Tanggal Sidang' => $exam->exam_date?->format('d/m/Y') ?? '-',
                 'Jam' => substr((string) $exam->start_time, 0, 5).' - '.substr((string) $exam->end_time, 0, 5),
                 'Mode' => $exam->modeLabel(),

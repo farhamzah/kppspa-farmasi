@@ -16,7 +16,7 @@ class ExamRequestController extends Controller
         $assignment = $this->activeAssignment();
 
         return view('student.exams.index', [
-            'assignment' => $assignment?->load(['place', 'internalSupervisor.user', 'finalReport', 'examRequest.exam.examiner.user', 'examRequest.exam.supervisor.user']),
+            'assignment' => $assignment?->load(['place', 'internalSupervisor.user', 'finalReport', 'examRequest.exam.examiner.user', 'examRequest.exam.examiners.user', 'examRequest.exam.supervisor.user']),
             'examRequest' => $assignment?->examRequest,
             'exam' => $assignment?->exam,
             'examEligibility' => $assignment?->examEligibility(),

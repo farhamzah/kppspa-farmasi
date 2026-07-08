@@ -54,6 +54,7 @@ class KpTuDocumentPayloadPreviewService
                 'internalSupervisor.user',
                 'fieldSupervisor.user',
                 'exam.examiner.user',
+                'exam.examiners.user',
                 'exam.supervisor.user',
                 'finalScore',
                 'finalReport.latestFile',
@@ -94,6 +95,7 @@ class KpTuDocumentPayloadPreviewService
                 'field' => $this->fieldSupervisorSnapshot($assignment->fieldSupervisor),
             ],
             'examiner' => $this->lecturerSnapshot($exam?->examiner),
+            'examiners' => $exam?->examiners?->map(fn ($lecturer) => $this->lecturerSnapshot($lecturer))->values()->all() ?? [],
             'exam_schedule' => $exam ? [
                 'kp_exam_id' => $exam->id,
                 'status' => $exam->status,

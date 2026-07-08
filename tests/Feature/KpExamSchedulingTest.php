@@ -33,6 +33,8 @@ class KpExamSchedulingTest extends TestCase
     private Lecturer $supervisor;
     private User $examinerUser;
     private Lecturer $examiner;
+    private User $secondExaminerUser;
+    private Lecturer $secondExaminer;
     private Lecturer $nonExaminer;
     private User $fieldUser;
     private KpAssignment $assignment;
@@ -50,6 +52,8 @@ class KpExamSchedulingTest extends TestCase
         $this->supervisor = Lecturer::create(['user_id' => $this->supervisorUser->id, 'nidn_nip' => '991101', 'status' => 'active']);
         $this->examinerUser = $this->makeUser('examiner-exam@test.local', ['penguji']);
         $this->examiner = Lecturer::create(['user_id' => $this->examinerUser->id, 'nidn_nip' => '991102', 'status' => 'active']);
+        $this->secondExaminerUser = $this->makeUser('second-examiner-exam@test.local', ['penguji']);
+        $this->secondExaminer = Lecturer::create(['user_id' => $this->secondExaminerUser->id, 'nidn_nip' => '991106', 'status' => 'active']);
         $nonExaminerUser = $this->makeUser('not-examiner@test.local', ['pembimbing_dalam']);
         $this->nonExaminer = Lecturer::create(['user_id' => $nonExaminerUser->id, 'nidn_nip' => '991103', 'status' => 'active']);
         $this->fieldUser = $this->makeUser('field-exam@test.local', ['pembimbing_lapangan']);
@@ -124,6 +128,8 @@ class KpExamSchedulingTest extends TestCase
 
         $exam = KpExam::first();
         $this->assertSame('dijadwalkan', $request->fresh()->status);
+        $this->assertEqualsCanonicalizing([$this->examiner->id, $this->secondExaminer->id], $exam->examiners()->pluck('lecturers.id')->all());
+        $this->assertSame($this->examiner->id, $exam->examiner_id);
         $this->assertDatabaseHas('kp_exam_logs', ['action' => 'exam_scheduled']);
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
@@ -140,6 +146,10 @@ class KpExamSchedulingTest extends TestCase
             ->get('/penguji/jadwal-sidang/'.$exam->id)
             ->assertOk()
             ->assertSee('Input nilai penguji akan tersedia pada tahap berikutnya.');
+
+        $this->actingAs($this->secondExaminerUser)->withSession(['active_role' => 'penguji'])
+            ->get('/penguji/jadwal-sidang/'.$exam->id)
+            ->assertOk();
     }
 
     public function test_schedule_validation_rejects_invalid_examiner_time_room_and_link(): void
@@ -147,12 +157,12 @@ class KpExamSchedulingTest extends TestCase
         $request = $this->submittedExamRequest();
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
-            ->post('/management/exam-requests/'.$request->id.'/schedule', $this->validSchedulePayload(['examiner_id' => $this->supervisor->id]))
-            ->assertSessionHasErrors('examiner_id');
+            ->post('/management/exam-requests/'.$request->id.'/schedule', $this->validSchedulePayload(['examiner_ids' => [$this->examiner->id]]))
+            ->assertSessionHasErrors('examiner_ids');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
-            ->post('/management/exam-requests/'.$request->id.'/schedule', $this->validSchedulePayload(['examiner_id' => $this->nonExaminer->id]))
-            ->assertSessionHasErrors('examiner_id');
+            ->post('/management/exam-requests/'.$request->id.'/schedule', $this->validSchedulePayload(['examiner_ids' => [$this->examiner->id, $this->nonExaminer->id]]))
+            ->assertSessionHasErrors('examiner_ids');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->post('/management/exam-requests/'.$request->id.'/schedule', $this->validSchedulePayload(['end_time' => '08:00']))
@@ -184,6 +194,21 @@ class KpExamSchedulingTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_internal_supervisor_can_also_be_examiner_when_they_have_penguji_role(): void
+    {
+        $this->supervisorUser->roles()->syncWithoutDetaching(Role::where('name', 'penguji')->value('id'));
+        $request = $this->submittedExamRequest();
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post('/management/exam-requests/'.$request->id.'/schedule', $this->validSchedulePayload([
+                'examiner_ids' => [$this->supervisor->id, $this->examiner->id],
+            ]))
+            ->assertRedirect();
+
+        $exam = KpExam::firstOrFail();
+        $this->assertEqualsCanonicalizing([$this->supervisor->id, $this->examiner->id], $exam->examiners()->pluck('lecturers.id')->all());
+    }
+
     public function test_admin_can_cancel_and_complete_exam_with_logs(): void
     {
         $exam = $this->scheduledExam();
@@ -208,7 +233,7 @@ class KpExamSchedulingTest extends TestCase
     private function validSchedulePayload(array $overrides = []): array
     {
         return array_merge([
-            'examiner_id' => $this->examiner->id,
+            'examiner_ids' => [$this->examiner->id, $this->secondExaminer->id],
             'exam_date' => now()->addWeek()->toDateString(),
             'start_time' => '09:00',
             'end_time' => '10:00',

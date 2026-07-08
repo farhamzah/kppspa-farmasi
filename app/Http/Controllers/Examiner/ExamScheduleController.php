@@ -12,8 +12,8 @@ class ExamScheduleController extends Controller
     public function index(Request $request): View
     {
         $lecturerId = $request->user()->lecturer?->id;
-        $exams = KpExam::with(['assignment.student.user', 'assignment.place', 'supervisor.user'])
-            ->where('examiner_id', $lecturerId)
+        $exams = KpExam::with(['assignment.student.user', 'assignment.place', 'supervisor.user', 'examiners.user'])
+            ->forExaminer($lecturerId)
             ->latest('exam_date')
             ->paginate(10);
 
@@ -22,7 +22,7 @@ class ExamScheduleController extends Controller
 
     public function show(KpExam $exam): View
     {
-        abort_unless(request()->user()->lecturer?->id === $exam->examiner_id, 403);
-        return view('examiner.exams.show', ['exam' => $exam->load(['assignment.student.user', 'assignment.place', 'assignment.finalReport.latestFile', 'supervisor.user'])]);
+        abort_unless($exam->hasExaminer(request()->user()->lecturer?->id), 403);
+        return view('examiner.exams.show', ['exam' => $exam->load(['assignment.student.user', 'assignment.place', 'assignment.finalReport.latestFile', 'supervisor.user', 'examiners.user'])]);
     }
 }

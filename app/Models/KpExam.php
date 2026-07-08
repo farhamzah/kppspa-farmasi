@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class KpExam extends Model
@@ -17,9 +18,60 @@ class KpExam extends Model
     public function assignment() { return $this->belongsTo(KpAssignment::class, 'kp_assignment_id'); }
     public function supervisor() { return $this->belongsTo(Lecturer::class, 'supervisor_id'); }
     public function examiner() { return $this->belongsTo(Lecturer::class, 'examiner_id'); }
+    public function examExaminers() { return $this->hasMany(KpExaminer::class, 'kp_exam_id'); }
+    public function examiners() { return $this->belongsToMany(Lecturer::class, 'kp_exam_examiners', 'kp_exam_id', 'lecturer_id')->withPivot('sort_order')->withTimestamps()->orderBy('kp_exam_examiners.sort_order'); }
     public function scheduledBy() { return $this->belongsTo(User::class, 'scheduled_by'); }
     public function logs() { return $this->hasMany(KpExamLog::class, 'kp_exam_id'); }
     public function scores() { return $this->hasMany(KpScore::class, 'kp_exam_id'); }
+
+    public function scopeForExaminer(Builder $query, ?int $lecturerId): Builder
+    {
+        if (! $lecturerId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function (Builder $q) use ($lecturerId): void {
+            $q->where('examiner_id', $lecturerId)
+                ->orWhereHas('examiners', fn (Builder $examiner) => $examiner->where('lecturers.id', $lecturerId));
+        });
+    }
+
+    public function hasExaminer(int|Lecturer|null $lecturer): bool
+    {
+        $lecturerId = $lecturer instanceof Lecturer ? $lecturer->id : $lecturer;
+        if (! $lecturerId) {
+            return false;
+        }
+
+        if ((int) $this->examiner_id === (int) $lecturerId) {
+            return true;
+        }
+
+        $this->loadMissing('examiners');
+
+        return $this->examiners->contains('id', $lecturerId);
+    }
+
+    public function examinerIds(): array
+    {
+        $this->loadMissing('examiners');
+
+        return $this->examiners->pluck('id')
+            ->when($this->examiner_id, fn ($ids) => $ids->prepend($this->examiner_id))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    public function examinerNamesLabel(): string
+    {
+        $this->loadMissing(['examiners.user', 'examiner.user']);
+        $examiners = $this->examiners->isNotEmpty()
+            ? $this->examiners
+            : collect([$this->examiner])->filter();
+
+        return $examiners->map(fn (Lecturer $lecturer): string => lecturer_display_name($lecturer))->implode(', ') ?: '-';
+    }
 
     public function statusLabel(): string
     {

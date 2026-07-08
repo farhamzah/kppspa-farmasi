@@ -166,10 +166,33 @@ class KpAssignment extends Model
 
     public function isAllRequiredScoresSubmitted(): bool
     {
-        $this->loadMissing('scores');
+        $this->loadMissing(['scores', 'exam.examiners.user', 'exam.examiner.user']);
         $components = $this->period?->assessmentComponents()->where('status', 'aktif')->where('is_required', true)->get() ?? collect();
 
-        return $components->isNotEmpty() && $components->every(fn ($component) => in_array($this->scores->firstWhere('kp_assessment_component_id', $component->id)?->status, ['submitted', 'locked'], true));
+        return $components->isNotEmpty() && $components->every(function ($component): bool {
+            if ($component->assessor_type !== 'penguji') {
+                return in_array($this->scores->firstWhere('kp_assessment_component_id', $component->id)?->status, ['submitted', 'locked'], true);
+            }
+
+            $examinerUserIds = $this->exam
+                ? $this->exam->examiners
+                    ->when($this->exam->examiner, fn ($examiners) => $examiners->prepend($this->exam->examiner))
+                    ->unique('id')
+                    ->pluck('user_id')
+                    ->filter()
+                    ->values()
+                : collect();
+
+            if ($examinerUserIds->isEmpty()) {
+                return false;
+            }
+
+            return $examinerUserIds->every(fn (int $userId): bool => $this->scores
+                ->where('kp_assessment_component_id', $component->id)
+                ->where('assessor_user_id', $userId)
+                ->whereIn('status', ['submitted', 'locked'])
+                ->isNotEmpty());
+        });
     }
 
     public function calculateFinalScore(): float

@@ -246,12 +246,12 @@ class KpAssessmentService
 
     private function ensureCanAssess(User $assessor, KpAssignment $assignment, string $assessorType): void
     {
-        $assignment->loadMissing(['internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user']);
+        $assignment->loadMissing(['internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'exam.examiners.user']);
 
         $allowed = match ($assessorType) {
             'pembimbing_dalam' => $assessor->lecturer && $assignment->internal_supervisor_id === $assessor->lecturer->id,
             'pembimbing_lapangan' => $assessor->fieldSupervisor && $assignment->field_supervisor_id === $assessor->fieldSupervisor->id,
-            'penguji' => $assessor->lecturer && $assignment->exam?->examiner_id === $assessor->lecturer->id,
+            'penguji' => $assessor->lecturer && $assignment->exam?->hasExaminer($assessor->lecturer->id),
             default => false,
         };
 
@@ -279,7 +279,7 @@ class KpAssessmentService
 
     private function defaultAssessorFor(KpAssignment $assignment, string $assessorType): ?User
     {
-        $assignment->loadMissing(['internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user']);
+        $assignment->loadMissing(['internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'exam.examiners.user']);
 
         return match ($assessorType) {
             'pembimbing_dalam' => $assignment->internalSupervisor?->user,

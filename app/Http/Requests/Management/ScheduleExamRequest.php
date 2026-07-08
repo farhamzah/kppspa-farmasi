@@ -15,7 +15,8 @@ class ScheduleExamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'examiner_id' => ['required', 'exists:lecturers,id'],
+            'examiner_ids' => ['required', 'array', 'min:2', 'max:3'],
+            'examiner_ids.*' => ['required', 'integer', 'distinct', 'exists:lecturers,id'],
             'exam_date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],

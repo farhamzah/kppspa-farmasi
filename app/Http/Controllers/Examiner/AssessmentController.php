@@ -16,7 +16,7 @@ class AssessmentController extends Controller
     {
         $lecturer = request()->user()->lecturer;
         $exams = KpExam::with(['assignment.student.user', 'assignment.period', 'assignment.place', 'assignment.scores'])
-            ->where('examiner_id', $lecturer?->id)
+            ->forExaminer($lecturer?->id)
             ->latest('exam_date')->paginate(10);
 
         return view('examiner.assessments.index', ['exams' => $exams]);
@@ -24,7 +24,7 @@ class AssessmentController extends Controller
 
     public function show(KpExam $exam): View
     {
-        abort_unless(request()->user()->lecturer?->id === $exam->examiner_id, 403);
+        abort_unless($exam->hasExaminer(request()->user()->lecturer?->id), 403);
         app(KpAssessmentService::class)->ensureDefaultComponents($exam->assignment->period, request()->user());
         $assignment = $exam->assignment->load(['student.user', 'period', 'place', 'scores.component', 'finalScore']);
 

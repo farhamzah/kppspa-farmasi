@@ -98,13 +98,14 @@ class KpExamService
                 throw ValidationException::withMessages(['supervisor_id' => 'Pembimbing dalam belum ditentukan.']);
             }
 
-            $examiner = Lecturer::findOrFail($data['examiner_id']);
-            $this->ensureExaminer($examiner, $assignment->internal_supervisor_id);
+            $examinerIds = $this->examinerIdsFrom($data);
+            $this->ensureExaminers($examinerIds);
 
             $exam = KpExam::create($this->examPayload($request, $assignment, $actor, $data));
+            $this->syncExaminers($exam, $examinerIds);
             $oldRequestStatus = $request->status;
             $request->update(['status' => 'dijadwalkan', 'reviewed_by' => $actor->id, 'reviewed_at' => now()]);
-            $this->logActivity($actor, $request, $exam, 'exam_scheduled', $oldRequestStatus, 'dijadwalkan', $data['note'] ?? null, ['exam_date' => $data['exam_date']]);
+            $this->logActivity($actor, $request, $exam, 'exam_scheduled', $oldRequestStatus, 'dijadwalkan', $data['note'] ?? null, ['exam_date' => $data['exam_date'], 'examiner_ids' => $examinerIds]);
 
             return $exam;
         });
@@ -117,11 +118,11 @@ class KpExamService
             if (! $exam->canBeRescheduled()) {
                 throw ValidationException::withMessages(['exam' => 'Sidang ini tidak bisa dijadwalkan ulang.']);
             }
-            $examiner = Lecturer::findOrFail($data['examiner_id']);
-            $this->ensureExaminer($examiner, $exam->supervisor_id);
+            $examinerIds = $this->examinerIdsFrom($data);
+            $this->ensureExaminers($examinerIds);
             $oldStatus = $exam->status;
             $exam->update([
-                'examiner_id' => $examiner->id,
+                'examiner_id' => $examinerIds[0],
                 'exam_date' => $data['exam_date'],
                 'start_time' => $data['start_time'],
                 'end_time' => $data['end_time'],
@@ -131,9 +132,10 @@ class KpExamService
                 'status' => 'dijadwalkan',
                 'note' => $data['note'] ?? null,
             ]);
-            $this->logActivity($actor, $exam->request, $exam->fresh(), 'exam_rescheduled', $oldStatus, 'dijadwalkan', $data['note'] ?? null);
+            $this->syncExaminers($exam, $examinerIds);
+            $this->logActivity($actor, $exam->request, $exam->fresh(), 'exam_rescheduled', $oldStatus, 'dijadwalkan', $data['note'] ?? null, ['examiner_ids' => $examinerIds]);
 
-            return $exam->fresh();
+            return $exam->fresh(['examiners']);
         });
     }
 
@@ -171,13 +173,20 @@ class KpExamService
         }
     }
 
-    private function ensureExaminer(Lecturer $examiner, int $supervisorId): void
+    private function ensureExaminers(array $examinerIds): void
     {
-        if ($examiner->id === $supervisorId) {
-            throw ValidationException::withMessages(['examiner_id' => 'Penguji tidak boleh sama dengan Pembimbing Dalam.']);
+        if (count($examinerIds) < 2 || count($examinerIds) > 3) {
+            throw ValidationException::withMessages(['examiner_ids' => 'Pilih minimal 2 dan maksimal 3 penguji.']);
         }
-        if (! $examiner->user?->hasRole('penguji')) {
-            throw ValidationException::withMessages(['examiner_id' => 'Penguji harus memiliki role Penguji.']);
+
+        $examiners = Lecturer::with('user.roles')->whereIn('id', $examinerIds)->get();
+        if ($examiners->count() !== count($examinerIds)) {
+            throw ValidationException::withMessages(['examiner_ids' => 'Data penguji tidak valid.']);
+        }
+
+        $invalid = $examiners->first(fn (Lecturer $examiner): bool => ! $examiner->user?->hasRole('penguji'));
+        if ($invalid) {
+            throw ValidationException::withMessages(['examiner_ids' => 'Semua penguji harus memiliki role Penguji.']);
         }
     }
 
@@ -187,7 +196,7 @@ class KpExamService
             'kp_exam_request_id' => $request->id,
             'kp_assignment_id' => $assignment->id,
             'supervisor_id' => $assignment->internal_supervisor_id,
-            'examiner_id' => $data['examiner_id'],
+            'examiner_id' => $this->examinerIdsFrom($data)[0],
             'exam_date' => $data['exam_date'],
             'start_time' => $data['start_time'],
             'end_time' => $data['end_time'],
@@ -199,5 +208,25 @@ class KpExamService
             'scheduled_at' => now(),
             'note' => $data['note'] ?? null,
         ];
+    }
+
+    private function examinerIdsFrom(array $data): array
+    {
+        return collect($data['examiner_ids'] ?? [$data['examiner_id'] ?? null])
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function syncExaminers(KpExam $exam, array $examinerIds): void
+    {
+        $sync = collect($examinerIds)
+            ->values()
+            ->mapWithKeys(fn (int $id, int $index): array => [$id => ['sort_order' => $index + 1]])
+            ->all();
+
+        $exam->examiners()->sync($sync);
     }
 }

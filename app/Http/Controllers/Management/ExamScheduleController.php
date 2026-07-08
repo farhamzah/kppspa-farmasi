@@ -20,7 +20,7 @@ class ExamScheduleController extends Controller
     public function index(Request $request): View
     {
         $exams = KpExam::query()
-            ->with(['assignment.student.user', 'assignment.period', 'assignment.place', 'supervisor.user', 'examiner.user'])
+            ->with(['assignment.student.user', 'assignment.period', 'assignment.place', 'supervisor.user', 'examiner.user', 'examiners.user'])
             ->when($request->filled('period'), fn ($q) => $q->whereHas('assignment', fn ($a) => $a->where('kp_period_id', $request->period)))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->latest('exam_date')
@@ -32,7 +32,7 @@ class ExamScheduleController extends Controller
 
     public function show(KpExam $exam): View
     {
-        return view('management.exams.show', ['exam' => $exam->load(['request.logs.user', 'assignment.student.user', 'assignment.place', 'supervisor.user', 'examiner.user'])]);
+        return view('management.exams.show', ['exam' => $exam->load(['request.logs.user', 'assignment.student.user', 'assignment.place', 'supervisor.user', 'examiner.user', 'examiners.user'])]);
     }
 
     public function create(KpExamRequest $examRequest): View
@@ -48,7 +48,7 @@ class ExamScheduleController extends Controller
 
     public function edit(KpExam $exam): View
     {
-        return view('management.exams.schedule', ['examRequest' => $exam->request->load(['assignment.student.user', 'assignment.place', 'assignment.internalSupervisor.user']), 'exam' => $exam, 'examiners' => $this->examiners()]);
+        return view('management.exams.schedule', ['examRequest' => $exam->request->load(['assignment.student.user', 'assignment.place', 'assignment.internalSupervisor.user']), 'exam' => $exam->load('examiners'), 'examiners' => $this->examiners()]);
     }
 
     public function update(UpdateExamScheduleRequest $request, KpExam $exam, KpExamService $service): RedirectResponse
