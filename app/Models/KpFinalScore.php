@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class KpFinalScore extends Model
 {
-    protected $fillable = ['kp_assignment_id', 'final_score', 'final_grade', 'status', 'calculated_at', 'finalized_by', 'finalized_at', 'published_at', 'note'];
+    protected $fillable = ['kp_assignment_id', 'final_score', 'final_grade', 'attendance_score_override', 'attendance_note', 'attendance_overridden_by', 'attendance_overridden_at', 'status', 'calculated_at', 'finalized_by', 'finalized_at', 'published_at', 'note'];
 
     protected function casts(): array
     {
-        return ['final_score' => 'decimal:2', 'calculated_at' => 'datetime', 'finalized_at' => 'datetime', 'published_at' => 'datetime'];
+        return ['final_score' => 'decimal:2', 'attendance_score_override' => 'decimal:2', 'calculated_at' => 'datetime', 'attendance_overridden_at' => 'datetime', 'finalized_at' => 'datetime', 'published_at' => 'datetime'];
     }
 
     public function assignment() { return $this->belongsTo(KpAssignment::class, 'kp_assignment_id'); }
     public function finalizedBy() { return $this->belongsTo(User::class, 'finalized_by'); }
+    public function attendanceOverriddenBy() { return $this->belongsTo(User::class, 'attendance_overridden_by'); }
     public function logs() { return $this->hasMany(KpScoreLog::class, 'kp_final_score_id'); }
 
     public function statusLabel(): string

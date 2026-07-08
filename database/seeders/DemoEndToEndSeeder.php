@@ -527,10 +527,9 @@ class DemoEndToEndSeeder extends Seeder
         foreach ($components as $component) {
             $scoreValue = $scores[$component->component_name] ?? 85;
             $score = KpScore::updateOrCreate(
-                ['kp_assignment_id' => $assignment->id, 'kp_assessment_component_id' => $component->id],
+                ['kp_assignment_id' => $assignment->id, 'kp_assessment_component_id' => $component->id, 'assessor_user_id' => $assessorUsers[$component->assessor_type]->id],
                 [
                     'kp_exam_id' => $component->assessor_type === 'penguji' ? $exam->id : null,
-                    'assessor_user_id' => $assessorUsers[$component->assessor_type]->id,
                     'assessor_type' => $component->assessor_type,
                     'score' => $scoreValue,
                     'weighted_score' => round(($scoreValue * (float) $component->weight) / 100, 2),
@@ -553,12 +552,13 @@ class DemoEndToEndSeeder extends Seeder
             );
         }
 
-        $final = round((float) KpScore::where('kp_assignment_id', $assignment->id)->sum('weighted_score'), 2);
         $finalScore = KpFinalScore::updateOrCreate(
             ['kp_assignment_id' => $assignment->id],
             [
-                'final_score' => $final,
-                'final_grade' => $this->grade($final),
+                'attendance_score_override' => 100,
+                'attendance_note' => 'Nilai kehadiran demo lengkap.',
+                'attendance_overridden_by' => $coordinator->id,
+                'attendance_overridden_at' => now(),
                 'status' => 'published',
                 'calculated_at' => now(),
                 'finalized_by' => $coordinator->id,
@@ -567,6 +567,12 @@ class DemoEndToEndSeeder extends Seeder
                 'note' => 'Nilai akhir demo sudah dipublikasikan.',
             ]
         );
+        $final = app(\App\Support\KpScoreCalculator::class)->breakdown($assignment->fresh())['final_score'];
+        $finalScore->update([
+            'final_score' => $final,
+            'final_grade' => $this->grade($final),
+        ]);
+        $finalScore = $finalScore->fresh();
 
         KpScoreLog::updateOrCreate(
             ['kp_assignment_id' => $assignment->id, 'kp_final_score_id' => $finalScore->id, 'action' => 'final_score_published'],

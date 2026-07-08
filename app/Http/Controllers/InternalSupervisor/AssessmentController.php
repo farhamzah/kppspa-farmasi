@@ -22,9 +22,10 @@ class AssessmentController extends Controller
         return view('internal-supervisor.assessments.index', ['assignments' => $assignments]);
     }
 
-    public function show(KpAssignment $assignment): View
+    public function show(KpAssignment $assignment, KpAssessmentService $service): View
     {
         abort_unless(request()->user()->lecturer?->id === $assignment->internal_supervisor_id, 403);
+        $service->ensureDefaultComponents($assignment->period, request()->user());
 
         return view('internal-supervisor.assessments.show', $this->payload($assignment, 'pembimbing_dalam'));
     }

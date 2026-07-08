@@ -168,6 +168,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('orientation-tests/{attempt}', [OrientationTestResultController::class, 'show'])->name('orientation-tests.show');
             Route::get('scores', [ScoreMonitoringController::class, 'index'])->name('scores.index');
             Route::get('scores/{assignment}', [ScoreMonitoringController::class, 'show'])->name('scores.show');
+            Route::post('scores/{assignment}/override', [ScoreMonitoringController::class, 'override'])->name('scores.override');
             Route::post('scores/{assignment}/calculate', [ScoreMonitoringController::class, 'calculate'])->name('scores.calculate');
             Route::post('scores/{assignment}/finalize', [ScoreMonitoringController::class, 'finalize'])->name('scores.finalize');
             Route::post('final-scores/{finalScore}/publish', [ScoreMonitoringController::class, 'publish'])->name('final-scores.publish');

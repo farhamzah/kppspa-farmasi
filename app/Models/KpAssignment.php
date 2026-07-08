@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\KpScoreCalculator;
 use Illuminate\Database\Eloquent\Model;
 
 class KpAssignment extends Model
@@ -173,6 +174,6 @@ class KpAssignment extends Model
 
     public function calculateFinalScore(): float
     {
-        return round((float) $this->scores()->whereIn('status', ['submitted', 'locked'])->sum('weighted_score'), 2);
+        return app(KpScoreCalculator::class)->breakdown($this)['final_score'];
     }
 }

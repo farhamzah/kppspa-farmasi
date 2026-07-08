@@ -5,13 +5,66 @@ namespace App\Services;
 use App\Models\KpAssessmentComponent;
 use App\Models\KpAssignment;
 use App\Models\KpFinalScore;
+use App\Models\KpPeriod;
 use App\Models\KpScore;
 use App\Models\User;
+use App\Support\KpScoreCalculator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class KpAssessmentService
 {
+    public const DEFAULT_COMPONENTS = [
+        'pembimbing_lapangan' => [
+            ['Komunikasi dan Kerjasama', 'Kemampuan berkomunikasi, bekerja sama, dan menjaga relasi profesional di tempat KP.', 30, 10],
+            ['Disiplin Kerja dan Adaptasi', 'Kedisiplinan hadir, menaati aturan, dan beradaptasi dengan lingkungan kerja.', 30, 20],
+            ['Penyelesaian Tugas', 'Kualitas penyelesaian tugas praktik dan tanggung jawab pada pekerjaan lapangan.', 40, 30],
+        ],
+        'pembimbing_dalam' => [
+            ['Proses Bimbingan Akademik', 'Konsistensi bimbingan, respons revisi, dan komunikasi akademik dengan pembimbing.', 30, 10],
+            ['Laporan Harian', 'Keteraturan, kelengkapan, dan mutu refleksi laporan/log kegiatan harian.', 20, 20],
+            ['Laporan KP', 'Kualitas substansi, sistematika, analisis, dan kesiapan laporan akhir KP.', 50, 30],
+        ],
+        'penguji' => [
+            ['Presentasi', 'Kejelasan penyampaian, struktur paparan, dan penggunaan media presentasi.', 20, 10],
+            ['Tanya Jawab', 'Ketepatan, ketenangan, dan argumentasi saat menjawab pertanyaan penguji.', 30, 20],
+            ['Penguasaan Materi KP', 'Pemahaman kegiatan, data, metode, hasil, dan konteks tempat KP.', 50, 30],
+        ],
+    ];
+
+    public function __construct(private readonly KpScoreCalculator $calculator)
+    {
+    }
+
+    public function ensureDefaultComponents(KpPeriod $period, ?User $actor = null): void
+    {
+        foreach (self::DEFAULT_COMPONENTS as $assessorType => $rows) {
+            $hasComponents = $period->assessmentComponents()
+                ->where('assessor_type', $assessorType)
+                ->exists();
+
+            if ($hasComponents) {
+                continue;
+            }
+
+            foreach ($rows as [$name, $description, $weight, $sortOrder]) {
+                KpAssessmentComponent::create([
+                    'kp_period_id' => $period->id,
+                    'assessor_type' => $assessorType,
+                    'component_name' => $name,
+                    'description' => $description,
+                    'weight' => $weight,
+                    'max_score' => 100,
+                    'sort_order' => $sortOrder,
+                    'is_required' => true,
+                    'status' => 'aktif',
+                    'created_by' => $actor?->id,
+                    'updated_by' => $actor?->id,
+                ]);
+            }
+        }
+    }
+
     public function saveScore(User $assessor, KpAssignment $assignment, KpAssessmentComponent $component, float $score, ?string $note = null): KpScore
     {
         $this->ensureCanAssess($assessor, $assignment, $component->assessor_type);
@@ -31,10 +84,9 @@ class KpAssessmentService
 
         return DB::transaction(function () use ($assessor, $assignment, $component, $score, $note, $exam) {
             $kpScore = KpScore::updateOrCreate(
-                ['kp_assignment_id' => $assignment->id, 'kp_assessment_component_id' => $component->id],
+                ['kp_assignment_id' => $assignment->id, 'kp_assessment_component_id' => $component->id, 'assessor_user_id' => $assessor->id],
                 [
                     'kp_exam_id' => $exam?->id,
-                    'assessor_user_id' => $assessor->id,
                     'assessor_type' => $component->assessor_type,
                     'score' => $score,
                     'weighted_score' => round(($score * (float) $component->weight) / 100, 2),
@@ -63,13 +115,14 @@ class KpAssessmentService
             ->get();
 
         foreach ($components as $component) {
-            if (! $assignment->scores()->where('kp_assessment_component_id', $component->id)->exists()) {
+            if (! $assignment->scores()->where('kp_assessment_component_id', $component->id)->where('assessor_user_id', $assessor->id)->exists()) {
                 throw ValidationException::withMessages(['scores' => 'Semua komponen wajib harus diisi sebelum submit.']);
             }
         }
 
         $assignment->scores()
             ->where('assessor_type', $assessorType)
+            ->where('assessor_user_id', $assessor->id)
             ->where('status', 'draft')
             ->each(function (KpScore $score) use ($assessor, $assignment) {
                 $old = $score->status;
@@ -80,7 +133,7 @@ class KpAssessmentService
 
     public function calculateFinalScore(KpAssignment $assignment): KpFinalScore
     {
-        $score = $assignment->calculateFinalScore();
+        $score = $this->calculator->breakdown($assignment)['final_score'];
         $final = KpFinalScore::updateOrCreate(
             ['kp_assignment_id' => $assignment->id],
             [
@@ -93,6 +146,52 @@ class KpAssessmentService
         $this->logActivity(auth()->user(), $assignment, 'final_score_calculated', null, null, 'calculated', null, ['final_score' => $score], $final);
 
         return $final;
+    }
+
+    public function overrideScores(User $actor, KpAssignment $assignment, array $rows, ?float $attendanceScore = null, ?string $attendanceNote = null): void
+    {
+        $this->ensureFinalScoreEditable($assignment);
+
+        DB::transaction(function () use ($actor, $assignment, $rows, $attendanceScore, $attendanceNote): void {
+            if ($attendanceScore !== null || $attendanceNote !== null) {
+                KpFinalScore::updateOrCreate(
+                    ['kp_assignment_id' => $assignment->id],
+                    [
+                        'attendance_score_override' => $attendanceScore,
+                        'attendance_note' => $attendanceNote,
+                        'attendance_overridden_by' => $actor->id,
+                        'attendance_overridden_at' => now(),
+                        'status' => $assignment->finalScore?->status ?? 'draft',
+                    ]
+                );
+            }
+
+            foreach ($rows as $row) {
+                $component = KpAssessmentComponent::findOrFail($row['component_id']);
+                $assessor = $this->defaultAssessorFor($assignment, $component->assessor_type);
+
+                if (! $assessor) {
+                    continue;
+                }
+
+                $score = (float) $row['score'];
+                $kpScore = KpScore::updateOrCreate(
+                    ['kp_assignment_id' => $assignment->id, 'kp_assessment_component_id' => $component->id, 'assessor_user_id' => $assessor->id],
+                    [
+                        'kp_exam_id' => $component->assessor_type === 'penguji' ? $assignment->exam?->id : null,
+                        'assessor_type' => $component->assessor_type,
+                        'score' => $score,
+                        'weighted_score' => round(($score * (float) $component->weight) / 100, 2),
+                        'note' => $row['note'] ?? null,
+                        'status' => 'submitted',
+                        'submitted_at' => now(),
+                        'locked_at' => null,
+                    ]
+                );
+
+                $this->logActivity($actor, $assignment, 'score_overridden_by_management', $kpScore, null, 'submitted', $row['note'] ?? null, ['component_id' => $component->id]);
+            }
+        });
     }
 
     public function finalizeScore(User $actor, KpAssignment $assignment, ?string $note = null): KpFinalScore
@@ -175,6 +274,18 @@ class KpAssessmentService
             $score >= 65 => 'C',
             $score >= 50 => 'D',
             default => 'E',
+        };
+    }
+
+    private function defaultAssessorFor(KpAssignment $assignment, string $assessorType): ?User
+    {
+        $assignment->loadMissing(['internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user']);
+
+        return match ($assessorType) {
+            'pembimbing_dalam' => $assignment->internalSupervisor?->user,
+            'pembimbing_lapangan' => $assignment->fieldSupervisor?->user,
+            'penguji' => $assignment->exam?->examiner?->user,
+            default => null,
         };
     }
 }

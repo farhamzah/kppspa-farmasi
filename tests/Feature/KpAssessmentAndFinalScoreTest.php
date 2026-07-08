@@ -8,6 +8,7 @@ use App\Models\KpAssignment;
 use App\Models\KpExam;
 use App\Models\KpExamRequest;
 use App\Models\KpFinalScore;
+use App\Models\KpLogbook;
 use App\Models\KpPeriod;
 use App\Models\KpPlace;
 use App\Models\KpRegistration;
@@ -15,6 +16,7 @@ use App\Models\Lecturer;
 use App\Models\Role;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\KpAssessmentService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -78,6 +80,15 @@ class KpAssessmentAndFinalScoreTest extends TestCase
 
         $this->assertDatabaseHas('kp_assessment_components', ['component_name' => 'Kualitas laporan']);
         $this->assertDatabaseHas('kp_score_logs', ['action' => 'component_created']);
+    }
+
+    public function test_default_assessment_rubric_is_created_per_period(): void
+    {
+        app(KpAssessmentService::class)->ensureDefaultComponents($this->assignment->period, $this->koordinator);
+
+        $this->assertDatabaseHas('kp_assessment_components', ['kp_period_id' => $this->assignment->kp_period_id, 'assessor_type' => 'pembimbing_lapangan', 'component_name' => 'Komunikasi dan Kerjasama', 'weight' => 30]);
+        $this->assertDatabaseHas('kp_assessment_components', ['kp_period_id' => $this->assignment->kp_period_id, 'assessor_type' => 'pembimbing_dalam', 'component_name' => 'Laporan KP', 'weight' => 50]);
+        $this->assertDatabaseHas('kp_assessment_components', ['kp_period_id' => $this->assignment->kp_period_id, 'assessor_type' => 'penguji', 'component_name' => 'Penguasaan Materi KP', 'weight' => 50]);
     }
 
     public function test_each_assessor_can_score_only_their_own_assignment_and_invalid_score_is_rejected(): void
@@ -147,6 +158,16 @@ class KpAssessmentAndFinalScoreTest extends TestCase
 
         $this->saveAndSubmit($this->supervisorUser, 'pembimbing-dalam', $this->assignment->id, $internal, 90);
         $this->saveAndSubmit($this->fieldUser, 'pembimbing-lapangan', $this->assignment->id, $field, 80);
+        KpLogbook::create([
+            'kp_assignment_id' => $this->assignment->id,
+            'activity_date' => now()->toDateString(),
+            'activity_title' => 'Kegiatan KP',
+            'activity_description' => 'Kegiatan harian.',
+            'status' => 'disetujui',
+            'submitted_at' => now(),
+            'validated_by' => $this->fieldUser->id,
+            'validated_at' => now(),
+        ]);
         $this->actingAs($this->examinerUser)->withSession(['active_role' => 'penguji'])
             ->post('/penguji/penilaian/'.$this->exam->id.'/save', ['scores' => [['component_id' => $examiner->id, 'score' => 85]]])
             ->assertRedirect();
@@ -161,6 +182,7 @@ class KpAssessmentAndFinalScoreTest extends TestCase
         $final = KpFinalScore::firstOrFail();
         $this->assertSame('locked', $final->status);
         $this->assertSame('A', $final->final_grade);
+        $this->assertSame('86.50', (string) $final->final_score);
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->post('/management/final-scores/'.$final->id.'/publish')
@@ -189,6 +211,27 @@ class KpAssessmentAndFinalScoreTest extends TestCase
 
         $this->assertSame('calculated', $final->fresh()->status);
         $this->assertDatabaseHas('kp_score_logs', ['action' => 'final_score_unlocked']);
+    }
+
+    public function test_management_can_override_scores_before_finalization(): void
+    {
+        [$internal, $field, $examiner] = $this->components();
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post('/management/scores/'.$this->assignment->id.'/override', [
+                'attendance_score' => 100,
+                'attendance_note' => 'Kehadiran lengkap.',
+                'scores' => [
+                    ['component_id' => $internal->id, 'score' => 90, 'note' => 'Override pembimbing dalam.'],
+                    ['component_id' => $field->id, 'score' => 80, 'note' => 'Override lapangan.'],
+                    ['component_id' => $examiner->id, 'score' => 85, 'note' => 'Override penguji.'],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('kp_final_scores', ['kp_assignment_id' => $this->assignment->id, 'attendance_score_override' => 100]);
+        $this->assertDatabaseHas('kp_scores', ['kp_assignment_id' => $this->assignment->id, 'assessor_type' => 'pembimbing_dalam', 'score' => 90, 'status' => 'submitted']);
+        $this->assertSame('86.50', (string) KpFinalScore::where('kp_assignment_id', $this->assignment->id)->firstOrFail()->final_score);
     }
 
     private function components(): array

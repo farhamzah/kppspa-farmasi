@@ -8,14 +8,17 @@ use App\Http\Requests\Management\UpdateAssessmentComponentRequest;
 use App\Models\KpAssessmentComponent;
 use App\Models\KpPeriod;
 use App\Models\KpScoreLog;
+use App\Services\KpAssessmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class AssessmentComponentController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, KpAssessmentService $service): View
     {
+        KpPeriod::query()->each(fn (KpPeriod $period) => $service->ensureDefaultComponents($period, $request->user()));
+
         $components = KpAssessmentComponent::with('period')
             ->when($request->filled('period'), fn ($q) => $q->where('kp_period_id', $request->period))
             ->when($request->filled('assessor_type'), fn ($q) => $q->where('assessor_type', $request->assessor_type))
@@ -23,9 +26,10 @@ class AssessmentComponentController extends Controller
             ->paginate(12)->withQueryString();
 
         $weightTotals = KpAssessmentComponent::where('status', 'aktif')
-            ->selectRaw('kp_period_id, sum(weight) as total_weight')
-            ->groupBy('kp_period_id')
-            ->pluck('total_weight', 'kp_period_id');
+            ->selectRaw('kp_period_id, assessor_type, sum(weight) as total_weight')
+            ->groupBy('kp_period_id', 'assessor_type')
+            ->get()
+            ->mapWithKeys(fn ($row) => [$row->kp_period_id.'-'.$row->assessor_type => $row->total_weight]);
 
         return view('management.assessment-components.index', [
             'components' => $components,

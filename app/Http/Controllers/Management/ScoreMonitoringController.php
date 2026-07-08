@@ -9,8 +9,10 @@ use App\Models\KpAssignment;
 use App\Models\KpFinalScore;
 use App\Models\KpPeriod;
 use App\Services\KpAssessmentService;
+use App\Support\KpScoreCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ScoreMonitoringController extends Controller
@@ -26,15 +28,51 @@ class ScoreMonitoringController extends Controller
         return view('management.scores.index', ['assignments' => $assignments, 'periods' => KpPeriod::latest()->get(), 'filters' => $request->only(['period', 'q'])]);
     }
 
-    public function show(KpAssignment $assignment): View
+    public function show(KpAssignment $assignment, KpAssessmentService $service, KpScoreCalculator $calculator): View
     {
-        return view('management.scores.show', ['assignment' => $assignment->load(['period.assessmentComponents', 'student.user', 'place', 'internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'scores.component', 'finalScore'])]);
+        $assignment->loadMissing('period');
+        $service->ensureDefaultComponents($assignment->period, request()->user());
+        $assignment->refresh();
+
+        return view('management.scores.show', [
+            'assignment' => $assignment->load(['period.assessmentComponents', 'student.user', 'place', 'internalSupervisor.user', 'fieldSupervisor.user', 'exam.examiner.user', 'scores.component', 'scores.assessor', 'logbooks', 'finalScore']),
+            'breakdown' => $calculator->breakdown($assignment),
+        ]);
     }
 
     public function calculate(KpAssignment $assignment, KpAssessmentService $service): RedirectResponse
     {
         $service->calculateFinalScore($assignment);
         return back()->with('status', 'Nilai akhir berhasil dihitung.');
+    }
+
+    public function override(Request $request, KpAssignment $assignment, KpAssessmentService $service): RedirectResponse
+    {
+        $validated = $request->validate([
+            'attendance_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'attendance_note' => ['nullable', 'string', 'max:2000'],
+            'scores' => ['nullable', 'array'],
+            'scores.*.component_id' => ['required', Rule::exists('kp_assessment_components', 'id')],
+            'scores.*.score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'scores.*.note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $rows = collect($validated['scores'] ?? [])
+            ->filter(fn (array $row) => $row['score'] !== null && $row['score'] !== '')
+            ->values()
+            ->all();
+
+        $service->overrideScores(
+            $request->user(),
+            $assignment,
+            $rows,
+            $request->filled('attendance_score') ? (float) $validated['attendance_score'] : null,
+            $validated['attendance_note'] ?? null
+        );
+
+        $service->calculateFinalScore($assignment->fresh());
+
+        return back()->with('status', 'Koreksi nilai berhasil disimpan dan nilai akhir dihitung ulang.');
     }
 
     public function finalize(FinalizeScoreRequest $request, KpAssignment $assignment, KpAssessmentService $service): RedirectResponse

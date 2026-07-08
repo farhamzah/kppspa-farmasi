@@ -7,12 +7,17 @@ use App\Models\KpExam;
 use App\Models\KpLogbook;
 use App\Models\KpPeriod;
 use App\Models\KpRegistration;
+use App\Support\KpScoreCalculator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
 class KpRecapService
 {
+    public function __construct(private readonly KpScoreCalculator $scoreCalculator)
+    {
+    }
+
     public function summary(): array
     {
         return [
@@ -117,21 +122,30 @@ class KpRecapService
     public function scoreRows(Request $request): Collection
     {
         return $this->assignmentQuery($request)
-            ->with(['student.user', 'period', 'place', 'scores.component', 'finalScore'])
+            ->with(['student.user', 'period.assessmentComponents', 'place', 'scores.component', 'logbooks', 'finalScore'])
             ->get()
-            ->map(fn (KpAssignment $assignment) => [
-                'Periode' => $assignment->period->name,
-                'Mahasiswa' => $assignment->student->user->name,
-                'NIM' => $assignment->student->nim,
-                'Tempat KP' => $assignment->place->name,
-                'Nilai Pembimbing Dalam' => $assignment->scores->where('assessor_type', 'pembimbing_dalam')->sum('weighted_score'),
-                'Nilai Pembimbing Lapangan' => $assignment->scores->where('assessor_type', 'pembimbing_lapangan')->sum('weighted_score'),
-                'Nilai Penguji' => $assignment->scores->where('assessor_type', 'penguji')->sum('weighted_score'),
-                'Nilai Akhir' => $assignment->finalScore?->final_score ?? '-',
-                'Grade' => $assignment->finalScore?->final_grade ?? '-',
-                'Status Final Score' => $assignment->finalScore?->statusLabel() ?? '-',
-                'Published At' => $assignment->finalScore?->published_at?->format('d/m/Y H:i') ?? '-',
-            ]);
+            ->map(function (KpAssignment $assignment) {
+                $breakdown = $this->scoreCalculator->breakdown($assignment);
+
+                return [
+                    'Periode' => $assignment->period->name,
+                    'Mahasiswa' => $assignment->student->user->name,
+                    'NIM' => $assignment->student->nim,
+                    'Tempat KP' => $assignment->place->name,
+                    'Nilai Kehadiran' => $breakdown['sections']['kehadiran']['score'],
+                    'Kontribusi Kehadiran' => $breakdown['sections']['kehadiran']['contribution'],
+                    'Nilai Pembimbing Dalam' => $breakdown['sections']['pembimbing_dalam']['score'],
+                    'Kontribusi Pembimbing Dalam' => $breakdown['sections']['pembimbing_dalam']['contribution'],
+                    'Nilai Pembimbing Lapangan' => $breakdown['sections']['pembimbing_lapangan']['score'],
+                    'Kontribusi Pembimbing Lapangan' => $breakdown['sections']['pembimbing_lapangan']['contribution'],
+                    'Nilai Penguji' => $breakdown['sections']['penguji']['score'],
+                    'Kontribusi Penguji' => $breakdown['sections']['penguji']['contribution'],
+                    'Nilai Akhir' => $assignment->finalScore?->final_score ?? $breakdown['final_score'],
+                    'Grade' => $assignment->finalScore?->final_grade ?? '-',
+                    'Status Final Score' => $assignment->finalScore?->statusLabel() ?? '-',
+                    'Published At' => $assignment->finalScore?->published_at?->format('d/m/Y H:i') ?? '-',
+                ];
+            });
     }
 
     public function rows(string $type, Request $request): Collection

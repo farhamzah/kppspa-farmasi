@@ -25,6 +25,7 @@ class AssessmentController extends Controller
     public function show(KpExam $exam): View
     {
         abort_unless(request()->user()->lecturer?->id === $exam->examiner_id, 403);
+        app(KpAssessmentService::class)->ensureDefaultComponents($exam->assignment->period, request()->user());
         $assignment = $exam->assignment->load(['student.user', 'period', 'place', 'scores.component', 'finalScore']);
 
         return view('examiner.assessments.show', [

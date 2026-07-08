@@ -22,9 +22,10 @@ class AssessmentController extends Controller
         return view('field-supervisor.assessments.index', ['assignments' => $assignments]);
     }
 
-    public function show(KpAssignment $assignment): View
+    public function show(KpAssignment $assignment, KpAssessmentService $service): View
     {
         abort_unless(request()->user()->fieldSupervisor?->id === $assignment->field_supervisor_id, 403);
+        $service->ensureDefaultComponents($assignment->period, request()->user());
 
         return view('field-supervisor.assessments.show', [
             'assignment' => $assignment->load(['student.user', 'period', 'place', 'scores.component', 'finalScore']),
