@@ -225,7 +225,7 @@ class KpCoreBridgeProvisioningService
             ! $legacyUser => 'create',
             (int) ($legacyUser->core_user_id ?? 0) !== (int) $coreUser->id => 'link',
             $this->rolesNeedSync($legacyUser, $kpRoles) || $legacyUser->status !== 'active' => 'update',
-            in_array('pembimbing_lapangan', $kpRoles, true) && ! $legacyFieldSupervisor => 'update',
+            in_array('pembimbing_lapangan', $kpRoles, true) && $this->fieldSupervisorNeedsSync($legacyFieldSupervisor, $coreExternalPerson, (int) $coreUser->id) => 'update',
             default => 'skip',
         };
 
@@ -340,9 +340,15 @@ class KpCoreBridgeProvisioningService
             'legacy_lecturer_id' => $legacyLecturer?->id,
             'core_external_person' => $coreExternalPerson ? [
                 'id' => $coreExternalPerson->id,
+                'display_name' => $this->coreExternalPersonDisplayName($coreExternalPerson),
                 'name' => $coreExternalPerson->name ?? null,
                 'email' => $coreExternalPerson->email ?? null,
                 'phone' => $coreExternalPerson->phone ?? null,
+                'external_number' => $coreExternalPerson->external_number ?? null,
+                'front_title' => $coreExternalPerson->front_title ?? null,
+                'back_title' => $coreExternalPerson->back_title ?? null,
+                'display_name_with_title' => $coreExternalPerson->display_name_with_title ?? null,
+                'formal_name' => $coreExternalPerson->formal_name ?? null,
                 'institution_name' => $coreExternalPerson->institution_name ?? null,
                 'position_title' => $coreExternalPerson->position_title ?? null,
                 'profession' => $coreExternalPerson->profession ?? null,
@@ -502,6 +508,62 @@ class KpCoreBridgeProvisioningService
         return $query->first();
     }
 
+    private function fieldSupervisorNeedsSync(?FieldSupervisor $legacyFieldSupervisor, ?object $coreExternalPerson, int $coreUserId): bool
+    {
+        if (! $legacyFieldSupervisor) {
+            return true;
+        }
+
+        $expectedDisplayName = $this->coreExternalPersonDisplayName($coreExternalPerson);
+        $expectedInstitution = $coreExternalPerson?->institution_name;
+        $expectedPosition = $coreExternalPerson?->position_title ?: $coreExternalPerson?->profession;
+        $expectedStatus = ($coreExternalPerson?->status ?? 'active') === 'inactive' ? 'inactive' : 'active';
+
+        return (int) ($legacyFieldSupervisor->core_user_id ?? 0) !== $coreUserId
+            || ($coreExternalPerson && (int) ($legacyFieldSupervisor->core_external_person_id ?? 0) !== (int) $coreExternalPerson->id)
+            || (filled($expectedDisplayName) && $legacyFieldSupervisor->core_display_name !== $expectedDisplayName)
+            || (filled($expectedInstitution) && $legacyFieldSupervisor->institution_name !== $expectedInstitution)
+            || (filled($expectedPosition) && $legacyFieldSupervisor->position !== $expectedPosition)
+            || (filled($coreExternalPerson?->phone) && $legacyFieldSupervisor->phone !== $coreExternalPerson->phone)
+            || (filled($coreExternalPerson?->address) && $legacyFieldSupervisor->address !== $coreExternalPerson->address)
+            || $legacyFieldSupervisor->status !== $expectedStatus;
+    }
+
+    private function coreExternalPersonDisplayName(?object $coreExternalPerson): ?string
+    {
+        if (! $coreExternalPerson) {
+            return null;
+        }
+
+        $displayName = $coreExternalPerson->display_name_with_title
+            ?? $coreExternalPerson->formal_name
+            ?? $this->composeTitledName(
+                $coreExternalPerson->front_title ?? null,
+                $coreExternalPerson->name ?? null,
+                $coreExternalPerson->back_title ?? null,
+            )
+            ?? $coreExternalPerson->name
+            ?? null;
+
+        return filled($displayName) ? trim((string) $displayName) : null;
+    }
+
+    private function composeTitledName(?string $frontTitle, ?string $name, ?string $backTitle): ?string
+    {
+        $name = trim((string) $name);
+
+        if ($name === '') {
+            return null;
+        }
+
+        $frontTitle = trim((string) $frontTitle);
+        $backTitle = trim((string) $backTitle);
+
+        $display = $frontTitle !== '' ? $frontTitle.' '.$name : $name;
+
+        return $backTitle !== '' ? $display.', '.$backTitle : $display;
+    }
+
     private function syncLegacyStudentProfile(User $legacyUser, array $plan): void
     {
         if (! $plan['core_student']) {
@@ -599,6 +661,7 @@ class KpCoreBridgeProvisioningService
             ?: 'Pembimbing Lapangan';
         $phone = $coreExternalPerson?->phone ?: $legacyFieldSupervisor?->phone;
         $address = $coreExternalPerson?->address ?: $legacyFieldSupervisor?->address;
+        $displayName = $coreExternalPerson?->display_name ?: $legacyFieldSupervisor?->core_display_name;
 
         $attributes = [
             'user_id' => $legacyUser->id,
@@ -608,6 +671,8 @@ class KpCoreBridgeProvisioningService
             'address' => $address,
             'status' => ($coreExternalPerson?->status ?? 'active') === 'inactive' ? 'inactive' : 'active',
             'core_user_id' => $plan['core_user']['id'],
+            'core_external_person_id' => $coreExternalPerson?->id ?: $legacyFieldSupervisor?->core_external_person_id,
+            'core_display_name' => $displayName,
             'core_synced_at' => now(),
             'core_sync_status' => 'synced',
             'core_sync_note' => 'Provisioned from Core external person/user for KP field supervisor bridge.',

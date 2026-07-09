@@ -142,6 +142,8 @@ class CoreBridgeProvisioningCommandTest extends TestCase
         $this->assertDatabaseHas('field_supervisors', [
             'user_id' => $user->id,
             'core_user_id' => 23,
+            'core_external_person_id' => 5,
+            'core_display_name' => 'apt. Field Supervisor Core, M.Farm.',
             'institution_name' => 'Apotek Sehat Core',
             'position' => 'Preseptor KP',
             'phone' => '081300000001',
@@ -149,6 +151,34 @@ class CoreBridgeProvisioningCommandTest extends TestCase
             'core_sync_status' => 'synced',
         ]);
         $this->assertTrue($user->hasRole('pembimbing_lapangan'));
+    }
+
+    public function test_execute_resyncs_external_field_supervisor_display_name_when_core_title_changes(): void
+    {
+        $this->coreUser(23, 'field.supervisor@example.test', ['pembimbing-lapangan']);
+        $this->coreExternalPerson(5, 23, 'field.supervisor@example.test');
+
+        $this->artisan('kp:provision-core-bridge-user --email=field.supervisor@example.test --execute --confirm-execute')
+            ->assertSuccessful();
+
+        DB::connection('core')->table('external_people')->where('id', 5)->update([
+            'display_name_with_title' => 'apt. Field Supervisor Core, M.Si.',
+            'back_title' => 'M.Si.',
+        ]);
+
+        $this->artisan('kp:provision-core-bridge-user --email=field.supervisor@example.test')
+            ->expectsOutputToContain('Action: update')
+            ->expectsOutputToContain('display_name: apt. Field Supervisor Core, M.Si.')
+            ->assertSuccessful();
+
+        $this->artisan('kp:provision-core-bridge-user --email=field.supervisor@example.test --execute --confirm-execute')
+            ->assertSuccessful();
+
+        $user = User::where('email', 'field.supervisor@example.test')->firstOrFail();
+        $fieldSupervisor = $user->fieldSupervisor()->firstOrFail();
+
+        $this->assertSame('apt. Field Supervisor Core, M.Si.', $fieldSupervisor->core_display_name);
+        $this->assertSame('apt. Field Supervisor Core, M.Si.', field_supervisor_display_name($fieldSupervisor));
     }
 
 
@@ -305,6 +335,10 @@ class CoreBridgeProvisioningCommandTest extends TestCase
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('external_number')->nullable();
             $table->string('name');
+            $table->string('front_title')->nullable();
+            $table->string('back_title')->nullable();
+            $table->string('display_name_with_title')->nullable();
+            $table->string('formal_name')->nullable();
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->string('institution_name')->nullable();
@@ -397,6 +431,10 @@ class CoreBridgeProvisioningCommandTest extends TestCase
             'user_id' => $userId,
             'external_number' => 'EXT-001',
             'name' => 'Field Supervisor Core',
+            'front_title' => 'apt.',
+            'back_title' => 'M.Farm.',
+            'display_name_with_title' => 'apt. Field Supervisor Core, M.Farm.',
+            'formal_name' => 'apt. Field Supervisor Core, M.Farm.',
             'email' => $email,
             'phone' => '081300000001',
             'institution_name' => 'Apotek Sehat Core',

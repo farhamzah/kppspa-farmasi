@@ -15,6 +15,8 @@ class FieldSupervisor extends Model
         'status',
         'profile_completed_at',
         'core_user_id',
+        'core_external_person_id',
+        'core_display_name',
         'core_synced_at',
         'core_sync_status',
         'core_sync_note',

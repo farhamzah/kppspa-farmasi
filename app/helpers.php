@@ -43,6 +43,10 @@ if (! function_exists('field_supervisor_display_name')) {
             return lecturer_display_name($fieldSupervisor->user->lecturer);
         }
 
+        if (filled($fieldSupervisor->core_display_name)) {
+            return $fieldSupervisor->core_display_name;
+        }
+
         return $fieldSupervisor->user?->name ?? 'Pembimbing lapangan';
     }
 }
