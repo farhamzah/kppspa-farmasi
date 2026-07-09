@@ -91,6 +91,31 @@ class KpLogbookTest extends TestCase
             ->assertSessionHasErrors('activity_date');
     }
 
+    public function test_student_can_set_kp_work_period_from_logbook_page(): void
+    {
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/logbook/periode-kerja', [
+                'started_at' => '2026-07-01',
+                'ended_at' => '2026-07-07',
+                'workday_pattern' => 'senin_sabtu',
+            ])
+            ->assertRedirect();
+
+        $this->assignment->refresh();
+
+        $this->assertSame('2026-07-01', $this->assignment->started_at->toDateString());
+        $this->assertSame('2026-07-07', $this->assignment->ended_at->toDateString());
+        $this->assertSame('senin_sabtu', $this->assignment->workday_pattern);
+        $this->assertSame(6, $this->assignment->expectedWorkdaysCount());
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/logbook')
+            ->assertOk()
+            ->assertSee('Dasar Perhitungan Absen')
+            ->assertSee('6 hari')
+            ->assertSee('Senin - Sabtu');
+    }
+
     public function test_student_can_upload_mobile_photo_evidence_for_logbook(): void
     {
         $payload = $this->logbookPayload([

@@ -10,6 +10,7 @@ use App\Models\KpAssignment;
 use App\Models\KpLogbook;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -34,6 +35,26 @@ class LogbookController extends Controller
     public function create(): View
     {
         return view('student.logbooks.create', ['assignment' => $this->requireActiveAssignment()]);
+    }
+
+    public function updateWorkPeriod(Request $request): RedirectResponse
+    {
+        $assignment = $this->requireActiveAssignment();
+
+        $data = $request->validate([
+            'started_at' => ['required', 'date'],
+            'ended_at' => ['required', 'date', 'after_or_equal:started_at'],
+            'workday_pattern' => ['required', 'in:senin_jumat,senin_sabtu'],
+        ], [
+            'started_at.required' => 'Tanggal mulai KP wajib diisi.',
+            'ended_at.required' => 'Tanggal selesai KP wajib diisi.',
+            'ended_at.after_or_equal' => 'Tanggal selesai KP tidak boleh sebelum tanggal mulai.',
+            'workday_pattern.in' => 'Pola hari kerja tidak valid.',
+        ]);
+
+        $assignment->update($data);
+
+        return back()->with('status', 'Periode kerja KP berhasil diperbarui.');
     }
 
     public function store(StoreKpLogbookRequest $request, KpLogbookService $service): RedirectResponse

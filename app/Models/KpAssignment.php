@@ -3,14 +3,23 @@
 namespace App\Models;
 
 use App\Support\KpScoreCalculator;
+use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Model;
 
 class KpAssignment extends Model
 {
+    public const WORKDAY_SENIN_JUMAT = 'senin_jumat';
+    public const WORKDAY_SENIN_SABTU = 'senin_sabtu';
+
+    public const WORKDAY_PATTERN_LABELS = [
+        self::WORKDAY_SENIN_JUMAT => 'Senin - Jumat',
+        self::WORKDAY_SENIN_SABTU => 'Senin - Sabtu',
+    ];
+
     protected $fillable = [
         'kp_period_id', 'kp_registration_id', 'kp_place_selection_id', 'student_id', 'kp_place_id',
         'internal_supervisor_id', 'field_supervisor_id', 'status', 'assigned_by', 'assigned_at',
-        'started_at', 'ended_at', 'active_key', 'note',
+        'started_at', 'ended_at', 'workday_pattern', 'active_key', 'note',
     ];
 
     protected function casts(): array
@@ -198,5 +207,35 @@ class KpAssignment extends Model
     public function calculateFinalScore(): float
     {
         return app(KpScoreCalculator::class)->breakdown($this)['final_score'];
+    }
+
+    public function workdayPatternLabel(): string
+    {
+        return self::WORKDAY_PATTERN_LABELS[$this->workday_pattern ?: self::WORKDAY_SENIN_JUMAT] ?? 'Senin - Jumat';
+    }
+
+    public function expectedWorkdaysCount(): int
+    {
+        $start = $this->started_at ?: $this->period?->kp_start_date;
+        $end = $this->ended_at ?: $this->period?->kp_end_date;
+
+        if (! $start || ! $end || $end->lt($start)) {
+            return 0;
+        }
+
+        $days = 0;
+        foreach (CarbonPeriod::create($start, $end) as $date) {
+            if ($date->isSunday()) {
+                continue;
+            }
+
+            if (($this->workday_pattern ?: self::WORKDAY_SENIN_JUMAT) === self::WORKDAY_SENIN_JUMAT && $date->isSaturday()) {
+                continue;
+            }
+
+            $days++;
+        }
+
+        return $days;
     }
 }

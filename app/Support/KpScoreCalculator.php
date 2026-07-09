@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Models\KpAssignment;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
 
 class KpScoreCalculator
@@ -115,7 +114,7 @@ class KpScoreCalculator
             ->unique()
             ->count();
 
-        $workdays = $this->workdayCount($assignment);
+        $workdays = $assignment->expectedWorkdaysCount();
         if ($workdays === 0) {
             $workdays = $approvedDates;
         }
@@ -130,24 +129,5 @@ class KpScoreCalculator
                 'workdays' => $workdays,
             ],
         ];
-    }
-
-    private function workdayCount(KpAssignment $assignment): int
-    {
-        $start = $assignment->started_at ?: $assignment->period?->kp_start_date;
-        $end = $assignment->ended_at ?: $assignment->period?->kp_end_date;
-
-        if (! $start || ! $end || $end->lt($start)) {
-            return 0;
-        }
-
-        $days = 0;
-        foreach (CarbonPeriod::create($start, $end) as $date) {
-            if (! $date->isWeekend()) {
-                $days++;
-            }
-        }
-
-        return $days;
     }
 }

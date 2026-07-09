@@ -20,6 +20,56 @@
                 <a href="{{ route('student.logbooks.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Tambah Logbook</a>
             </div>
         </section>
+        <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+            <div class="grid gap-5 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-teal-700">Periode Kerja KP</p>
+                    <h2 class="mt-1 text-xl font-bold text-slate-950">Dasar Perhitungan Absen</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Tanggal mulai, tanggal selesai, dan pola hari kerja dipakai untuk menghitung jumlah hari kerja seharusnya.
+                    </p>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div class="rounded-xl bg-slate-50 px-4 py-3">
+                            <p class="text-xs font-semibold uppercase text-slate-500">Mulai</p>
+                            <p class="mt-1 text-sm font-bold text-slate-950">{{ $assignment->started_at?->format('d M Y') ?? '-' }}</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 px-4 py-3">
+                            <p class="text-xs font-semibold uppercase text-slate-500">Selesai</p>
+                            <p class="mt-1 text-sm font-bold text-slate-950">{{ $assignment->ended_at?->format('d M Y') ?? '-' }}</p>
+                        </div>
+                        <div class="rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-teal-100">
+                            <p class="text-xs font-semibold uppercase text-teal-700">Hari Kerja</p>
+                            <p class="mt-1 text-sm font-bold text-teal-900">{{ $assignment->expectedWorkdaysCount() }} hari</p>
+                            <p class="mt-1 text-xs text-teal-700">{{ $assignment->workdayPatternLabel() }}</p>
+                        </div>
+                    </div>
+                </div>
+                <form method="POST" action="{{ route('student.logbooks.work-period.update') }}" class="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
+                    @csrf
+                    <div>
+                        <label class="text-sm font-semibold text-slate-700">Tanggal Mulai KP</label>
+                        <input type="date" name="started_at" value="{{ old('started_at', $assignment->started_at?->format('Y-m-d')) }}" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                        @error('started_at')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="text-sm font-semibold text-slate-700">Tanggal Selesai KP</label>
+                        <input type="date" name="ended_at" value="{{ old('ended_at', $assignment->ended_at?->format('Y-m-d')) }}" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                        @error('ended_at')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-sm font-semibold text-slate-700">Hari Kerja Dalam Seminggu</label>
+                        <select name="workday_pattern" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                            <option value="senin_jumat" @selected(old('workday_pattern', $assignment->workday_pattern ?: 'senin_jumat') === 'senin_jumat')>Senin sampai Jumat</option>
+                            <option value="senin_sabtu" @selected(old('workday_pattern', $assignment->workday_pattern ?: 'senin_jumat') === 'senin_sabtu')>Senin sampai Sabtu</option>
+                        </select>
+                        @error('workday_pattern')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2">
+                        <button class="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-teal-600/20">Simpan Periode Kerja</button>
+                    </div>
+                </form>
+            </div>
+        </section>
         <section class="grid gap-3 md:grid-cols-5">
             @foreach(['total'=>'Total','pending'=>'Menunggu','approved'=>'Disetujui','revision'=>'Revisi','rejected'=>'Ditolak'] as $key=>$label)
                 <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">

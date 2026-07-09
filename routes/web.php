@@ -209,6 +209,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('pemilihan-tempat/daftar-tunggu', [PlaceSelectionController::class, 'joinWaitingList'])->name('place-selections.waiting-list');
             Route::get('penempatan-kp', [AssignmentController::class, 'show'])->name('assignments.show');
             Route::get('logbook', [LogbookController::class, 'index'])->name('logbooks.index');
+            Route::post('logbook/periode-kerja', [LogbookController::class, 'updateWorkPeriod'])->name('logbooks.work-period.update');
             Route::get('logbook/create', [LogbookController::class, 'create'])->name('logbooks.create');
             Route::post('logbook', [LogbookController::class, 'store'])->name('logbooks.store');
             Route::get('logbook/{logbook}', [LogbookController::class, 'show'])->name('logbooks.show');

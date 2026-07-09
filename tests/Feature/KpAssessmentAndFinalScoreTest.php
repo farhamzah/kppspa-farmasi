@@ -17,6 +17,7 @@ use App\Models\Role;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\KpAssessmentService;
+use App\Support\KpScoreCalculator;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -242,6 +243,34 @@ class KpAssessmentAndFinalScoreTest extends TestCase
             ->assertOk()
             ->assertSee('Nilai Akhir KP')
             ->assertSee('A');
+    }
+
+    public function test_attendance_score_uses_assignment_work_period_and_workday_pattern(): void
+    {
+        $this->assignment->update([
+            'started_at' => '2026-07-01',
+            'ended_at' => '2026-07-07',
+            'workday_pattern' => 'senin_sabtu',
+        ]);
+
+        foreach (['2026-07-01', '2026-07-02', '2026-07-04'] as $date) {
+            KpLogbook::create([
+                'kp_assignment_id' => $this->assignment->id,
+                'activity_date' => $date,
+                'activity_title' => 'Kegiatan KP '.$date,
+                'activity_description' => 'Kegiatan harian.',
+                'status' => 'disetujui',
+                'submitted_at' => now(),
+                'validated_by' => $this->fieldUser->id,
+                'validated_at' => now(),
+            ]);
+        }
+
+        $breakdown = app(KpScoreCalculator::class)->breakdown($this->assignment->fresh());
+
+        $this->assertSame(6, $breakdown['sections']['kehadiran']['meta']['workdays']);
+        $this->assertSame(3, $breakdown['sections']['kehadiran']['meta']['approved_logbook_days']);
+        $this->assertSame(50.0, $breakdown['sections']['kehadiran']['score']);
     }
 
     public function test_published_score_cannot_be_changed_by_assessor_and_can_be_unlocked_by_management(): void
