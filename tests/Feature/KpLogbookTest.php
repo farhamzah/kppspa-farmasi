@@ -134,6 +134,43 @@ class KpLogbookTest extends TestCase
         Storage::disk('local')->assertExists($logbook->evidence_path);
     }
 
+    public function test_student_can_save_evidence_link_and_supervisors_can_view_it(): void
+    {
+        $payload = $this->logbookPayload([
+            'activity_date' => now()->addDays(3)->toDateString(),
+            'evidence_url' => 'https://drive.google.com/file/d/abc123/view?usp=sharing',
+            'evidence_url_label' => 'Foto kegiatan Drive',
+        ]);
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/logbook', $payload)
+            ->assertRedirect();
+
+        $logbook = KpLogbook::latest('id')->first();
+
+        $this->assertTrue($logbook->hasEvidence());
+        $this->assertTrue($logbook->hasEvidenceLink());
+        $this->assertFalse($logbook->hasEvidenceFile());
+        $this->assertSame('Foto kegiatan Drive', $logbook->evidenceLabel());
+        $this->assertSame('https://drive.google.com/uc?export=download&id=abc123', $logbook->evidenceExternalDownloadUrl());
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/logbook/'.$logbook->id)
+            ->assertOk()
+            ->assertSee('Preview Link')
+            ->assertSee('Download/Buka Link');
+
+        $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/logbook/'.$logbook->id)
+            ->assertOk()
+            ->assertSee('Preview Link');
+
+        $this->actingAs($this->lecturerUser)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/logbook/'.$logbook->id)
+            ->assertOk()
+            ->assertSee('Preview Link');
+    }
+
     public function test_student_cannot_edit_approved_logbook_and_invalid_upload_is_rejected(): void
     {
         $approved = KpLogbook::create($this->logbookAttributes(['status' => 'disetujui']));
@@ -162,7 +199,7 @@ class KpLogbookTest extends TestCase
 
         $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->post('/pembimbing-lapangan/logbook/'.$logbook->id.'/approve', ['validation_note' => 'Baik.'])
-            ->assertRedirect();
+            ->assertRedirect(route('field-supervisor.logbooks.index', ['assignment' => $this->assignment->id]));
 
         $this->assertSame('disetujui', $logbook->fresh()->status);
         $this->assertDatabaseHas('kp_logbook_logs', ['kp_logbook_id' => $logbook->id, 'action' => 'approved']);

@@ -12,7 +12,7 @@
             <p><span class="font-semibold">Tempat:</span> {{ $logbook->assignment->place->name }}</p>
             <div><p class="font-semibold">Uraian</p><p class="mt-1 whitespace-pre-line">{{ $logbook->activity_description }}</p></div>
             <div><p class="font-semibold">Hasil Pembelajaran</p><p class="mt-1 whitespace-pre-line">{{ $logbook->learning_outcome ?: '-' }}</p></div>
-            @if($logbook->hasEvidence())<a href="{{ route('internal-supervisor.logbooks.evidence.download',$logbook) }}" class="inline-flex rounded-lg border border-teal-200 px-4 py-2 text-sm font-semibold text-teal-700">Download Bukti</a>@endif
+            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'internal-supervisor.logbooks.evidence.download'])
         </div>
     </section>
     <aside class="space-y-5">

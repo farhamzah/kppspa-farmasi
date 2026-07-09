@@ -42,10 +42,21 @@
         <label class="text-sm font-semibold text-slate-700">Bukti Kegiatan Opsional</label>
         <input type="file" name="evidence" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
         <p class="mt-1 text-xs text-slate-500">Format: PDF, JPG, JPEG, PNG, WebP, HEIC, HEIF. Maksimal 5MB.</p>
-        @if($logbook?->hasEvidence())
+        @if($logbook?->hasEvidenceFile())
             <p class="mt-1 text-xs text-teal-700">Bukti saat ini: {{ $logbook->evidence_original_filename }}</p>
         @endif
         @error('evidence')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+    </div>
+    <div>
+        <label class="text-sm font-semibold text-slate-700">Link Bukti Kegiatan Opsional</label>
+        <input type="url" name="evidence_url" value="{{ old('evidence_url', $logbook?->evidence_url) }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="https://drive.google.com/...">
+        <input name="evidence_url_label" value="{{ old('evidence_url_label', $logbook?->evidence_url_label) }}" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Label link, contoh: Foto kegiatan hari 1">
+        <p class="mt-1 text-xs text-slate-500">Jika file dari HP sulit diunggah, unggah ke Google Drive lalu tempel link berbagi di sini.</p>
+        @if($logbook?->hasEvidenceLink())
+            <p class="mt-1 text-xs text-sky-700">Link saat ini: {{ $logbook->evidenceLabel() }}</p>
+        @endif
+        @error('evidence_url')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+        @error('evidence_url_label')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
     </div>
 </div>
 <div class="mt-6 flex flex-wrap gap-3">

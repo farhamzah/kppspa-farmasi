@@ -4,6 +4,7 @@
 @section('content')
 <div class="grid gap-5 lg:grid-cols-[1fr_360px]">
     <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+        <a href="{{ route('field-supervisor.logbooks.index', ['assignment' => $logbook->kp_assignment_id]) }}" class="mb-5 inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Kembali ke Daftar Logbook</a>
         <p class="text-sm text-slate-500">{{ $logbook->assignment->student->user->name }} | {{ $logbook->assignment->student->nim ?: '-' }}</p>
         <h2 class="mt-1 text-2xl font-bold text-slate-950">{{ $logbook->activity_title }}</h2>
         <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 {{ $logbook->statusBadgeClass() }}">{{ $logbook->statusLabel() }}</span>
@@ -12,7 +13,7 @@
             <div><p class="font-semibold">Uraian Kegiatan</p><p class="mt-1 whitespace-pre-line">{{ $logbook->activity_description }}</p></div>
             <div><p class="font-semibold">Hasil Pembelajaran</p><p class="mt-1 whitespace-pre-line">{{ $logbook->learning_outcome ?: '-' }}</p></div>
             <div><p class="font-semibold">Kendala/Solusi</p><p class="mt-1 whitespace-pre-line">{{ $logbook->obstacle ?: '-' }} / {{ $logbook->solution ?: '-' }}</p></div>
-            @if($logbook->hasEvidence())<a href="{{ route('field-supervisor.logbooks.evidence.download',$logbook) }}" class="inline-flex rounded-lg border border-teal-200 px-4 py-2 text-sm font-semibold text-teal-700">Download Bukti</a>@endif
+            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'field-supervisor.logbooks.evidence.download'])
         </div>
     </section>
     <aside class="space-y-5">

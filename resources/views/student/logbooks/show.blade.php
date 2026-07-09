@@ -24,7 +24,7 @@
         <div class="mt-6 flex flex-wrap gap-3">
             @if($logbook->canBeEditedByStudent())<a href="{{ route('student.logbooks.edit',$logbook) }}" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Edit</a>@endif
             @if($logbook->canBeSubmitted())<form method="POST" action="{{ route('student.logbooks.submit',$logbook) }}">@csrf<button onclick="return confirm('Submit logbook untuk validasi?')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Submit</button></form>@endif
-            @if($logbook->hasEvidence())<a href="{{ route('student.logbooks.evidence.download',$logbook) }}" class="rounded-lg border border-teal-200 px-4 py-2 text-sm font-semibold text-teal-700">Download Bukti</a>@endif
+            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'student.logbooks.evidence.download'])
         </div>
     </section>
     <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">

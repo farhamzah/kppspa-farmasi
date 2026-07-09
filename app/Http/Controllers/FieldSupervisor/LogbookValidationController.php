@@ -83,7 +83,7 @@ class LogbookValidationController extends Controller
     {
         $service->approve($request->user(), $logbook, $request->validation_note);
 
-        return back()->with('status', 'Logbook berhasil disetujui.');
+        return $this->redirectToAssignmentLogbooks($logbook, 'Logbook berhasil disetujui.');
     }
 
     public function revision(ReviewKpLogbookRequest $request, KpLogbook $logbook, KpLogbookService $service): RedirectResponse
@@ -94,7 +94,7 @@ class LogbookValidationController extends Controller
 
         $service->requestRevision($request->user(), $logbook, $request->validation_note);
 
-        return back()->with('status', 'Revisi logbook berhasil diminta.');
+        return $this->redirectToAssignmentLogbooks($logbook, 'Revisi logbook berhasil diminta.');
     }
 
     public function reject(ReviewKpLogbookRequest $request, KpLogbook $logbook, KpLogbookService $service): RedirectResponse
@@ -105,14 +105,21 @@ class LogbookValidationController extends Controller
 
         $service->reject($request->user(), $logbook, $request->validation_note);
 
-        return back()->with('status', 'Logbook berhasil ditolak.');
+        return $this->redirectToAssignmentLogbooks($logbook, 'Logbook berhasil ditolak.');
     }
 
     public function download(KpLogbook $logbook, KpLogbookService $service): StreamedResponse
     {
         $service->ensureFieldSupervisorCanReview(request()->user(), $logbook);
-        abort_unless($logbook->hasEvidence(), 404);
+        abort_unless($logbook->hasEvidenceFile(), 404);
 
         return Storage::disk($logbook->evidence_disk ?: 'local')->download($logbook->evidence_path, $logbook->evidence_original_filename);
+    }
+
+    private function redirectToAssignmentLogbooks(KpLogbook $logbook, string $message): RedirectResponse
+    {
+        return redirect()
+            ->route('field-supervisor.logbooks.index', ['assignment' => $logbook->kp_assignment_id])
+            ->with('status', $message);
     }
 }

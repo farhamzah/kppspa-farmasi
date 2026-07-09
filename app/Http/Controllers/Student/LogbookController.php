@@ -122,7 +122,7 @@ class LogbookController extends Controller
     public function download(KpLogbook $logbook, KpLogbookService $service): StreamedResponse
     {
         $service->ensureStudentOwnsLogbook(request()->user(), $logbook);
-        abort_unless($logbook->hasEvidence(), 404);
+        abort_unless($logbook->hasEvidenceFile(), 404);
 
         return Storage::disk($logbook->evidence_disk ?: 'local')->download($logbook->evidence_path, $logbook->evidence_original_filename);
     }

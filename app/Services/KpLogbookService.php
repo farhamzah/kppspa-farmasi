@@ -28,7 +28,7 @@ class KpLogbookService
             $this->logActivity($studentUser, $logbook, 'created', null, 'draft', 'Logbook dibuat sebagai draft.');
 
             if ($logbook->hasEvidence()) {
-                $this->logActivity($studentUser, $logbook, 'evidence_uploaded', 'draft', 'draft', 'Bukti kegiatan diunggah.');
+                $this->logActivity($studentUser, $logbook, 'evidence_uploaded', 'draft', 'draft', 'Bukti kegiatan ditambahkan.');
             }
 
             return $logbook;
@@ -47,6 +47,9 @@ class KpLogbookService
             $oldStatus = $logbook->status;
             $payload = $this->payload($data);
             $evidenceReplaced = false;
+            $evidenceLinkChanged = array_key_exists('evidence_url', $payload)
+                && ($logbook->evidence_url !== $payload['evidence_url']
+                    || $logbook->evidence_url_label !== $payload['evidence_url_label']);
 
             if (isset($data['evidence']) && $data['evidence'] instanceof UploadedFile) {
                 $this->deleteEvidence($logbook);
@@ -60,6 +63,9 @@ class KpLogbookService
             $this->logActivity($studentUser, $logbook, 'updated', $oldStatus, $logbook->status, 'Logbook diperbarui.');
             if ($evidenceReplaced) {
                 $this->logActivity($studentUser, $logbook, 'evidence_replaced', $logbook->status, $logbook->status, 'Bukti kegiatan diganti.');
+            }
+            if ($evidenceLinkChanged) {
+                $this->logActivity($studentUser, $logbook, 'evidence_link_updated', $logbook->status, $logbook->status, 'Link bukti kegiatan diperbarui.');
             }
 
             return $logbook;
@@ -209,6 +215,9 @@ class KpLogbookService
 
     private function payload(array $data): array
     {
+        $evidenceUrl = trim((string) ($data['evidence_url'] ?? ''));
+        $evidenceLabel = trim((string) ($data['evidence_url_label'] ?? ''));
+
         return [
             'activity_date' => $data['activity_date'],
             'start_time' => $data['start_time'] ?? null,
@@ -218,6 +227,8 @@ class KpLogbookService
             'learning_outcome' => $data['learning_outcome'] ?? null,
             'obstacle' => $data['obstacle'] ?? null,
             'solution' => $data['solution'] ?? null,
+            'evidence_url' => $evidenceUrl !== '' ? $evidenceUrl : null,
+            'evidence_url_label' => $evidenceUrl !== '' ? ($evidenceLabel !== '' ? $evidenceLabel : 'Link bukti kegiatan') : null,
         ];
     }
 

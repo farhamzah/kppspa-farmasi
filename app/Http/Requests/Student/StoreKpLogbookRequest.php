@@ -27,6 +27,8 @@ class StoreKpLogbookRequest extends FormRequest
             'obstacle' => ['nullable', 'string'],
             'solution' => ['nullable', 'string'],
             'evidence' => ['nullable', 'file', 'mimes:'.implode(',', self::EVIDENCE_TYPES), 'max:'.self::EVIDENCE_MAX_KB],
+            'evidence_url' => ['nullable', 'url', 'max:2048'],
+            'evidence_url_label' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -36,6 +38,9 @@ class StoreKpLogbookRequest extends FormRequest
             'evidence.mimes' => 'Bukti kegiatan harus berupa PDF atau foto JPG, JPEG, PNG, WebP, HEIC, atau HEIF.',
             'evidence.max' => 'Ukuran bukti kegiatan maksimal 5MB.',
             'evidence.file' => 'Bukti kegiatan harus berupa file yang valid.',
+            'evidence_url.url' => 'Link bukti kegiatan harus berupa URL yang valid.',
+            'evidence_url.max' => 'Link bukti kegiatan terlalu panjang.',
+            'evidence_url_label.max' => 'Label link bukti kegiatan maksimal 255 karakter.',
         ];
     }
 }

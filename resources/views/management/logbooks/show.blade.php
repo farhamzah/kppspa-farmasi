@@ -14,7 +14,9 @@
             <div class="rounded-xl bg-slate-50 p-4"><p class="font-semibold">Hasil Pembelajaran</p><p>{{ $logbook->learning_outcome ?: '-' }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="font-semibold">Kendala/Solusi</p><p>{{ $logbook->obstacle ?: '-' }} / {{ $logbook->solution ?: '-' }}</p></div>
         </div>
-        @if($logbook->hasEvidence())<a href="{{ route('management.logbooks.evidence.download',$logbook) }}" class="mt-5 inline-flex rounded-lg border border-teal-200 px-4 py-2 text-sm font-semibold text-teal-700">Download Bukti</a>@endif
+        <div class="mt-5">
+            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'management.logbooks.evidence.download'])
+        </div>
     </section>
     <aside class="space-y-5">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

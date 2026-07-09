@@ -23,6 +23,8 @@ class KpLogbook extends Model
         'evidence_disk',
         'evidence_mime',
         'evidence_size',
+        'evidence_url',
+        'evidence_url_label',
         'status',
         'submitted_at',
         'validated_by',
@@ -95,7 +97,44 @@ class KpLogbook extends Model
 
     public function hasEvidence(): bool
     {
+        return $this->hasEvidenceFile() || $this->hasEvidenceLink();
+    }
+
+    public function hasEvidenceFile(): bool
+    {
         return filled($this->evidence_path);
+    }
+
+    public function hasEvidenceLink(): bool
+    {
+        return filled($this->evidence_url);
+    }
+
+    public function evidenceLabel(): string
+    {
+        return $this->evidence_url_label
+            ?: $this->evidence_original_filename
+            ?: 'Bukti kegiatan';
+    }
+
+    public function evidenceExternalDownloadUrl(): ?string
+    {
+        if (! $this->hasEvidenceLink()) {
+            return null;
+        }
+
+        $url = (string) $this->evidence_url;
+        $fileId = null;
+
+        if (preg_match('~/d/([^/]+)~', $url, $matches) === 1) {
+            $fileId = $matches[1];
+        } elseif (preg_match('~[?&]id=([^&]+)~', $url, $matches) === 1) {
+            $fileId = $matches[1];
+        }
+
+        return $fileId
+            ? 'https://drive.google.com/uc?export=download&id='.$fileId
+            : $url;
     }
 
     public function humanEvidenceSize(): string
