@@ -175,6 +175,46 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
             ->assertSee('Profil Dosen');
     }
 
+    public function test_external_field_supervisor_profile_uses_core_external_title(): void
+    {
+        $this->coreExternalProfile();
+
+        $user = User::create([
+            'name' => 'Tuti Rohayati',
+            'email' => 'tuti.apt@gmail.com',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'profile_completed' => true,
+            'core_user_id' => 30,
+        ]);
+        $user->roles()->sync(Role::whereIn('name', ['pembimbing_lapangan'])->pluck('id'));
+        $user->fieldSupervisor()->create([
+            'institution_name' => 'Apotek Hafizh Farma',
+            'position' => 'Mitra Eksternal',
+            'phone' => '+6281388690909',
+            'status' => 'active',
+            'core_user_id' => 30,
+            'core_external_person_id' => 40,
+            'core_display_name' => 'apt. Tuti Rohayati',
+            'profile_completed_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/profil-saya')
+            ->assertOk()
+            ->assertSee('apt. Tuti Rohayati')
+            ->assertSee('Profil Mitra Eksternal')
+            ->assertSee('Apotek Hafizh Farma')
+            ->assertDontSee('Profil Dosen');
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/dashboard')
+            ->assertOk()
+            ->assertSee('Selamat datang, apt. Tuti Rohayati');
+    }
+
     private function createCoreSchema(): void
     {
         Schema::connection('core')->create('users', function ($table): void {
@@ -252,6 +292,28 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
             $table->unsignedBigInteger('study_program_id')->nullable();
             $table->text('notes')->nullable();
         });
+
+        Schema::connection('core')->create('external_people', function ($table): void {
+            $table->id();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->string('external_number')->nullable();
+            $table->string('name');
+            $table->string('front_title')->nullable();
+            $table->string('back_title')->nullable();
+            $table->string('display_name_with_title')->nullable();
+            $table->string('formal_name')->nullable();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('institution_name')->nullable();
+            $table->string('institution_type')->nullable();
+            $table->string('position_title')->nullable();
+            $table->string('profession')->nullable();
+            $table->string('identity_number')->nullable();
+            $table->text('address')->nullable();
+            $table->string('status')->default('active');
+            $table->timestamps();
+            $table->softDeletes();
+        });
     }
 
     private function coreLecturerProfile(): void
@@ -292,6 +354,44 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
             'department_id' => 1,
             'study_program_id' => 1,
             'notes' => 'Teknologi Farmasi',
+        ]);
+    }
+
+    private function coreExternalProfile(): void
+    {
+        DB::connection('core')->table('users')->insert([
+            'id' => 30,
+            'name' => 'Tuti Rohayati',
+            'email' => 'tuti.apt@gmail.com',
+            'username' => 'tuti.apt@gmail.com',
+            'identity_type' => 'external',
+            'identity_number' => null,
+            'profile_photo_path' => null,
+            'display_name_with_title' => null,
+            'formal_name' => null,
+            'active' => true,
+        ]);
+
+        DB::connection('core')->table('external_people')->insert([
+            'id' => 40,
+            'user_id' => 30,
+            'external_number' => null,
+            'name' => 'Tuti Rohayati',
+            'front_title' => 'apt.',
+            'back_title' => null,
+            'display_name_with_title' => 'apt. Tuti Rohayati',
+            'formal_name' => 'apt. Tuti Rohayati',
+            'email' => 'tuti.apt@gmail.com',
+            'phone' => '+6281388690909',
+            'institution_name' => 'Apotek Hafizh Farma',
+            'institution_type' => 'Apotek',
+            'position_title' => 'Mitra Eksternal',
+            'profession' => 'Apoteker, APJ dan owner',
+            'identity_number' => null,
+            'address' => null,
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

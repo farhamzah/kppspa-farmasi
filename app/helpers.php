@@ -64,13 +64,18 @@ if (! function_exists('field_supervisor_display_label')) {
 if (! function_exists('user_display_name')) {
     function user_display_name(User $user, ?string $role = null): string
     {
-        $user->loadMissing('lecturer');
+        $user->loadMissing(['lecturer', 'fieldSupervisor']);
+
+        $role ??= session('active_role');
+
+        if ($role === 'pembimbing_lapangan' && ! $user->lecturer && $user->fieldSupervisor) {
+            return field_supervisor_display_name($user->fieldSupervisor);
+        }
 
         if (! $user->lecturer) {
             return $user->name;
         }
 
-        $role ??= session('active_role');
         $lecturerBackedRoles = ['admin', 'koordinator_kp', 'pembimbing_dalam', 'pembimbing_lapangan', 'penguji'];
 
         return in_array($role, $lecturerBackedRoles, true) || $user->profileTypeForRole($role) === 'dosen'

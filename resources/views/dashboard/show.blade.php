@@ -6,7 +6,8 @@
 @section('content')
 @php
     $user = auth()->user();
-    $firstName = explode(' ', trim($user->name))[0] ?: $user->name;
+    $displayName = user_display_name($user, session('active_role'));
+    $firstName = $displayName ?: $user->name;
     $activeRole = session('active_role');
 
     $formatLabel = fn (string $label): string => str($label)->replace('_', ' ')->headline()->toString();

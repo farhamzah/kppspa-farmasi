@@ -34,6 +34,7 @@ class CoreProfileReadService
             $linkedProfile = match ($coreProfileType) {
                 'mahasiswa' => $this->studentProfileFor($user, $coreUser),
                 'dosen' => $this->lecturerProfileFor($user, $coreUser),
+                'external' => $this->externalProfileFor($user, $coreUser),
                 default => null,
             };
 
@@ -154,7 +155,11 @@ class CoreProfileReadService
             return 'dosen';
         }
 
-        $user->loadMissing('lecturer');
+        $user->loadMissing(['lecturer', 'fieldSupervisor']);
+
+        if ($profileType === 'pembimbing_lapangan' && ! $user->lecturer) {
+            return 'external';
+        }
 
         return $user->lecturer || in_array($profileType, ['admin', 'koordinator_kp', 'pembimbing_dalam', 'pembimbing_lapangan', 'penguji'], true)
             ? 'dosen'
@@ -206,6 +211,29 @@ class CoreProfileReadService
             })
             ->select($select)
             ->first();
+    }
+
+    private function externalProfileFor(User $user, object $coreUser): ?object
+    {
+        if (! Schema::connection('core')->hasTable('external_people')) {
+            return null;
+        }
+
+        $query = DB::connection('core')->table('external_people')
+            ->where(function ($query) use ($user, $coreUser): void {
+                $query->where('external_people.user_id', $coreUser->id)
+                    ->orWhereRaw('LOWER(TRIM(external_people.email)) = ?', [strtolower(trim($user->email))]);
+
+                if ($user->fieldSupervisor?->core_external_person_id) {
+                    $query->orWhere('external_people.id', $user->fieldSupervisor->core_external_person_id);
+                }
+            });
+
+        if (Schema::connection('core')->hasColumn('external_people', 'deleted_at')) {
+            $query->whereNull('external_people.deleted_at');
+        }
+
+        return $query->select('external_people.*')->first();
     }
 
     private function lecturerProfileFor(User $user, object $coreUser): ?object
@@ -300,6 +328,23 @@ class CoreProfileReadService
             ];
         }
 
+        if ($profileType === 'external') {
+            $sections['Profil Mitra Eksternal'] = [
+                'Nomor Eksternal' => $profile->external_number ?? null,
+                'Email Profil' => $profile->email ?? null,
+                'Telepon' => $profile->phone ?? null,
+                'Instansi / Perusahaan' => $profile->institution_name ?? null,
+                'Jenis Instansi' => $profile->institution_type ?? null,
+                'Jabatan / Posisi' => $profile->position_title ?? null,
+                'Profesi' => $profile->profession ?? null,
+                'NIK / Identitas' => $this->mask($profile->identity_number ?? null),
+                'Alamat' => $profile->address ?? null,
+                'Status' => $profile->status ?? null,
+            ];
+
+            return $sections;
+        }
+
         $sections['Unit Akademik'] = [
             'Fakultas' => $profile->faculty_name ?? null,
             'Program Studi' => $profile->study_program_name ?? null,
@@ -311,6 +356,18 @@ class CoreProfileReadService
 
     private function displayNameFor(object $coreUser, ?object $profile, string $profileType): ?string
     {
+        if ($profileType === 'external') {
+            return $profile?->display_name_with_title
+                ?? $profile?->formal_name
+                ?? $this->composeTitledName($profile?->front_title ?? null, $profile?->name ?? null, $profile?->back_title ?? null)
+                ?? $coreUser->display_name_with_title
+                ?? $coreUser->formal_name
+                ?? $this->composeTitledName($coreUser->front_title ?? null, $coreUser->name ?? null, $coreUser->back_title ?? null)
+                ?? $profile?->name
+                ?? $coreUser->name
+                ?? null;
+        }
+
         if ($profileType !== 'dosen') {
             return $coreUser->name ?? null;
         }
