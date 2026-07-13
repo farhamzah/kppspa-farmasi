@@ -49,9 +49,9 @@
     </div>
     <div>
         <label class="text-sm font-semibold text-slate-700">Link Bukti Kegiatan Opsional</label>
-        <input type="url" name="evidence_url" value="{{ old('evidence_url', $logbook?->evidence_url) }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="https://drive.google.com/...">
+        <input type="text" inputmode="url" name="evidence_url" value="{{ old('evidence_url', $logbook?->evidence_url) }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="https://drive.google.com/... atau drive.google.com/...">
         <input name="evidence_url_label" value="{{ old('evidence_url_label', $logbook?->evidence_url_label) }}" class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Label link, contoh: Foto kegiatan hari 1">
-        <p class="mt-1 text-xs text-slate-500">Jika file dari HP sulit diunggah, unggah ke Google Drive lalu tempel link berbagi di sini.</p>
+        <p class="mt-1 text-xs text-slate-500">Jika file dari HP sulit diunggah, unggah ke Google Drive lalu tempel link berbagi di sini. Link Drive tanpa https:// akan dirapikan otomatis.</p>
         @if($logbook?->hasEvidenceLink())
             <p class="mt-1 text-xs text-sky-700">Link saat ini: {{ $logbook->evidenceLabel() }}</p>
         @endif

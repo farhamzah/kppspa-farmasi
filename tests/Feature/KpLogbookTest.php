@@ -171,6 +171,38 @@ class KpLogbookTest extends TestCase
             ->assertSee('Preview Link');
     }
 
+    public function test_student_can_submit_pasted_google_drive_link_without_protocol(): void
+    {
+        $payload = $this->logbookPayload([
+            'activity_date' => now()->addDays(4)->toDateString(),
+            'action' => 'submit',
+            'evidence_url' => " drive.google.com/file/d/mobile123/view?usp=sharing\n",
+            'evidence_url_label' => ' Bukti kegiatan dari HP ',
+        ]);
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/logbook', $payload)
+            ->assertRedirect();
+
+        $logbook = KpLogbook::latest('id')->first();
+
+        $this->assertSame('menunggu_validasi', $logbook->status);
+        $this->assertSame('https://drive.google.com/file/d/mobile123/view?usp=sharing', $logbook->evidence_url);
+        $this->assertSame('Bukti kegiatan dari HP', $logbook->evidence_url_label);
+    }
+
+    public function test_student_logbook_rejects_unsafe_evidence_link(): void
+    {
+        $payload = $this->logbookPayload([
+            'activity_date' => now()->addDays(5)->toDateString(),
+            'evidence_url' => 'javascript:alert(1)',
+        ]);
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/logbook', $payload)
+            ->assertSessionHasErrors('evidence_url');
+    }
+
     public function test_student_cannot_edit_approved_logbook_and_invalid_upload_is_rejected(): void
     {
         $approved = KpLogbook::create($this->logbookAttributes(['status' => 'disetujui']));
