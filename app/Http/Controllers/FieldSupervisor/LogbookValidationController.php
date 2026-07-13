@@ -86,6 +86,48 @@ class LogbookValidationController extends Controller
         return $this->redirectToAssignmentLogbooks($logbook, 'Logbook berhasil disetujui.');
     }
 
+    public function bulkApprove(Request $request, KpLogbookService $service): RedirectResponse
+    {
+        $fieldSupervisorId = $request->user()->fieldSupervisor?->id;
+
+        abort_unless($fieldSupervisorId, 403);
+
+        $validated = $request->validate([
+            'assignment_id' => ['required', 'integer', 'exists:kp_assignments,id'],
+            'logbook_ids' => ['required', 'array', 'min:1'],
+            'logbook_ids.*' => ['integer'],
+            'validation_note' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'logbook_ids.required' => 'Pilih minimal satu logbook yang akan disetujui.',
+            'logbook_ids.min' => 'Pilih minimal satu logbook yang akan disetujui.',
+        ]);
+
+        $assignment = KpAssignment::query()
+            ->where('field_supervisor_id', $fieldSupervisorId)
+            ->whereKey($validated['assignment_id'])
+            ->firstOrFail();
+
+        $logbooks = $assignment->logbooks()
+            ->whereIn('id', $validated['logbook_ids'])
+            ->where('status', 'menunggu_validasi')
+            ->oldest('activity_date')
+            ->get();
+
+        if ($logbooks->isEmpty()) {
+            throw ValidationException::withMessages([
+                'logbook_ids' => 'Tidak ada logbook menunggu validasi yang dipilih.',
+            ]);
+        }
+
+        foreach ($logbooks as $logbook) {
+            $service->approve($request->user(), $logbook, $validated['validation_note'] ?? null);
+        }
+
+        return redirect()
+            ->route('field-supervisor.logbooks.index', ['assignment' => $assignment->id])
+            ->with('status', $logbooks->count().' logbook berhasil disetujui.');
+    }
+
     public function revision(ReviewKpLogbookRequest $request, KpLogbook $logbook, KpLogbookService $service): RedirectResponse
     {
         if (! $request->filled('validation_note')) {

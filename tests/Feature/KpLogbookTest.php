@@ -254,6 +254,74 @@ class KpLogbookTest extends TestCase
         $this->assertSame('ditolak', $rejected->fresh()->status);
     }
 
+    public function test_field_supervisor_can_bulk_approve_selected_pending_logbooks(): void
+    {
+        $first = KpLogbook::create($this->logbookAttributes([
+            'activity_title' => 'Kegiatan hari pertama',
+            'status' => 'menunggu_validasi',
+            'submitted_at' => now(),
+        ]));
+        $second = KpLogbook::create($this->logbookAttributes([
+            'activity_date' => now()->subDay()->toDateString(),
+            'activity_title' => 'Kegiatan hari kedua',
+            'status' => 'menunggu_validasi',
+            'submitted_at' => now(),
+        ]));
+        $revision = KpLogbook::create($this->logbookAttributes([
+            'activity_date' => now()->subDays(2)->toDateString(),
+            'activity_title' => 'Kegiatan revisi',
+            'status' => 'revisi',
+            'submitted_at' => now(),
+        ]));
+
+        $this->actingAs($this->fieldUser)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post('/pembimbing-lapangan/logbook/bulk-approve', [
+                'assignment_id' => $this->assignment->id,
+                'logbook_ids' => [$first->id, $second->id, $revision->id],
+                'validation_note' => 'Sudah dicek sekaligus.',
+            ])
+            ->assertRedirect(route('field-supervisor.logbooks.index', ['assignment' => $this->assignment->id]));
+
+        $this->assertSame('disetujui', $first->fresh()->status);
+        $this->assertSame('disetujui', $second->fresh()->status);
+        $this->assertSame('revisi', $revision->fresh()->status);
+        $this->assertDatabaseHas('kp_logbook_logs', ['kp_logbook_id' => $first->id, 'action' => 'approved']);
+        $this->assertDatabaseHas('kp_logbook_logs', ['kp_logbook_id' => $second->id, 'action' => 'approved']);
+    }
+
+    public function test_field_supervisor_bulk_approve_only_affects_own_pending_logbooks(): void
+    {
+        $ownLogbook = KpLogbook::create($this->logbookAttributes([
+            'status' => 'menunggu_validasi',
+            'submitted_at' => now(),
+        ]));
+        $otherFieldUser = $this->makeUser('bulk-other-field@test.local', ['pembimbing_lapangan']);
+        $otherField = FieldSupervisor::create(['user_id' => $otherFieldUser->id, 'institution_name' => 'Apotek Lain', 'position' => 'Supervisor', 'status' => 'active']);
+        $otherStudentUser = $this->makeUser('bulk-other-student@test.local', ['mahasiswa']);
+        $otherAssignment = $this->makeAssignment($this->makeStudent($otherStudentUser, '2210631230201'), $this->lecturer, $otherField);
+        $otherLogbook = KpLogbook::create([
+            'kp_assignment_id' => $otherAssignment->id,
+            'student_id' => $otherAssignment->student_id,
+            'activity_date' => now()->toDateString(),
+            'activity_title' => 'Kegiatan mahasiswa lain',
+            'activity_description' => 'Tidak boleh ikut tervalidasi.',
+            'status' => 'menunggu_validasi',
+            'submitted_at' => now(),
+        ]);
+
+        $this->actingAs($this->fieldUser)
+            ->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post('/pembimbing-lapangan/logbook/bulk-approve', [
+                'assignment_id' => $this->assignment->id,
+                'logbook_ids' => [$ownLogbook->id, $otherLogbook->id],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame('disetujui', $ownLogbook->fresh()->status);
+        $this->assertSame('menunggu_validasi', $otherLogbook->fresh()->status);
+    }
+
     public function test_field_supervisor_logbook_index_groups_by_student_and_opens_assignment_detail(): void
     {
         $otherFieldUser = $this->makeUser('other-index-field@test.local', ['pembimbing_lapangan']);
@@ -300,6 +368,8 @@ class KpLogbookTest extends TestCase
             ->get('/pembimbing-lapangan/logbook?assignment='.$this->assignment->id)
             ->assertOk()
             ->assertSee('Rincian Logbook Mahasiswa')
+            ->assertSee('Validasi massal')
+            ->assertSee('Setujui logbook terpilih')
             ->assertSee('Kegiatan pelayanan resep')
             ->assertSee('Kegiatan stok opname')
             ->assertSee('Validasi');

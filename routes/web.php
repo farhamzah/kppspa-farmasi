@@ -263,6 +263,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('mahasiswa-kp', [FieldStudentController::class, 'index'])->name('assignments.index');
             Route::get('mahasiswa-kp/{assignment}', [FieldStudentController::class, 'show'])->name('assignments.show');
             Route::get('logbook', [LogbookValidationController::class, 'index'])->name('logbooks.index');
+            Route::post('logbook/bulk-approve', [LogbookValidationController::class, 'bulkApprove'])->name('logbooks.bulk-approve');
             Route::get('logbook/{logbook}', [LogbookValidationController::class, 'show'])->name('logbooks.show');
             Route::post('logbook/{logbook}/approve', [LogbookValidationController::class, 'approve'])->name('logbooks.approve');
             Route::post('logbook/{logbook}/revision', [LogbookValidationController::class, 'revision'])->name('logbooks.revision');

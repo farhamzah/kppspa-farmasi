@@ -114,6 +114,9 @@
     </section>
 
     @if($selectedAssignment)
+        @php
+            $pendingSelectedLogbooks = $selectedLogbooks->where('status', 'menunggu_validasi');
+        @endphp
         <section id="rincian-logbook" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-cyan-100">
             <div class="flex flex-col gap-3 border-b border-slate-100 pb-4 md:flex-row md:items-start md:justify-between">
                 <div>
@@ -123,6 +126,46 @@
                 </div>
                 <a href="{{ route('field-supervisor.logbooks.index', request()->except('assignment')) }}" class="inline-flex rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Tutup Rincian</a>
             </div>
+
+            @if($pendingSelectedLogbooks->isNotEmpty())
+                <form method="POST" action="{{ route('field-supervisor.logbooks.bulk-approve') }}" class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                    @csrf
+                    <input type="hidden" name="assignment_id" value="{{ $selectedAssignment->id }}">
+
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-widest text-emerald-700">Validasi massal</p>
+                            <h3 class="mt-1 text-lg font-black text-slate-950">Setujui beberapa logbook sekaligus</h3>
+                            <p class="mt-1 text-sm text-slate-600">Semua logbook yang menunggu validasi sudah dicentang. Hapus centang bila ingin diperiksa satu per satu.</p>
+                        </div>
+                        <button class="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-5 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-700/15 hover:bg-emerald-800">
+                            Setujui logbook terpilih
+                        </button>
+                    </div>
+
+                    <div class="mt-4 grid gap-2 md:grid-cols-2">
+                        @foreach($pendingSelectedLogbooks as $pendingLogbook)
+                            <label class="flex gap-3 rounded-xl border border-emerald-100 bg-white p-3 text-sm shadow-sm">
+                                <input type="checkbox" name="logbook_ids[]" value="{{ $pendingLogbook->id }}" checked class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500">
+                                <span>
+                                    <span class="block font-bold text-slate-950">{{ $pendingLogbook->activity_date->format('d M Y') }}</span>
+                                    <span class="mt-0.5 block text-slate-600">{{ $pendingLogbook->activity_title }}</span>
+                                    <span class="mt-1 block text-xs text-slate-500">Diajukan: {{ $pendingLogbook->submitted_at?->format('d M Y H:i') ?? '-' }}</span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="bulk_validation_note" class="text-sm font-bold text-slate-700">Catatan validasi opsional</label>
+                        <textarea id="bulk_validation_note" name="validation_note" rows="2" placeholder="Contoh: Aktivitas sudah sesuai dan bukti kegiatan sudah dicek." class="mt-2 w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20">{{ old('validation_note') }}</textarea>
+                    </div>
+
+                    @error('logbook_ids')
+                        <p class="mt-3 text-sm font-semibold text-red-600">{{ $message }}</p>
+                    @enderror
+                </form>
+            @endif
 
             <div class="mt-4 space-y-3">
                 @forelse($selectedLogbooks as $logbook)
