@@ -231,7 +231,7 @@ class KpLogbookTest extends TestCase
 
         $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->post('/pembimbing-lapangan/logbook/'.$logbook->id.'/approve', ['validation_note' => 'Baik.'])
-            ->assertRedirect(route('field-supervisor.logbooks.index', ['assignment' => $this->assignment->id]));
+            ->assertRedirect(route('field-supervisor.logbooks.index', ['assignment' => $this->assignment->id]).'#rincian-logbook');
 
         $this->assertSame('disetujui', $logbook->fresh()->status);
         $this->assertDatabaseHas('kp_logbook_logs', ['kp_logbook_id' => $logbook->id, 'action' => 'approved']);
@@ -281,7 +281,7 @@ class KpLogbookTest extends TestCase
                 'logbook_ids' => [$first->id, $second->id, $revision->id],
                 'validation_note' => 'Sudah dicek sekaligus.',
             ])
-            ->assertRedirect(route('field-supervisor.logbooks.index', ['assignment' => $this->assignment->id]));
+            ->assertRedirect(route('field-supervisor.logbooks.index', ['assignment' => $this->assignment->id]).'#rincian-logbook');
 
         $this->assertSame('disetujui', $first->fresh()->status);
         $this->assertSame('disetujui', $second->fresh()->status);

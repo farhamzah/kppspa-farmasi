@@ -138,7 +138,7 @@
                             <h3 class="mt-1 text-lg font-black text-slate-950">Setujui beberapa logbook sekaligus</h3>
                             <p class="mt-1 text-sm text-slate-600">Semua logbook yang menunggu validasi sudah dicentang. Hapus centang bila ingin diperiksa satu per satu.</p>
                         </div>
-                        <button class="inline-flex min-h-11 items-center justify-center rounded-xl bg-emerald-700 px-5 py-2 text-sm font-bold text-white shadow-sm shadow-emerald-700/15 hover:bg-emerald-800">
+                        <button type="submit" style="background:#047857;color:#ffffff;" class="inline-flex min-h-11 items-center justify-center rounded-xl px-5 py-2 text-sm font-bold shadow-sm shadow-emerald-700/15 hover:bg-emerald-800">
                             Setujui logbook terpilih
                         </button>
                     </div>

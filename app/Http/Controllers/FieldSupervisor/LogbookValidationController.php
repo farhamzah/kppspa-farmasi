@@ -124,7 +124,7 @@ class LogbookValidationController extends Controller
         }
 
         return redirect()
-            ->route('field-supervisor.logbooks.index', ['assignment' => $assignment->id])
+            ->to(route('field-supervisor.logbooks.index', ['assignment' => $assignment->id]).'#rincian-logbook')
             ->with('status', $logbooks->count().' logbook berhasil disetujui.');
     }
 
@@ -161,7 +161,7 @@ class LogbookValidationController extends Controller
     private function redirectToAssignmentLogbooks(KpLogbook $logbook, string $message): RedirectResponse
     {
         return redirect()
-            ->route('field-supervisor.logbooks.index', ['assignment' => $logbook->kp_assignment_id])
+            ->to(route('field-supervisor.logbooks.index', ['assignment' => $logbook->kp_assignment_id]).'#rincian-logbook')
             ->with('status', $message);
     }
 }
