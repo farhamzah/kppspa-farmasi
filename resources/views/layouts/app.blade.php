@@ -22,7 +22,7 @@
 @endphp
 <div class="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_32%),radial-gradient(circle_at_80%_12%,rgba(20,184,166,0.14),transparent_28%),linear-gradient(135deg,#f8fdff,#eef9fb_45%,#f4f9fc)] lg:flex">
     <!-- Sidebar Navigation -->
-    <aside class="border-b border-sky-100 bg-white/92 text-slate-800 shadow-xl shadow-sky-900/8 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:h-screen lg:w-[17rem] lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r lg:border-sky-100 xl:w-72">
+    <aside class="border-b border-sky-100 bg-white/92 text-slate-800 shadow-xl shadow-sky-900/8 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r lg:border-sky-100">
         <!-- Branding -->
         <div class="relative flex-none overflow-hidden border-b border-sky-100 px-4 py-4 sm:px-5 lg:py-6">
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.22),transparent_46%),linear-gradient(135deg,rgba(20,184,166,0.16),transparent)]"></div>
@@ -179,7 +179,7 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:pl-[17rem] xl:pl-72">
+    <div class="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:pl-72">
         <!-- Header -->
         <header class="sticky top-0 z-20 flex-none overflow-hidden border-b border-sky-100/90 bg-white/88 shadow-sm shadow-sky-900/5 backdrop-blur-xl">
             <div class="mx-auto flex w-full max-w-screen-2xl min-w-0 flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4 md:flex-row md:items-center md:justify-between md:gap-3 md:px-5 lg:px-6 xl:px-8">
@@ -190,9 +190,9 @@
                 </div>
                 
                 <!-- Header Actions -->
-                <div class="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 md:flex md:w-auto md:flex-nowrap md:justify-end md:gap-3">
+                <div class="flex w-full min-w-0 flex-wrap items-center justify-start gap-2 md:w-auto md:flex-nowrap md:justify-end md:gap-3">
                     <!-- User Pill -->
-                    <div class="flex min-w-0 items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs shadow-sm ring-1 ring-sky-100 md:max-w-[260px]">
+                    <div class="flex min-w-0 max-w-[220px] items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs shadow-sm ring-1 ring-sky-100 sm:max-w-[260px]">
                         <x-ui.avatar :user="$currentUser" size="sm" />
                         <span class="min-w-0 leading-tight">
                             <span class="block truncate font-black text-slate-800">{{ $currentUserDisplayName }}</span>
@@ -202,7 +202,7 @@
                     
                     <!-- Role Switcher -->
                     @if($ownedRoles->count() > 1)
-                        <a href="{{ route('role.select') }}" class="flex h-11 w-11 flex-none items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-white text-xs font-bold text-cyan-700 shadow-sm transition-all hover:bg-cyan-50 sm:w-auto sm:px-3">
+                        <a href="{{ route('role.select') }}" class="flex flex-none items-center gap-2 rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-xs font-bold text-cyan-700 shadow-sm transition-all hover:bg-cyan-50">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
@@ -213,7 +213,7 @@
                     <!-- Logout Button -->
                     <form method="POST" action="{{ route('logout') }}" class="inline flex-none">
                         @csrf
-                        <button type="submit" class="flex h-11 w-11 flex-none items-center justify-center gap-2 rounded-2xl bg-cyan-900 text-xs font-bold text-white shadow-lg shadow-cyan-900/20 ring-1 ring-cyan-800 transition-all hover:bg-cyan-800 sm:w-auto sm:px-3">
+                        <button type="submit" class="flex flex-none items-center gap-2 rounded-2xl bg-cyan-900 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-900/20 ring-1 ring-cyan-800 transition-all hover:bg-cyan-800">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
