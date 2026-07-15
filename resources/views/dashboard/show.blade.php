@@ -194,11 +194,11 @@
     ];
 @endphp
 
-<div class="space-y-5">
-    <section class="overflow-hidden rounded-3xl border border-cyan-100 bg-white shadow-xl shadow-cyan-950/10">
-        <div class="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div class="border-b border-cyan-100 bg-linear-to-br from-white via-white to-cyan-50/50 p-6 md:p-7 lg:border-b-0 lg:border-r">
-                <div class="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+<div class="space-y-4 sm:space-y-5">
+    <section class="overflow-hidden rounded-[1.35rem] border border-cyan-100 bg-white shadow-xl shadow-cyan-950/10 sm:rounded-3xl">
+        <div class="grid gap-0 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div class="border-b border-cyan-100 bg-linear-to-br from-white via-white to-cyan-50/50 p-4 sm:p-5 md:p-6 lg:p-7 xl:border-b-0 xl:border-r">
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div class="flex min-w-0 items-start gap-4">
                         <x-ui.avatar :user="$user" size="lg" class="ring-4 ring-white shadow-sm" />
                         <div class="min-w-0">
@@ -208,11 +208,11 @@
                                     {{ $user->profile_completed ? 'Profil lengkap' : 'Profil perlu dilengkapi' }}
                                 </span>
                             </div>
-                            <h2 class="mt-3 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">Selamat datang, {{ $firstName }}</h2>
+                            <h2 class="mt-3 break-words text-[1.65rem] font-black leading-tight tracking-tight text-slate-950 sm:text-3xl">Selamat datang, {{ $firstName }}</h2>
                             <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Pantau status pendaftaran, berkas, bimbingan, sidang, dan nilai dari satu dashboard yang ringkas.</p>
                         </div>
                     </div>
-                    <div class="flex shrink-0 gap-2">
+                    <div class="grid grid-cols-2 gap-2 sm:flex lg:shrink-0">
                         <a href="{{ route('profile.show') }}" class="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">Profil</a>
                         @if($features)
                             @php
@@ -225,7 +225,7 @@
                     </div>
                 </div>
 
-                <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach($primaryStats as $stat)
                         @php
                             $tone = $toneClasses[$stat['tone']] ?? $toneClasses['sky'];
@@ -239,7 +239,7 @@
                 </div>
             </div>
 
-            <aside class="bg-slate-50/90 p-6 md:p-7">
+            <aside class="bg-slate-50/90 p-4 sm:p-5 md:p-6 lg:p-7">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-[11px] font-black uppercase tracking-widest text-slate-500">Prioritas Hari Ini</p>
@@ -295,7 +295,7 @@
     @endif
 
     <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-5">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="text-[11px] font-black uppercase tracking-widest text-cyan-700">Alur KP</p>
@@ -303,7 +303,7 @@
                 </div>
                 <p class="text-xs text-slate-500">Dari pendaftaran sampai nilai akhir.</p>
             </div>
-            <div class="mt-5 grid gap-3 md:grid-cols-4">
+            <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach([
                     ['01', 'Pendaftaran', 'Berkas dan verifikasi awal'],
                     ['02', 'Tempat', 'Pilihan tempat dan kuota'],
@@ -319,12 +319,12 @@
             </div>
         </div>
 
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-5">
             <p class="text-[11px] font-black uppercase tracking-widest text-slate-500">Status Akun</p>
             <div class="mt-4 space-y-3 text-sm">
-                <div class="flex items-center justify-between gap-3">
+                <div class="flex min-w-0 items-center justify-between gap-3">
                     <span class="text-slate-600">Role aktif</span>
-                    <span class="text-right font-black text-slate-950">{{ $roleData['label'] }}</span>
+                    <span class="min-w-0 break-words text-right font-black text-slate-950">{{ $roleData['label'] }}</span>
                 </div>
                 <div class="flex items-center justify-between gap-3">
                     <span class="text-slate-600">Akun</span>
@@ -341,7 +341,7 @@
     </section>
 
     @if($studentRegistration)
-        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section class="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-5">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p class="text-[11px] font-black uppercase tracking-widest text-cyan-700">Status Mahasiswa</p>
@@ -365,7 +365,7 @@
                 <p class="text-sm text-slate-500">Akses cepat sesuai peran aktif.</p>
             </div>
         </div>
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             @foreach($features as $feature)
                 @php
                     $routeName = $featureRoutes[$feature] ?? null;
@@ -399,7 +399,7 @@
             @php
                 $tone = $toneClasses[$section['tone']] ?? $toneClasses['sky'];
             @endphp
-            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-5">
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <h2 class="text-lg font-black text-slate-950">{{ $section['title'] }}</h2>
@@ -407,7 +407,7 @@
                     </div>
                     <span class="rounded-md {{ $tone['bg'] }} {{ $tone['text'] }} px-2.5 py-1 text-[11px] font-black uppercase tracking-widest ring-1 {{ $tone['ring'] }}">Live</span>
                 </div>
-                <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
                     @foreach($section['stats'] as $label => $value)
                         <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
                             <p class="text-[11px] font-black uppercase tracking-widest text-slate-500">{{ $formatLabel($label) }}</p>

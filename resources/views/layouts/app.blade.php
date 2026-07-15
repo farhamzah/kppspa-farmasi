@@ -22,9 +22,9 @@
 @endphp
 <div class="min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.16),transparent_32%),radial-gradient(circle_at_80%_12%,rgba(20,184,166,0.14),transparent_28%),linear-gradient(135deg,#f8fdff,#eef9fb_45%,#f4f9fc)] lg:flex">
     <!-- Sidebar Navigation -->
-    <aside class="border-b border-sky-100 bg-white/92 text-slate-800 shadow-xl shadow-sky-900/8 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:h-screen lg:w-72 lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r lg:border-sky-100">
+    <aside class="border-b border-sky-100 bg-white/92 text-slate-800 shadow-xl shadow-sky-900/8 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:h-screen lg:w-[17rem] lg:flex-col lg:overflow-hidden lg:border-b-0 lg:border-r lg:border-sky-100 xl:w-72">
         <!-- Branding -->
-        <div class="relative flex-none overflow-hidden border-b border-sky-100 px-5 py-6 lg:py-7">
+        <div class="relative flex-none overflow-hidden border-b border-sky-100 px-4 py-4 sm:px-5 lg:py-6">
             <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.22),transparent_46%),linear-gradient(135deg,rgba(20,184,166,0.16),transparent)]"></div>
             <div class="relative flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
@@ -45,7 +45,7 @@
         </div>
         
         <!-- Navigation Menu -->
-        <nav class="flex gap-2 overflow-x-auto px-4 py-4 lg:block lg:min-h-0 lg:flex-1 lg:space-y-1.5 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:p-4 lg:pr-3 si-sidebar-scroll">
+        <nav class="flex gap-2 overflow-x-auto px-3 py-3 sm:px-4 sm:py-4 lg:block lg:min-h-0 lg:flex-1 lg:space-y-1.5 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:p-4 lg:pr-3 si-sidebar-scroll">
             <p class="mb-3 hidden px-3 text-[11px] font-black uppercase tracking-widest text-sky-700/70 lg:block">Menu Kerja Praktek</p>
             @foreach(($roleData['menu'] ?? ['Dashboard', 'Profil Saya']) as $item)
                 @php
@@ -179,20 +179,20 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:pl-72">
+    <div class="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden lg:pl-[17rem] xl:pl-72">
         <!-- Header -->
         <header class="sticky top-0 z-20 flex-none overflow-hidden border-b border-sky-100/90 bg-white/88 shadow-sm shadow-sky-900/5 backdrop-blur-xl">
-            <div class="mx-auto flex w-full max-w-screen-2xl min-w-0 flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:gap-3 md:px-6 lg:px-8">
+            <div class="mx-auto flex w-full max-w-screen-2xl min-w-0 flex-col gap-3 px-3 py-3 sm:px-4 sm:py-4 md:flex-row md:items-center md:justify-between md:gap-3 md:px-5 lg:px-6 xl:px-8">
                 <!-- Page Title -->
                 <div class="min-w-0">
                     <p class="text-xs font-black uppercase tracking-widest text-cyan-700 mb-1">{{ config('app.name') }}</p>
-                    <h1 class="truncate text-2xl font-black tracking-tight text-slate-950">@yield('page_title', 'Dashboard')</h1>
+                    <h1 class="truncate text-xl font-black leading-tight tracking-tight text-slate-950 sm:text-2xl">@yield('page_title', 'Dashboard')</h1>
                 </div>
                 
                 <!-- Header Actions -->
-                <div class="flex w-full min-w-0 flex-wrap items-center justify-start gap-2 md:w-auto md:flex-nowrap md:justify-end md:gap-3">
+                <div class="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 md:flex md:w-auto md:flex-nowrap md:justify-end md:gap-3">
                     <!-- User Pill -->
-                    <div class="flex min-w-0 max-w-[220px] items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs shadow-sm ring-1 ring-sky-100 sm:max-w-[260px]">
+                    <div class="flex min-w-0 items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs shadow-sm ring-1 ring-sky-100 md:max-w-[260px]">
                         <x-ui.avatar :user="$currentUser" size="sm" />
                         <span class="min-w-0 leading-tight">
                             <span class="block truncate font-black text-slate-800">{{ $currentUserDisplayName }}</span>
@@ -202,7 +202,7 @@
                     
                     <!-- Role Switcher -->
                     @if($ownedRoles->count() > 1)
-                        <a href="{{ route('role.select') }}" class="flex flex-none items-center gap-2 rounded-2xl border border-cyan-200 bg-white px-3 py-2 text-xs font-bold text-cyan-700 shadow-sm transition-all hover:bg-cyan-50">
+                        <a href="{{ route('role.select') }}" class="flex h-11 w-11 flex-none items-center justify-center gap-2 rounded-2xl border border-cyan-200 bg-white text-xs font-bold text-cyan-700 shadow-sm transition-all hover:bg-cyan-50 sm:w-auto sm:px-3">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                             </svg>
@@ -213,7 +213,7 @@
                     <!-- Logout Button -->
                     <form method="POST" action="{{ route('logout') }}" class="inline flex-none">
                         @csrf
-                        <button type="submit" class="flex flex-none items-center gap-2 rounded-2xl bg-cyan-900 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-900/20 transition-all hover:bg-cyan-800 ring-1 ring-cyan-800">
+                        <button type="submit" class="flex h-11 w-11 flex-none items-center justify-center gap-2 rounded-2xl bg-cyan-900 text-xs font-bold text-white shadow-lg shadow-cyan-900/20 ring-1 ring-cyan-800 transition-all hover:bg-cyan-800 sm:w-auto sm:px-3">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                             </svg>
@@ -225,7 +225,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="mx-auto w-full max-w-screen-2xl min-w-0 flex-1 overflow-x-hidden px-4 py-6 md:px-6 lg:px-8">
+        <main class="mx-auto w-full max-w-screen-2xl min-w-0 flex-1 overflow-x-hidden px-3 py-4 sm:px-4 sm:py-5 md:px-5 lg:px-6 xl:px-8">
             <!-- Status Message -->
             @if(session('status'))
                 <div class="mb-6 rounded-2xl border border-emerald-200 bg-linear-to-r from-emerald-50 to-cyan-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-sm">
