@@ -226,6 +226,17 @@ npm run build
 ```
 
 Gunakan database development/testing. Jangan memakai Core production untuk automated test; gunakan fake/mocking HTTP.
+
+## Data Dummy Belajar PKPA
+
+Untuk menanam data dummy MY PSPA end-to-end pada database lokal/demo:
+
+```bash
+php artisan db:seed --class=PkpaDemoEndToEndSeeder --force
+```
+
+Seeder ini idempotent dan membuat contoh alur belajar dari program PKPA, peserta, enam requirement wahana, kelompok, publikasi penempatan, rotasi selesai, nilai wahana finalized, sampai hasil akhir released. Akun uji lokal dapat memakai `MY_PSPA_TEST_SUPERADMIN_PASSWORD` di `.env` development bila perlu mengatur password khusus tanpa menyimpannya di repository.
+
 ## Dokumen, Analytics, Hardening, dan UAT Tahap 10
 
 MY PSPA kini memiliki fondasi Dokumen Internal PKPA, template berversi, penomoran configurable, generation DOCX/PDF/XLSX/CSV pada private storage, portal dokumen mahasiswa, Pelaporan dan Analytics, health check, security headers, rate limit download/export, queue health, orphan file audit dry-run, serta dokumen operasi dan UAT. Status production tetap `Ready with condition` sampai UAT real, queue/mail production, backup restore, dan browser matrix selesai.
