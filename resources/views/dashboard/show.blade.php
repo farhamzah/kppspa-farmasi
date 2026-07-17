@@ -27,8 +27,10 @@
 
     $featureDescriptions = [
         'Pendaftaran KP' => 'Pengajuan dan status verifikasi pendaftaran.',
+        'Pendaftaran PKPA' => 'Pengajuan dan status verifikasi pendaftaran PKPA.',
         'Berkas Persyaratan' => 'Kelengkapan dokumen awal mahasiswa.',
         'Berkas KP' => 'Berkas administrasi Kerja Praktek.',
+        'Berkas PKPA' => 'Berkas administrasi Program Studi Profesi Apoteker.',
         'Pemilihan Tempat KP' => 'Pilihan tempat dan kuota KP.',
         'Logbook' => 'Catatan aktivitas harian KP.',
         'Laporan Akhir' => 'Review dan approval laporan akhir.',
@@ -47,8 +49,17 @@
         'Penilaian Sidang' => 'Input nilai penguji sidang.',
         'Manajemen User' => 'Kelola akun dan peran pengguna KP.',
         'Import Excel' => 'Impor data pengguna secara terstruktur.',
+        'Program PKPA' => 'Master program dan konfigurasi wahana.',
+        'Peserta PKPA' => 'Kepesertaan mahasiswa dari Core Farmasi.',
+        'Kelompok PKPA' => 'Kelompok mahasiswa untuk persiapan penempatan.',
         'Periode KP' => 'Pengaturan periode Kerja Praktek.',
         'Tempat KP' => 'Master tempat dan mitra KP.',
+        'Tempat Tersedia' => 'Kapasitas tempat per Program PKPA.',
+        'Kesiapan Penempatan' => 'Checklist readiness sebelum penyusunan penempatan.',
+        'Penyusunan Penempatan' => 'Matriks dan rancangan draft penempatan PKPA.',
+        'Publikasi Penempatan' => 'Final review, publikasi jadwal resmi, dan revisi.',
+        'PKPA Saya' => 'Jadwal resmi PKPA yang sudah dipublikasikan.',
+        'Jadwal PKPA' => 'Jadwal bimbingan PKPA resmi.',
         'Kuota Tempat KP' => 'Kuota pendaftaran tiap tempat KP.',
         'Verifikasi Berkas' => 'Pemeriksaan berkas pendaftaran.',
         'Rekap' => 'Rekap operasional dan ekspor data KP.',
@@ -56,8 +67,10 @@
 
     $featureRoutes = [
         'Pendaftaran KP' => 'student.kp-registrations.index',
+        'Pendaftaran PKPA' => 'student.kp-registrations.index',
         'Berkas Persyaratan' => 'student.kp-documents.index',
         'Berkas KP' => 'student.kp-documents.index',
+        'Berkas PKPA' => 'student.kp-documents.index',
         'Pemilihan Tempat KP' => 'student.place-selections.index',
         'Logbook' => 'student.logbooks.index',
         'Laporan Akhir' => 'student.final-reports.show',
@@ -74,14 +87,30 @@
         'Penilaian Sidang' => 'examiner.assessments.index',
         'Manajemen User' => 'admin.users.index',
         'Import Excel' => 'admin.import-users.index',
+        'Program PKPA' => 'management.pkpa-programs.index',
+        'Peserta PKPA' => 'management.pkpa-enrollments.index',
+        'Kelompok PKPA' => 'management.pkpa-student-groups.index',
         'Periode KP' => 'management.kp-periods.index',
         'Tempat KP' => 'management.kp-places.index',
+        'Tempat Tersedia' => 'management.pkpa-program-sites.index',
+        'Kesiapan Penempatan' => 'management.pkpa-placement-readiness.index',
+        'Penyusunan Penempatan' => 'management.pkpa-placement-planner.index',
+        'Publikasi Penempatan' => 'management.pkpa-publications.index',
+        'PKPA Saya' => 'student.pkpa-schedule.index',
+        'Jadwal PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-schedule.index' : 'internal-supervisor.pkpa-schedule.index',
         'Kuota Tempat KP' => 'management.kp-place-quotas.index',
         'Verifikasi Berkas' => 'management.kp-registrations.index',
         'Rekap' => 'management.recaps.index',
     ];
 
     $summarySections = collect([
+        ['title' => 'Ringkasan Master PKPA', 'description' => 'Program, wahana, dan tempat praktik berdasarkan data aktual.', 'stats' => $pkpaMasterStats ?? null, 'tone' => 'cyan'],
+        ['title' => 'Ringkasan Peserta PKPA', 'description' => 'Peserta, kelompok, sync Core, dan kelengkapan requirement.', 'stats' => $pkpaEnrollmentStats ?? null, 'tone' => 'teal'],
+        ['title' => 'Ringkasan Readiness PKPA', 'description' => 'Kapasitas tempat, availability, dan pembimbing dari Core.', 'stats' => $pkpaPlacementReadinessStats ?? null, 'tone' => 'emerald'],
+        ['title' => 'Ringkasan Penyusunan Penempatan', 'description' => 'Current plan, assignment draft, validasi, dan issue aktif.', 'stats' => $pkpaPlacementPlannerStats ?? null, 'tone' => 'amber'],
+        ['title' => 'Ringkasan Publikasi PKPA', 'description' => 'Publication current, snapshot resmi, acknowledgement, dan notification delivery.', 'stats' => $pkpaPublicationStats ?? null, 'tone' => 'emerald'],
+        ['title' => 'Ringkasan Jadwal PKPA Saya', 'description' => 'Jadwal resmi dan acknowledgement mahasiswa.', 'stats' => $studentPkpaScheduleStats ?? null, 'tone' => 'cyan'],
+        ['title' => 'Ringkasan Jadwal Bimbingan PKPA', 'description' => 'Jadwal resmi yang terhubung ke akun pembimbing.', 'stats' => $supervisorPkpaScheduleStats ?? null, 'tone' => 'cyan'],
         ['title' => 'Ringkasan Kerja Praktek', 'description' => 'Periode, tempat, dan kuota yang sedang tersedia.', 'stats' => $kpStats, 'tone' => 'sky'],
         ['title' => 'Ringkasan Pendaftaran KP', 'description' => 'Status pendaftaran dan verifikasi berkas mahasiswa.', 'stats' => $registrationStats, 'tone' => 'indigo'],
         ['title' => 'Ringkasan Pemilihan Tempat', 'description' => 'Pilihan tempat, daftar tunggu, dan sisa kuota.', 'stats' => $selectionStats, 'tone' => 'cyan'],
@@ -107,28 +136,28 @@
     if ($activeRole === 'mahasiswa') {
         $primaryStats = collect([
             [
-                'label' => 'Pendaftaran',
-                'value' => $studentRegistration?->statusLabel() ?? 'Belum daftar',
-                'section' => $studentRegistration?->period->name ?? 'Kerja Praktek',
-                'tone' => $studentRegistration?->isVerified() ? 'emerald' : 'amber',
+                'label' => 'Program PKPA',
+                'value' => $studentPkpaEnrollment ? 'Terdaftar' : 'Belum terdaftar',
+                'section' => $studentPkpaEnrollment?->program?->name ?? 'Hubungi pengelola program',
+                'tone' => $studentPkpaEnrollment ? 'emerald' : 'amber',
             ],
             [
-                'label' => 'Berkas',
-                'value' => $studentRegistration ? $studentRegistration->progressPercentage().'%' : '0%',
-                'section' => 'Kelengkapan dokumen',
-                'tone' => $studentRegistration?->progressPercentage() >= 100 ? 'emerald' : 'cyan',
+                'label' => 'Kelompok',
+                'value' => $studentPkpaEnrollment?->activeGroupMembership?->group?->code ?? 'Belum',
+                'section' => 'Kelompok PKPA',
+                'tone' => $studentPkpaEnrollment?->activeGroupMembership ? 'cyan' : 'amber',
             ],
             [
-                'label' => 'Logbook',
-                'value' => $logbookStats['total'] ?? 0,
-                'section' => 'Catatan kegiatan',
+                'label' => 'Kewajiban Wahana',
+                'value' => $studentPkpaEnrollment ? $studentPkpaEnrollment->requirementSummary() : '0 dari 0 selesai',
+                'section' => 'Penempatan belum dipublikasikan',
                 'tone' => 'teal',
             ],
             [
-                'label' => 'Nilai',
-                'value' => $scoreStats['status_nilai'] ?? 'Belum tersedia',
-                'section' => 'Status akhir',
-                'tone' => 'violet',
+                'label' => 'Jadwal Resmi',
+                'value' => $studentPkpaScheduleStats['jadwal_resmi'] ?? 0,
+                'section' => 'PKPA Saya',
+                'tone' => ((int) ($studentPkpaScheduleStats['jadwal_resmi'] ?? 0)) > 0 ? 'emerald' : 'amber',
             ],
         ]);
     }
@@ -142,6 +171,48 @@
     }
 
     $priorityItems = collect([
+        [
+            'label' => 'Issue rancangan penempatan',
+            'value' => (int) (($pkpaPlacementPlannerStats['error'] ?? 0) + ($pkpaPlacementPlannerStats['warning'] ?? 0)),
+            'route' => 'management.pkpa-placement-planner.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Change request publikasi aktif',
+            'value' => (int) ($pkpaPublicationStats['change_request_aktif'] ?? 0),
+            'route' => 'management.pkpa-publications.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Notifikasi publikasi pending',
+            'value' => (int) ($pkpaPublicationStats['notifikasi_pending'] ?? 0),
+            'route' => 'management.pkpa-publications.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Peserta belum berkelompok',
+            'value' => (int) ($pkpaEnrollmentStats['peserta_belum_berkelompok'] ?? 0),
+            'route' => 'management.pkpa-enrollments.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Sync Core peserta bermasalah',
+            'value' => (int) ($pkpaEnrollmentStats['sync_core_bermasalah'] ?? 0),
+            'route' => 'management.pkpa-enrollments.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Tempat PKPA tanpa availability',
+            'value' => (int) ($pkpaPlacementReadinessStats['tempat_tanpa_availability'] ?? 0),
+            'route' => 'management.pkpa-program-sites.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Pembimbing PKPA perlu sync',
+            'value' => (int) ($pkpaPlacementReadinessStats['pembimbing_perlu_sync'] ?? 0),
+            'route' => 'management.pkpa-internal-supervisors.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
         [
             'label' => 'Pendaftaran menunggu verifikasi',
             'value' => (int) ($registrationStats['pending'] ?? 0),

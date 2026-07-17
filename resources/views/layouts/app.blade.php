@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name', 'SI-KP Farmasi UBP'))</title>
+    <title>@yield('title', config('app.name', 'MY PSPA'))</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/logo-fakultas-farmasi-ubp.png') }}">
@@ -32,7 +32,7 @@
                     <img src="{{ asset('images/logo-fakultas-farmasi-ubp.png') }}" alt="Logo Fakultas Farmasi UBP" class="h-full w-full object-contain">
                 </div>
                 <div class="hidden lg:block">
-                    <p class="text-sm font-black tracking-widest uppercase text-slate-950">SI-KP</p>
+                    <p class="text-sm font-black tracking-widest uppercase text-slate-950">MY PSPA</p>
                     <p class="mt-0.5 text-[11px] font-bold text-cyan-700">Farmasi UBP</p>
                 </div>
             </div>
@@ -46,7 +46,7 @@
         
         <!-- Navigation Menu -->
         <nav class="flex gap-2 overflow-x-auto px-3 py-3 sm:px-4 sm:py-4 lg:block lg:min-h-0 lg:flex-1 lg:space-y-1.5 lg:overflow-x-hidden lg:overflow-y-auto lg:overscroll-contain lg:p-4 lg:pr-3 si-sidebar-scroll">
-            <p class="mb-3 hidden px-3 text-[11px] font-black uppercase tracking-widest text-sky-700/70 lg:block">Menu Kerja Praktek</p>
+            <p class="mb-3 hidden px-3 text-[11px] font-black uppercase tracking-widest text-sky-700/70 lg:block">Menu PKPA</p>
             @foreach(($roleData['menu'] ?? ['Dashboard', 'Profil Saya']) as $item)
                 @php
                     $isDashboard = $item === 'Dashboard';
@@ -56,25 +56,59 @@
                         'Import User' => 'admin.import-users.index',
                         'Riwayat Import' => 'admin.import-users.history',
                         'Periode KP' => 'management.kp-periods.index',
+                        'Program PKPA' => 'management.pkpa-programs.index',
+                        'Wahana PKPA' => 'management.pkpa-practice-domains.index',
+                        'Peserta PKPA' => 'management.pkpa-enrollments.index',
+                        'Kelompok PKPA' => 'management.pkpa-student-groups.index',
                         'Tempat KP' => 'management.kp-places.index',
+                        'Tempat Praktik' => 'management.pkpa-practice-sites.index',
+                        'Tempat Tersedia' => 'management.pkpa-program-sites.index',
+                        'Pembimbing Dalam' => 'management.pkpa-internal-supervisors.index',
+                        'Kesiapan Penempatan' => 'management.pkpa-placement-readiness.index',
+                        'Penyusunan Penempatan' => 'management.pkpa-placement-planner.index',
+                        'Publikasi Penempatan' => 'management.pkpa-publications.index',
                         'Kuota Tempat KP' => 'management.kp-place-quotas.index',
+                        'Kapasitas Tempat' => 'management.kp-place-quotas.index',
                         'Log Kuota' => 'management.kp-quota-logs.index',
+                        'Log Kapasitas' => 'management.kp-quota-logs.index',
                         'Persyaratan Dokumen' => 'management.document-requirements.index',
                         'Verifikasi Pendaftaran' => 'management.kp-registrations.index',
                         'Pendaftaran KP' => 'student.kp-registrations.index',
+                        'Pendaftaran PKPA' => 'student.kp-registrations.index',
                         'Berkas KP' => 'student.kp-documents.index',
+                        'Berkas PKPA' => 'student.kp-documents.index',
                         'Pemilihan Tempat KP' => 'student.place-selections.index',
+                        'PKPA Saya' => 'student.pkpa-schedule.index',
+                        'Rotasi PKPA' => 'student.pkpa-operations.index',
+                        'Akademik Rotasi' => $activeRole === 'mahasiswa' ? 'student.pkpa-academics.index' : 'management.pkpa-academics.index',
+                        'Nilai PKPA' => 'student.pkpa-grades.index',
+                        'Hasil Akhir PKPA' => 'student.pkpa-final-results.index',
+                        'Dokumen PKPA' => $activeRole === 'mahasiswa' ? 'student.pkpa-documents.index' : 'management.pkpa-documents.index',
+                        'Penyelesaian PKPA' => 'management.pkpa-final-program.index',
+                        'Pelaporan Analytics' => 'management.pkpa-analytics.index',
+                        'Penilaian PKPA' => match ($activeRole) {
+                            'pembimbing_lapangan' => 'field-supervisor.pkpa-assessments.index',
+                            'pembimbing_dalam' => 'internal-supervisor.pkpa-assessments.index',
+                            default => 'management.pkpa-assessments.index',
+                        },
+                        'Operasional Rotasi' => 'management.pkpa-operations.index',
+                        'Operasional PKPA' => 'field-supervisor.pkpa-operations.index',
+                        'Monitoring PKPA' => 'internal-supervisor.pkpa-operations.index',
+                        'Akademik PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-academics.index' : 'internal-supervisor.pkpa-academics.index',
                         'Monitoring Pemilihan' => 'management.place-selections.index',
                         'Daftar Tunggu' => 'management.waiting-lists.index',
                         'Log Pemilihan' => 'management.selection-logs.index',
                         'Penempatan KP' => $activeRole === 'mahasiswa' ? 'student.assignments.show' : 'management.kp-assignments.index',
+                        'Penempatan PKPA' => $activeRole === 'mahasiswa' ? 'student.assignments.show' : 'management.kp-assignments.index',
                         'Log Penempatan' => 'management.kp-assignment-logs.index',
                         'Panduan Kompetensi' => 'management.competencies.index',
+                        'Jadwal PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-schedule.index' : 'internal-supervisor.pkpa-schedule.index',
                         'Mahasiswa Bimbingan' => 'internal-supervisor.assignments.index',
                         'Capaian Kompetensi' => 'internal-supervisor.competencies.index',
                         'Mahasiswa KP' => 'field-supervisor.assignments.index',
                         'Checklist Kompetensi' => 'field-supervisor.competencies.index',
                         'Logbook KP' => 'student.logbooks.index',
+                        'Logbook PKPA' => 'student.logbooks.index',
                         'Validasi Logbook' => 'field-supervisor.logbooks.index',
                         'Logbook Mahasiswa' => 'internal-supervisor.logbooks.index',
                         'Monitoring Logbook' => 'management.logbooks.index',
@@ -84,15 +118,22 @@
                         'Monitoring Laporan' => 'management.final-reports.index',
                         'Log Laporan' => 'management.final-report-logs.index',
                         'Sidang' => 'student.exams.index',
+                        'Ujian' => 'student.exams.index',
                         'Pre/Post Test' => 'student.orientation-tests.index',
+                        'Pembekalan' => 'student.orientation-tests.index',
                         'Pengajuan Sidang' => 'management.exam-requests.index',
+                        'Pengajuan Ujian' => 'management.exam-requests.index',
                         'Jadwal Sidang' => $activeRole === 'pembimbing_dalam' ? 'internal-supervisor.exams.index' : ($activeRole === 'penguji' ? 'examiner.exams.index' : 'management.exams.index'),
+                        'Jadwal Ujian' => $activeRole === 'pembimbing_dalam' ? 'internal-supervisor.exams.index' : ($activeRole === 'penguji' ? 'examiner.exams.index' : 'management.exams.index'),
                         'Log Sidang' => 'management.exam-logs.index',
+                        'Log Ujian' => 'management.exam-logs.index',
                         'Komponen Penilaian' => 'management.assessment-components.index',
                         'Monitoring Nilai' => 'management.scores.index',
                         'Hasil Pre/Post Test' => 'management.orientation-tests.index',
+                        'Hasil Pembekalan' => 'management.orientation-tests.index',
                         'Log Nilai' => 'management.score-logs.index',
                         'Rekap KP' => 'management.recaps.index',
+                        'Rekap PKPA' => 'management.recaps.index',
                         'Review Integrasi' => 'management.integration.tu-payload-preview',
                         'Penilaian Pembimbing' => 'internal-supervisor.assessments.index',
                         'Penilaian Lapangan' => 'field-supervisor.assessments.index',
@@ -103,18 +144,47 @@
                         'Dashboard' => [$roleData['route'] ?? 'dashboard'],
                         'Profil Saya' => ['profile.show', 'profile.edit'],
                         'Pendaftaran KP' => ['student.kp-registrations.index', 'student.kp-registrations.create', 'student.kp-registrations.store'],
+                        'Pendaftaran PKPA' => ['student.kp-registrations.index', 'student.kp-registrations.create', 'student.kp-registrations.store'],
                         'Berkas KP' => ['student.kp-documents.*', 'student.kp-registrations.show', 'student.kp-registrations.documents.*', 'student.kp-registrations.submit', 'student.kp-registrations.cancel'],
+                        'Berkas PKPA' => ['student.kp-documents.*', 'student.kp-registrations.show', 'student.kp-registrations.documents.*', 'student.kp-registrations.submit', 'student.kp-registrations.cancel'],
                         'Pemilihan Tempat KP' => ['student.place-selections.*'],
+                        'PKPA Saya' => ['student.pkpa-schedule.*'],
+                        'Rotasi PKPA' => ['student.pkpa-operations.*', 'student.pkpa-attendance.*', 'student.pkpa-logbooks.*'],
+                        'Akademik Rotasi' => ['student.pkpa-academics.*', 'student.pkpa-competencies.*', 'student.pkpa-special-tasks.*', 'student.pkpa-rotation-reports.*', 'student.pkpa-guidance.*', 'management.pkpa-academics.*', 'management.pkpa-competency-*', 'management.pkpa-special-task-*', 'management.pkpa-rotation-report-*'],
+                        'Nilai PKPA' => ['student.pkpa-grades.*'],
+                        'Hasil Akhir PKPA' => ['student.pkpa-final-results.*'],
+                        'Dokumen PKPA' => ['student.pkpa-documents.*', 'management.pkpa-documents.*', 'management.pkpa-document-*'],
+                        'Penyelesaian PKPA' => ['management.pkpa-final-*', 'management.pkpa-requirements.completion.*', 'management.pkpa-graduation-*', 'management.pkpa-remedials.*'],
+                        'Pelaporan Analytics' => ['management.pkpa-analytics.*'],
+                        'Penilaian PKPA' => ['management.pkpa-assessments.*', 'management.pkpa-assessment-*', 'management.pkpa-rotation-assessments.*', 'management.pkpa-grade-*', 'field-supervisor.pkpa-assessments.*', 'internal-supervisor.pkpa-assessments.*'],
+                        'Operasional Rotasi' => ['management.pkpa-operations.*', 'management.pkpa-rotation-runs.*'],
+                        'Operasional PKPA' => ['field-supervisor.pkpa-operations.*', 'field-supervisor.pkpa-attendance.*', 'field-supervisor.pkpa-logbooks.*'],
+                        'Monitoring PKPA' => ['internal-supervisor.pkpa-operations.*', 'internal-supervisor.pkpa-logbooks.*'],
+                        'Akademik PKPA' => ['field-supervisor.pkpa-academics.*', 'field-supervisor.pkpa-competencies.*', 'field-supervisor.pkpa-special-tasks.*', 'field-supervisor.pkpa-rotation-reports.*', 'internal-supervisor.pkpa-academics.*', 'internal-supervisor.pkpa-competencies.*', 'internal-supervisor.pkpa-special-tasks.*', 'internal-supervisor.pkpa-rotation-reports.*', 'internal-supervisor.pkpa-guidance.*'],
                         'Penempatan KP' => ['student.assignments.*', 'management.kp-assignments.*'],
+                        'Penempatan PKPA' => ['student.assignments.*', 'management.kp-assignments.*'],
                         'Logbook KP' => ['student.logbooks.*'],
+                        'Logbook PKPA' => ['student.logbooks.*'],
                         'Laporan Akhir' => ['student.final-reports.*'],
                         'Manajemen User' => ['admin.users.*'],
                         'Import User' => ['admin.import-users.index', 'admin.import-users.preview', 'admin.import-users.process', 'admin.import-users.template'],
                         'Riwayat Import' => ['admin.import-users.history', 'admin.import-users.history.*'],
                         'Periode KP' => ['management.kp-periods.*'],
+                        'Program PKPA' => ['management.pkpa-programs.*'],
+                        'Wahana PKPA' => ['management.pkpa-practice-domains.*'],
+                        'Peserta PKPA' => ['management.pkpa-enrollments.*', 'management.pkpa-enrollment-imports.*'],
+                        'Kelompok PKPA' => ['management.pkpa-student-groups.*'],
                         'Tempat KP' => ['management.kp-places.*'],
+                        'Tempat Praktik' => ['management.pkpa-practice-sites.*'],
+                        'Tempat Tersedia' => ['management.pkpa-program-sites.*'],
+                        'Pembimbing Dalam' => ['management.pkpa-internal-supervisors.*'],
+                        'Kesiapan Penempatan' => ['management.pkpa-placement-readiness.*'],
+                        'Penyusunan Penempatan' => ['management.pkpa-placement-planner.*', 'management.pkpa-placement-plans.*', 'management.pkpa-placement-batches.*', 'management.pkpa-rotation-assignments.*'],
+                        'Publikasi Penempatan' => ['management.pkpa-publications.*', 'management.pkpa-change-requests.*', 'management.pkpa-notifications.*'],
                         'Kuota Tempat KP' => ['management.kp-place-quotas.*'],
+                        'Kapasitas Tempat' => ['management.kp-place-quotas.*'],
                         'Log Kuota' => ['management.kp-quota-logs.*'],
+                        'Log Kapasitas' => ['management.kp-quota-logs.*'],
                         'Persyaratan Dokumen' => ['management.document-requirements.*'],
                         'Verifikasi Pendaftaran' => ['management.kp-registrations.*'],
                         'Monitoring Pemilihan' => ['management.place-selections.*'],
@@ -122,6 +192,7 @@
                         'Log Pemilihan' => ['management.selection-logs.*'],
                         'Log Penempatan' => ['management.kp-assignment-logs.*'],
                         'Panduan Kompetensi' => ['management.competencies.*'],
+                        'Jadwal PKPA' => ['internal-supervisor.pkpa-schedule.*', 'field-supervisor.pkpa-schedule.*'],
                         'Mahasiswa Bimbingan' => ['internal-supervisor.assignments.*'],
                         'Capaian Kompetensi' => ['internal-supervisor.competencies.*'],
                         'Mahasiswa KP' => ['field-supervisor.assignments.*'],
@@ -134,15 +205,22 @@
                         'Monitoring Laporan' => ['management.final-reports.*'],
                         'Log Laporan' => ['management.final-report-logs.*'],
                         'Sidang' => ['student.exams.*'],
+                        'Ujian' => ['student.exams.*'],
                         'Pre/Post Test' => ['student.orientation-tests.*'],
+                        'Pembekalan' => ['student.orientation-tests.*'],
                         'Pengajuan Sidang' => ['management.exam-requests.*'],
+                        'Pengajuan Ujian' => ['management.exam-requests.*'],
                         'Jadwal Sidang' => ['management.exams.*', 'internal-supervisor.exams.*', 'examiner.exams.*'],
+                        'Jadwal Ujian' => ['management.exams.*', 'internal-supervisor.exams.*', 'examiner.exams.*'],
                         'Log Sidang' => ['management.exam-logs.*'],
+                        'Log Ujian' => ['management.exam-logs.*'],
                         'Komponen Penilaian' => ['management.assessment-components.*'],
                         'Monitoring Nilai' => ['management.scores.*', 'management.final-scores.*'],
                         'Hasil Pre/Post Test' => ['management.orientation-tests.*'],
+                        'Hasil Pembekalan' => ['management.orientation-tests.*'],
                         'Log Nilai' => ['management.score-logs.*'],
                         'Rekap KP' => ['management.recaps.*', 'management.exports.*'],
+                        'Rekap PKPA' => ['management.recaps.*', 'management.exports.*'],
                         'Review Integrasi' => ['management.integration.*'],
                         'Penilaian Pembimbing' => ['internal-supervisor.assessments.*'],
                         'Penilaian Lapangan' => ['field-supervisor.assessments.*'],
@@ -244,8 +322,8 @@
 
         <!-- Footer -->
         <footer class="border-t border-sky-100 bg-white/70 px-5 py-5 text-center text-xs text-slate-500 md:px-8">
-            <p class="font-bold text-slate-700">SI-KP Farmasi UBP</p>
-            <p class="mt-1">Sistem Informasi Portal Akademik Kerja Praktek Farmasi Universitas Buana Perjuangan Karawang</p>
+            <p class="font-bold text-slate-700">MY PSPA</p>
+            <p class="mt-1">Sistem Informasi Program Studi Profesi Apoteker Universitas Buana Perjuangan Karawang</p>
         </footer>
     </div>
 </div>

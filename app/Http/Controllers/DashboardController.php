@@ -14,6 +14,25 @@ use App\Models\KpPlaceQuota;
 use App\Models\KpPlaceSelection;
 use App\Models\KpRegistration;
 use App\Models\KpWaitingList;
+use App\Models\PkpaPracticeDomain;
+use App\Models\PkpaPracticeSite;
+use App\Models\PkpaProgram;
+use App\Models\PkpaEnrollment;
+use App\Models\PkpaEnrollmentImportBatch;
+use App\Models\PkpaEnrollmentRequirement;
+use App\Models\PkpaInternalSupervisorEligibility;
+use App\Models\PkpaPlacementPlan;
+use App\Models\PkpaPlacementPublication;
+use App\Models\PkpaPlacementValidationIssue;
+use App\Models\PkpaProgramSite;
+use App\Models\PkpaNotificationDelivery;
+use App\Models\PkpaPlacementChangeRequest;
+use App\Models\PkpaPublishedAssignment;
+use App\Models\PkpaScheduleAcknowledgement;
+use App\Models\PkpaRotationAssignment;
+use App\Models\PkpaSiteAvailabilityPeriod;
+use App\Models\PkpaSiteFieldSupervisor;
+use App\Models\PkpaStudentGroup;
 use App\Models\User;
 use App\Models\UserImportBatch;
 use App\Support\RoleDashboard;
@@ -38,6 +57,11 @@ class DashboardController extends Controller
             'features' => RoleDashboard::dataFor($role)['features'],
             'adminStats' => $role === 'admin' ? $this->adminStats() : null,
             'kpStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->kpStats() : null,
+            'pkpaMasterStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->pkpaMasterStats() : null,
+            'pkpaEnrollmentStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->pkpaEnrollmentStats() : null,
+            'pkpaPlacementReadinessStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->pkpaPlacementReadinessStats() : null,
+            'pkpaPlacementPlannerStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->pkpaPlacementPlannerStats() : null,
+            'pkpaPublicationStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->pkpaPublicationStats() : null,
             'registrationStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->registrationStats() : null,
             'selectionStats' => in_array($role, ['admin', 'koordinator_kp'], true) ? $this->selectionStats() : null,
             'assignmentStats' => $this->assignmentStats($role, $request),
@@ -46,6 +70,9 @@ class DashboardController extends Controller
             'examStats' => $this->examStats($role, $request),
             'scoreStats' => $this->scoreStats($role, $request),
             'studentRegistration' => $role === 'mahasiswa' ? $request->user()->student?->kpRegistrations()->with(['documents', 'activePlaceSelection.place', 'waitingList'])->latest()->first() : null,
+            'studentPkpaEnrollment' => $role === 'mahasiswa' ? $this->studentPkpaEnrollment($request) : null,
+            'studentPkpaScheduleStats' => $role === 'mahasiswa' ? $this->studentPkpaScheduleStats($request) : null,
+            'supervisorPkpaScheduleStats' => in_array($role, ['pembimbing_dalam', 'pembimbing_lapangan'], true) ? $this->supervisorPkpaScheduleStats($role, $request) : null,
         ]);
     }
 
@@ -69,6 +96,141 @@ class DashboardController extends Controller
             'total_quota' => KpPlaceQuota::sum('quota'),
             'open_quotas' => KpPlaceQuota::where('is_open', true)->count(),
         ];
+    }
+
+    private function pkpaMasterStats(): array
+    {
+        return [
+            'program_aktif' => PkpaProgram::where('status', 'active')->count(),
+            'program_draft' => PkpaProgram::where('status', 'draft')->count(),
+            'wahana_aktif' => PkpaPracticeDomain::where('is_active', true)->count(),
+            'tempat_praktik_aktif' => PkpaPracticeSite::where('is_active', true)->where('status', 'active')->count(),
+            'kerja_sama_akan_berakhir' => PkpaPracticeSite::whereNotNull('cooperation_end_date')->whereBetween('cooperation_end_date', [now(), now()->addDays(90)])->count(),
+            'program_belum_lengkap' => PkpaProgram::whereIn('status', ['draft', 'ready'])->get()->filter(fn (PkpaProgram $program) => ! $program->isReadyForActivation())->count(),
+        ];
+    }
+
+    private function pkpaEnrollmentStats(): array
+    {
+        $latestImport = PkpaEnrollmentImportBatch::latest()->first();
+
+        return [
+            'peserta_aktif' => PkpaEnrollment::where('status', 'active')->count(),
+            'peserta_belum_berkelompok' => PkpaEnrollment::where('status', 'active')->whereDoesntHave('activeGroupMembership')->count(),
+            'kelompok_aktif' => PkpaStudentGroup::where('is_active', true)->where('status', 'active')->count(),
+            'sync_core_bermasalah' => PkpaEnrollment::whereIn('last_core_sync_status', ['failed', 'warning'])->count(),
+            'akun_core_nonaktif' => PkpaEnrollment::where('core_account_status_snapshot', 'inactive')->count(),
+            'requirement_belum_lengkap' => PkpaEnrollment::whereDoesntHave('requirements')->count()
+                + PkpaEnrollmentRequirement::whereIn('status', ['failed', 'cancelled'])->count(),
+            'import_terakhir_valid' => $latestImport?->valid_rows ?? 0,
+        ];
+    }
+
+    private function pkpaPlacementReadinessStats(): array
+    {
+        return [
+            'tempat_program_aktif' => PkpaProgramSite::where('is_active', true)->whereIn('status', ['ready', 'active'])->count(),
+            'tempat_tanpa_availability' => PkpaProgramSite::where('is_active', true)->whereIn('status', ['ready', 'active'])->whereDoesntHave('availabilityPeriods', fn ($query) => $query->whereIn('status', ['available', 'full']))->count(),
+            'kapasitas_rencana' => PkpaSiteAvailabilityPeriod::whereIn('status', ['available', 'full'])->sum('maximum_students'),
+            'availability_aktif' => PkpaSiteAvailabilityPeriod::whereIn('status', ['available', 'full'])->count(),
+            'pembimbing_dalam_aktif' => PkpaInternalSupervisorEligibility::where('status', 'active')->count(),
+            'pembimbing_lapangan_aktif' => PkpaSiteFieldSupervisor::where('status', 'active')->count(),
+            'pembimbing_perlu_sync' => PkpaInternalSupervisorEligibility::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->count()
+                + PkpaSiteFieldSupervisor::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->count(),
+            'akun_core_nonaktif_pembimbing' => PkpaInternalSupervisorEligibility::where('core_account_status_snapshot', 'inactive')->count()
+                + PkpaSiteFieldSupervisor::where('core_account_status_snapshot', 'inactive')->count(),
+        ];
+    }
+
+    private function pkpaPlacementPlannerStats(): array
+    {
+        $currentPlans = PkpaPlacementPlan::where('is_current', true)->count();
+        $currentPlanIds = PkpaPlacementPlan::where('is_current', true)->pluck('id');
+
+        return [
+            'rancangan_current' => $currentPlans,
+            'versi_rancangan' => PkpaPlacementPlan::count(),
+            'assignment_terisi' => PkpaRotationAssignment::whereIn('pkpa_placement_plan_id', $currentPlanIds)->whereNotIn('status', ['cancelled', 'superseded'])->count(),
+            'assignment_valid' => PkpaRotationAssignment::whereIn('pkpa_placement_plan_id', $currentPlanIds)->where('status', 'valid')->count(),
+            'warning' => PkpaPlacementValidationIssue::where('severity', 'warning')->where('is_resolved', false)->count(),
+            'error' => PkpaPlacementValidationIssue::where('severity', 'error')->where('is_resolved', false)->count(),
+            'kapasitas_kurang' => PkpaPlacementValidationIssue::where('category', 'capacity')->where('severity', 'error')->where('is_resolved', false)->count(),
+            'pembimbing_overload' => PkpaPlacementValidationIssue::where('category', 'supervisor')->where('issue_code', 'like', '%OVERLOAD%')->where('is_resolved', false)->count(),
+            'jadwal_overlap' => PkpaPlacementValidationIssue::where('issue_code', 'STUDENT_SCHEDULE_OVERLAP')->where('is_resolved', false)->count(),
+        ];
+    }
+
+    private function pkpaPublicationStats(): array
+    {
+        $currentPublicationIds = PkpaPlacementPublication::current()->pluck('id');
+
+        return [
+            'publikasi_current' => $currentPublicationIds->count(),
+            'assignment_resmi' => PkpaPublishedAssignment::whereIn('pkpa_placement_publication_id', $currentPublicationIds)->count(),
+            'sudah_acknowledge' => PkpaScheduleAcknowledgement::whereIn('pkpa_placement_publication_id', $currentPublicationIds)->where('acknowledgement_type', 'acknowledged')->count(),
+            'change_request_aktif' => PkpaPlacementChangeRequest::whereIn('status', ['draft', 'submitted', 'approved'])->count(),
+            'notifikasi_pending' => PkpaNotificationDelivery::whereIn('status', ['pending', 'failed'])->count(),
+        ];
+    }
+
+    private function studentPkpaScheduleStats(Request $request): array
+    {
+        $coreUserId = $request->user()->core_user_id;
+        if (blank($coreUserId)) {
+            return ['jadwal_resmi' => 0, 'sudah_acknowledge' => 0, 'belum_acknowledge' => 0];
+        }
+
+        $assignments = PkpaPublishedAssignment::query()
+            ->forStudent($coreUserId)
+            ->whereHas('publication', fn ($query) => $query->current())
+            ->pluck('id');
+
+        $acknowledged = PkpaScheduleAcknowledgement::whereIn('pkpa_published_assignment_id', $assignments)
+            ->where('core_user_id', $coreUserId)
+            ->where('acknowledgement_type', 'acknowledged')
+            ->count();
+
+        return [
+            'jadwal_resmi' => $assignments->count(),
+            'sudah_acknowledge' => $acknowledged,
+            'belum_acknowledge' => max(0, $assignments->count() - $acknowledged),
+        ];
+    }
+
+    private function supervisorPkpaScheduleStats(string $role, Request $request): array
+    {
+        $type = $role === 'pembimbing_lapangan' ? 'field' : 'internal';
+        $coreUserId = $request->user()->core_user_id;
+        if (blank($coreUserId)) {
+            return ['jadwal_resmi' => 0, 'sudah_acknowledge' => 0];
+        }
+
+        $assignments = PkpaPublishedAssignment::query()
+            ->forSupervisor($type, $coreUserId)
+            ->whereHas('publication', fn ($query) => $query->current())
+            ->pluck('id');
+
+        return [
+            'jadwal_resmi' => $assignments->count(),
+            'sudah_acknowledge' => PkpaScheduleAcknowledgement::whereIn('pkpa_published_assignment_id', $assignments)
+                ->where('core_user_id', $coreUserId)
+                ->where('acknowledgement_type', 'acknowledged')
+                ->count(),
+        ];
+    }
+
+    private function studentPkpaEnrollment(Request $request): ?PkpaEnrollment
+    {
+        if (blank($request->user()->core_user_id)) {
+            return null;
+        }
+
+        return PkpaEnrollment::query()
+            ->with(['program', 'requirements', 'activeGroupMembership.group'])
+            ->where('core_user_id', $request->user()->core_user_id)
+            ->whereIn('status', ['active', 'on_hold', 'completed'])
+            ->latest()
+            ->first();
     }
 
     private function registrationStats(): array

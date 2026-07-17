@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'mode' => env('KP_AUTH_MODE', 'legacy'),
+    'mode' => env('KP_AUTH_MODE', 'core_http'),
 
     'core_bridge_allowed_roles' => [
         'admin-kp',

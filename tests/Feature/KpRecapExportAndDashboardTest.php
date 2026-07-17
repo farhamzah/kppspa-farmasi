@@ -115,7 +115,7 @@ class KpRecapExportAndDashboardTest extends TestCase
             ->assertDontSee('Data transaksi tetap memakai ID legacy KP')
             ->assertDontSee('Segera');
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/admin/dashboard')->assertOk()->assertSee('Dashboard Admin')->assertDontSee('Segera');
-        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')->assertOk()->assertSee('Dashboard Koordinator KP')->assertDontSee('Segera');
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')->assertOk()->assertSee('Dashboard Koordinator PKPA')->assertDontSee('Segera');
         $this->actingAs($this->internal)->withSession(['active_role' => 'pembimbing_dalam'])->get('/pembimbing-dalam/dashboard')->assertOk()->assertSee('Dashboard Pembimbing Dalam')->assertDontSee('Segera');
         $this->actingAs($this->field)->withSession(['active_role' => 'pembimbing_lapangan'])->get('/pembimbing-lapangan/dashboard')->assertOk()->assertSee('Dashboard Pembimbing Luar')->assertDontSee('Segera');
         $this->actingAs($this->examiner)->withSession(['active_role' => 'penguji'])->get('/penguji/dashboard')->assertOk()->assertSee('Dashboard Penguji')->assertDontSee('Segera');

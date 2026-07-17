@@ -14,6 +14,8 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertRedirect('/login');
+        $response->assertOk()
+            ->assertSee('MY PSPA')
+            ->assertSee('Sistem Informasi Program Studi Profesi Apoteker');
     }
 }

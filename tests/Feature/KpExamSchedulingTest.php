@@ -65,12 +65,12 @@ class KpExamSchedulingTest extends TestCase
     {
         $this->get('/login')
             ->assertOk()
-            ->assertSee('Portal Kerja Praktek Farmasi UBP');
+            ->assertSee('MY PSPA');
 
         $response = $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/pendaftaran-kp');
 
-        $response->assertOk()->assertSee('Pendaftaran KP')->assertSee('Berkas KP');
+        $response->assertOk()->assertSee('Pendaftaran PKPA')->assertSee('Berkas PKPA');
         $this->assertSame(1, substr_count($response->getContent(), 'bg-cyan-700 text-white'));
     }
 

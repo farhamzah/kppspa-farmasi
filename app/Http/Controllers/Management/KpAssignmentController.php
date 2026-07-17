@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Management;
 
-use App\Exports\KpRecapExport;
+use App\Exports\KpTableReportExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Management\AssignFieldSupervisorRequest;
 use App\Http\Requests\Management\AssignInternalSupervisorRequest;
@@ -58,9 +58,10 @@ class KpAssignmentController extends Controller
 
         $rows = $report->rows($request);
         $filename = 'penempatan-kp-'.now()->format('Ymd-His');
+        $filters = $report->filterSummary($request);
 
         if ($format === 'excel') {
-            return Excel::download(new KpRecapExport($rows), $filename.'.xlsx');
+            return Excel::download(new KpTableReportExport('Penempatan KP', $filters, $rows), $filename.'.xlsx');
         }
 
         if ($format === 'pdf') {
@@ -77,7 +78,7 @@ class KpAssignmentController extends Controller
 
             return response(SimplePdfReport::table(
                 'Penempatan KP',
-                $report->filterSummary($request),
+                $filters + ['Total data' => $rows->count()],
                 $headings,
                 $rows->map(fn ($row) => array_values($row))->all()
             ), 200, [
@@ -89,7 +90,7 @@ class KpAssignmentController extends Controller
         return response()
             ->view('management.assignments.report-word', [
                 'rows' => $rows,
-                'filters' => $report->filterSummary($request),
+                'filters' => $filters,
             ], 200, [
                 'Content-Type' => 'application/msword; charset=UTF-8',
                 'Content-Disposition' => 'attachment; filename="'.$filename.'.doc"',

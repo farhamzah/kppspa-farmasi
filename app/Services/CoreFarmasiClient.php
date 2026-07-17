@@ -45,6 +45,95 @@ class CoreFarmasiClient
         return $url;
     }
 
+    public function health(): bool
+    {
+        if (! filled(config('core_farmasi.base_url'))) {
+            return false;
+        }
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout((int) config('core_farmasi.timeout', 10))
+                ->connectTimeout((int) config('core_farmasi.connect_timeout', 3))
+                ->get($this->path('health'));
+
+            return $response->successful() && ($response->json('status') === 'ok');
+        } catch (Throwable $exception) {
+            Log::warning('Core Farmasi health check unavailable.', [
+                'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
+                'error_class' => $exception::class,
+            ]);
+
+            return false;
+        }
+    }
+
+    public function authenticate(string $email, string $password): ?array
+    {
+        if (! filled(config('core_farmasi.base_url'))) {
+            return null;
+        }
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout((int) config('core_farmasi.timeout', 10))
+                ->connectTimeout((int) config('core_farmasi.connect_timeout', 3))
+                ->post($this->path('auth/login'), [
+                    'email' => $email,
+                    'password' => $password,
+                ]);
+
+            if ($response->status() === 401) {
+                return ['authenticated' => false, 'reason' => 'invalid_credentials'];
+            }
+
+            if (! $response->successful()) {
+                return $this->handleFailedResponse($response->status());
+            }
+
+            $payload = $response->json();
+
+            if (! is_array($payload) || blank($payload['token'] ?? null) || ! is_array($payload['user'] ?? null)) {
+                return null;
+            }
+
+            return [
+                'authenticated' => true,
+                'token' => $payload['token'],
+                'user' => $payload['user'],
+            ];
+        } catch (RequestException $exception) {
+            return $this->handleThrowable($exception);
+        } catch (Throwable $exception) {
+            return $this->handleThrowable($exception);
+        }
+    }
+
+    public function validateToken(string $token): ?array
+    {
+        if (! filled(config('core_farmasi.base_url')) || blank($token)) {
+            return null;
+        }
+
+        try {
+            $response = Http::acceptJson()
+                ->timeout((int) config('core_farmasi.timeout', 10))
+                ->connectTimeout((int) config('core_farmasi.connect_timeout', 3))
+                ->withToken($token)
+                ->get($this->path('auth/validate-token'));
+
+            if (! $response->successful()) {
+                return $this->handleFailedResponse($response->status());
+            }
+
+            return $response->json();
+        } catch (RequestException $exception) {
+            return $this->handleThrowable($exception);
+        } catch (Throwable $exception) {
+            return $this->handleThrowable($exception);
+        }
+    }
+
     public function getUser(int|string $id): ?array
     {
         return $this->data($this->get("internal/directory/users/{$id}"));
@@ -98,7 +187,7 @@ class CoreFarmasiClient
 
     public function checkUserAppAccess(int|string $userId): array
     {
-        $appCode = (string) config('core_farmasi.app_code', 'kp-farmasi');
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
 
         return $this->get("internal/apps/{$appCode}/users/{$userId}/access") ?? [
             'has_access' => false,
@@ -199,7 +288,7 @@ class CoreFarmasiClient
 
         Log::warning('Core Farmasi read-only request failed.', [
             'status' => $status,
-            'app_code' => config('core_farmasi.app_code', 'kp-farmasi'),
+            'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
         ]);
 
         return null;
@@ -212,7 +301,7 @@ class CoreFarmasiClient
         }
 
         Log::warning('Core Farmasi read-only request unavailable.', [
-            'app_code' => config('core_farmasi.app_code', 'kp-farmasi'),
+            'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
             'error_class' => $exception::class,
         ]);
 

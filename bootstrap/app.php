@@ -2,7 +2,10 @@
 
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\CheckUserActive;
+use App\Http\Middleware\EnsureLocalAccountManagementEnabled;
 use App\Http\Middleware\EnsureRoleSelected;
+use App\Http\Middleware\EnsureStudentPlaceSelectionEnabled;
+use App\Http\Middleware\AddSecurityHeaders;
 use App\Console\Commands\AcademicUnitCleanupCommand;
 use App\Console\Commands\AssignmentCancelReconcileCommand;
 use App\Console\Commands\CoreHealthCheckCommand;
@@ -18,6 +21,11 @@ use App\Console\Commands\DisplayAdapterCheckCommand;
 use App\Console\Commands\IntegrationGapCheckCommand;
 use App\Console\Commands\MasterDataReadCheckCommand;
 use App\Console\Commands\ProductionReadinessGateCommand;
+use App\Console\Commands\PkpaDocumentOrphanAuditCommand;
+use App\Console\Commands\PkpaE2ePrepareCommand;
+use App\Console\Commands\PkpaHypercareStatusCommand;
+use App\Console\Commands\PkpaIntegrityAuditCommand;
+use App\Console\Commands\PkpaQueueHealthCommand;
 use App\Console\Commands\ProvisionCoreBridgeUserCommand;
 use App\Console\Commands\ProvisionCoreBridgeUsersCommand;
 use App\Console\Commands\ReleaseCandidateGateCommand;
@@ -55,6 +63,11 @@ return Application::configure(basePath: dirname(__DIR__))
         IntegrationGapCheckCommand::class,
         MasterDataReadCheckCommand::class,
         ProductionReadinessGateCommand::class,
+        PkpaDocumentOrphanAuditCommand::class,
+        PkpaE2ePrepareCommand::class,
+        PkpaHypercareStatusCommand::class,
+        PkpaIntegrityAuditCommand::class,
+        PkpaQueueHealthCommand::class,
         ProvisionCoreBridgeUserCommand::class,
         ProvisionCoreBridgeUsersCommand::class,
         ReleaseCandidateGateCommand::class,
@@ -66,10 +79,13 @@ return Application::configure(basePath: dirname(__DIR__))
         UiReadinessCheckCommand::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(AddSecurityHeaders::class);
         $middleware->alias([
             'active' => CheckUserActive::class,
             'role.selected' => EnsureRoleSelected::class,
             'role' => CheckRole::class,
+            'local.accounts.enabled' => EnsureLocalAccountManagementEnabled::class,
+            'student.place-selection.enabled' => EnsureStudentPlaceSelectionEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

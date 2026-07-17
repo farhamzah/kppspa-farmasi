@@ -143,7 +143,7 @@ class User extends Authenticatable
         $role ??= session('active_role');
 
         return match ($role) {
-            'koordinator_kp' => 'Koordinator KP',
+            'koordinator_kp' => 'Koordinator PKPA',
             'pembimbing_dalam' => 'Pembimbing Dalam',
             'pembimbing_lapangan' => 'Pembimbing Lapangan',
             'mahasiswa' => 'Mahasiswa',

@@ -9,6 +9,7 @@ use App\Support\CoreRoleTranslator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 class CoreBridgeAuthService
@@ -17,6 +18,7 @@ class CoreBridgeAuthService
 
     public function __construct(
         private readonly KpCoreBridgeProvisioningService $provisioningService,
+        private readonly CoreFarmasiClient $coreClient,
     ) {
     }
 
@@ -29,7 +31,9 @@ class CoreBridgeAuthService
             return $this->fallbackLegacyAttempt($email, $password, $remember);
         }
 
-        $coreResult = $this->attemptCoreBridge($email, $password, $remember);
+        $coreResult = $mode === 'core_http'
+            ? $this->attemptCoreHttp($email, $password, $remember)
+            : $this->attemptCoreBridge($email, $password, $remember);
         if ($coreResult['ok']) {
             return $coreResult;
         }
@@ -98,8 +102,9 @@ class CoreBridgeAuthService
         $coreUser = CoreUser::query()
             ->with(['roles', 'appAccesses'])
             ->find($coreUserId);
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
         $accesses = $coreUser?->appAccesses
-            ->where('app_code', 'kp-farmasi')
+            ->where('app_code', $appCode)
             ->where('is_active', true) ?? collect();
         $coreRoles = $coreUser?->roles->pluck('name')->all() ?? [];
         $roleCandidates = $accesses
@@ -208,6 +213,58 @@ class CoreBridgeAuthService
         return $this->result(true, $legacyUser, null, 'core_bridge');
     }
 
+    private function attemptCoreHttp(string $email, string $password, bool $remember): array
+    {
+        $auth = $this->coreClient->authenticate($email, $password);
+
+        if (! is_array($auth)) {
+            $this->failureReason = 'core_unavailable';
+
+            return $this->result(false, null, $this->failureReason, 'core_http');
+        }
+
+        if (($auth['authenticated'] ?? false) !== true || ! is_array($auth['user'] ?? null)) {
+            $this->failureReason = $auth['reason'] ?? 'invalid_credentials';
+
+            return $this->result(false, null, $this->failureReason, 'core_http');
+        }
+
+        $coreUser = $auth['user'];
+        if (($coreUser['active'] ?? true) !== true) {
+            $this->failureReason = 'core_user_inactive';
+
+            return $this->result(false, null, $this->failureReason, 'core_http');
+        }
+
+        $access = $this->coreClient->checkUserAppAccess($coreUser['id']);
+        if (($access['has_access'] ?? false) !== true) {
+            $this->failureReason = 'core_app_access_denied';
+
+            return $this->result(false, null, $this->failureReason, 'core_http');
+        }
+
+        $kpRoles = CoreRoleTranslator::coreRolesToKp($access['roles'] ?? $coreUser['roles'] ?? []);
+        if ($kpRoles === []) {
+            $this->failureReason = 'core_app_access_denied';
+
+            return $this->result(false, null, $this->failureReason, 'core_http');
+        }
+
+        $legacyUser = $this->resolveOrCreateLocalProjection($coreUser, $kpRoles);
+        if (! $legacyUser) {
+            return $this->result(false, null, $this->failureReason, 'core_http');
+        }
+
+        Auth::login($legacyUser, $remember);
+        Log::info('MY PSPA Core HTTP login success.', [
+            'email' => $this->normalize($email),
+            'core_user_id' => $coreUser['id'] ?? null,
+            'legacy_user_id' => $legacyUser->id,
+        ]);
+
+        return $this->result(true, $legacyUser, null, 'core_http');
+    }
+
     private function result(bool $ok, ?User $legacyUser, ?string $reason, string $via): array
     {
         return [
@@ -227,7 +284,7 @@ class CoreBridgeAuthService
     {
         $coreRoles = $coreUser->roles->pluck('name');
         $appAccessRoles = $coreUser->appAccesses
-            ->where('app_code', 'kp-farmasi')
+            ->where('app_code', (string) config('core_farmasi.app_code', 'kppspa-farmasi'))
             ->where('is_active', true)
             ->pluck('role_slug');
         $kpRoles = CoreRoleTranslator::coreRolesToKp($appAccessRoles->merge($coreRoles));
@@ -266,5 +323,51 @@ class CoreBridgeAuthService
         ]);
 
         return User::query()->find($report['legacy_user_id']);
+    }
+
+    private function resolveOrCreateLocalProjection(array $coreUser, array $kpRoles): ?User
+    {
+        $coreUserId = (int) ($coreUser['id'] ?? 0);
+        $email = (string) ($coreUser['email'] ?? '');
+        $name = (string) ($coreUser['name'] ?? $email);
+
+        if ($coreUserId <= 0 || blank($email)) {
+            $this->failureReason = 'core_contract_incomplete';
+
+            return null;
+        }
+
+        $legacyUser = User::query()->firstOrNew(['core_user_id' => $coreUserId]);
+        $legacyUser->forceFill([
+            'name' => $name,
+            'email' => $email,
+            'status' => 'active',
+            'must_change_password' => false,
+            'profile_completed' => $legacyUser->profile_completed ?? false,
+            'core_synced_at' => now(),
+            'core_sync_status' => 'synced',
+            'core_sync_note' => 'Synced from Core Farmasi HTTP auth.',
+        ]);
+
+        if (! $legacyUser->exists) {
+            $legacyUser->setAttribute('password', Hash::make(Str::random(48)));
+        }
+
+        $legacyUser->save();
+
+        $roleIds = Role::query()
+            ->whereIn('name', $kpRoles)
+            ->pluck('id')
+            ->all();
+
+        if ($roleIds === []) {
+            $this->failureReason = 'core_app_access_denied';
+
+            return null;
+        }
+
+        $legacyUser->roles()->sync($roleIds);
+
+        return $legacyUser->load('roles');
     }
 }

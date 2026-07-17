@@ -21,7 +21,7 @@ class StabilizationDemoSeederTest extends TestCase
     {
         $response = $this->get('/login')
             ->assertOk()
-            ->assertSee('Portal Kerja Praktek Farmasi UBP')
+            ->assertSee('MY PSPA')
             ->assertSee('toggle-password')
             ->assertSee('Tampilkan kata sandi');
 
