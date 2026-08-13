@@ -4,7 +4,7 @@
 @section('content')
 <div class="space-y-6">
     <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-        <h2 class="text-xl font-black text-slate-950">Monitoring Hasil Pre/Post Test</h2>
+        <h2 class="text-xl font-black text-slate-950">Pemantauan Hasil Pre/Post Test</h2>
         <form class="mt-5 grid gap-3 md:grid-cols-[1fr_220px_140px]">
             <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cari nama, NIM, email" class="rounded-2xl border-slate-200 text-sm">
             <select name="type" class="rounded-2xl border-slate-200 text-sm">
@@ -19,7 +19,7 @@
     <section class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-100">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-5 py-3">Mahasiswa</th><th class="px-5 py-3">Test</th><th class="px-5 py-3">Skor</th><th class="px-5 py-3">Submit</th><th class="px-5 py-3 text-right">Aksi</th></tr></thead>
+                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-5 py-3">Mahasiswa</th><th class="px-5 py-3">Test</th><th class="px-5 py-3">Skor</th><th class="px-5 py-3">Dikirim</th><th class="px-5 py-3 text-right">Aksi</th></tr></thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($attempts as $attempt)
                         <tr>

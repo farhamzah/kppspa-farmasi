@@ -47,11 +47,11 @@ class KpDocument extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
-            'menunggu' => 'Menunggu Review',
+            'menunggu' => 'Menunggu Pemeriksaan',
             'disetujui' => 'Disetujui',
             'revisi' => 'Revisi',
             'ditolak' => 'Ditolak',
-            default => 'Belum Upload',
+            default => 'Belum Unggah',
         };
     }
 

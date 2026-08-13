@@ -20,7 +20,7 @@
     </section>
     <aside class="space-y-5">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <h3 class="font-bold text-slate-950">Komentar Monitoring</h3>
+            <h3 class="font-bold text-slate-950">Komentar Pemantauan</h3>
             <form method="POST" action="{{ route('management.logbooks.comments',$logbook) }}" class="mt-4">@csrf<textarea name="comment" rows="4" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><select name="visibility" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="visible_to_student">Terlihat Mahasiswa</option><option value="internal">Internal</option></select><button class="mt-3 w-full rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Simpan Komentar</button></form>
         </section>
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

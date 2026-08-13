@@ -14,7 +14,7 @@
             </div>
         </div>
         @if($assignment->finalScore?->isLocked())
-            <div class="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Nilai sudah dikunci/dipublish dan tidak dapat diubah.</div>
+            <div class="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Nilai sudah dikunci/diterbitkan dan tidak dapat diubah.</div>
         @endif
     </section>
 
@@ -84,9 +84,9 @@
             </table>
         </div>
         @if($errors->any())<div class="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{{ $errors->first() }}</div>@endif
-        <div class="mt-6 flex justify-end gap-2"><button class="rounded-2xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700" @disabled($assignment->finalScore?->isLocked())>Simpan Draft</button></div>
+        <div class="mt-6 flex justify-end gap-2"><button class="rounded-2xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700" @disabled($assignment->finalScore?->isLocked())>Simpan Draf</button></div>
     </form>
-    <form method="POST" action="{{ $submitRoute }}" onsubmit="return confirm('Submit nilai? Nilai tidak dapat diubah setelah nilai akhir dikunci.')" class="flex justify-end">@csrf<button class="rounded-2xl bg-cyan-700 px-5 py-3 text-sm font-bold text-white" @disabled($assignment->finalScore?->isLocked())>Submit Nilai</button></form>
+    <form method="POST" action="{{ $submitRoute }}" onsubmit="return confirm('Kirim nilai? Nilai tidak dapat diubah setelah nilai akhir dikunci.')" class="flex justify-end">@csrf<button class="rounded-2xl bg-cyan-700 px-5 py-3 text-sm font-bold text-white" @disabled($assignment->finalScore?->isLocked())>Kirim Nilai</button></form>
 </div>
 
 @push('scripts')

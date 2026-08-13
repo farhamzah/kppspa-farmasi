@@ -53,7 +53,7 @@
                 <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
                     <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
-                            <h3 class="text-lg font-black text-slate-950">Link Laporan Final</h3>
+                    <h3 class="text-lg font-black text-slate-950">Tautan Laporan Final</h3>
                             <p class="mt-1 text-sm text-slate-500">Gunakan link Google Docs/Drive final yang sudah disepakati pembimbing. Link ini terlihat oleh pembimbing dalam dan lapangan.</p>
                         </div>
                         @if($report?->final_document_url)
@@ -69,22 +69,22 @@
                             <button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-cyan-700/15">Simpan Link</button>
                         </form>
                     @else
-                        <p class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Link final terkunci saat laporan sedang direview atau sudah disetujui.</p>
+                        <p class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Tautan final terkunci saat laporan sedang diperiksa atau sudah disetujui.</p>
                     @endif
                 </section>
 
                 <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
-                    <h3 class="text-lg font-black text-slate-950">Upload File Laporan</h3>
+                    <h3 class="text-lg font-black text-slate-950">Unggah Berkas Laporan</h3>
                     <p class="mt-1 text-sm text-slate-500">Opsional jika laporan final memakai Google Docs/Drive. Format PDF, DOC, atau DOCX. Maksimal 10MB.</p>
                     @if(! $report || $report->canBeEditedByStudent())
                         <form method="POST" action="{{ route('student.final-reports.upload') }}" enctype="multipart/form-data" class="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
                             @csrf
                             <input type="file" name="report_file" class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
                             <input name="note" placeholder="Catatan upload opsional" class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
-                            <button class="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-teal-700/15">Upload</button>
+                            <button class="rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-teal-700/15">Unggah</button>
                         </form>
                     @else
-                        <p class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Upload tidak tersedia pada status saat ini.</p>
+                        <p class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Unggah tidak tersedia pada status saat ini.</p>
                     @endif
 
                     <div class="mt-4 space-y-3">
@@ -94,7 +94,7 @@
                                     <p class="font-bold text-slate-950">Versi {{ $file->version }} - {{ $file->original_filename }}</p>
                                     <p class="text-xs text-slate-500">{{ $file->humanFileSize() }} | {{ $file->uploaded_at->format('d M Y H:i') }}</p>
                                 </div>
-                                <a href="{{ route('student.final-reports.files.download',$file) }}" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Download</a>
+                                <a href="{{ route('student.final-reports.files.download',$file) }}" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Unduh</a>
                             </div>
                         @empty
                             <p class="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Belum ada file laporan.</p>
@@ -109,12 +109,12 @@
                     <div class="mt-4 space-y-3 text-sm">
                         <div class="rounded-xl bg-slate-50 p-4">
                             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pembimbing Dalam</p>
-                            <p class="mt-1 font-black text-slate-950">{{ $report?->internalReviewStatusLabel() ?? 'Belum Review' }}</p>
+                            <p class="mt-1 font-black text-slate-950">{{ $report?->internalReviewStatusLabel() ?? 'Belum Diperiksa' }}</p>
                             @if($report?->internal_review_note)<p class="mt-2 text-xs text-slate-600">{{ $report->internal_review_note }}</p>@endif
                         </div>
                         <div class="rounded-xl bg-slate-50 p-4">
                             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pembimbing Lapangan</p>
-                            <p class="mt-1 font-black text-slate-950">{{ $report?->fieldReviewStatusLabel() ?? 'Belum Review' }}</p>
+                            <p class="mt-1 font-black text-slate-950">{{ $report?->fieldReviewStatusLabel() ?? 'Belum Diperiksa' }}</p>
                             @if($report?->field_review_note)<p class="mt-2 text-xs text-slate-600">{{ $report->field_review_note }}</p>@endif
                         </div>
                     </div>
@@ -124,7 +124,7 @@
                     @if($report?->canBeSubmitted())
                         <form method="POST" action="{{ route('student.final-reports.submit') }}" class="mt-4">
                             @csrf
-                            <button onclick="return confirm('Submit laporan final untuk review kedua pembimbing?')" class="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">Submit Final untuk Review</button>
+                            <button onclick="return confirm('Kirim laporan final untuk pemeriksaan kedua pembimbing?')" class="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">Kirim Final untuk Pemeriksaan</button>
                         </form>
                     @endif
                 </section>

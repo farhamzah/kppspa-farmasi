@@ -26,7 +26,7 @@
                 <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Status</label>
                 <select name="status" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     <option value="">Semua Status</option>
-                    @foreach(['draft' => 'Draft', 'menunggu_verifikasi' => 'Menunggu Verifikasi', 'revisi' => 'Revisi', 'terverifikasi' => 'Terverifikasi', 'ditolak' => 'Ditolak', 'dibatalkan' => 'Dibatalkan'] as $value => $label)
+                    @foreach(['draft' => 'Draf', 'menunggu_verifikasi' => 'Menunggu Verifikasi', 'revisi' => 'Revisi', 'terverifikasi' => 'Terverifikasi', 'ditolak' => 'Ditolak', 'dibatalkan' => 'Dibatalkan'] as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -43,9 +43,9 @@
                         <th class="px-4 py-3">Nomor</th>
                         <th class="px-4 py-3">Mahasiswa</th>
                         <th class="px-4 py-3">Periode</th>
-                        <th class="px-4 py-3">Progress</th>
+                        <th class="px-4 py-3">Kemajuan</th>
                         <th class="px-4 py-3">Status</th>
-                        <th class="px-4 py-3">Submit</th>
+                        <th class="px-4 py-3">Dikirim</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -70,11 +70,11 @@
                                 @if($registration->submitted_at)
                                     {{ $registration->submitted_at->format('d M Y H:i') }}
                                 @else
-                                    <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Belum submit</span>
+                                    <span class="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Belum dikirim</span>
                                 @endif
                             </td>
                             <td class="px-4 py-4 text-right">
-                                <a href="{{ route('management.kp-registrations.show', ['registration' => $registration, 'return_url' => request()->fullUrl()]) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Review</a>
+                                <a href="{{ route('management.kp-registrations.show', ['registration' => $registration, 'return_url' => request()->fullUrl()]) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Periksa</a>
                             </td>
                         </tr>
                     @empty

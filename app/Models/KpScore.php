@@ -20,7 +20,7 @@ class KpScore extends Model
 
     public function statusLabel(): string
     {
-        return ['draft' => 'Draft', 'submitted' => 'Submitted', 'locked' => 'Locked'][$this->status] ?? ucfirst((string) $this->status);
+        return ['draft' => 'Draf', 'submitted' => 'Dikirim', 'locked' => 'Dikunci'][$this->status] ?? ucfirst((string) $this->status);
     }
 
     public function statusBadgeClass(): string

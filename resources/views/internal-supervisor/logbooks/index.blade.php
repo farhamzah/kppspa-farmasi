@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $statusOptions = ['draft'=>'Draft','menunggu_validasi'=>'Menunggu Validasi','disetujui'=>'Disetujui','revisi'=>'Revisi','ditolak'=>'Ditolak'];
+    $statusOptions = ['draft'=>'Draf','menunggu_validasi'=>'Menunggu Validasi','disetujui'=>'Disetujui','revisi'=>'Revisi','ditolak'=>'Ditolak'];
     $totalLogbooks = $assignments->getCollection()->sum('logbooks_count');
     $pendingLogbooks = $assignments->getCollection()->sum('pending_logbooks_count');
     $revisionLogbooks = $assignments->getCollection()->sum('revision_logbooks_count');
@@ -85,7 +85,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="font-semibold text-slate-800">{{ $lastActivityDate }}</div>
-                                <div class="mt-1 text-xs text-slate-500">Submit: {{ $lastSubmittedAt }}</div>
+                                <div class="mt-1 text-xs text-slate-500">Dikirim: {{ $lastSubmittedAt }}</div>
                             </td>
                             <td class="px-5 py-4">
                                 @if($assignment->pending_logbooks_count > 0)

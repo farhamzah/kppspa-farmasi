@@ -44,7 +44,7 @@
                     @error('external_status')<p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Synced At</label>
+                    <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Disinkronkan Pada</label>
                     <input type="datetime-local" name="synced_at" value="{{ old('synced_at', $reference->synced_at?->format('Y-m-d\TH:i')) }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                     @error('synced_at')<p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>@enderror
                 </div>

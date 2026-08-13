@@ -16,7 +16,7 @@
 <div class="space-y-5">
 <div class="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
     <div class="grid gap-2 sm:grid-cols-2 lg:flex lg:flex-wrap">
-        <a href="{{ route('management.kp-assignments.report.preview', $reportQuery) }}" target="_blank" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">Preview</a>
+        <a href="{{ route('management.kp-assignments.report.preview', $reportQuery) }}" target="_blank" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">Pratinjau</a>
         <a href="{{ route('management.kp-assignments.report.preview', $reportQuery + ['print' => 1]) }}" target="_blank" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">Print</a>
         <a href="{{ route('management.kp-assignments.report.download', ['format' => 'word'] + $reportQuery) }}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">Word</a>
         <a href="{{ route('management.kp-assignments.report.download', ['format' => 'excel'] + $reportQuery) }}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm">Excel</a>

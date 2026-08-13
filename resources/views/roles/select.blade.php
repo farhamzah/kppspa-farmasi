@@ -50,14 +50,14 @@
                         </span>
                         <div>
                             <p class="font-black">Akun Anda memiliki lebih dari satu peran.</p>
-                            <p class="mt-1 leading-6 text-cyan-800">Pilih peran yang ingin digunakan pada sesi ini. Anda dapat mengganti peran kembali dari topbar setelah masuk dashboard.</p>
+                            <p class="mt-1 leading-6 text-cyan-800">Pilih peran yang ingin digunakan pada sesi ini. Anda dapat mengganti peran kembali dari bilah atas setelah masuk dashboard.</p>
                         </div>
                     </div>
                 </div>
 
                 @if($roles->isEmpty())
                     <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-                        <p class="font-black">Akun belum memiliki role aktif.</p>
+                        <p class="font-black">Akun belum memiliki peran aktif.</p>
                         <p class="mt-1">Hubungi Admin untuk mengaktifkan akses sebelum menggunakan sistem.</p>
                     </div>
                 @else

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title','Review Laporan - '.config('app.name'))
-@section('page_title','Review Laporan')
+@section('title','Pemeriksaan Laporan - '.config('app.name'))
+@section('page_title','Pemeriksaan Laporan')
 
 @section('content')
 <div class="si-page">
@@ -10,7 +10,7 @@
             <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cari nama/NIM" class="si-input mt-0">
             <select name="status" class="si-input mt-0">
                 <option value="">Semua Status</option>
-                @foreach(['draft'=>'Draft','menunggu_review'=>'Menunggu Review','revisi'=>'Revisi','disetujui'=>'Disetujui','ditolak'=>'Ditolak'] as $value=>$label)
+                @foreach(['draft'=>'Draf','menunggu_review'=>'Menunggu Pemeriksaan','revisi'=>'Revisi','disetujui'=>'Disetujui','ditolak'=>'Ditolak'] as $value=>$label)
                     <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                 @endforeach
             </select>
@@ -27,7 +27,7 @@
                         <th>Tempat</th>
                         <th>Pembimbing Dalam</th>
                         <th>Status</th>
-                        <th>Submit</th>
+                        <th>Dikirim</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>

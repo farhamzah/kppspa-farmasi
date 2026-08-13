@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Import User - '.config('app.name'))
-@section('page_title', 'Import User')
+@section('title', 'Impor Pengguna - '.config('app.name'))
+@section('page_title', 'Impor Pengguna')
 
 @section('content')
 <div class="space-y-5">
@@ -10,7 +10,7 @@
     @endif
 
     <section class="grid gap-4 md:grid-cols-5">
-        @foreach(['Download template', 'Upload file', 'Preview validasi', 'Proses import', 'Lihat hasil'] as $step)
+        @foreach(['Unduh template', 'Unggah berkas', 'Pratinjau validasi', 'Proses impor', 'Lihat hasil'] as $step)
             <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
                 <p class="text-xs font-semibold uppercase tracking-wide text-teal-700">Langkah {{ $loop->iteration }}</p>
                 <p class="mt-2 text-sm font-bold text-slate-950">{{ $step }}</p>
@@ -21,8 +21,8 @@
     <section class="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
         <div class="space-y-5">
             <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <h2 class="text-lg font-bold text-slate-950">Download Template</h2>
-                <p class="mt-1 text-sm text-slate-500">Pilih template sesuai tipe import.</p>
+                <h2 class="text-lg font-bold text-slate-950">Unduh Template</h2>
+                <p class="mt-1 text-sm text-slate-500">Pilih template sesuai tipe impor.</p>
                 <div class="mt-4 grid gap-2">
                     @foreach($types as $type)
                         <a href="{{ route('admin.import-users.template', $type) }}" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Template {{ str_replace('_', ' ', ucwords($type, '_')) }}</a>
@@ -32,10 +32,10 @@
 
             <form method="POST" action="{{ route('admin.import-users.preview') }}" enctype="multipart/form-data" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 @csrf
-                <h2 class="text-lg font-bold text-slate-950">Upload File</h2>
+                <h2 class="text-lg font-bold text-slate-950">Unggah Berkas</h2>
                 <div class="mt-4 space-y-4">
                     <div>
-                        <label class="text-sm font-semibold text-slate-700">Tipe Import</label>
+                        <label class="text-sm font-semibold text-slate-700">Tipe Impor</label>
                         <select name="import_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                             @foreach($types as $type)
                                 <option value="{{ $type }}" @selected($importType === $type)>{{ str_replace('_', ' ', ucwords($type, '_')) }}</option>
@@ -43,11 +43,11 @@
                         </select>
                     </div>
                     <div>
-                        <label class="text-sm font-semibold text-slate-700">File Excel/CSV</label>
+                        <label class="text-sm font-semibold text-slate-700">Berkas Excel/CSV</label>
                         <input name="file" type="file" accept=".xlsx,.xls,.csv" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                         <p class="mt-1 text-xs text-slate-500">Format: xlsx, xls, csv. Maksimal 5MB.</p>
                     </div>
-                    <button class="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white">Preview Import</button>
+                    <button class="w-full rounded-lg bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white">Pratinjau Impor</button>
                 </div>
             </form>
         </div>
@@ -55,8 +55,8 @@
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <div class="flex items-start justify-between gap-3">
                 <div>
-                    <h2 class="text-lg font-bold text-slate-950">Preview Validasi</h2>
-                    <p class="mt-1 text-sm text-slate-500">Baris valid dapat diproses. Baris error akan dicatat dan tidak dibuat.</p>
+                    <h2 class="text-lg font-bold text-slate-950">Pratinjau Validasi</h2>
+                    <p class="mt-1 text-sm text-slate-500">Baris valid dapat diproses. Baris bermasalah akan dicatat dan tidak dibuat.</p>
                 </div>
                 <a href="{{ route('admin.import-users.history') }}" class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Riwayat</a>
             </div>
@@ -79,7 +79,7 @@
                                 <th class="px-3 py-2">Nama</th>
                                 <th class="px-3 py-2">Email</th>
                                 <th class="px-3 py-2">Tipe</th>
-                                <th class="px-3 py-2">Role</th>
+                                <th class="px-3 py-2">Peran</th>
                                 <th class="px-3 py-2">Status</th>
                             </tr>
                         </thead>
@@ -105,10 +105,10 @@
                 </div>
                 <form method="POST" action="{{ route('admin.import-users.process') }}" class="mt-4" onsubmit="return confirm('Proses baris valid dari preview ini?')">
                     @csrf
-                    <button class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">Proses Import</button>
+                    <button class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white">Proses Impor</button>
                 </form>
             @else
-                <div class="mt-6 rounded-xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">Belum ada preview. Upload file untuk melihat validasi per baris.</div>
+                <div class="mt-6 rounded-xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">Belum ada pratinjau. Unggah berkas untuk melihat validasi per baris.</div>
             @endif
         </div>
     </section>

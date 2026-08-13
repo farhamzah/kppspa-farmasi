@@ -20,7 +20,7 @@ class KpFinalScore extends Model
 
     public function statusLabel(): string
     {
-        return ['draft' => 'Draft', 'calculated' => 'Calculated', 'final' => 'Final', 'locked' => 'Locked', 'published' => 'Published'][$this->status] ?? ucfirst((string) $this->status);
+        return ['draft' => 'Draf', 'calculated' => 'Terhitung', 'final' => 'Final', 'locked' => 'Dikunci', 'published' => 'Diterbitkan'][$this->status] ?? ucfirst((string) $this->status);
     }
 
     public function statusBadgeClass(): string

@@ -98,7 +98,7 @@ class PkpaPracticeSite extends Model
             'active' => 'Aktif',
             'inactive' => 'Nonaktif',
             'expired' => 'Expired',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 

@@ -33,7 +33,7 @@
     @endforeach
 
     <div class="sticky bottom-4 z-10 rounded-3xl bg-white/95 p-4 shadow-xl shadow-slate-900/10 ring-1 ring-slate-100 backdrop-blur">
-        <button class="w-full rounded-2xl bg-teal-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-teal-700/20">Submit {{ $test->typeLabel() }}</button>
+        <button class="w-full rounded-2xl bg-teal-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-teal-700/20">Kirim {{ $test->typeLabel() }}</button>
     </div>
 </form>
 @endsection

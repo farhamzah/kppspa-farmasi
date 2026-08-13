@@ -123,7 +123,7 @@
 
     <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <div class="border-b border-slate-100 p-5">
-            <h2 class="text-lg font-black text-slate-950">Monitoring Capaian Mahasiswa</h2>
+            <h2 class="text-lg font-black text-slate-950">Pemantauan Capaian Mahasiswa</h2>
             <p class="mt-1 text-sm text-slate-500">Admin dan koordinator melihat semua mahasiswa, pembimbing luar yang mencentang capaian.</p>
         </div>
         <div class="overflow-x-auto">

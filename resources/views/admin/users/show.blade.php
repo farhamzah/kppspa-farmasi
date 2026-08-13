@@ -34,7 +34,7 @@
             <a href="{{ route('admin.users.edit', $user) }}" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Edit</a>
             <form method="POST" action="{{ route('admin.users.sync-core.single', $user) }}" onsubmit="return confirm('Sync data user ini dari Core? Password Core tidak akan disalin.')">
                 @csrf
-                <button class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Sync dari Core</button>
+                <button class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Sinkronkan dari Core</button>
             </form>
             <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}" onsubmit="return confirm('Ubah status akun ini?')">
                 @csrf

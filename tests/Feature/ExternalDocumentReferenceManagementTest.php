@@ -42,12 +42,12 @@ class ExternalDocumentReferenceManagementTest extends TestCase
             ->get(route('management.integration.external-document-references.index'))
             ->assertOk()
             ->assertSee('Referensi Dokumen Eksternal TU')
-            ->assertSee('Buat Draft Referensi Lokal');
+            ->assertSee('Buat Draf Referensi Lokal');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get(route('management.integration.external-document-references.index'))
             ->assertOk()
-            ->assertSee('Draft Reference TU');
+            ->assertSee('Referensi Draf TU');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/management/integration/external-document-references')

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title','Detail Review Laporan - '.config('app.name'))
-@section('page_title','Detail Review Laporan')
+@section('title','Detail Pemeriksaan Laporan - '.config('app.name'))
+@section('page_title','Detail Pemeriksaan Laporan')
 
 @section('content')
 @php
@@ -12,7 +12,7 @@
     @if($errors->any())
         <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{{ $errors->first() }}</div>
     @endif
-    <a href="{{ route('internal-supervisor.final-reports.index', request()->query()) }}" class="inline-flex rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-bold text-cyan-700 shadow-sm">Kembali ke daftar review</a>
+    <a href="{{ route('internal-supervisor.final-reports.index', request()->query()) }}" class="inline-flex rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-bold text-cyan-700 shadow-sm">Kembali ke daftar pemeriksaan</a>
 
     <div class="grid gap-5 xl:grid-cols-[1fr_380px]">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
@@ -27,12 +27,12 @@
 
             <div class="mt-5 grid gap-3 md:grid-cols-2">
                 <div class="rounded-2xl bg-slate-50 p-4">
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Review Pembimbing Dalam</p>
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pemeriksaan Pembimbing Dalam</p>
                     <p class="mt-1 font-black text-slate-950">{{ $report->internalReviewStatusLabel() }}</p>
                     @if($report->internal_review_note)<p class="mt-2 text-sm text-slate-600">{{ $report->internal_review_note }}</p>@endif
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Review Pembimbing Lapangan</p>
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pemeriksaan Pembimbing Lapangan</p>
                     <p class="mt-1 font-black text-slate-950">{{ $report->fieldReviewStatusLabel() }}</p>
                     @if($report->field_review_note)<p class="mt-2 text-sm text-slate-600">{{ $report->field_review_note }}</p>@endif
                 </div>
@@ -41,8 +41,8 @@
             <h3 class="mt-6 font-black text-slate-950">Dokumen Final</h3>
             @if($report->final_document_url)
                 <div class="mt-3 rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4">
-                    <p class="text-sm font-bold text-slate-950">{{ $report->final_document_label ?: 'Link laporan final' }}</p>
-                    <a href="{{ $report->final_document_url }}" target="_blank" rel="noopener" class="mt-2 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Buka Link Google Docs/Drive</a>
+                    <p class="text-sm font-bold text-slate-950">{{ $report->final_document_label ?: 'Tautan laporan final' }}</p>
+                    <a href="{{ $report->final_document_url }}" target="_blank" rel="noopener" class="mt-2 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Buka Tautan Google Docs/Drive</a>
                 </div>
             @endif
 
@@ -53,7 +53,7 @@
                             <p class="font-bold text-slate-950">Versi {{ $file->version }} - {{ $file->original_filename }}</p>
                             <p class="text-xs text-slate-500">{{ $file->humanFileSize() }} | {{ $file->uploaded_at->format('d M Y H:i') }}</p>
                         </div>
-                        <a href="{{ route('internal-supervisor.final-reports.files.download',$file) }}" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Download</a>
+                        <a href="{{ route('internal-supervisor.final-reports.files.download',$file) }}" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Unduh</a>
                     </div>
                 @empty
                     @unless($report->final_document_url)
@@ -96,7 +96,7 @@
 
         <aside class="space-y-5">
             <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                <h3 class="font-black text-slate-950">Aksi Review Laporan</h3>
+                <h3 class="font-black text-slate-950">Aksi Pemeriksaan Laporan</h3>
                 @if($report->status === 'menunggu_review')
                     <form method="POST" action="{{ route('internal-supervisor.final-reports.approve',$report) }}" class="mt-4">
                         @csrf
@@ -114,7 +114,7 @@
                         <button onclick="return confirm('Tolak laporan ini?')" class="mt-3 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white">Tolak</button>
                     </form>
                 @else
-                    <p class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Aksi review tersedia setelah mahasiswa submit laporan final.</p>
+                    <p class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Aksi pemeriksaan tersedia setelah mahasiswa mengirim laporan final.</p>
                 @endif
             </section>
             <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

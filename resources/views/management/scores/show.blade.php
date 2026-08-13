@@ -19,7 +19,7 @@
             <div class="rounded-3xl bg-slate-950 px-6 py-4 text-right text-white">
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-200">Nilai akhir</p>
                 <p class="mt-1 text-4xl font-black">{{ $assignment->finalScore?->final_score ?? $breakdown['final_score'] }}</p>
-                <p class="text-sm font-bold text-slate-300">Grade {{ $assignment->finalScore?->final_grade ?? '-' }}</p>
+                <p class="text-sm font-bold text-slate-300">Huruf Mutu {{ $assignment->finalScore?->final_grade ?? '-' }}</p>
             </div>
         </div>
     </section>
@@ -33,7 +33,7 @@
                 @if(($section['meta']['source'] ?? null) === 'logbook')
                     <p class="mt-2 text-xs font-semibold text-slate-500">{{ $section['meta']['approved_logbook_days'] }} logbook disetujui / {{ $section['meta']['workdays'] }} hari kerja</p>
                 @elseif(($section['meta']['source'] ?? null) === 'override')
-                    <p class="mt-2 text-xs font-semibold text-amber-700">Override koordinator</p>
+                    <p class="mt-2 text-xs font-semibold text-amber-700">Koreksi koordinator</p>
                 @endif
             </div>
         @endforeach
@@ -56,7 +56,7 @@
                     <p class="text-xs text-slate-500">Bobot akhir 15%</p>
                 </div>
                 <input type="number" name="attendance_score" min="0" max="100" step="0.01" value="{{ old('attendance_score', $assignment->finalScore?->attendance_score_override) }}" class="rounded-2xl border-slate-200 text-sm font-bold" placeholder="{{ number_format($breakdown['sections']['kehadiran']['score'], 2) }}" @disabled($assignment->finalScore?->isLocked())>
-                <input name="attendance_note" value="{{ old('attendance_note', $assignment->finalScore?->attendance_note) }}" class="rounded-2xl border-slate-200 text-sm" placeholder="Catatan override kehadiran bila ada" @disabled($assignment->finalScore?->isLocked())>
+                <input name="attendance_note" value="{{ old('attendance_note', $assignment->finalScore?->attendance_note) }}" class="rounded-2xl border-slate-200 text-sm" placeholder="Catatan koreksi kehadiran bila ada" @disabled($assignment->finalScore?->isLocked())>
             </div>
         </div>
 
@@ -110,7 +110,7 @@
     <section class="flex flex-wrap gap-2 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
         <form method="POST" action="{{ route('management.scores.calculate',$assignment) }}">@csrf<button class="rounded-2xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Hitung Ulang</button></form>
         <form method="POST" action="{{ route('management.scores.finalize',$assignment) }}" onsubmit="return confirm('Finalisasi dan kunci nilai?')">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Finalisasi</button></form>
-        @if($assignment->finalScore)<form method="POST" action="{{ route('management.final-scores.publish',$assignment->finalScore) }}" onsubmit="return confirm('Publish nilai ke mahasiswa?')">@csrf<button class="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Publish</button></form><form method="POST" action="{{ route('management.final-scores.unlock',$assignment->finalScore) }}" onsubmit="return confirm('Buka kunci nilai?')">@csrf<input type="hidden" name="reason" value="Dibuka ulang oleh Koordinator/Admin"><button class="rounded-2xl border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700">Unlock</button></form>@endif
+        @if($assignment->finalScore)<form method="POST" action="{{ route('management.final-scores.publish',$assignment->finalScore) }}" onsubmit="return confirm('Terbitkan nilai ke mahasiswa?')">@csrf<button class="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Terbitkan</button></form><form method="POST" action="{{ route('management.final-scores.unlock',$assignment->finalScore) }}" onsubmit="return confirm('Buka kunci nilai?')">@csrf<input type="hidden" name="reason" value="Dibuka ulang oleh Koordinator/Admin"><button class="rounded-2xl border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700">Buka Kunci</button></form>@endif
     </section>
 </div>
 @endsection

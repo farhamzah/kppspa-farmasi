@@ -186,7 +186,7 @@ class KpFinalReportTest extends TestCase
 
         $this->assertSame('ditolak', $report->fresh()->status);
 
-        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/management/final-reports')->assertOk()->assertSee('Monitoring Laporan');
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/management/final-reports')->assertOk()->assertSee('Pemantauan Laporan');
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/management/final-report-logs')->assertOk();
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])->get('/management/final-reports')->assertForbidden();
     }

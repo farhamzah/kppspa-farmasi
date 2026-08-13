@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen User - '.config('app.name'))
-@section('page_title', 'Manajemen User')
+@section('title', 'Manajemen Pengguna - '.config('app.name'))
+@section('page_title', 'Manajemen Pengguna')
 
 @section('content')
 <div class="space-y-5">
@@ -19,9 +19,9 @@
                 <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Nama atau email" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:ring-4 focus:ring-teal-100">
             </div>
             <div>
-                <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Role</label>
+                <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Peran</label>
                 <select name="role" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:ring-4 focus:ring-teal-100">
-                    <option value="">Semua role</option>
+                    <option value="">Semua peran</option>
                     @foreach($roles as $role)
                         <option value="{{ $role->name }}" @selected(($filters['role'] ?? '') === $role->name)>{{ $role->label }}</option>
                     @endforeach
@@ -38,11 +38,11 @@
             <button class="self-end rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Filter</button>
         </form>
         <div class="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
-            <form method="POST" action="{{ route('admin.users.sync-core') }}" onsubmit="return confirm('Sync semua user Core yang punya akses kp-farmasi ke lokal KP? Password Core tidak akan disalin.')">
+            <form method="POST" action="{{ route('admin.users.sync-core') }}" onsubmit="return confirm('Sinkronkan semua pengguna Core yang punya akses kp-farmasi ke lokal KP? Password Core tidak akan disalin.')">
                 @csrf
-                <button class="w-full rounded-lg border border-cyan-200 px-4 py-2 text-center text-sm font-semibold text-cyan-700 hover:bg-cyan-50">Sync Semua Core</button>
+                <button class="w-full rounded-lg border border-cyan-200 px-4 py-2 text-center text-sm font-semibold text-cyan-700 hover:bg-cyan-50">Sinkronkan Semua Core</button>
             </form>
-            <a href="{{ route('admin.users.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-teal-700">Tambah User</a>
+            <a href="{{ route('admin.users.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-teal-700">Tambah Pengguna</a>
         </div>
     </div>
 
@@ -51,11 +51,11 @@
             <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                        <th class="px-4 py-3">User</th>
-                        <th class="px-4 py-3">Role</th>
+                        <th class="px-4 py-3">Pengguna</th>
+                        <th class="px-4 py-3">Peran</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Profil</th>
-                        <th class="px-4 py-3">Last Login</th>
+                        <th class="px-4 py-3">Login Terakhir</th>
                         <th class="px-4 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -84,11 +84,11 @@
                                 <div class="flex flex-wrap justify-end gap-2">
                                     <a href="{{ route('admin.users.show', $user) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Detail</a>
                                     <a href="{{ route('admin.users.edit', $user) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Edit</a>
-                                    <form method="POST" action="{{ route('admin.users.sync-core.single', $user) }}" onsubmit="return confirm('Sync data user ini dari Core?')">
+                                    <form method="POST" action="{{ route('admin.users.sync-core.single', $user) }}" onsubmit="return confirm('Sinkronkan data pengguna ini dari Core?')">
                                         @csrf
-                                        <button class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Sync Core</button>
+                                        <button class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Sinkronkan Core</button>
                                     </form>
-                                    <form method="POST" action="{{ route('admin.users.reset-password', $user) }}" onsubmit="return confirm('Reset password user ini ke password development?')">
+                                    <form method="POST" action="{{ route('admin.users.reset-password', $user) }}" onsubmit="return confirm('Reset password pengguna ini ke password pengembangan?')">
                                         @csrf
                                         <button class="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700">Reset</button>
                                     </form>
@@ -101,7 +101,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-10 text-center text-slate-500">Belum ada user sesuai filter.</td>
+                            <td colspan="6" class="px-4 py-10 text-center text-slate-500">Belum ada pengguna sesuai filter.</td>
                         </tr>
                     @endforelse
                 </tbody>

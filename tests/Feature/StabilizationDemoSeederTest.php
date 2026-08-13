@@ -83,7 +83,7 @@ class StabilizationDemoSeederTest extends TestCase
         $this->actingAs($admin)->withSession(['active_role' => 'admin'])
             ->get('/management/recaps')
             ->assertOk()
-            ->assertSee('Rekap, Monitoring, dan Export KP');
+            ->assertSee('Rekap, Pemantauan, dan Ekspor KP');
 
         $this->actingAs($studentA)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/dashboard')

@@ -58,7 +58,7 @@ class PkpaInternalSupervisorController extends Controller
         $domain = PkpaPracticeDomain::findOrFail($request->validated('practice_domain_id'));
         $eligibility = $this->internalService->create($program, $domain, $request->validated(), $request->user());
 
-        return redirect()->route('management.pkpa-internal-supervisors.index')->with('status', 'Eligibility Pembimbing Dalam berhasil dibuat untuk '.$eligibility->name_snapshot.'.');
+        return redirect()->route('management.pkpa-internal-supervisors.index')->with('status', 'Kelayakan Pembimbing Dalam berhasil dibuat untuk '.$eligibility->name_snapshot.'.');
     }
 
     public function sync(PkpaInternalSupervisorEligibility $eligibility, Request $request): RedirectResponse
@@ -72,7 +72,7 @@ class PkpaInternalSupervisorController extends Controller
     {
         $this->internalService->deactivate($eligibility, $request->user());
 
-        return back()->with('status', 'Eligibility Pembimbing Dalam berhasil dinonaktifkan.');
+        return back()->with('status', 'Kelayakan Pembimbing Dalam berhasil dinonaktifkan.');
     }
 
     public function storeUnavailability(StorePkpaSupervisorUnavailabilityRequest $request, PkpaInternalSupervisorEligibility $eligibility): RedirectResponse

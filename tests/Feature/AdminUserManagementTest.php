@@ -36,7 +36,7 @@ class AdminUserManagementTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->get('/admin/users');
 
-        $response->assertOk()->assertSee('Manajemen User');
+        $response->assertOk()->assertSee('Manajemen Pengguna');
     }
 
     public function test_mahasiswa_cannot_open_user_management_page(): void

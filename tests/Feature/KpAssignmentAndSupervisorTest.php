@@ -262,7 +262,7 @@ class KpAssignmentAndSupervisorTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->get('/management/kp-assignments?place=LAFI&sort=student')
             ->assertOk()
-            ->assertSee('Preview')
+            ->assertSee('Pratinjau')
             ->assertSee('Print')
             ->assertSee('Word')
             ->assertSee('Excel')

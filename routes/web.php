@@ -16,6 +16,7 @@ use App\Http\Controllers\FieldSupervisor\PkpaScheduleController as FieldPkpaSche
 use App\Http\Controllers\FieldSupervisor\PkpaRotationOperationController as FieldPkpaRotationOperationController;
 use App\Http\Controllers\FieldSupervisor\PkpaAcademicRotationController as FieldPkpaAcademicRotationController;
 use App\Http\Controllers\FieldSupervisor\PkpaAssessmentController as FieldPkpaAssessmentController;
+use App\Http\Controllers\FieldSupervisor\PkpaPortfolioReviewController as FieldPkpaPortfolioReviewController;
 use App\Http\Controllers\InternalSupervisor\ExamScheduleController as InternalExamScheduleController;
 use App\Http\Controllers\InternalSupervisor\AssessmentController as InternalAssessmentController;
 use App\Http\Controllers\InternalSupervisor\CompetencyController as InternalCompetencyController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\InternalSupervisor\PkpaScheduleController as InternalPk
 use App\Http\Controllers\InternalSupervisor\PkpaRotationOperationController as InternalPkpaRotationOperationController;
 use App\Http\Controllers\InternalSupervisor\PkpaAcademicRotationController as InternalPkpaAcademicRotationController;
 use App\Http\Controllers\InternalSupervisor\PkpaAssessmentController as InternalPkpaAssessmentController;
+use App\Http\Controllers\InternalSupervisor\PkpaPortfolioReviewController as InternalPkpaPortfolioReviewController;
 use App\Http\Controllers\InternalSupervisor\SupervisedStudentController;
 use App\Http\Controllers\Management\KpAssignmentController;
 use App\Http\Controllers\Management\KpAssignmentLogController;
@@ -63,6 +65,7 @@ use App\Http\Controllers\Management\PkpaAssessmentController as ManagementPkpaAs
 use App\Http\Controllers\Management\PkpaAnalyticsController;
 use App\Http\Controllers\Management\PkpaDocumentController;
 use App\Http\Controllers\Management\PkpaFinalProgramController;
+use App\Http\Controllers\Management\PkpaPortfolioBuilderController;
 use App\Http\Controllers\Management\PkpaStudentGroupController;
 use App\Http\Controllers\Management\SelectionLogController;
 use App\Http\Controllers\Management\ScoreLogController;
@@ -86,6 +89,7 @@ use App\Http\Controllers\Student\PkpaAcademicRotationController as StudentPkpaAc
 use App\Http\Controllers\Student\PkpaDocumentPortalController;
 use App\Http\Controllers\Student\PkpaGradeController as StudentPkpaGradeController;
 use App\Http\Controllers\Student\PkpaFinalResultController;
+use App\Http\Controllers\Student\PkpaPortfolioController as StudentPkpaPortfolioController;
 use App\Http\Controllers\Student\ScoreController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -162,6 +166,12 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('pkpa-document-versions/{version}/download', [PkpaDocumentController::class, 'download'])->middleware('throttle:pkpa-downloads')->name('pkpa-document-versions.download');
             Route::get('pkpa-analytics', [PkpaAnalyticsController::class, 'index'])->name('pkpa-analytics.index');
             Route::get('pkpa-analytics/export', [PkpaAnalyticsController::class, 'export'])->middleware('throttle:pkpa-exports')->name('pkpa-analytics.export');
+            Route::get('pkpa-portfolios', [PkpaPortfolioBuilderController::class, 'index'])->name('pkpa-portfolios.index');
+            Route::post('pkpa-rotation-runs/{run}/portfolio', [PkpaPortfolioBuilderController::class, 'ensure'])->name('pkpa-rotation-runs.portfolio.ensure');
+            Route::post('pkpa-portfolios/{portfolio}/reopen', [PkpaPortfolioBuilderController::class, 'reopen'])->name('pkpa-portfolios.reopen');
+            Route::post('pkpa-portfolios/{portfolio}/publish', [PkpaPortfolioBuilderController::class, 'publish'])->name('pkpa-portfolios.publish');
+            Route::post('pkpa-portfolios/{portfolio}/exports/{format}', [PkpaPortfolioBuilderController::class, 'export'])->name('pkpa-portfolios.exports.store');
+            Route::get('pkpa-portfolio-exports/{version}/download', [PkpaPortfolioBuilderController::class, 'download'])->middleware('throttle:pkpa-downloads')->name('pkpa-portfolios.exports.download');
             Route::post('pkpa-programs/{program}/final-schemes', [PkpaFinalProgramController::class, 'storeScheme'])->name('pkpa-final-schemes.store');
             Route::post('pkpa-final-schemes/{scheme}/components', [PkpaFinalProgramController::class, 'storeComponent'])->name('pkpa-final-components.store');
             Route::post('pkpa-final-schemes/{scheme}/activate', [PkpaFinalProgramController::class, 'activateScheme'])->name('pkpa-final-schemes.activate');
@@ -365,6 +375,17 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('hasil-akhir-pkpa', [PkpaFinalResultController::class, 'index'])->name('pkpa-final-results.index');
             Route::get('dokumen-pkpa', [PkpaDocumentPortalController::class, 'index'])->name('pkpa-documents.index');
             Route::get('dokumen-pkpa/{version}/download', [PkpaDocumentPortalController::class, 'download'])->middleware('throttle:pkpa-downloads')->name('pkpa-documents.download');
+            Route::get('portofolio-pkpa', [StudentPkpaPortfolioController::class, 'index'])->name('pkpa-portfolios.index');
+            Route::get('portfolio-export-versions/{version}/download', [StudentPkpaPortfolioController::class, 'download'])->middleware('throttle:pkpa-downloads')->name('pkpa-portfolios.exports.download');
+            Route::get('portofolio-pkpa/{portfolio}', [StudentPkpaPortfolioController::class, 'show'])->name('pkpa-portfolios.show');
+            Route::post('portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'acknowledge'])->name('pkpa-portfolios.integrity.acknowledge');
+            Route::post('portofolio-pkpa/{portfolio}/studi-kasus', [StudentPkpaPortfolioController::class, 'storeCase'])->name('pkpa-portfolios.cases.store');
+            Route::post('portofolio-pkpa/{portfolio}/refleksi', [StudentPkpaPortfolioController::class, 'storeReflection'])->name('pkpa-portfolios.reflections.store');
+            Route::post('portofolio-pkpa/{portfolio}/penilaian-diri', [StudentPkpaPortfolioController::class, 'storeSelfAssessment'])->name('pkpa-portfolios.self-assessments.store');
+            Route::post('portofolio-pkpa/{portfolio}/dokumentasi', [StudentPkpaPortfolioController::class, 'storeDocumentation'])->name('pkpa-portfolios.documentation.store');
+            Route::post('portofolio-pkpa/{portfolio}/submit', [StudentPkpaPortfolioController::class, 'submit'])->name('pkpa-portfolios.submit');
+            Route::post('portofolio-pkpa/{portfolio}/submit-pd', [StudentPkpaPortfolioController::class, 'submitToInternal'])->name('pkpa-portfolios.submit-internal');
+            Route::post('portofolio-pkpa/{portfolio}/exports/{format}', [StudentPkpaPortfolioController::class, 'export'])->name('pkpa-portfolios.exports.store');
             Route::get('akademik-rotasi/{run}', [StudentPkpaAcademicRotationController::class, 'show'])->name('pkpa-academics.show');
             Route::post('kompetensi-rotasi/{record}/progress', [StudentPkpaAcademicRotationController::class, 'markCompetency'])->name('pkpa-competencies.progress');
             Route::post('kompetensi-rotasi/{record}/evidences', [StudentPkpaAcademicRotationController::class, 'evidence'])->name('pkpa-competencies.evidences.store');
@@ -431,6 +452,10 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('monitoring-pkpa', [InternalPkpaRotationOperationController::class, 'index'])->name('pkpa-operations.index');
             Route::get('akademik-pkpa', [InternalPkpaAcademicRotationController::class, 'index'])->name('pkpa-academics.index');
             Route::get('penilaian-pkpa', [InternalPkpaAssessmentController::class, 'index'])->name('pkpa-assessments.index');
+            Route::get('review-portofolio', [InternalPkpaPortfolioReviewController::class, 'index'])->name('pkpa-portfolios.index');
+            Route::get('review-portofolio/{portfolio}', [InternalPkpaPortfolioReviewController::class, 'show'])->name('pkpa-portfolios.show');
+            Route::post('review-portofolio/{portfolio}/approve', [InternalPkpaPortfolioReviewController::class, 'approve'])->name('pkpa-portfolios.approve');
+            Route::post('review-portofolio/{portfolio}/revision', [InternalPkpaPortfolioReviewController::class, 'revision'])->name('pkpa-portfolios.revision');
             Route::post('penilaian-pkpa/scores/{score}/save', [InternalPkpaAssessmentController::class, 'save'])->name('pkpa-assessments.scores.save');
             Route::post('penilaian-pkpa/scores/{score}/submit', [InternalPkpaAssessmentController::class, 'submit'])->name('pkpa-assessments.scores.submit');
             Route::post('kompetensi-rotasi/{record}/monitoring', [InternalPkpaAcademicRotationController::class, 'commentCompetency'])->name('pkpa-competencies.monitoring');
@@ -471,6 +496,10 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('operasional-pkpa', [FieldPkpaRotationOperationController::class, 'index'])->name('pkpa-operations.index');
             Route::get('akademik-pkpa', [FieldPkpaAcademicRotationController::class, 'index'])->name('pkpa-academics.index');
             Route::get('penilaian-pkpa', [FieldPkpaAssessmentController::class, 'index'])->name('pkpa-assessments.index');
+            Route::get('review-portofolio', [FieldPkpaPortfolioReviewController::class, 'index'])->name('pkpa-portfolios.index');
+            Route::get('review-portofolio/{portfolio}', [FieldPkpaPortfolioReviewController::class, 'show'])->name('pkpa-portfolios.show');
+            Route::post('review-portofolio/{portfolio}/verify', [FieldPkpaPortfolioReviewController::class, 'verify'])->name('pkpa-portfolios.verify');
+            Route::post('review-portofolio/{portfolio}/revision', [FieldPkpaPortfolioReviewController::class, 'revision'])->name('pkpa-portfolios.revision');
             Route::post('penilaian-pkpa/scores/{score}/save', [FieldPkpaAssessmentController::class, 'save'])->name('pkpa-assessments.scores.save');
             Route::post('penilaian-pkpa/scores/{score}/submit', [FieldPkpaAssessmentController::class, 'submit'])->name('pkpa-assessments.scores.submit');
             Route::post('kompetensi-rotasi/{record}/review', [FieldPkpaAcademicRotationController::class, 'reviewCompetency'])->name('pkpa-competencies.review');

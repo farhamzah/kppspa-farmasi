@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Monitoring Pemilihan - '.config('app.name'))
-@section('page_title', 'Monitoring Pemilihan Tempat')
+@section('title', 'Pemantauan Pemilihan - '.config('app.name'))
+@section('page_title', 'Pemantauan Pemilihan Tempat')
 @section('content')
 @php
     $reportQuery = array_filter($filters ?? [], fn ($value) => filled($value));
@@ -15,11 +15,11 @@
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wide text-cyan-700">Laporan Pemilihan</p>
-                <p class="mt-1 text-sm text-slate-500">Preview, cetak, atau unduh seluruh hasil sesuai filter aktif.</p>
+                <p class="mt-1 text-sm text-slate-500">Pratinjau, cetak, atau unduh seluruh hasil sesuai filter aktif.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('management.place-selections.report.preview', $reportQuery) }}" target="_blank" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Print Preview</a>
-                <a href="{{ route('management.place-selections.report.preview', array_merge($reportQuery, ['print' => 1])) }}" target="_blank" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Print</a>
+                <a href="{{ route('management.place-selections.report.preview', $reportQuery) }}" target="_blank" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Pratinjau Cetak</a>
+                <a href="{{ route('management.place-selections.report.preview', array_merge($reportQuery, ['print' => 1])) }}" target="_blank" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Cetak</a>
                 <a href="{{ route('management.place-selections.report.download', array_merge(['format' => 'word'], $reportQuery)) }}" class="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700">Word</a>
                 <a href="{{ route('management.place-selections.report.download', array_merge(['format' => 'excel'], $reportQuery)) }}" class="rounded-lg border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700">Excel</a>
                 <a href="{{ route('management.place-selections.report.download', array_merge(['format' => 'pdf'], $reportQuery)) }}" class="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700">PDF</a>

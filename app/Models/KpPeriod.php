@@ -122,7 +122,7 @@ class KpPeriod extends Model
             'dibuka' => 'Dibuka',
             'ditutup' => 'Ditutup',
             'selesai' => 'Selesai',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 

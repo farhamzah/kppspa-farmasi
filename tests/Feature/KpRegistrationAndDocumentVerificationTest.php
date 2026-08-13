@@ -83,7 +83,7 @@ class KpRegistrationAndDocumentVerificationTest extends TestCase
             ->get('/mahasiswa/berkas-kp')
             ->assertOk()
             ->assertSee('KRS')
-            ->assertSee('Belum Upload');
+            ->assertSee('Belum Unggah');
 
         $this->actingAs($this->mahasiswa)
             ->withSession(['active_role' => 'mahasiswa'])
@@ -202,8 +202,8 @@ class KpRegistrationAndDocumentVerificationTest extends TestCase
             ->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/berkas-kp')
             ->assertOk()
-            ->assertSee('Berkas sudah lengkap, submit pendaftaran Anda.')
-            ->assertSee('Submit Pendaftaran');
+            ->assertSee('Berkas sudah lengkap, kirim pendaftaran Anda.')
+            ->assertSee('Kirim Pendaftaran');
     }
 
     public function test_admin_and_koordinator_can_open_review_page(): void
@@ -294,8 +294,8 @@ class KpRegistrationAndDocumentVerificationTest extends TestCase
 
         $showResponse->assertOk()
             ->assertSee('Kembali ke Antrian')
-            ->assertSee('Preview')
-            ->assertSee('Download');
+            ->assertSee('Pratinjau')
+            ->assertSee('Unduh');
 
         $previewResponse = $this->actingAs($this->admin)
             ->withSession(['active_role' => 'admin'])

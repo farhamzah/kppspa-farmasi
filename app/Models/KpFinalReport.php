@@ -49,8 +49,8 @@ class KpFinalReport extends Model
     public function statusLabel(): string
     {
         return [
-            'draft' => 'Draft',
-            'menunggu_review' => 'Menunggu Review',
+            'draft' => 'Draf',
+            'menunggu_review' => 'Menunggu Pemeriksaan',
             'revisi' => 'Revisi',
             'disetujui' => 'Disetujui',
             'ditolak' => 'Ditolak',
@@ -102,14 +102,14 @@ class KpFinalReport extends Model
             'revisi' => 'Perlu revisi laporan',
             'disetujui' => 'Siap pengajuan sidang',
             'ditolak' => 'Laporan ditolak',
-            default => 'Draft laporan',
+            default => 'Draf laporan',
         };
     }
 
     private function reviewStatusLabel(?string $status): string
     {
         return [
-            'pending' => 'Belum Review',
+            'pending' => 'Belum Diperiksa',
             'disetujui' => 'Disetujui',
             'revisi' => 'Revisi',
             'ditolak' => 'Ditolak',

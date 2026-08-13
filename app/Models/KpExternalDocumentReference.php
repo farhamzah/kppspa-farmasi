@@ -110,7 +110,7 @@ class KpExternalDocumentReference extends Model
     public function statusLabel(): string
     {
         return [
-            'draft' => 'Draft lokal',
+            'draft' => 'Draf lokal',
             'pending_external' => 'Menunggu TU',
             'linked' => 'Tertaut',
             'failed' => 'Gagal',

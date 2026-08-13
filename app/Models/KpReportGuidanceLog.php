@@ -38,7 +38,7 @@ class KpReportGuidanceLog extends Model
     public function statusLabel(): string
     {
         return [
-            'draft' => 'Draft',
+            'draft' => 'Draf',
             'menunggu_validasi' => 'Menunggu Validasi',
             'disetujui' => 'Disetujui',
             'revisi' => 'Revisi',

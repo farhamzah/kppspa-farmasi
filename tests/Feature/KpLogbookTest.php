@@ -157,18 +157,18 @@ class KpLogbookTest extends TestCase
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/logbook/'.$logbook->id)
             ->assertOk()
-            ->assertSee('Preview Link')
-            ->assertSee('Download/Buka Link');
+            ->assertSee('Pratinjau Tautan')
+            ->assertSee('Unduh/Buka Tautan');
 
         $this->actingAs($this->fieldUser)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/logbook/'.$logbook->id)
             ->assertOk()
-            ->assertSee('Preview Link');
+            ->assertSee('Pratinjau Tautan');
 
         $this->actingAs($this->lecturerUser)->withSession(['active_role' => 'pembimbing_dalam'])
             ->get('/pembimbing-dalam/logbook/'.$logbook->id)
             ->assertOk()
-            ->assertSee('Preview Link');
+            ->assertSee('Pratinjau Tautan');
     }
 
     public function test_student_can_submit_pasted_google_drive_link_without_protocol(): void

@@ -49,7 +49,7 @@
                     <div class="rounded-xl bg-slate-50 p-3 text-sm">
                         <div class="flex flex-wrap items-center justify-between gap-2"><span><b>{{ $entry->title }}</b> / {{ $entry->status }}</span>@if(in_array($entry->status, ['draft', 'revision_requested']))<form method="POST" action="{{ route('student.pkpa-logbooks.submit', $entry) }}">@csrf<button class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-black text-white">Kirim</button></form>@endif</div>
                         @if(in_array($entry->status, ['draft', 'revision_requested']))
-                            <form method="POST" enctype="multipart/form-data" action="{{ route('student.pkpa-logbooks.attachments.store', $entry) }}" class="mt-2 flex flex-wrap gap-2">@csrf<input name="attachment" type="file" class="text-xs"><button class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-black">Upload</button></form>
+                            <form method="POST" enctype="multipart/form-data" action="{{ route('student.pkpa-logbooks.attachments.store', $entry) }}" class="mt-2 flex flex-wrap gap-2">@csrf<input name="attachment" type="file" class="text-xs"><button class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-black">Unggah</button></form>
                         @endif
                     </div>
                 @endforeach

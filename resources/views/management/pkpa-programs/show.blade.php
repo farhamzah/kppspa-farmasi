@@ -17,7 +17,7 @@
                 <a href="{{ route('management.pkpa-programs.configure', $program) }}" class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Konfigurasi Durasi</a>
                 <a href="{{ route('management.pkpa-program-sites.index', ['program_id' => $program->id]) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Tempat Tersedia</a>
                 <a href="{{ route('management.pkpa-internal-supervisors.index', ['program_id' => $program->id]) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Pembimbing Dalam</a>
-                <a href="{{ route('management.pkpa-placement-readiness.index', ['program_id' => $program->id]) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Readiness Penempatan</a>
+                <a href="{{ route('management.pkpa-placement-readiness.index', ['program_id' => $program->id]) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Kesiapan Penempatan</a>
                 <a href="{{ route('management.pkpa-programs.readiness', $program) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Periksa Kesiapan</a>
             </div>
         </div>

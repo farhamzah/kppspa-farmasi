@@ -5,7 +5,7 @@
 @section('content')
 @php
     $publicationStatusLabels = ['publishing' => 'Diproses', 'published' => 'Diterbitkan', 'superseded' => 'Digantikan', 'withdrawn' => 'Ditarik'];
-    $changeStatusLabels = ['draft' => 'Draft', 'submitted' => 'Diajukan', 'under_review' => 'Direview', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'applied' => 'Diterapkan', 'failed' => 'Gagal'];
+    $changeStatusLabels = ['draft' => 'Draf', 'submitted' => 'Diajukan', 'under_review' => 'Diperiksa', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'applied' => 'Diterapkan', 'failed' => 'Gagal'];
 @endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
@@ -39,10 +39,10 @@
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Rancangan</p><p class="mt-1 font-black text-slate-950">v{{ $plan->version_number }}</p></div>
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Status</p><p class="mt-1 font-black text-slate-950">{{ $plan->statusLabel() }}</p></div>
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Terisi</p><p class="mt-1 font-black text-slate-950">{{ $review['filled_assignments'] ?? 0 }} / {{ $review['required_assignments'] ?? 0 }}</p></div>
-                        <div class="rounded-xl {{ ($review['ready'] ?? false) ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }} p-4"><p class="text-xs font-black uppercase">Status Review</p><p class="mt-1 font-black">{{ ($review['ready'] ?? false) ? 'Siap Publikasi' : 'Belum Siap' }}</p></div>
+                        <div class="rounded-xl {{ ($review['ready'] ?? false) ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }} p-4"><p class="text-xs font-black uppercase">Status Pemeriksaan</p><p class="mt-1 font-black">{{ ($review['ready'] ?? false) ? 'Siap Publikasi' : 'Belum Siap' }}</p></div>
                     </div>
                     <div class="mt-5 flex flex-wrap gap-2">
-                        <a href="{{ route('management.pkpa-placement-plans.final-review', $plan) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Review Ulang</a>
+                        <a href="{{ route('management.pkpa-placement-plans.final-review', $plan) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Periksa Ulang</a>
                         @if(auth()->user()->hasRole('koordinator_kp'))
                             <form method="POST" action="{{ route('management.pkpa-placement-plans.publication-lock', $plan) }}">@csrf<button class="rounded-xl border border-amber-200 px-4 py-2 text-sm font-black text-amber-700">Kunci untuk Publikasi</button></form>
                         @endif

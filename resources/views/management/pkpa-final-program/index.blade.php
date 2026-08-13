@@ -105,7 +105,7 @@
     </div>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-xl font-black text-slate-950">Monitoring Peserta</h2>
+        <h2 class="text-xl font-black text-slate-950">Pemantauan Peserta</h2>
         <div class="mt-4 grid gap-4">
             @foreach ($enrollments as $enrollment)
                 <article class="rounded-2xl border border-slate-100 p-4">

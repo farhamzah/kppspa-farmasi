@@ -22,7 +22,7 @@ class KpExamRequest extends Model
     public function statusLabel(): string
     {
         return [
-            'draft' => 'Draft',
+            'draft' => 'Draf',
             'diajukan' => 'Diajukan',
             'disetujui' => 'Disetujui',
             'dijadwalkan' => 'Dijadwalkan',

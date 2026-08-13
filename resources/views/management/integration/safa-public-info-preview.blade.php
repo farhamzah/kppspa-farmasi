@@ -1,34 +1,34 @@
 @extends('layouts.app')
-@section('title','Review Info SAFA - '.config('app.name'))
-@section('page_title','Review Integrasi SAFA')
+@section('title','Pemeriksaan Info SAFA - '.config('app.name'))
+@section('page_title','Pemeriksaan Integrasi SAFA')
 @section('content')
 <div class="space-y-5">
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-                <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Public-safe preview</p>
-                <h2 class="mt-2 text-2xl font-black text-slate-950">Preview Informasi Publik KP untuk SAFA</h2>
+                <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pratinjau aman publik</p>
+                <h2 class="mt-2 text-2xl font-black text-slate-950">Pratinjau Informasi Publik KP untuk SAFA</h2>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Halaman ini menampilkan whitelist informasi umum yang aman untuk portal publik. Data operasional individual tidak ditampilkan.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('management.integration.external-document-references.index') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Draft Reference</a>
-                <a href="{{ route('management.integration.tu-payload-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Review TU</a>
-                <a href="{{ route('management.integration.safa-public-info-preview.json', request()->query()) }}" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Preview JSON</a>
+                <a href="{{ route('management.integration.external-document-references.index') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Referensi Draf</a>
+                <a href="{{ route('management.integration.tu-payload-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Periksa TU</a>
+                <a href="{{ route('management.integration.safa-public-info-preview.json', request()->query()) }}" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Pratinjau JSON</a>
             </div>
         </div>
     </section>
 
     <section class="grid gap-4 md:grid-cols-4">
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Dry-run</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Simulasi</p>
             <p class="mt-2 text-xl font-black {{ $payload['dry_run'] ? 'text-emerald-700' : 'text-rose-700' }}">{{ $payload['dry_run'] ? 'Aktif' : 'Tidak aktif' }}</p>
         </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Request keluar</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Permintaan keluar</p>
             <p class="mt-2 text-xl font-black {{ $payload['external_request_sent'] ? 'text-rose-700' : 'text-emerald-700' }}">{{ $payload['external_request_sent'] ? 'Ada' : 'Tidak ada' }}</p>
         </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Visibility</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Visibilitas</p>
             <p class="mt-2 text-sm font-black text-cyan-700">{{ $payload['public_visibility'] }}</p>
         </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -40,7 +40,7 @@
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <form method="GET" class="grid gap-3 md:grid-cols-[1fr_auto]">
             <div>
-                <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Period ID</label>
+                <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">ID Periode</label>
                 <input name="period_id" value="{{ $periodId }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Opsional">
             </div>
             <button class="self-end rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white">Terapkan</button>
@@ -121,7 +121,7 @@
             </div>
         </section>
     @else
-        <section class="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">Belum ada periode KP untuk dipreview.</section>
+        <section class="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">Belum ada periode KP untuk dipratinjau.</section>
     @endif
 </div>
 @endsection

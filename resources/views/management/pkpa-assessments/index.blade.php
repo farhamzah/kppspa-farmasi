@@ -8,10 +8,10 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Penilaian Per Wahana PKPA</p>
-                <h1 class="mt-2 text-3xl font-black text-slate-950">Skema, assessment, finalisasi, dan release nilai wahana</h1>
+                <h1 class="mt-2 text-3xl font-black text-slate-950">Skema, penilaian, finalisasi, dan rilis nilai wahana</h1>
                 <p class="mt-2 max-w-3xl text-sm text-slate-600">Nilai di halaman ini hanya untuk satu rotasi/wahana PKPA dan belum merupakan nilai akhir keseluruhan Program PKPA.</p>
             </div>
-            <a href="{{ route('management.pkpa-assessments.export') }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-cyan-800">Export Rekap</a>
+            <a href="{{ route('management.pkpa-assessments.export') }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white shadow-sm hover:bg-cyan-800">Ekspor Rekap</a>
         </div>
     </div>
 
@@ -33,14 +33,14 @@
 
     <div class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 class="text-xl font-black text-slate-950">Builder Skema</h2>
+            <h2 class="text-xl font-black text-slate-950">Pembuat Skema</h2>
             <div class="mt-4 space-y-4">
                 @foreach ($programDomains as $domain)
                     <div class="rounded-2xl border border-slate-100 p-4">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <p class="font-black text-slate-900">{{ $domain->practiceDomain?->name }}</p>
-                                <p class="text-xs text-slate-500">{{ $domain->program?->name }} · Current: {{ $domain->activeAssessmentScheme?->code ?? 'Belum ada' }}</p>
+                                <p class="text-xs text-slate-500">{{ $domain->program?->name }} · Saat ini: {{ $domain->activeAssessmentScheme?->code ?? 'Belum ada' }}</p>
                             </div>
                             @if ($domain->activeAssessmentScheme)
                                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Aktif</span>
@@ -109,7 +109,7 @@
     </div>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-xl font-black text-slate-950">Assessment Wahana</h2>
+        <h2 class="text-xl font-black text-slate-950">Penilaian Wahana</h2>
         <div class="mt-4 overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
                 <thead class="text-left text-xs uppercase text-slate-500">
@@ -126,7 +126,7 @@
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="{{ route('management.pkpa-rotation-assessments.finalize', $assessment) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Finalisasi</button></form>
                                     @if ($assessment->gradeResult && $assessment->gradeResult->result_status !== 'released')
-                                        <form method="POST" action="{{ route('management.pkpa-grade-results.release', $assessment->gradeResult) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Release</button></form>
+                                        <form method="POST" action="{{ route('management.pkpa-grade-results.release', $assessment->gradeResult) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Rilis</button></form>
                                     @endif
                                 </div>
                             </td>
@@ -139,16 +139,16 @@
     </section>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-xl font-black text-slate-950">Buat Assessment dari Rotasi Ready</h2>
+        <h2 class="text-xl font-black text-slate-950">Buat Penilaian dari Rotasi Siap</h2>
         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($runs as $run)
                 <div class="rounded-2xl border border-slate-100 p-4">
                     <p class="font-black text-slate-900">{{ $run->student_core_user_id }}</p>
                     <p class="text-sm text-slate-500">{{ $run->practiceDomain?->name }} · {{ $run->practiceSite?->name }}</p>
-                    <p class="mt-1 text-xs text-slate-500">Readiness: {{ $run->academicReadinessReviews->first()?->status ?? '-' }}</p>
+                    <p class="mt-1 text-xs text-slate-500">Kesiapan: {{ $run->academicReadinessReviews->first()?->status ?? '-' }}</p>
                     <form method="POST" action="{{ route('management.pkpa-rotation-assessments.store', $run) }}" class="mt-3">
                         @csrf
-                        <button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Buat Assessment</button>
+                        <button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Buat Penilaian</button>
                     </form>
                 </div>
             @endforeach

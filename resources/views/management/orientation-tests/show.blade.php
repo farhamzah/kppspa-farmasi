@@ -10,7 +10,7 @@
         <div class="mt-5 grid gap-4 md:grid-cols-3">
             <div class="rounded-2xl bg-cyan-50 p-5"><p class="text-xs font-black uppercase tracking-widest text-cyan-700">Test</p><p class="mt-1 font-black">{{ $attempt->test->typeLabel() }}</p></div>
             <div class="rounded-2xl bg-emerald-50 p-5"><p class="text-xs font-black uppercase tracking-widest text-emerald-700">Skor</p><p class="mt-1 text-3xl font-black">{{ $attempt->score }}/{{ $attempt->max_score }}</p></div>
-            <div class="rounded-2xl bg-slate-50 p-5"><p class="text-xs font-black uppercase tracking-widest text-slate-500">Submit</p><p class="mt-1 font-black">{{ $attempt->submitted_at?->format('d M Y H:i') }}</p></div>
+            <div class="rounded-2xl bg-slate-50 p-5"><p class="text-xs font-black uppercase tracking-widest text-slate-500">Dikirim</p><p class="mt-1 font-black">{{ $attempt->submitted_at?->format('d M Y H:i') }}</p></div>
         </div>
     </section>
 

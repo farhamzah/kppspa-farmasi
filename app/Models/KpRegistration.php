@@ -79,7 +79,7 @@ class KpRegistration extends Model
             'terverifikasi' => 'Terverifikasi',
             'ditolak' => 'Ditolak',
             'dibatalkan' => 'Dibatalkan',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 

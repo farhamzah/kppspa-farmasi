@@ -143,7 +143,7 @@
                     <x-ui.avatar :user="$user" size="xl" class="shadow-xl shadow-cyan-900/10" />
                     <div class="min-w-0 flex-1">
                         <h3 class="text-lg font-bold text-slate-900">Foto Profil</h3>
-                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Gunakan foto JPG/PNG/WebP maksimal 2MB. Foto akan tampil di topbar, dashboard, dan halaman pilih role.</p>
+                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Gunakan foto JPG/PNG/WebP maksimal 2MB. Foto akan tampil di bilah atas, dashboard, dan halaman pilih peran.</p>
                         @if($user->avatar_original_filename)
                             <p class="mt-2 truncate text-xs font-semibold text-cyan-700">{{ $user->avatar_original_filename }}</p>
                         @endif

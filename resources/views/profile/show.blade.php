@@ -72,7 +72,7 @@
             </div>
 
             <div class="mt-6 space-y-2.5">
-                <form method="POST" action="{{ route('profile.sync-core') }}" onsubmit="return confirm('Refresh data profil dan role dari Core?')">
+                <form method="POST" action="{{ route('profile.sync-core') }}" onsubmit="return confirm('Segarkan data profil dan peran dari Core?')">
                     @csrf
                     <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2.5 text-center text-xs font-bold text-cyan-800 transition-all hover:-translate-y-[1px] hover:bg-cyan-100">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +166,7 @@
                     <x-ui.avatar :user="$user" size="xl" class="shadow-xl shadow-cyan-900/10" />
                     <div class="min-w-0 flex-1">
                         <h3 class="text-lg font-bold text-slate-900">Foto Profil</h3>
-                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Gunakan foto JPG/PNG/WebP maksimal 2MB. Foto akan tampil di topbar, dashboard, dan halaman pilih role.</p>
+                        <p class="mt-1 text-xs text-slate-500 leading-relaxed">Gunakan foto JPG/PNG/WebP maksimal 2MB. Foto akan tampil di bilah atas, dashboard, dan halaman pilih peran.</p>
                         @if($user->avatar_original_filename)
                             <p class="mt-2 truncate text-xs font-semibold text-cyan-700">{{ $user->avatar_original_filename }}</p>
                         @endif
@@ -243,7 +243,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <p class="leading-relaxed text-xs">
-                        Belum ada data operasional tambahan yang perlu diisi di KP untuk role aktif ini. Data identitas yang sama sudah diambil dari Core.
+                        Belum ada data operasional tambahan yang perlu diisi di KP untuk peran aktif ini. Data identitas yang sama sudah diambil dari Core.
                     </p>
                 </div>
             @else

@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $statusLabels = ['ready' => 'Siap', 'scheduled' => 'Terjadwal', 'active' => 'Aktif', 'on_hold' => 'Ditahan', 'awaiting_operational_review' => 'Menunggu Review', 'operational_complete' => 'Operasional Selesai'];
+    $statusLabels = ['ready' => 'Siap', 'scheduled' => 'Terjadwal', 'active' => 'Aktif', 'on_hold' => 'Ditahan', 'awaiting_operational_review' => 'Menunggu Pemeriksaan', 'operational_complete' => 'Operasional Selesai'];
     $syncLabels = ['current' => 'Terkini', 'review_required' => 'Perlu Review'];
 @endphp
 <div class="space-y-6">
@@ -81,7 +81,7 @@
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Progress</th><th class="px-4 py-3">Aksi</th></tr></thead>
+                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Kemajuan</th><th class="px-4 py-3">Aksi</th></tr></thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($runs as $run)
                         <tr>

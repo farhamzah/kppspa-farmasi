@@ -216,7 +216,7 @@ class UserImportAndProfileTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->get('/admin/import-users')
             ->assertOk()
-            ->assertSee('Import User');
+            ->assertSee('Impor Pengguna');
     }
 
     public function test_multi_role_lecturer_can_manage_field_partner_places_from_profile(): void

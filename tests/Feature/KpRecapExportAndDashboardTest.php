@@ -43,15 +43,15 @@ class KpRecapExportAndDashboardTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/management/recaps')
             ->assertOk()
-            ->assertSee('Rekap, Monitoring, dan Export KP')
-            ->assertSee('Preview')
+            ->assertSee('Rekap, Pemantauan, dan Ekspor KP')
+            ->assertSee('Pratinjau')
             ->assertSee('Excel');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/recaps/students')
             ->assertOk()
             ->assertSee('Rekap Mahasiswa KP')
-            ->assertSee('Print Preview')
+            ->assertSee('Pratinjau Cetak')
             ->assertSee('PDF');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])

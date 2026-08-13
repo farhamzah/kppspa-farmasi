@@ -9,7 +9,7 @@
             <h2 class="mt-1 text-xl font-black text-slate-950">{{ $run->practiceSite?->name }}</h2>
             <p class="mt-2 text-sm text-slate-500">{{ $run->scheduled_start_date?->format('d M Y') }} - {{ $run->scheduled_end_date?->format('d M Y') }}</p>
             <div class="mt-4 h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-cyan-600" style="width: {{ optional($run->progressSnapshots->first())->progress_percentage ?? 0 }}%"></div></div>
-            <p class="mt-2 text-xs font-bold text-slate-500">Progress {{ optional($run->progressSnapshots->first())->progress_percentage ?? 0 }}%</p>
+            <p class="mt-2 text-xs font-bold text-slate-500">Kemajuan {{ optional($run->progressSnapshots->first())->progress_percentage ?? 0 }}%</p>
         </a>
     @empty
         <div class="rounded-2xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-sky-100">Belum ada rotasi operasional aktif dari publikasi resmi.</div>

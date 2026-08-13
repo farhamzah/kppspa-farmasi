@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Draft Reference TU - '.config('app.name'))
-@section('page_title','Draft Reference TU')
+@section('title','Referensi Draf TU - '.config('app.name'))
+@section('page_title','Referensi Draf TU')
 @section('content')
 <div class="space-y-5">
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -11,15 +11,15 @@
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Halaman ini menyimpan draft referensi dokumen di database KP saja. Tidak ada sinkronisasi, upload ulang, atau request ke TU.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('management.integration.tu-payload-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Review TU</a>
-                <a href="{{ route('management.integration.safa-public-info-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Review SAFA</a>
+                <a href="{{ route('management.integration.tu-payload-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Periksa TU</a>
+                <a href="{{ route('management.integration.safa-public-info-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Periksa SAFA</a>
             </div>
         </div>
     </section>
 
     <section class="grid gap-4 md:grid-cols-4">
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Preview source</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Sumber pratinjau</p>
             <p class="mt-2 text-xl font-black text-cyan-700">TU Payload</p>
         </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -27,7 +27,7 @@
             <p class="mt-2 text-xl font-black text-cyan-700">{{ data_get($preview, 'summary.documents_scanned', 0) }}</p>
         </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Draft previewed</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Draf dipratinjau</p>
             <p class="mt-2 text-xl font-black text-cyan-700">{{ data_get($preview, 'summary.references_previewed', 0) }}</p>
         </div>
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -55,7 +55,7 @@
                 <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Limit</label>
                 <input type="number" min="1" max="25" name="limit" value="{{ $filters['limit'] }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
-            <button class="self-end rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Preview Draft dari Payload TU</button>
+            <button class="self-end rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Pratinjau Draf dari Payload TU</button>
         </form>
 
         <form method="POST" action="{{ route('management.integration.external-document-references.store-drafts') }}" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4" onsubmit="return confirm('Buat atau perbarui draft referensi lokal KP dari preview payload TU? Tidak ada request ke TU.')">
@@ -65,13 +65,13 @@
             <input type="hidden" name="limit" value="{{ $filters['limit'] }}">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p class="text-sm font-semibold text-amber-900">Aksi ini hanya membuat atau memperbarui draft reference di database lokal KP. Tidak ada upload, sync, atau HTTP request ke TU.</p>
-                <button class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white">Buat Draft Referensi Lokal</button>
+                <button class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white">Buat Draf Referensi Lokal</button>
             </div>
         </form>
     </section>
 
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h3 class="text-lg font-black text-slate-950">Preview Draft dari Payload TU</h3>
+        <h3 class="text-lg font-black text-slate-950">Pratinjau Draf dari Payload TU</h3>
         <div class="mt-4 overflow-hidden rounded-xl border border-slate-200">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 text-sm">
@@ -116,7 +116,7 @@
                         <th class="px-4 py-3">External Number</th>
                         <th class="px-4 py-3">External ID</th>
                         <th class="px-4 py-3">Reference URL</th>
-                        <th class="px-4 py-3">Synced</th>
+                        <th class="px-4 py-3">Tersinkron</th>
                         <th class="px-4 py-3">Created</th>
                         <th class="px-4 py-3">Aksi</th>
                     </tr>

@@ -15,7 +15,7 @@
         <a href="{{ $backUrl }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-cyan-300 hover:text-cyan-700">
             Kembali ke Antrian
         </a>
-        <p class="text-sm text-slate-500">Review pendaftaran dan dokumen mahasiswa dari satu halaman.</p>
+        <p class="text-sm text-slate-500">Periksa pendaftaran dan dokumen mahasiswa dari satu halaman.</p>
     </div>
 
     <div class="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
@@ -34,7 +34,7 @@
                     <dd class="mt-1 font-semibold text-slate-900">{{ $registration->period->name }}</dd>
                 </div>
                 <div class="rounded-lg bg-slate-50 p-3">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tanggal Submit</dt>
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tanggal Dikirim</dt>
                     <dd class="mt-1 font-semibold text-slate-900">{{ $registration->submitted_at?->format('d M Y H:i') ?? '-' }}</dd>
                 </div>
             </dl>
@@ -43,7 +43,7 @@
                 <div class="h-3 overflow-hidden rounded-full bg-slate-100">
                     <div class="h-full rounded-full bg-teal-600" style="width: {{ $registration->progressPercentage() }}%"></div>
                 </div>
-                <p class="mt-2 text-sm text-slate-500">Progress upload berkas {{ $registration->progressPercentage() }}%.</p>
+                <p class="mt-2 text-sm text-slate-500">Kemajuan unggah berkas {{ $registration->progressPercentage() }}%.</p>
             </div>
 
             <div class="mt-6 space-y-3">
@@ -55,7 +55,7 @@
                     </form>
                 @elseif($registration->isDraft())
                     <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                        Pendaftaran masih Draft. Mahasiswa perlu menekan Submit Pendaftaran sebelum admin/koordinator memverifikasi.
+                        Pendaftaran masih draf. Mahasiswa perlu menekan Kirim Pendaftaran sebelum admin/koordinator memverifikasi.
                     </div>
                 @endif
                 <form method="POST" action="{{ route('management.kp-registrations.revision', $registration) }}" onsubmit="return confirm('Minta revisi pendaftaran ini?')">
@@ -88,12 +88,12 @@
                                     <p class="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">{{ $document->review_note }}</p>
                                 @endif
                             </div>
-                            <span class="rounded-full {{ $document?->statusBadgeClass() ?? 'bg-slate-100 text-slate-700' }} px-3 py-1 text-xs font-semibold">{{ $document?->statusLabel() ?? 'Belum Upload' }}</span>
+                            <span class="rounded-full {{ $document?->statusBadgeClass() ?? 'bg-slate-100 text-slate-700' }} px-3 py-1 text-xs font-semibold">{{ $document?->statusLabel() ?? 'Belum Unggah' }}</span>
                         </div>
                         @if($document?->file_path)
                             <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="{{ route('management.kp-registrations.documents.preview', [$registration, $document]) }}" target="_blank" rel="noopener" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Preview</a>
-                                <a href="{{ route('management.kp-registrations.documents.download', [$registration, $document]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Download</a>
+                                <a href="{{ route('management.kp-registrations.documents.preview', [$registration, $document]) }}" target="_blank" rel="noopener" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Pratinjau</a>
+                                <a href="{{ route('management.kp-registrations.documents.download', [$registration, $document]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Unduh</a>
                                 @if($document->status === 'disetujui')
                                     <span class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">Sudah disetujui</span>
                                 @else

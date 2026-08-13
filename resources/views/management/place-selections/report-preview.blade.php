@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Monitoring Pemilihan Tempat KP</title>
+    <title>Pemantauan Pemilihan Tempat KP</title>
     <style>
         body { color: #0f172a; font-family: Arial, sans-serif; margin: 32px; }
         h1 { font-size: 22px; margin: 0 0 4px; }
@@ -32,7 +32,7 @@
         <a href="{{ url()->previous() }}">Kembali</a>
     </div>
 
-    <h1>Monitoring Pemilihan Tempat KP</h1>
+    <h1>Pemantauan Pemilihan Tempat KP</h1>
     <div class="subtitle">SI-KP Farmasi UBP</div>
 
     <div class="meta">

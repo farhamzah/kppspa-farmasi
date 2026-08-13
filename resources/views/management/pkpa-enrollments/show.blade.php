@@ -33,7 +33,7 @@
         <div class="border-b border-slate-200 px-5 py-4"><h3 class="font-black text-slate-950">Enam Kewajiban Wahana</h3></div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Mode</th><th class="px-4 py-3">Pilihan</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Progress</th></tr></thead>
+                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Mode</th><th class="px-4 py-3">Pilihan</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Kemajuan</th></tr></thead>
                 <tbody class="divide-y divide-slate-100">
                 @foreach($enrollment->requirements as $requirement)
                     <tr>

@@ -57,7 +57,7 @@
                     @if($plan)
                         <div class="flex flex-wrap gap-2">
                             <a href="{{ route('management.pkpa-placement-plans.timeline', $plan) }}" class="rounded-xl border border-cyan-200 px-3 py-2 text-xs font-black text-cyan-700">Timeline Rotasi</a>
-                            <a href="{{ route('management.pkpa-placement-plans.export', $plan) }}" class="rounded-xl border border-emerald-200 px-3 py-2 text-xs font-black text-emerald-700">Export Internal</a>
+                            <a href="{{ route('management.pkpa-placement-plans.export', $plan) }}" class="rounded-xl border border-emerald-200 px-3 py-2 text-xs font-black text-emerald-700">Ekspor Internal</a>
                             <form method="POST" action="{{ route('management.pkpa-placement-plans.validate', $plan) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-black text-white">Validasi Seluruh Rancangan</button></form>
                         </div>
                     @endif
@@ -69,7 +69,7 @@
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Status</p><p class="text-xl font-black">{{ $plan->statusLabel() }}</p></div>
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Terisi</p><p class="text-xl font-black">{{ $progress['filled'] }} / {{ $progress['required'] }}</p></div>
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Valid</p><p class="text-xl font-black">{{ $progress['valid'] }}</p></div>
-                        <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Progress</p><p class="text-xl font-black">{{ $progress['percent'] }}%</p></div>
+                        <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Kemajuan</p><p class="text-xl font-black">{{ $progress['percent'] }}%</p></div>
                     </div>
                 @endif
             </div>
@@ -205,13 +205,13 @@
                             <select name="internal_supervisor_eligibility_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required><option value="">Pembimbing Dalam</option>@foreach($internalSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceDomain?->name }}</option>@endforeach</select>
                             <select name="site_field_supervisor_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required><option value="">Pembimbing Lapangan</option>@foreach($fieldSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceSite?->name }}</option>@endforeach</select>
                             <select name="overwrite_mode" class="rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="empty_only">Hanya isi yang kosong</option><option value="overwrite_draft">Timpa assignment draft</option></select>
-                            <button class="rounded-xl bg-slate-950 px-3 py-2 text-sm font-black text-white">Preview Bulk</button>
+                            <button class="rounded-xl bg-slate-950 px-3 py-2 text-sm font-black text-white">Pratinjau Massal</button>
                         </form>
                     </section>
 
                     @if($latestBatch)
                         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                            <h3 class="text-base font-black text-slate-950">Preview Terakhir</h3>
+                            <h3 class="text-base font-black text-slate-950">Pratinjau Terakhir</h3>
                             <p class="mt-1 text-sm text-slate-500">{{ $latestBatch->items->where('result_status', 'valid')->count() }} valid / {{ $latestBatch->items->where('result_status', 'invalid')->count() }} invalid</p>
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <form method="POST" action="{{ route('management.pkpa-placement-batches.apply', $latestBatch) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-black text-white">Terapkan Semua Jika Valid</button></form>

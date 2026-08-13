@@ -87,7 +87,7 @@ class PkpaPlacementPlan extends Model
             'needs_revision' => 'Perlu revisi',
             'locked' => 'Dikunci',
             'archived' => 'Diarsipkan',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 }

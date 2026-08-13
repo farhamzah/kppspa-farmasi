@@ -161,7 +161,7 @@ class KpPlaceSelectionWarTicketTest extends TestCase
             ->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/berkas-kp')
             ->assertOk()
-            ->assertSee('Submit Pendaftaran');
+            ->assertSee('Kirim Pendaftaran');
 
         $this->actingAs($this->mahasiswa)
             ->withSession(['active_role' => 'mahasiswa'])
@@ -242,7 +242,7 @@ class KpPlaceSelectionWarTicketTest extends TestCase
     {
         $this->verifiedRegistration($this->student);
 
-        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/management/place-selections')->assertOk()->assertSee('Monitoring Pemilihan')->assertSee('Print Preview')->assertSee('Excel');
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/management/place-selections')->assertOk()->assertSee('Pemantauan Pemilihan')->assertSee('Pratinjau Cetak')->assertSee('Excel');
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/management/place-selections')->assertOk();
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])->get('/management/place-selections')->assertForbidden();
     }
@@ -266,7 +266,7 @@ class KpPlaceSelectionWarTicketTest extends TestCase
             ->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/place-selections/report/preview?status=aktif')
             ->assertOk()
-            ->assertSee('Monitoring Pemilihan Tempat KP')
+            ->assertSee('Pemantauan Pemilihan Tempat KP')
             ->assertSee($this->student->nim)
             ->assertSee('Apotek Sehat');
 

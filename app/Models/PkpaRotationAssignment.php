@@ -131,7 +131,7 @@ class PkpaRotationAssignment extends Model
             'needs_attention' => 'Peringatan',
             'cancelled' => 'Dibatalkan',
             'superseded' => 'Digantikan',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 }

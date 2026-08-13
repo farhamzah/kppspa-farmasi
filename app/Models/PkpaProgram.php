@@ -114,7 +114,7 @@ class PkpaProgram extends Model
             'active' => 'Aktif',
             'completed' => 'Selesai',
             'archived' => 'Diarsipkan',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 

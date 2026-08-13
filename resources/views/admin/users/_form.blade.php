@@ -43,7 +43,7 @@
             </div>
         </div>
         <div>
-            <label class="text-sm font-semibold text-slate-700">Role</label>
+            <label class="text-sm font-semibold text-slate-700">Peran</label>
             <div class="mt-2 grid gap-2 md:grid-cols-2">
                 @foreach($roles as $role)
                     <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">

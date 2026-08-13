@@ -21,7 +21,7 @@
                 <p class="mt-2 text-sm text-slate-600">{{ $programSite->practiceDomain?->name }}{{ $programSite->practiceDomainOption ? ' / '.$programSite->practiceDomainOption->name : '' }} - {{ $programSite->practiceSite?->city ?: 'Kota belum diisi' }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('management.pkpa-placement-readiness.index', ['program_id' => $programSite->pkpa_program_id]) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Cek Readiness</a>
+                <a href="{{ route('management.pkpa-placement-readiness.index', ['program_id' => $programSite->pkpa_program_id]) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Cek Kesiapan</a>
                 @if($programSite->is_active)
                     <form method="POST" action="{{ route('management.pkpa-program-sites.deactivate', $programSite) }}">@csrf<button class="rounded-xl border border-rose-200 px-4 py-2 text-sm font-bold text-rose-700">Nonaktifkan</button></form>
                 @endif
@@ -110,7 +110,7 @@
                             <p class="mt-2 text-sm text-slate-600">{{ $supervisor->position_title ?: 'Jabatan belum diisi' }} - beban maks {{ $supervisor->maximum_active_students ?: 'tidak dibatasi' }}</p>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <form method="POST" action="{{ route('management.pkpa-program-sites.field-supervisors.sync', [$programSite, $supervisor]) }}">@csrf<button class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Sync</button></form>
+                            <form method="POST" action="{{ route('management.pkpa-program-sites.field-supervisors.sync', [$programSite, $supervisor]) }}">@csrf<button class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Sinkronkan</button></form>
                             <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-600">{{ str($supervisor->status)->headline() }}</span>
                         </div>
                     </div>

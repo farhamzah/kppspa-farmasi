@@ -31,7 +31,13 @@ class PkpaDemoEndToEndSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([RoleSeeder::class, PkpaMasterSeeder::class, AdminSeeder::class, DemoUserSeeder::class]);
+        $this->call([
+            RoleSeeder::class,
+            PkpaMasterSeeder::class,
+            PkpaPortfolioTemplateSeeder::class,
+            AdminSeeder::class,
+            DemoUserSeeder::class,
+        ]);
 
         $admin = User::where('email', 'farhamzah@ubpkarawang.ac.id')->first()
             ?? User::where('email', 'admin@sikp.test')->firstOrFail();

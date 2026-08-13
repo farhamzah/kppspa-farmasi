@@ -22,7 +22,7 @@
             </select>
             <select name="status" class="si-input mt-0">
                 <option value="">Semua Status</option>
-                @foreach(['draft'=>'Draft','menunggu_review'=>'Menunggu Review','revisi'=>'Revisi','disetujui'=>'Disetujui','ditolak'=>'Ditolak'] as $value=>$label)
+                @foreach(['draft'=>'Draf','menunggu_review'=>'Menunggu Pemeriksaan','revisi'=>'Revisi','disetujui'=>'Disetujui','ditolak'=>'Ditolak'] as $value=>$label)
                     <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                 @endforeach
             </select>

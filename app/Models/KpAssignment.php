@@ -52,7 +52,7 @@ class KpAssignment extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
-            'draft' => 'Draft',
+            'draft' => 'Draf',
             'aktif' => 'Aktif',
             'berjalan' => 'Berjalan',
             'selesai' => 'Selesai',

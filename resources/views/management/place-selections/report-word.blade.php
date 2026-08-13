@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Monitoring Pemilihan Tempat KP</title>
+    <title>Pemantauan Pemilihan Tempat KP</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 11pt; }
         h1 { font-size: 18pt; margin-bottom: 4px; }
@@ -13,7 +13,7 @@
     </style>
 </head>
 <body>
-    <h1>Monitoring Pemilihan Tempat KP</h1>
+    <h1>Pemantauan Pemilihan Tempat KP</h1>
     <p>SI-KP Farmasi UBP</p>
 
     <div class="meta">

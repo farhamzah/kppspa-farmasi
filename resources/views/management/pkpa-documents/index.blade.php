@@ -9,7 +9,7 @@
             <div>
                 <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Dokumen Internal MY PSPA</p>
                 <h1 class="mt-2 text-3xl font-black text-slate-950">Template, penomoran, penerbitan, dan distribusi dokumen PKPA</h1>
-                <p class="mt-2 max-w-3xl text-sm text-slate-600">Semua output disimpan privat, berbasis snapshot, dan tidak menggantikan dokumen resmi universitas.</p>
+                <p class="mt-2 max-w-3xl text-sm text-slate-600">Semua keluaran disimpan privat, berbasis snapshot, dan tidak menggantikan dokumen resmi universitas.</p>
             </div>
             <a href="{{ route('management.pkpa-documents.export') }}" class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Ekspor Dokumen</a>
         </div>
@@ -41,7 +41,7 @@
                 </div>
                 <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_number" value="1"> Perlu nomor</label>
                 <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_signatory" value="1"> Perlu penandatangan</label>
-                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_approval" value="1" checked> Perlu approval</label>
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="requires_approval" value="1" checked> Perlu persetujuan</label>
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Tambah Jenis</button>
             </form>
         </section>
@@ -77,7 +77,7 @@
                         <input name="name" placeholder="Nama template" class="rounded-2xl border-slate-200 text-sm" required>
                         <select name="template_engine" class="rounded-2xl border-slate-200 text-sm"><option value="html">HTML aman</option><option value="docx_template">DOCX template</option><option value="spreadsheet">Spreadsheet</option><option value="csv">CSV</option></select>
                         <textarea name="template_content" rows="6" class="rounded-2xl border-slate-200 text-sm" placeholder="Contoh: Dokumen Internal MY PSPA&#10;Program: @{{ program.name }}&#10;Mahasiswa: @{{ student.name }}"></textarea>
-                        <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Simpan Draft Template</button>
+                        <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Simpan Draf Template</button>
                     </form>
                 </details>
             @endforeach
@@ -128,7 +128,7 @@
     </div>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">Generate Dokumen</h2>
+        <h2 class="text-lg font-black text-slate-950">Buat Dokumen</h2>
         <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             @foreach($types as $type)
                 <form method="POST" action="{{ route('management.pkpa-document-types.generate', $type) }}" class="rounded-2xl border border-slate-100 p-4">
@@ -139,7 +139,7 @@
                     <select name="scope_type" class="mt-3 w-full rounded-2xl border-slate-200 text-sm"><option value="custom">Custom</option><option value="publication">Publication</option><option value="assignment">Assignment</option><option value="final_release">Hasil akhir</option></select>
                     <input name="scope_id" placeholder="ID scope" class="mt-3 w-full rounded-2xl border-slate-200 text-sm">
                     <div class="mt-3 grid grid-cols-2 gap-2 text-sm">@foreach($type->output_formats ?? ['docx'] as $format)<label class="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2"><input type="checkbox" name="formats[]" value="{{ $format }}" checked> {{ strtoupper($format) }}</label>@endforeach</div>
-                    <button class="mt-3 w-full rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Generate Draft</button>
+                    <button class="mt-3 w-full rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Buat Draf</button>
                 </form>
             @endforeach
         </div>
@@ -149,7 +149,7 @@
         <h2 class="text-lg font-black text-slate-950">Dokumen Terbaru</h2>
         <div class="mt-4 overflow-x-auto">
             <table class="min-w-full text-left text-sm">
-                <thead class="text-xs uppercase text-slate-500"><tr><th class="p-3">Judul</th><th class="p-3">Jenis</th><th class="p-3">Nomor</th><th class="p-3">Status</th><th class="p-3">File</th><th class="p-3">Aksi</th></tr></thead>
+                <thead class="text-xs uppercase text-slate-500"><tr><th class="p-3">Judul</th><th class="p-3">Jenis</th><th class="p-3">Nomor</th><th class="p-3">Status</th><th class="p-3">Berkas</th><th class="p-3">Aksi</th></tr></thead>
                 <tbody>
                     @foreach($documents as $document)
                         <tr class="border-t border-slate-100">
@@ -160,8 +160,8 @@
                             <td class="p-3">@foreach($document->versions as $version)<a class="mr-2 font-bold text-cyan-700" href="{{ route('management.pkpa-document-versions.download', $version) }}">{{ strtoupper($version->output_format) }}</a>@endforeach</td>
                             <td class="p-3">
                                 <div class="flex flex-wrap gap-2">
-                                    @if(in_array($document->status, ['generated','under_review'], true))<form method="POST" action="{{ route('management.pkpa-documents.approve', $document) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Approve</button></form>@endif
-                                    @if(in_array($document->status, ['approved','generated'], true))<form method="POST" action="{{ route('management.pkpa-documents.publish', $document) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Publish</button></form>@endif
+                                    @if(in_array($document->status, ['generated','under_review'], true))<form method="POST" action="{{ route('management.pkpa-documents.approve', $document) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Setujui</button></form>@endif
+                                    @if(in_array($document->status, ['approved','generated'], true))<form method="POST" action="{{ route('management.pkpa-documents.publish', $document) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Terbitkan</button></form>@endif
                                     @if(!in_array($document->status, ['cancelled','published'], true))<form method="POST" action="{{ route('management.pkpa-documents.cancel', $document) }}">@csrf<input type="hidden" name="cancellation_reason" value="Dibatalkan dari dashboard dokumen"><button class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white">Batal</button></form>@endif
                                 </div>
                             </td>

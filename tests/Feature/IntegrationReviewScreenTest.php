@@ -36,16 +36,16 @@ class IntegrationReviewScreenTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get(route('management.integration.tu-payload-preview'))
             ->assertOk()
-            ->assertSee('Preview Dokumen KP untuk TU')
+            ->assertSee('Pratinjau Dokumen KP untuk TU')
             ->assertSee('KP_PLACEMENT_LETTER')
-            ->assertSee('Request keluar')
+            ->assertSee('Permintaan keluar')
             ->assertDontSee('storage/app', false)
             ->assertDontSee('signed_url', false);
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get(route('management.integration.tu-payload-preview'))
             ->assertOk()
-            ->assertSee('Review Integrasi TU');
+            ->assertSee('Pemeriksaan Integrasi TU');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/management/integration/tu-payload-preview')
@@ -59,7 +59,7 @@ class IntegrationReviewScreenTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get(route('management.integration.safa-public-info-preview'))
             ->assertOk()
-            ->assertSee('Preview Informasi Publik KP untuk SAFA')
+            ->assertSee('Pratinjau Informasi Publik KP untuk SAFA')
             ->assertSee('KP Farmasi Public')
             ->assertSee('Persyaratan Umum')
             ->assertDontSee('final_score', false)
@@ -70,7 +70,7 @@ class IntegrationReviewScreenTest extends TestCase
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get(route('management.integration.safa-public-info-preview'))
             ->assertOk()
-            ->assertSee('Review Integrasi SAFA');
+            ->assertSee('Pemeriksaan Integrasi SAFA');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/management/integration/safa-public-info-preview')

@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $changeStatusLabels = ['draft' => 'Draft', 'submitted' => 'Diajukan', 'under_review' => 'Direview', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'applied' => 'Diterapkan', 'failed' => 'Gagal'];
+    $changeStatusLabels = ['draft' => 'Draf', 'submitted' => 'Diajukan', 'under_review' => 'Diperiksa', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'applied' => 'Diterapkan', 'failed' => 'Gagal'];
     $changeTypeLabels = ['date_change' => 'Ubah tanggal', 'site_change' => 'Ubah tempat', 'supervisor_change' => 'Ubah pembimbing', 'administrative_correction' => 'Koreksi administrasi', 'student_assignment_change' => 'Ubah penempatan mahasiswa'];
 @endphp
 <div class="space-y-5">
@@ -17,7 +17,7 @@
         <p class="mt-1 text-sm text-slate-500">Publikasi sumber {{ $change->publication->code }} / status {{ $changeStatusLabels[$change->status] ?? $change->status }} / tipe {{ $changeTypeLabels[$change->request_type] ?? $change->request_type }}</p>
         <div class="mt-5 flex flex-wrap gap-2">
             @if($change->status === 'draft')
-                <form method="POST" action="{{ route('management.pkpa-change-requests.submit', $change) }}">@csrf<button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Ajukan Review</button></form>
+                <form method="POST" action="{{ route('management.pkpa-change-requests.submit', $change) }}">@csrf<button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Ajukan Pemeriksaan</button></form>
             @endif
             @if($change->status === 'submitted' && auth()->user()->hasRole('koordinator_kp'))
                 <form method="POST" action="{{ route('management.pkpa-change-requests.approve', $change) }}">@csrf<button class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white">Setujui</button></form>

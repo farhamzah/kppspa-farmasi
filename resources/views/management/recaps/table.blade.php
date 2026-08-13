@@ -8,8 +8,8 @@
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div><h2 class="text-xl font-black text-slate-950">{{ $title }}</h2><p class="text-sm text-slate-500">Total data: {{ $rows->count() }}</p></div>
             <div class="flex flex-wrap gap-2">
-                <a href="{{ route('management.recaps.preview', array_merge(['type' => $type], $reportQuery)) }}" target="_blank" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Print Preview</a>
-                <a href="{{ route('management.recaps.preview', array_merge(['type' => $type, 'print' => 1], $reportQuery)) }}" target="_blank" class="rounded-2xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Print</a>
+                <a href="{{ route('management.recaps.preview', array_merge(['type' => $type], $reportQuery)) }}" target="_blank" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Pratinjau Cetak</a>
+                <a href="{{ route('management.recaps.preview', array_merge(['type' => $type, 'print' => 1], $reportQuery)) }}" target="_blank" class="rounded-2xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Cetak</a>
                 <a href="{{ route('management.recaps.download', array_merge(['type' => $type, 'format' => 'word'], $reportQuery)) }}" class="rounded-2xl border border-indigo-200 px-4 py-2 text-sm font-bold text-indigo-700">Word</a>
                 <a href="{{ route('management.recaps.download', array_merge(['type' => $type, 'format' => 'excel'], $reportQuery)) }}" class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Excel</a>
                 <a href="{{ route('management.recaps.download', array_merge(['type' => $type, 'format' => 'pdf'], $reportQuery)) }}" class="rounded-2xl border border-rose-200 px-4 py-2 text-sm font-bold text-rose-700">PDF</a>

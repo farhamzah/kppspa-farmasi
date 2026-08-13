@@ -92,7 +92,7 @@ class PkpaEnrollment extends Model
             'cancelled' => 'Dibatalkan',
             'completed' => 'Selesai',
             'archived' => 'Diarsipkan',
-            default => 'Draft',
+            default => 'Draf',
         };
     }
 
