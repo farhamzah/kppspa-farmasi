@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\CoreBridgeAuthService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -156,6 +157,107 @@ class Tahap00MyPspaBaselineTest extends TestCase
             'email' => 'local@example.test',
             'password' => 'local-pass',
         ])->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    public function test_core_http_login_does_not_require_direct_core_database_connection(): void
+    {
+        config()->set('database.connections.core', [
+            'driver' => 'sqlite',
+            'database' => database_path('missing-core-direct-db.sqlite'),
+            'prefix' => '',
+        ]);
+        DB::purge('core');
+
+        Http::fake([
+            'https://core.test/api/v1/auth/login' => Http::response([
+                'token' => 'core-token',
+                'user' => [
+                    'id' => 40,
+                    'name' => 'HTTP Only Admin',
+                    'email' => 'http-only@example.test',
+                    'active' => true,
+                ],
+            ]),
+            'https://core.test/api/v1/internal/apps/kppspa-farmasi/users/40/access' => Http::response([
+                'has_access' => true,
+                'app_code' => 'kppspa-farmasi',
+                'user_id' => 40,
+                'roles' => [['slug' => 'admin-kp', 'name' => 'Admin KP']],
+            ]),
+        ]);
+
+        $this->post('/login', [
+            'email' => 'http-only@example.test',
+            'password' => 'core-pass',
+        ])->assertRedirect('/admin/dashboard');
+
+        $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', [
+            'core_user_id' => 40,
+            'email' => 'http-only@example.test',
+            'core_sync_status' => 'synced',
+        ]);
+    }
+
+    public function test_core_http_login_skips_unknown_roles_when_supported_role_remains(): void
+    {
+        Http::fake([
+            'https://core.test/api/v1/auth/login' => Http::response([
+                'token' => 'core-token',
+                'user' => [
+                    'id' => 41,
+                    'name' => 'Mixed Role User',
+                    'email' => 'mixed-role@example.test',
+                    'active' => true,
+                ],
+            ]),
+            'https://core.test/api/v1/internal/apps/kppspa-farmasi/users/41/access' => Http::response([
+                'has_access' => true,
+                'app_code' => 'kppspa-farmasi',
+                'user_id' => 41,
+                'roles' => [
+                    ['slug' => 'viewer', 'name' => 'Viewer'],
+                    ['slug' => 'pembimbing-dalam', 'name' => 'Pembimbing Dalam'],
+                ],
+            ]),
+        ]);
+
+        $this->post('/login', [
+            'email' => 'mixed-role@example.test',
+            'password' => 'core-pass',
+        ])->assertRedirect('/pembimbing-dalam/dashboard');
+
+        $this->assertAuthenticated();
+        $this->assertSame('pembimbing_dalam', session('active_role'));
+    }
+
+    public function test_core_http_login_denies_cleanly_when_only_unknown_roles_are_returned(): void
+    {
+        Http::fake([
+            'https://core.test/api/v1/auth/login' => Http::response([
+                'token' => 'core-token',
+                'user' => [
+                    'id' => 42,
+                    'name' => 'Unsupported Role User',
+                    'email' => 'unsupported-role@example.test',
+                    'active' => true,
+                ],
+            ]),
+            'https://core.test/api/v1/internal/apps/kppspa-farmasi/users/42/access' => Http::response([
+                'has_access' => true,
+                'app_code' => 'kppspa-farmasi',
+                'user_id' => 42,
+                'roles' => [['slug' => 'viewer', 'name' => 'Viewer']],
+            ]),
+        ]);
+
+        $this->post('/login', [
+            'email' => 'unsupported-role@example.test',
+            'password' => 'core-pass',
+        ])->assertRedirect()
+            ->assertSessionHasErrors(['email' => 'Akun Core Anda belum memiliki akses aplikasi MY PSPA / KPPSPA.']);
 
         $this->assertGuest();
     }
