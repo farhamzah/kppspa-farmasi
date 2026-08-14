@@ -19,6 +19,7 @@ class CoreBridgeAuthService
     public function __construct(
         private readonly KpCoreBridgeProvisioningService $provisioningService,
         private readonly CoreFarmasiClient $coreClient,
+        private readonly CoreHttpUserProjectionService $projectionService,
     ) {
     }
 
@@ -250,8 +251,17 @@ class CoreBridgeAuthService
             return $this->result(false, null, $this->failureReason, 'core_http');
         }
 
-        $legacyUser = $this->resolveOrCreateLocalProjection($coreUser, $kpRoles);
+        $projection = $this->projectionService->project(
+            $coreUser,
+            $access,
+            $this->coreClient->getAppAccessUser($coreUser['id'])
+        );
+        $legacyUser = $projection['legacy_user'] ?? null;
         if (! $legacyUser) {
+            $this->failureReason = ($projection['blockers'] ?? []) === []
+                ? 'core_app_access_denied'
+                : 'core_contract_incomplete';
+
             return $this->result(false, null, $this->failureReason, 'core_http');
         }
 

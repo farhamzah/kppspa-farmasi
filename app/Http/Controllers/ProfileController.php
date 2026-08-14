@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Services\CoreFarmasiClient;
+use App\Services\CoreHttpUserProjectionService;
 use App\Services\CoreProfileReadService;
-use App\Services\KpCoreBridgeProvisioningService;
 use App\Models\KpPlace;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -152,11 +152,24 @@ class ProfileController extends Controller
         return redirect()->route('profile.show')->with('status', 'Profil berhasil diperbarui.');
     }
 
-    public function syncCore(Request $request, KpCoreBridgeProvisioningService $service): RedirectResponse
+    public function syncCore(Request $request, CoreHttpUserProjectionService $projection): RedirectResponse
     {
-        $report = $service->execute($request->user()->email);
+        $appUser = $request->user()->core_user_id
+            ? $this->coreFarmasi->getAppAccessUser($request->user()->core_user_id)
+            : $this->appUserByEmail($request->user()->email);
 
-        if ($report['blockers'] !== []) {
+        if (! $appUser) {
+            return back()->withErrors(['core_sync' => 'Akses aplikasi MY PSPA / KPPSPA belum ditemukan di Core.']);
+        }
+
+        $report = $projection->project($appUser['user'] ?? [], [
+            'has_access' => true,
+            'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
+            'user_id' => $appUser['user_id'] ?? data_get($appUser, 'user.id'),
+            'roles' => $appUser['roles'] ?? [],
+        ], $appUser);
+
+        if (($report['blockers'] ?? []) !== []) {
             return back()->withErrors(['core_sync' => implode(' ', $report['blockers'])]);
         }
 
@@ -169,7 +182,24 @@ class ProfileController extends Controller
             return redirect()->route('role.select')->with('status', 'Profil berhasil disinkronkan dari Core. Pilih ulang role karena akses berubah.');
         }
 
-        return redirect()->route('profile.show')->with('status', 'Profil berhasil disinkronkan dari Core.');
+        $message = 'Profil berhasil disinkronkan dari Core.';
+
+        if (($report['warnings'] ?? []) !== []) {
+            $message .= ' '.implode(' ', $report['warnings']).' Silakan lengkapi profil di Core Farmasi.';
+        }
+
+        return redirect()->route('profile.show')->with('status', $message);
+    }
+
+    private function appUserByEmail(string $email): ?array
+    {
+        $users = $this->coreFarmasi->listAppAccessUsers([
+            'q' => $email,
+            'limit' => 10,
+        ]);
+
+        return collect($users['data'] ?? [])
+            ->first(fn (array $row): bool => strtolower((string) data_get($row, 'user.email')) === strtolower(trim($email)));
     }
 
     /**

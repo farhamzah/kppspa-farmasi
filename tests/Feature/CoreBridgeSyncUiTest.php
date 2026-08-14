@@ -8,6 +8,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -87,7 +88,42 @@ class CoreBridgeSyncUiTest extends TestCase
     public function test_user_can_refresh_own_profile_from_core(): void
     {
         $user = $this->user('Nama Lokal Lama', 'student-self@sikp.test', ['mahasiswa']);
-        $this->coreUser(101, 'Nama Core Baru', $user->email, ['mahasiswa']);
+        config()->set('core_farmasi.enabled', true);
+        config()->set('core_farmasi.base_url', 'https://core.test');
+        config()->set('core_farmasi.app_code', 'kppspa-farmasi');
+        config()->set('core_farmasi.client_id', 'client-id');
+        config()->set('core_farmasi.client_secret', 'client-secret');
+
+        Http::fake([
+            'https://core.test/api/v1/internal/apps/kppspa-farmasi/users*' => Http::response([
+                'data' => [[
+                    'user_id' => 101,
+                    'app_code' => 'kppspa-farmasi',
+                    'roles' => [['slug' => 'mahasiswa', 'name' => 'Mahasiswa']],
+                    'user' => [
+                        'id' => 101,
+                        'name' => 'Nama Core Baru',
+                        'email' => $user->email,
+                        'active' => true,
+                    ],
+                    'profiles' => [
+                        'student' => [
+                            'id' => 301,
+                            'user_id' => 101,
+                            'student_number' => 'PSPA301',
+                            'student_class' => 'PSPA-A',
+                            'name' => 'Nama Core Baru',
+                            'email' => $user->email,
+                            'active' => true,
+                            'study_program' => ['name' => 'Profesi Apoteker'],
+                        ],
+                        'lecturer' => null,
+                        'external_person' => null,
+                    ],
+                ]],
+                'meta' => ['total' => 1, 'has_more' => false],
+            ]),
+        ]);
 
         $this->actingAs($user)
             ->withSession(['active_role' => 'mahasiswa'])
@@ -96,6 +132,11 @@ class CoreBridgeSyncUiTest extends TestCase
             ->assertSessionHas('status');
 
         $this->assertSame('Nama Core Baru', $user->fresh()->name);
+        $this->assertDatabaseHas('students', [
+            'user_id' => $user->id,
+            'core_student_id' => 301,
+            'nim' => 'PSPA301',
+        ]);
     }
 
     private function user(string $name, string $email, array $roles): User

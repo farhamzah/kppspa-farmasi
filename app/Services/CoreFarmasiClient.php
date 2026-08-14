@@ -197,6 +197,23 @@ class CoreFarmasiClient
         ];
     }
 
+    public function listAppAccessUsers(array $params = []): array
+    {
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
+
+        return $this->collection($this->get("internal/apps/{$appCode}/users", $params));
+    }
+
+    public function getAppAccessUser(int|string $userId): ?array
+    {
+        $users = $this->listAppAccessUsers([
+            'user_id' => $userId,
+            'limit' => 1,
+        ]);
+
+        return $users['data'][0] ?? null;
+    }
+
     protected function get(string $path, array $params = []): ?array
     {
         if (! $this->enabled()) {

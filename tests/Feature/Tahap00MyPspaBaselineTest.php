@@ -71,6 +71,34 @@ class Tahap00MyPspaBaselineTest extends TestCase
                 'user_id' => 10,
                 'roles' => [['slug' => 'mahasiswa', 'name' => 'Mahasiswa']],
             ]),
+            'https://core.test/api/v1/internal/apps/kppspa-farmasi/users*' => Http::response([
+                'data' => [[
+                    'user_id' => 10,
+                    'app_code' => 'kppspa-farmasi',
+                    'roles' => [['slug' => 'mahasiswa', 'name' => 'Mahasiswa']],
+                    'user' => [
+                        'id' => 10,
+                        'name' => 'Mahasiswa Core',
+                        'email' => 'mahasiswa@example.test',
+                        'active' => true,
+                    ],
+                    'profiles' => [
+                        'student' => [
+                            'id' => 501,
+                            'user_id' => 10,
+                            'student_number' => 'PSPA001',
+                            'student_class' => 'PSPA-A',
+                            'name' => 'Mahasiswa Core',
+                            'email' => 'mahasiswa@example.test',
+                            'active' => true,
+                            'study_program' => ['name' => 'Profesi Apoteker'],
+                        ],
+                        'lecturer' => null,
+                        'external_person' => null,
+                    ],
+                ]],
+                'meta' => ['total' => 1, 'has_more' => false],
+            ]),
         ]);
 
         $response = $this->post('/login', [
@@ -86,6 +114,12 @@ class Tahap00MyPspaBaselineTest extends TestCase
             'name' => 'Mahasiswa Core',
             'email' => 'mahasiswa@example.test',
             'core_sync_status' => 'synced',
+        ]);
+        $this->assertDatabaseHas('students', [
+            'user_id' => $legacy->id,
+            'core_student_id' => 501,
+            'nim' => 'PSPA001',
+            'study_program' => 'Profesi Apoteker',
         ]);
         $this->assertSame($oldPassword, $legacy->fresh()->password);
         $this->assertEqualsCanonicalizing(['mahasiswa'], $legacy->fresh()->roles()->pluck('name')->all());
