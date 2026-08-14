@@ -17,6 +17,7 @@ class CoreRoleTranslatorTest extends TestCase
         $this->assertSame('pembimbing_dalam', CoreRoleTranslator::toKp('pembimbing-dalam'));
         $this->assertSame('pembimbing_lapangan', CoreRoleTranslator::toKp('pembimbing-lapangan'));
         $this->assertSame('penguji', CoreRoleTranslator::toKp('penguji'));
+        $this->assertSame('penguji', CoreRoleTranslator::toKp('penguji-luar'));
         $this->assertSame('mahasiswa', CoreRoleTranslator::toKp('mahasiswa'));
     }
 

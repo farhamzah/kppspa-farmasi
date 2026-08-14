@@ -337,8 +337,26 @@ class CoreBridgeAuthService
             return null;
         }
 
-        $legacyUser = User::query()->firstOrNew(['core_user_id' => $coreUserId]);
+        $legacyUser = User::query()
+            ->where('core_user_id', $coreUserId)
+            ->orWhereRaw('LOWER(TRIM(email)) = ?', [$this->normalize($email)])
+            ->first();
+
+        if ($legacyUser && filled($legacyUser->core_user_id) && (int) $legacyUser->core_user_id !== $coreUserId) {
+            $this->failureReason = 'legacy_bridge_email_conflict';
+            Log::warning('KP auth Core HTTP projection email conflict.', [
+                'core_user_id' => $coreUserId,
+                'legacy_user_id' => $legacyUser->id,
+                'legacy_core_user_id' => $legacyUser->core_user_id,
+                'email' => $this->normalize($email),
+            ]);
+
+            return null;
+        }
+
+        $legacyUser ??= new User();
         $legacyUser->forceFill([
+            'core_user_id' => $coreUserId,
             'name' => $name,
             'email' => $email,
             'status' => 'active',

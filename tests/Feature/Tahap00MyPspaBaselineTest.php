@@ -88,6 +88,54 @@ class Tahap00MyPspaBaselineTest extends TestCase
         $this->assertEqualsCanonicalizing(['mahasiswa'], $legacy->fresh()->roles()->pluck('name')->all());
     }
 
+    public function test_core_http_login_links_existing_local_user_by_email_without_duplicate_user(): void
+    {
+        $legacy = User::create([
+            'name' => 'Farhamzah Local',
+            'email' => 'farhamzah@ubpkarawang.ac.id',
+            'password' => Hash::make('local-pass'),
+            'status' => 'active',
+            'core_user_id' => null,
+        ]);
+        $legacy->roles()->sync(Role::where('name', 'mahasiswa')->pluck('id'));
+        $oldPassword = $legacy->password;
+
+        Http::fake([
+            'https://core.test/api/v1/auth/login' => Http::response([
+                'token' => 'core-token',
+                'user' => [
+                    'id' => 337,
+                    'name' => 'apt. Farhamzah, S.Si., M.T.I',
+                    'email' => 'farhamzah@ubpkarawang.ac.id',
+                    'active' => true,
+                    'roles' => [['name' => 'admin-kp']],
+                ],
+            ]),
+            'https://core.test/api/v1/internal/apps/kppspa-farmasi/users/337/access' => Http::response([
+                'has_access' => true,
+                'app_code' => 'kppspa-farmasi',
+                'user_id' => 337,
+                'roles' => [['slug' => 'admin-kp', 'name' => 'Admin KP']],
+            ]),
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'farhamzah@ubpkarawang.ac.id',
+            'password' => 'core-pass',
+        ]);
+
+        $response->assertRedirect('/admin/dashboard');
+        $this->assertAuthenticated();
+        $this->assertSame('admin', session('active_role'));
+        $this->assertSame(1, User::where('email', 'farhamzah@ubpkarawang.ac.id')->count());
+
+        $linked = $legacy->fresh();
+        $this->assertSame(337, (int) $linked->core_user_id);
+        $this->assertSame('apt. Farhamzah, S.Si., M.T.I', $linked->name);
+        $this->assertSame($oldPassword, $linked->password);
+        $this->assertEqualsCanonicalizing(['admin'], $linked->roles()->pluck('name')->all());
+    }
+
     public function test_local_password_is_not_used_when_core_http_rejects_login(): void
     {
         User::create([

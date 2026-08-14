@@ -17,6 +17,7 @@ class CoreRoleTranslator
         'pembimbing-dalam' => 'pembimbing_dalam',
         'pembimbing-lapangan' => 'pembimbing_lapangan',
         'penguji' => 'penguji',
+        'penguji-luar' => 'penguji',
     ];
 
     public const KP_TO_CORE = [
