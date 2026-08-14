@@ -9,8 +9,11 @@ class CoreRoleTranslatorTest extends TestCase
 {
     public function test_core_roles_translate_to_existing_kp_roles(): void
     {
+        $this->assertSame('admin', CoreRoleTranslator::toKp('admin-kppspa'));
         $this->assertSame('admin', CoreRoleTranslator::toKp('admin-kp'));
+        $this->assertSame('koordinator_kp', CoreRoleTranslator::toKp('koordinator-kppspa'));
         $this->assertSame('koordinator_kp', CoreRoleTranslator::toKp('koordinator-kp'));
+        $this->assertSame('pembimbing_dalam', CoreRoleTranslator::toKp('pembimbing'));
         $this->assertSame('pembimbing_dalam', CoreRoleTranslator::toKp('pembimbing-dalam'));
         $this->assertSame('pembimbing_lapangan', CoreRoleTranslator::toKp('pembimbing-lapangan'));
         $this->assertSame('penguji', CoreRoleTranslator::toKp('penguji'));
@@ -29,7 +32,7 @@ class CoreRoleTranslatorTest extends TestCase
     {
         $this->assertSame(
             ['koordinator_kp', 'pembimbing_dalam', 'penguji'],
-            CoreRoleTranslator::coreRolesToKp(['koordinator-kp', 'pembimbing-dalam', 'penguji', 'admin-core', 'penguji'])
+            CoreRoleTranslator::coreRolesToKp(['koordinator-kppspa', 'pembimbing', 'penguji', 'admin-core', 'penguji'])
         );
 
         $this->assertSame(
@@ -38,4 +41,3 @@ class CoreRoleTranslatorTest extends TestCase
         );
     }
 }
-

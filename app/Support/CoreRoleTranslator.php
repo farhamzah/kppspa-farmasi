@@ -7,10 +7,13 @@ use Illuminate\Support\Str;
 class CoreRoleTranslator
 {
     public const CORE_TO_KP = [
+        'admin-kppspa' => 'admin',
         'admin-kp' => 'admin',
         'mahasiswa' => 'mahasiswa',
         'dosen' => 'pembimbing_dalam',
+        'koordinator-kppspa' => 'koordinator_kp',
         'koordinator-kp' => 'koordinator_kp',
+        'pembimbing' => 'pembimbing_dalam',
         'pembimbing-dalam' => 'pembimbing_dalam',
         'pembimbing-lapangan' => 'pembimbing_lapangan',
         'penguji' => 'penguji',
@@ -87,4 +90,3 @@ class CoreRoleTranslator
         return Str::of((string) $role)->trim()->lower()->replace('-', '_')->toString();
     }
 }
-

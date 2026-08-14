@@ -228,7 +228,7 @@ class CoreFarmasiClient
             ->timeout((int) config('core_farmasi.timeout', 5))
             ->connectTimeout((int) config('core_farmasi.connect_timeout', 3))
             ->withHeaders([
-                'X-Core-App-Code' => (string) config('core_farmasi.app_code', 'kp-farmasi'),
+                'X-Core-App-Code' => (string) config('core_farmasi.app_code', 'kppspa-farmasi'),
                 'X-Core-Client-Id' => (string) config('core_farmasi.client_id'),
                 'X-Core-Client-Secret' => (string) config('core_farmasi.client_secret'),
             ]);
