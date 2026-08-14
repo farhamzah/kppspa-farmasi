@@ -9,8 +9,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Throwable;
 
 class LoginController extends Controller
 {
@@ -38,24 +40,42 @@ class LoginController extends Controller
                 ->onlyInput('email');
         }
 
-        $authResult = $authBridge->attempt(
-            $credentials['email'],
-            $credentials['password'],
-            $request->boolean('remember')
-        );
+        try {
+            $authResult = $authBridge->attempt(
+                $credentials['email'],
+                $credentials['password'],
+                $request->boolean('remember')
+            );
 
-        if (! $authResult['ok']) {
+            if (! $authResult['ok']) {
+                RateLimiter::hit($key);
+
+                return back()
+                    ->withErrors(['email' => $this->loginFailureMessage($authResult['reason'] ?? null)])
+                    ->onlyInput('email');
+            }
+
+            RateLimiter::clear($key);
+            $request->session()->regenerate();
+
+            return $this->redirectAuthenticatedUser($request);
+        } catch (Throwable $exception) {
             RateLimiter::hit($key);
+            Auth::logout();
+            $request->session()->forget('active_role');
+            $request->session()->regenerateToken();
+
+            Log::error('MY PSPA Core login failed with unhandled exception.', [
+                'email' => Str::lower(trim((string) $credentials['email'])),
+                'auth_mode' => config('kp_auth.mode'),
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
 
             return back()
-                ->withErrors(['email' => $this->loginFailureMessage($authResult['reason'] ?? null)])
+                ->withErrors(['email' => 'Login belum dapat diproses. Silakan coba lagi atau hubungi Admin KPPSPA.'])
                 ->onlyInput('email');
         }
-
-        RateLimiter::clear($key);
-        $request->session()->regenerate();
-
-        return $this->redirectAuthenticatedUser($request);
     }
 
     private function redirectAuthenticatedUser(Request $request): RedirectResponse

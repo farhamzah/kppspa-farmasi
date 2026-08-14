@@ -4,10 +4,12 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Services\CoreBridgeAuthService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Tests\TestCase;
 
 class Tahap00MyPspaBaselineTest extends TestCase
@@ -181,6 +183,23 @@ class Tahap00MyPspaBaselineTest extends TestCase
             'email' => 'down@example.test',
             'password' => 'core-pass',
         ])->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
+    public function test_core_http_login_exception_returns_safe_error_instead_of_500(): void
+    {
+        $this->mock(CoreBridgeAuthService::class, function ($mock): void {
+            $mock->shouldReceive('attempt')
+                ->once()
+                ->andThrow(new RuntimeException('Simulated Core bridge failure'));
+        });
+
+        $this->post('/login', [
+            'email' => 'farhamzah@ubpkarawang.ac.id',
+            'password' => 'core-pass',
+        ])->assertRedirect()
+            ->assertSessionHasErrors('email');
+
         $this->assertGuest();
     }
 
