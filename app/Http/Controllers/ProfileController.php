@@ -246,6 +246,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        abort_if(($user->avatar_disk ?? 'local') === 'remote', 404);
         abort_if(! $user->avatar_path || ! Storage::disk($user->avatar_disk ?? 'local')->exists($user->avatar_path), 404);
 
         return Storage::disk($user->avatar_disk ?? 'local')->response(
@@ -302,7 +303,7 @@ class ProfileController extends Controller
         ]);
 
         if ($oldPath) {
-            rescue(fn () => Storage::disk($oldDisk)->delete($oldPath), report: false);
+            rescue(fn () => $oldDisk === 'remote' ? null : Storage::disk($oldDisk)->delete($oldPath), report: false);
         }
 
         return back()->with('status', 'Foto profil berhasil diperbarui.');
@@ -323,7 +324,7 @@ class ProfileController extends Controller
         ]);
 
         if ($oldPath) {
-            rescue(fn () => Storage::disk($oldDisk)->delete($oldPath), report: false);
+            rescue(fn () => $oldDisk === 'remote' ? null : Storage::disk($oldDisk)->delete($oldPath), report: false);
         }
 
         return back()->with('status', 'Foto profil berhasil dihapus.');

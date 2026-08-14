@@ -160,6 +160,34 @@ class UserImportAndProfileTest extends TestCase
             ->assertHeader('content-type', 'image/jpeg');
     }
 
+    public function test_remote_core_avatar_renders_without_local_avatar_route(): void
+    {
+        $user = User::create([
+            'name' => 'Core Avatar',
+            'email' => 'core-avatar@test.local',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'avatar_path' => 'https://core.test/storage/profile-photos/core-avatar.jpg',
+            'avatar_disk' => 'remote',
+            'avatar_original_filename' => 'core-avatar.jpg',
+        ]);
+        $user->roles()->sync(Role::whereIn('name', ['admin', 'penguji'])->pluck('id'));
+
+        $this->assertTrue($user->hasAvatar());
+        $this->assertFalse($user->hasLocalAvatar());
+        $this->assertSame('https://core.test/storage/profile-photos/core-avatar.jpg', $user->avatarUrl());
+
+        $this->actingAs($user)
+            ->get('/pilih-role')
+            ->assertOk()
+            ->assertSee('https://core.test/storage/profile-photos/core-avatar.jpg', false)
+            ->assertDontSee(route('profile.avatar.show'), false);
+
+        $this->actingAs($user)
+            ->get('/profile/avatar')
+            ->assertNotFound();
+    }
+
     public function test_invalid_avatar_upload_is_rejected_and_initials_are_available(): void
     {
         Storage::fake('local');

@@ -113,9 +113,25 @@ class User extends Authenticatable
         return filled($this->avatar_path);
     }
 
+    public function hasLocalAvatar(): bool
+    {
+        return $this->hasAvatar()
+            && ($this->avatar_disk ?? 'local') !== 'remote'
+            && ! str_starts_with((string) $this->avatar_path, 'http://')
+            && ! str_starts_with((string) $this->avatar_path, 'https://');
+    }
+
     public function avatarUrl(): ?string
     {
-        return $this->hasAvatar() ? route('profile.avatar.show') : null;
+        if (! $this->hasAvatar()) {
+            return null;
+        }
+
+        if (! $this->hasLocalAvatar()) {
+            return (string) $this->avatar_path;
+        }
+
+        return route('profile.avatar.show');
     }
 
     public function initials(): string

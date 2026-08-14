@@ -355,7 +355,8 @@ class CoreBridgeAuthService
         }
 
         $legacyUser ??= new User();
-        $legacyUser->forceFill([
+        $profilePhotoUrl = $this->profilePhotoUrlFromCoreUser($coreUser);
+        $projection = [
             'core_user_id' => $coreUserId,
             'name' => $name,
             'email' => $email,
@@ -365,7 +366,17 @@ class CoreBridgeAuthService
             'core_synced_at' => now(),
             'core_sync_status' => 'synced',
             'core_sync_note' => 'Synced from Core Farmasi HTTP auth.',
-        ]);
+        ];
+
+        if ($profilePhotoUrl) {
+            $projection['avatar_path'] = $profilePhotoUrl;
+            $projection['avatar_disk'] = 'remote';
+            $projection['avatar_original_filename'] = basename((string) parse_url($profilePhotoUrl, PHP_URL_PATH)) ?: 'core-profile-photo';
+            $projection['avatar_mime'] = null;
+            $projection['avatar_size'] = null;
+        }
+
+        $legacyUser->forceFill($projection);
 
         if (! $legacyUser->exists) {
             $legacyUser->setAttribute('password', Hash::make(Str::random(48)));
@@ -387,5 +398,16 @@ class CoreBridgeAuthService
         $legacyUser->roles()->sync($roleIds);
 
         return $legacyUser->load('roles');
+    }
+
+    private function profilePhotoUrlFromCoreUser(array $coreUser): ?string
+    {
+        $photo = $coreUser['profile_photo_url']
+            ?? $coreUser['avatar_url']
+            ?? $coreUser['photo_url']
+            ?? $coreUser['profile_photo_path']
+            ?? null;
+
+        return is_string($photo) ? $this->coreClient->publicUrl($photo) : null;
     }
 }

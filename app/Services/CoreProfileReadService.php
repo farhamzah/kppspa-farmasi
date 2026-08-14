@@ -414,42 +414,13 @@ class CoreProfileReadService
             return null;
         }
 
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
+        $url = app(CoreFarmasiClient::class)->publicUrl($path);
 
-        $baseUrl = $this->coreBaseUrl();
-
-        if ($baseUrl) {
-            return rtrim($baseUrl, '/').'/storage/'.ltrim($path, '/');
+        if ($url) {
+            return $url;
         }
 
         return $this->localProfilePhotoPath($path) ? route('profile.core-avatar.show') : null;
-    }
-
-    private function coreBaseUrl(): ?string
-    {
-        $baseUrl = config('core_farmasi.base_url');
-
-        if (filled($baseUrl)) {
-            return rtrim((string) $baseUrl, '/');
-        }
-
-        $profileUrl = config('core_farmasi.profile_url');
-
-        if (blank($profileUrl)) {
-            return null;
-        }
-
-        $parts = parse_url((string) $profileUrl);
-
-        if (! isset($parts['scheme'], $parts['host'])) {
-            return null;
-        }
-
-        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
-
-        return $parts['scheme'].'://'.$parts['host'].$port;
     }
 
     private function mask(?string $value): ?string

@@ -100,7 +100,7 @@ class CoreFarmasiClient
             return [
                 'authenticated' => true,
                 'token' => $payload['token'],
-                'user' => $payload['user'],
+                'user' => $this->normalizeUserPayload($payload['user']),
             ];
         } catch (RequestException $exception) {
             return $this->handleThrowable($exception);
@@ -261,6 +261,86 @@ class CoreFarmasiClient
         $port = isset($parts['port']) ? ':' . $parts['port'] : '';
 
         return $parts['scheme'] . '://' . $parts['host'] . $port . '/' . ltrim($path, '/');
+    }
+
+    public function publicUrl(?string $pathOrUrl): ?string
+    {
+        if (blank($pathOrUrl)) {
+            return null;
+        }
+
+        $value = trim(str_replace('\\', '/', (string) $pathOrUrl));
+
+        if ($value === '' || str_contains($value, '..')) {
+            return null;
+        }
+
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $this->safeBrowserUrl($value);
+        }
+
+        if (preg_match('/^[a-z][a-z0-9+.-]*:/i', $value) === 1) {
+            return null;
+        }
+
+        $baseUrl = $this->coreBaseUrl();
+
+        if (! $baseUrl) {
+            return null;
+        }
+
+        if (str_starts_with($value, '/storage/')) {
+            return $this->safeBrowserUrl($baseUrl.$value);
+        }
+
+        if (str_starts_with($value, 'storage/')) {
+            return $this->safeBrowserUrl($baseUrl.'/'.ltrim($value, '/'));
+        }
+
+        return $this->safeBrowserUrl($baseUrl.'/storage/'.ltrim($value, '/'));
+    }
+
+    protected function coreBaseUrl(): ?string
+    {
+        if (filled(config('core_farmasi.base_url'))) {
+            return rtrim((string) config('core_farmasi.base_url'), '/');
+        }
+
+        if (blank(config('core_farmasi.profile_url'))) {
+            return null;
+        }
+
+        $parts = parse_url((string) config('core_farmasi.profile_url'));
+
+        if (! is_array($parts) || blank($parts['scheme'] ?? null) || blank($parts['host'] ?? null)) {
+            return null;
+        }
+
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+
+        return $parts['scheme'].'://'.$parts['host'].$port;
+    }
+
+    /**
+     * @param  array<string, mixed>  $user
+     * @return array<string, mixed>
+     */
+    protected function normalizeUserPayload(array $user): array
+    {
+        $photo = $user['profile_photo_url']
+            ?? $user['avatar_url']
+            ?? $user['photo_url']
+            ?? $user['profile_photo_path']
+            ?? null;
+
+        $photoUrl = is_string($photo) ? $this->publicUrl($photo) : null;
+
+        if ($photoUrl) {
+            $user['profile_photo_url'] = $photoUrl;
+            $user['avatar_url'] ??= $photoUrl;
+        }
+
+        return $user;
     }
 
     protected function collection(?array $payload): array

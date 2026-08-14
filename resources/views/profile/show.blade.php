@@ -24,7 +24,7 @@
                         @if($coreOfficialProfile && data_get($coreOfficialProfile, 'user.profile_photo_url'))
                             <img src="{{ data_get($coreOfficialProfile, 'user.profile_photo_url') }}" alt="Foto profil" class="h-full w-full rounded-[1.5rem] object-cover object-[center_10%]">
                         @elseif($user->hasAvatar())
-                            <img src="{{ route('profile.avatar.show') }}" alt="Foto profil" class="h-full w-full rounded-[1.5rem] object-cover object-[center_10%]">
+                            <img src="{{ $user->avatarUrl() }}" alt="Foto profil" class="h-full w-full rounded-[1.5rem] object-cover object-[center_10%]">
                         @else
                             <div class="flex h-full w-full items-center justify-center rounded-[1.5rem] bg-gradient-to-br from-cyan-50 to-teal-50 text-3xl font-black text-cyan-700">
                                 {{ $user->initials() }}
@@ -183,7 +183,7 @@
                         <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs file:mr-4 file:rounded-lg file:border-0 file:bg-cyan-50 file:px-3 file:py-1 file:text-xs file:font-bold file:text-cyan-700 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20">
                         <button class="flex-none rounded-xl bg-cyan-700 px-4 py-2 text-xs font-bold text-white shadow-md shadow-cyan-700/15 hover:bg-cyan-800 transition">Ubah Foto</button>
                     </form>
-                    @if($user->hasAvatar())
+                    @if($user->hasLocalAvatar())
                         <form method="POST" action="{{ route('profile.avatar.delete') }}">
                             @csrf
                             @method('DELETE')

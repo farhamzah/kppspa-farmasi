@@ -79,6 +79,20 @@ class CoreFarmasiClientTest extends TestCase
         $this->assertNull($client->profileEditUrl());
     }
 
+    public function test_public_core_storage_photo_paths_are_safe_browser_links(): void
+    {
+        config(['core_farmasi.base_url' => 'https://core.test']);
+
+        $client = app(CoreFarmasiClient::class);
+
+        $this->assertSame('https://core.test/storage/profile-photos/farah.jpg', $client->publicUrl('profile-photos/farah.jpg'));
+        $this->assertSame('https://core.test/storage/profile-photos/farah.jpg', $client->publicUrl('storage/profile-photos/farah.jpg'));
+        $this->assertSame('https://core.test/storage/profile-photos/farah.jpg', $client->publicUrl('/storage/profile-photos/farah.jpg'));
+        $this->assertSame('https://cdn.test/farah.jpg', $client->publicUrl('https://cdn.test/farah.jpg?secret=1'));
+        $this->assertNull($client->publicUrl('../.env'));
+        $this->assertNull($client->publicUrl('javascript:alert(1)'));
+    }
+
     public function test_get_user_and_search_students_map_to_core_endpoints(): void
     {
         $this->enableClient();
@@ -164,6 +178,29 @@ class CoreFarmasiClientTest extends TestCase
         ]);
 
         $this->assertNull(app(CoreFarmasiClient::class)->getUser(1));
+    }
+
+    public function test_authenticate_normalizes_core_profile_photo_payload(): void
+    {
+        $this->enableClient();
+        Http::fake([
+            'https://core.test/api/v1/auth/login' => Http::response([
+                'token' => 'token-test',
+                'user' => [
+                    'id' => 2,
+                    'name' => 'Farhamzah',
+                    'email' => 'farhamzah@ubpkarawang.ac.id',
+                    'active' => true,
+                    'profile_photo_path' => 'profile-photos/farhamzah.jpg',
+                ],
+            ]),
+        ]);
+
+        $result = app(CoreFarmasiClient::class)->authenticate('farhamzah@ubpkarawang.ac.id', 'secret');
+
+        $this->assertTrue($result['authenticated']);
+        $this->assertSame('https://core.test/storage/profile-photos/farhamzah.jpg', $result['user']['profile_photo_url']);
+        $this->assertSame('https://core.test/storage/profile-photos/farhamzah.jpg', $result['user']['avatar_url']);
     }
 
     public function test_smoke_command_disabled_mode_does_not_call_http(): void
