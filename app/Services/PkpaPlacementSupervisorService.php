@@ -18,7 +18,7 @@ class PkpaPlacementSupervisorService
             $errors[] = 'Pembimbing Dalam tidak eligible untuk program atau wahana ini.';
         }
         if ($supervisor->status !== 'active' || $supervisor->core_account_status_snapshot === 'inactive') {
-            $errors[] = 'Pembimbing Dalam tidak aktif di Core atau MY PSPA.';
+            $errors[] = 'Pembimbing Dalam tidak aktif di Core atau MY PKPA.';
         }
         if ($this->outsideEffectiveWindow($supervisor->effective_start_date?->toDateString(), $supervisor->effective_end_date?->toDateString(), $startDate, $endDate)) {
             $errors[] = 'Tanggal penempatan di luar masa efektif Pembimbing Dalam.';
@@ -44,7 +44,7 @@ class PkpaPlacementSupervisorService
             $errors[] = 'Pembimbing Lapangan bukan milik tempat praktik yang dipilih.';
         }
         if ($supervisor->status !== 'active' || $supervisor->core_account_status_snapshot === 'inactive') {
-            $errors[] = 'Pembimbing Lapangan tidak aktif di Core atau MY PSPA.';
+            $errors[] = 'Pembimbing Lapangan tidak aktif di Core atau MY PKPA.';
         }
         if ($this->outsideEffectiveWindow($supervisor->effective_start_date?->toDateString(), $supervisor->effective_end_date?->toDateString(), $startDate, $endDate)) {
             $errors[] = 'Tanggal penempatan di luar masa efektif Pembimbing Lapangan.';

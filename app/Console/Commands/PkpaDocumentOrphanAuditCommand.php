@@ -36,7 +36,7 @@ class PkpaDocumentOrphanAuditCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('MY PSPA Document Orphan Audit - dry-run');
+        $this->info('MY PKPA Document Orphan Audit - dry-run');
         $this->line('Checked versions: '.$payload['checked_versions']);
         $this->line('Missing files: '.$payload['missing_count']);
 

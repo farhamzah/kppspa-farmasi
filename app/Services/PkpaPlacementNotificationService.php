@@ -67,12 +67,12 @@ class PkpaPlacementNotificationService
         $failed = 0;
 
         PkpaNotificationDelivery::whereIn('status', ['pending', 'failed'])->get()->each(function (PkpaNotificationDelivery $delivery) use (&$sent, &$skipped, &$failed, $actor) {
-            if ($delivery->channel === 'database' && ! config('my_pspa.database_notifications_enabled')) {
+            if ($delivery->channel === 'database' && ! config('my_pkpa.database_notifications_enabled')) {
                 $delivery->update(['status' => 'skipped', 'last_attempt_at' => now(), 'attempt_count' => $delivery->attempt_count + 1]);
                 $skipped++;
                 return;
             }
-            if ($delivery->channel === 'mail' && ! config('my_pspa.email_notifications_enabled')) {
+            if ($delivery->channel === 'mail' && ! config('my_pkpa.email_notifications_enabled')) {
                 $delivery->update(['status' => 'skipped', 'last_attempt_at' => now(), 'attempt_count' => $delivery->attempt_count + 1, 'failure_code' => 'email_disabled']);
                 $skipped++;
                 return;
@@ -88,7 +88,7 @@ class PkpaPlacementNotificationService
                     Mail::raw($this->mailText($delivery), fn ($message) => $message
                         ->to($delivery->recipient_email_snapshot)
                         ->subject($this->subjectFor($delivery))
-                        ->from(config('mail.from.address'), config('my_pspa.notification_from_name')));
+                        ->from(config('mail.from.address'), config('my_pkpa.notification_from_name')));
                 }
 
                 $delivery->update([
@@ -127,12 +127,12 @@ class PkpaPlacementNotificationService
     private function subjectFor(PkpaNotificationDelivery $delivery): string
     {
         return $delivery->event_type === 'placement_revised'
-            ? 'Revisi Jadwal Penempatan PKPA MY PSPA'
-            : 'Jadwal Penempatan PKPA MY PSPA Telah Dipublikasikan';
+            ? 'Revisi Jadwal Penempatan PKPA MY PKPA'
+            : 'Jadwal Penempatan PKPA MY PKPA Telah Dipublikasikan';
     }
 
     private function mailText(PkpaNotificationDelivery $delivery): string
     {
-        return "Jadwal Penempatan PKPA telah dipublikasikan melalui MY PSPA.\n\nSilakan masuk ke portal MY PSPA untuk melihat detail resmi. Email ini tidak memuat password atau token login.";
+        return "Jadwal Penempatan PKPA telah dipublikasikan melalui MY PKPA.\n\nSilakan masuk ke portal MY PKPA untuk melihat detail resmi. Email ini tidak memuat password atau token login.";
     }
 }

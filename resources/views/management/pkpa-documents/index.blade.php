@@ -7,7 +7,7 @@
     <div class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Dokumen Internal MY PSPA</p>
+                <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Dokumen Internal MY PKPA</p>
                 <h1 class="mt-2 text-3xl font-black text-slate-950">Template, penomoran, penerbitan, dan distribusi dokumen PKPA</h1>
                 <p class="mt-2 max-w-3xl text-sm text-slate-600">Semua keluaran disimpan privat, berbasis snapshot, dan tidak menggantikan dokumen resmi universitas.</p>
             </div>
@@ -76,7 +76,7 @@
                         <input name="code" placeholder="Kode template" class="rounded-2xl border-slate-200 text-sm" required>
                         <input name="name" placeholder="Nama template" class="rounded-2xl border-slate-200 text-sm" required>
                         <select name="template_engine" class="rounded-2xl border-slate-200 text-sm"><option value="html">HTML aman</option><option value="docx_template">DOCX template</option><option value="spreadsheet">Spreadsheet</option><option value="csv">CSV</option></select>
-                        <textarea name="template_content" rows="6" class="rounded-2xl border-slate-200 text-sm" placeholder="Contoh: Dokumen Internal MY PSPA&#10;Program: @{{ program.name }}&#10;Mahasiswa: @{{ student.name }}"></textarea>
+                        <textarea name="template_content" rows="6" class="rounded-2xl border-slate-200 text-sm" placeholder="Contoh: Dokumen Internal MY PKPA&#10;Program: @{{ program.name }}&#10;Mahasiswa: @{{ student.name }}"></textarea>
                         <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Simpan Draf Template</button>
                     </form>
                 </details>

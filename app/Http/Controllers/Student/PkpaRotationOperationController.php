@@ -99,7 +99,7 @@ class PkpaRotationOperationController extends Controller
 
     public function uploadAttachment(Request $request, PkpaLogbookEntry $entry): RedirectResponse
     {
-        $request->validate(['attachment' => ['required', 'file', 'max:'.config('my_pspa.logbook_attachment_max_kb', 5120)]]);
+        $request->validate(['attachment' => ['required', 'file', 'max:'.config('my_pkpa.logbook_attachment_max_kb', 5120)]]);
         $this->logbooks->storeAttachment($entry, $request->file('attachment'), $request->user());
 
         return back()->with('status', 'Lampiran logbook tersimpan.');

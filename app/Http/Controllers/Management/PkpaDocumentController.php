@@ -62,7 +62,7 @@ class PkpaDocumentController extends Controller
         ]);
 
         PkpaDocumentType::create($data + [
-            'description' => 'Jenis dokumen internal MY PSPA.',
+            'description' => 'Jenis dokumen internal MY PKPA.',
             'is_system' => false,
             'is_active' => true,
             'created_by_core_user_id' => $request->user()->core_user_id,

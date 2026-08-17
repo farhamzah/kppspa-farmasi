@@ -65,7 +65,7 @@ class KpExamSchedulingTest extends TestCase
     {
         $this->get('/login')
             ->assertOk()
-            ->assertSee('MY PSPA');
+            ->assertSee('MY PKPA');
 
         $response = $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/pendaftaran-kp');

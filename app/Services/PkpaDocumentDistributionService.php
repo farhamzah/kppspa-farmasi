@@ -40,9 +40,9 @@ class PkpaDocumentDistributionService
                 'recipient_id' => $recipient->id,
                 'channel' => 'email',
             ], [
-                'status' => config('my_pspa.document_email_enabled') ? 'pending' : 'skipped',
+                'status' => config('my_pkpa.document_email_enabled') ? 'pending' : 'skipped',
                 'attempt_count' => 0,
-                'failure_message' => config('my_pspa.document_email_enabled') ? null : 'Email dokumen belum diaktifkan.',
+                'failure_message' => config('my_pkpa.document_email_enabled') ? null : 'Email dokumen belum diaktifkan.',
                 'distributed_by_core_user_id' => $actor?->core_user_id,
             ]);
         }

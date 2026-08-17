@@ -17,7 +17,7 @@ class ProductionReadinessTest extends TestCase
     {
         $envExample = file_get_contents(base_path('.env.example'));
 
-        $this->assertStringContainsString('APP_NAME="MY PSPA"', $envExample);
+        $this->assertStringContainsString('APP_NAME="MY PKPA"', $envExample);
         $this->assertStringContainsString('APP_ENV=local', $envExample);
         $this->assertStringContainsString('APP_DEBUG=true', $envExample);
         $this->assertStringContainsString('APP_URL=http://127.0.0.1:8000', $envExample);
@@ -36,8 +36,8 @@ class ProductionReadinessTest extends TestCase
 
         $this->assertStringContainsString('APP_ENV=production', $envExample);
         $this->assertStringContainsString('APP_DEBUG=false', $envExample);
-        $this->assertStringContainsString('APP_NAME="MY PSPA"', $envExample);
-        $this->assertStringContainsString('APP_URL=https://my-pspa.example.ac.id', $envExample);
+        $this->assertStringContainsString('APP_NAME="MY PKPA"', $envExample);
+        $this->assertStringContainsString('APP_URL=https://my-pkpa.example.ac.id', $envExample);
         $this->assertStringContainsString('SESSION_SECURE_COOKIE=true', $envExample);
         $this->assertStringContainsString('SESSION_ENCRYPT=true', $envExample);
         $this->assertStringContainsString('CORE_FARMASI_VERIFY_SSL=true', $envExample);
@@ -66,8 +66,8 @@ class ProductionReadinessTest extends TestCase
 
         $this->assertStringContainsString('APP_ENV=production', $envExample);
         $this->assertStringContainsString('APP_DEBUG=false', $envExample);
-        $this->assertStringContainsString('APP_NAME="MY PSPA"', $envExample);
-        $this->assertStringContainsString('APP_URL=https://my-pspa.example.ac.id', $envExample);
+        $this->assertStringContainsString('APP_NAME="MY PKPA"', $envExample);
+        $this->assertStringContainsString('APP_URL=https://my-pkpa.example.ac.id', $envExample);
         $this->assertStringContainsString('KP_AUTH_MODE=core_http', $envExample);
         $this->assertStringContainsString('KP_MASTER_DATA_READ_MODE=core_preferred', $envExample);
         $this->assertStringContainsString('CORE_FARMASI_ENABLED=true', $envExample);
@@ -94,8 +94,8 @@ class ProductionReadinessTest extends TestCase
     {
         $this->get('/login')
             ->assertOk()
-            ->assertSee('MY PSPA')
-            ->assertSee('Masuk ke MY PSPA');
+            ->assertSee('MY PKPA')
+            ->assertSee('Masuk ke MY PKPA');
 
         $this->assertStringContainsString('Akses Ditolak', view('errors.403')->render());
         $this->assertStringContainsString('Halaman Tidak Ditemukan', view('errors.404')->render());

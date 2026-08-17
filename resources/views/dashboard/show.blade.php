@@ -30,7 +30,7 @@
         'Pendaftaran PKPA' => 'Pengajuan dan status verifikasi pendaftaran PKPA.',
         'Berkas Persyaratan' => 'Kelengkapan dokumen awal mahasiswa.',
         'Berkas KP' => 'Berkas administrasi Kerja Praktek.',
-        'Berkas PKPA' => 'Berkas administrasi Program Studi Profesi Apoteker.',
+        'Berkas PKPA' => 'Berkas administrasi PKPA.',
         'Pemilihan Tempat KP' => 'Pilihan tempat dan kuota KP.',
         'Logbook' => 'Catatan aktivitas harian KP.',
         'Laporan Akhir' => 'Pemeriksaan dan persetujuan laporan akhir.',

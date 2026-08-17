@@ -11,7 +11,7 @@ class PkpaHypercareStatusCommand extends Command
 {
     protected $signature = 'pkpa:hypercare-status {--json : Output JSON}';
 
-    protected $description = 'Read-only MY PSPA hypercare health summary.';
+    protected $description = 'Read-only MY PKPA hypercare health summary.';
 
     public function handle(): int
     {
@@ -39,7 +39,7 @@ class PkpaHypercareStatusCommand extends Command
         if ($this->option('json')) {
             $this->line(json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } else {
-            $this->info('MY PSPA Hypercare Status: '.$payload['status']);
+            $this->info('MY PKPA Hypercare Status: '.$payload['status']);
             foreach ($checks as $name => $check) {
                 $this->line("- {$name}: {$check['status']}");
             }

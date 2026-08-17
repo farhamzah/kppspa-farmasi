@@ -266,7 +266,7 @@ class CoreBridgeAuthService
         }
 
         Auth::login($legacyUser, $remember);
-        Log::info('MY PSPA Core HTTP login success.', [
+        Log::info('MY PKPA Core HTTP login success.', [
             'email' => $this->normalize($email),
             'core_user_id' => $coreUser['id'] ?? null,
             'legacy_user_id' => $legacyUser->id,

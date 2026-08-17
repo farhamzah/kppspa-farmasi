@@ -15,7 +15,7 @@ class ExampleTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk()
-            ->assertSee('MY PSPA')
-            ->assertSee('Sistem Informasi Program Studi Profesi Apoteker');
+            ->assertSee('MY PKPA')
+            ->assertSee('Sistem Informasi Praktik Kerja Profesi Apoteker');
     }
 }

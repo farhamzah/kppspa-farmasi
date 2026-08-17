@@ -24,7 +24,7 @@ Tahap 05 menambahkan alur resmi dari placement plan terkunci ke publication snap
 - `php artisan test --filter=Tahap05PkpaPublicationPortalTest --stop-on-failure`: 3 passed, 78 assertions
 - `php artisan test`: 278 passed, 1909 assertions
 - `npm.cmd run build`: pass
-- SQLite clean migration `migrate:fresh --seed --force`: pass pada `C:\tmp\my_pspa_tahap05_clean.sqlite`
+- SQLite clean migration `migrate:fresh --seed --force`: pass pada `C:\tmp\my_pkpa_tahap05_clean.sqlite`
 - Browser QA localhost port 3006: halaman publikasi desktop/mobile tidak overflow, portal pembimbing mobile menampilkan empty state bersih, portal mahasiswa mobile menampilkan empty state bersih
 
 ## Catatan

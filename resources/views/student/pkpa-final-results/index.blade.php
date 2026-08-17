@@ -7,7 +7,7 @@
     <div class="rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Hasil Akhir Program PKPA</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">Hasil Akademik PKPA</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">Hasil pada halaman ini merupakan hasil akademik Program PKPA dalam MY PSPA. Dokumen resmi universitas dapat mengikuti proses administrasi terpisah.</p>
+        <p class="mt-2 max-w-3xl text-sm text-slate-600">Hasil pada halaman ini merupakan hasil akademik Program PKPA dalam MY PKPA. Dokumen resmi universitas dapat mengikuti proses administrasi terpisah.</p>
     </div>
     <div class="grid gap-4">
         @forelse($releases as $release)

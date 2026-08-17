@@ -11,12 +11,12 @@ use Throwable;
 class SyncCoreHttpAppUsersCommand extends Command
 {
     protected $signature = 'kp:sync-core-http-app-users
-        {--execute : Create/update local KPPSPA users, roles, and profiles}
+        {--execute : Create/update local MY PKPA users, roles, and profiles}
         {--confirm-execute : Confirm write to local users/user_roles/profile tables}
         {--limit=100 : Maximum Core app-access users to process}
         {--role= : Optional Core app role slug filter}';
 
-    protected $description = 'Sync local KPPSPA user/profile projections from Core HTTP app access.';
+    protected $description = 'Sync local MY PKPA user/profile projections from Core HTTP app access.';
 
     public function handle(CoreFarmasiClient $client, CoreHttpUserProjectionService $projection): int
     {
@@ -41,7 +41,7 @@ class SyncCoreHttpAppUsersCommand extends Command
         $warnings = 0;
         $page = 1;
 
-        $this->info('KPPSPA Core HTTP app-user sync');
+        $this->info('MY PKPA Core HTTP app-user sync');
         $this->line('Mode: '.($execute ? 'execute local projection writes' : 'dry-run only; no writes performed'));
 
         try {
@@ -66,7 +66,7 @@ class SyncCoreHttpAppUsersCommand extends Command
 
                     if ($kpRoles === []) {
                         $blocked++;
-                        $this->warn("  - {$email}: blocked; no supported KPPSPA role");
+                        $this->warn("  - {$email}: blocked; no supported MY PKPA role");
                         continue;
                     }
 

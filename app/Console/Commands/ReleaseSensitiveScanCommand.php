@@ -176,6 +176,10 @@ class ReleaseSensitiveScanCommand extends Command
             return false;
         }
 
+        if (preg_match('/password\s*=\s*Hash::make\(Str::random\(/i', $line)) {
+            return false;
+        }
+
         if (! preg_match('/\b(db_password|password|passwd|secret|token|private_key|access_key|api_key|client_secret)\b\s*[:=]\s*["\']?([^"\'\s#]+)["\']?/i', $line, $matches)) {
             return false;
         }

@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Tahap 12A mencatat keputusan Project Owner untuk melewati Human UAT formal dan menyiapkan MY PSPA untuk controlled go-live dengan hypercare intensif. Dokumen release, rollback, backup, known limitations, incident matrix, hypercare log, dan quick start per role telah disiapkan.
+Tahap 12A mencatat keputusan Project Owner untuk melewati Human UAT formal dan menyiapkan MY PKPA untuk controlled go-live dengan hypercare intensif. Dokumen release, rollback, backup, known limitations, incident matrix, hypercare log, dan quick start per role telah disiapkan.
 
 Status akhir tahap ini: Persiapan selesai, deployment belum dilakukan.
 
@@ -53,7 +53,7 @@ Gate target yang masih memblokir klaim go-live:
 
 ## Backup
 
-Backup pre-go-live target belum dilakukan karena server target dan credential belum tersedia. Template pencatatan tersedia di `docs/releases/MY_PSPA_PRE_GO_LIVE_BACKUP_RECORD.md`.
+Backup pre-go-live target belum dilakukan karena server target dan credential belum tersedia. Template pencatatan tersedia di `docs/releases/MY_PKPA_PRE_GO_LIVE_BACKUP_RECORD.md`.
 
 Deployment tidak boleh dilanjutkan tanpa backup target yang dapat diverifikasi beserta checksum dan restore readiness.
 
@@ -80,7 +80,7 @@ Core login nyata target belum diuji pada Tahap 12A karena tidak ada URL/credenti
 
 ## Smoke Test
 
-Smoke test target belum dilakukan. Checklist target tersedia di `docs/releases/MY_PSPA_POST_DEPLOY_SMOKE_RESULT.md`.
+Smoke test target belum dilakukan. Checklist target tersedia di `docs/releases/MY_PKPA_POST_DEPLOY_SMOKE_RESULT.md`.
 
 Smoke test lokal otomatis tetap dijalankan melalui PHPUnit dan Playwright sebelum status final tahap.
 
@@ -107,7 +107,7 @@ Hypercare awal direncanakan 14 hari kalender sejak go-live. Cadence:
 - Hari 4-7: minimal dua kali sehari.
 - Hari 8-14: harian.
 
-Incident matrix tersedia di `docs/operations/MY_PSPA_HYPERCARE_INCIDENT_MATRIX.md`. Hypercare log tersedia di `docs/hypercare/MY_PSPA_HYPERCARE_LOG.md`.
+Incident matrix tersedia di `docs/operations/MY_PKPA_HYPERCARE_INCIDENT_MATRIX.md`. Hypercare log tersedia di `docs/hypercare/MY_PKPA_HYPERCARE_LOG.md`.
 
 ## Incident
 
@@ -122,27 +122,27 @@ Karena deployment belum dilakukan, incident produksi/hypercare belum ada.
 
 ## Known Limitations
 
-Known limitations tersedia di `docs/releases/MY_PSPA_KNOWN_LIMITATIONS.md`. Kondisi utama: Human UAT formal dilewati, akun Core nyata belum diuji E2E target, HTTPS target belum diverifikasi, queue/scheduler target belum diverifikasi, email production belum diaktifkan, antivirus file scanning belum dibuktikan, dan backup-restore target belum dibuktikan.
+Known limitations tersedia di `docs/releases/MY_PKPA_KNOWN_LIMITATIONS.md`. Kondisi utama: Human UAT formal dilewati, akun Core nyata belum diuji E2E target, HTTPS target belum diverifikasi, queue/scheduler target belum diverifikasi, email production belum diaktifkan, antivirus file scanning belum dibuktikan, dan backup-restore target belum dibuktikan.
 
 ## Dokumen Tahap 12A
 
-- `docs/releases/MY_PSPA_HUMAN_UAT_WAIVER.md`
-- `docs/releases/MY_PSPA_RELEASE_FREEZE_POLICY.md`
-- `docs/releases/MY_PSPA_PRE_GO_LIVE_BACKUP_RECORD.md`
-- `docs/releases/MY_PSPA_ROLLBACK_PLAN.md`
-- `docs/releases/MY_PSPA_CONTROLLED_GO_LIVE_CHECKLIST.md`
-- `docs/releases/MY_PSPA_RELEASE_NOTES.md`
-- `docs/releases/MY_PSPA_KNOWN_LIMITATIONS.md`
-- `docs/releases/MY_PSPA_POST_DEPLOY_SMOKE_RESULT.md`
-- `docs/releases/MY_PSPA_HYPERCARE_PLAN.md`
-- `docs/releases/MY_PSPA_HYPERCARE_CLOSURE_REPORT.md`
-- `docs/operations/MY_PSPA_HYPERCARE_INCIDENT_MATRIX.md`
-- `docs/hypercare/MY_PSPA_HYPERCARE_LOG.md`
-- `docs/guides/MY_PSPA_QUICK_START_ADMIN.md`
-- `docs/guides/MY_PSPA_QUICK_START_COORDINATOR.md`
-- `docs/guides/MY_PSPA_QUICK_START_STUDENT.md`
-- `docs/guides/MY_PSPA_QUICK_START_INTERNAL_SUPERVISOR.md`
-- `docs/guides/MY_PSPA_QUICK_START_FIELD_SUPERVISOR.md`
+- `docs/releases/MY_PKPA_HUMAN_UAT_WAIVER.md`
+- `docs/releases/MY_PKPA_RELEASE_FREEZE_POLICY.md`
+- `docs/releases/MY_PKPA_PRE_GO_LIVE_BACKUP_RECORD.md`
+- `docs/releases/MY_PKPA_ROLLBACK_PLAN.md`
+- `docs/releases/MY_PKPA_CONTROLLED_GO_LIVE_CHECKLIST.md`
+- `docs/releases/MY_PKPA_RELEASE_NOTES.md`
+- `docs/releases/MY_PKPA_KNOWN_LIMITATIONS.md`
+- `docs/releases/MY_PKPA_POST_DEPLOY_SMOKE_RESULT.md`
+- `docs/releases/MY_PKPA_HYPERCARE_PLAN.md`
+- `docs/releases/MY_PKPA_HYPERCARE_CLOSURE_REPORT.md`
+- `docs/operations/MY_PKPA_HYPERCARE_INCIDENT_MATRIX.md`
+- `docs/hypercare/MY_PKPA_HYPERCARE_LOG.md`
+- `docs/guides/MY_PKPA_QUICK_START_ADMIN.md`
+- `docs/guides/MY_PKPA_QUICK_START_COORDINATOR.md`
+- `docs/guides/MY_PKPA_QUICK_START_STUDENT.md`
+- `docs/guides/MY_PKPA_QUICK_START_INTERNAL_SUPERVISOR.md`
+- `docs/guides/MY_PKPA_QUICK_START_FIELD_SUPERVISOR.md`
 
 ## QA
 
@@ -162,7 +162,7 @@ php artisan pkpa:hypercare-status --json: pass, status ok
 npx.cmd playwright test --reporter=list: pass, 16 passed
 ```
 
-Clean installation menggunakan SQLite temporary `C:\tmp\my_pspa_tahap12a_clean.sqlite` dan berhasil menjalankan migration plus seeder. `migrate:fresh` tidak dijalankan pada MySQL.
+Clean installation menggunakan SQLite temporary `C:\tmp\my_pkpa_tahap12a_clean.sqlite` dan berhasil menjalankan migration plus seeder. `migrate:fresh` tidak dijalankan pada MySQL.
 
 ## Git dan Deployment Status
 

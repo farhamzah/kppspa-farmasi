@@ -12,7 +12,7 @@ class PkpaAssessmentNotificationService
 {
     public function notifyAssessment(PkpaRotationAssessment $assessment, string $eventType, Model $entity, array $recipientTypes): void
     {
-        if (! config('my_pspa.assessment_database_notifications_enabled') && ! config('my_pspa.assessment_email_notifications_enabled')) {
+        if (! config('my_pkpa.assessment_database_notifications_enabled') && ! config('my_pkpa.assessment_email_notifications_enabled')) {
             return;
         }
 
@@ -23,10 +23,10 @@ class PkpaAssessmentNotificationService
             ->flatMap(fn (string $type) => $this->recipientsFor($run, $type))
             ->unique(fn (array $recipient) => $recipient['type'].':'.$recipient['core_user_id'])
             ->each(function (array $recipient) use ($eventType, $entity) {
-                if (config('my_pspa.assessment_database_notifications_enabled')) {
+                if (config('my_pkpa.assessment_database_notifications_enabled')) {
                     $this->createDelivery($eventType, $entity, $recipient, 'database');
                 }
-                if (config('my_pspa.assessment_email_notifications_enabled')) {
+                if (config('my_pkpa.assessment_email_notifications_enabled')) {
                     $this->createDelivery($eventType, $entity, $recipient, 'mail');
                 }
             });

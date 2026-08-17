@@ -14,7 +14,7 @@ class HealthController extends Controller
     {
         return response()->json([
             'status' => 'ok',
-            'app' => 'MY PSPA',
+            'app' => 'MY PKPA',
         ]);
     }
 
@@ -24,10 +24,10 @@ class HealthController extends Controller
 
         return response()->json([
             'status' => 'ok',
-            'app' => 'MY PSPA',
+            'app' => 'MY PKPA',
             'checks' => [
                 'database' => $this->check(fn () => DB::select('select 1')),
-                'cache' => $this->check(fn () => Cache::put('health:my-pspa', now()->toIso8601String(), 10)),
+                'cache' => $this->check(fn () => Cache::put('health:my-pkpa', now()->toIso8601String(), 10)),
                 'storage_private' => $this->check(fn () => Storage::disk('local')->exists('.')),
                 'queue_connection' => config('queue.default'),
                 'core_mode' => config('kp_auth.mode'),

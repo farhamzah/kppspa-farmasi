@@ -8,7 +8,7 @@ Tidak ada commit, push, tag, rilis, atau deployment pada tahap ini. `apps/core-f
 
 ## Ringkasan Implementasi
 
-Tahap 14 menambahkan Pembuat Portofolio generik untuk MY PSPA. Modul membuat portofolio digital per mahasiswa per wahana dari `pkpa_rotation_runs`, dengan pola awal:
+Tahap 14 menambahkan Pembuat Portofolio generik untuk MY PKPA. Modul membuat portofolio digital per mahasiswa per wahana dari `pkpa_rotation_runs`, dengan pola awal:
 
 - `PORT-APT-v1` untuk Wahana Apotek;
 - `PORT-RS-v1` untuk Wahana Rumah Sakit.

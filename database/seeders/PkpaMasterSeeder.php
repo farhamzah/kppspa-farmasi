@@ -82,7 +82,7 @@ class PkpaMasterSeeder extends Seeder
             foreach ($documentTypes as $data) {
                 PkpaDocumentType::withTrashed()->updateOrCreate(['code' => $data['code']], [
                     'name' => $data['name'],
-                    'description' => 'Jenis dokumen internal MY PSPA. Template isi wajib dikonfigurasi sebelum digunakan untuk dokumen resmi internal.',
+                    'description' => 'Jenis dokumen internal MY PKPA. Template isi wajib dikonfigurasi sebelum digunakan untuk dokumen resmi internal.',
                     'scope_type' => $data['scope_type'],
                     'output_formats' => $data['formats'],
                     'requires_number' => $data['number'],

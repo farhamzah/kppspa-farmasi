@@ -34,7 +34,7 @@ class AdminSeeder extends Seeder
             'profile_completed' => true,
         ];
 
-        $configuredTestingPassword = env('MY_PSPA_TEST_SUPERADMIN_PASSWORD');
+        $configuredTestingPassword = env('MY_PKPA_TEST_SUPERADMIN_PASSWORD', env('MY_PKPA_TEST_SUPERADMIN_PASSWORD'));
         if (filled($configuredTestingPassword)) {
             $testingSuperAdminData['password'] = Hash::make($configuredTestingPassword);
         } elseif (! $testingSuperAdmin) {
@@ -58,15 +58,15 @@ class AdminSeeder extends Seeder
         $testingSuperAdmin->roles()->syncWithoutDetaching($testingRoleIds);
 
         $testingSuperAdmin->student()->updateOrCreate([], [
-            'nim' => 'PSPA-TEST-001',
+            'nim' => 'PKPA-TEST-001',
             'study_program' => 'Farmasi',
             'semester' => 1,
             'class_name' => 'Testing',
         ]);
 
         $testingSuperAdmin->lecturer()->updateOrCreate([], [
-            'nidn_nip' => 'UBP-PSPA-TEST',
-            'employee_number' => 'PSPA-ADMIN-001',
+            'nidn_nip' => 'UBP-PKPA-TEST',
+            'employee_number' => 'PKPA-ADMIN-001',
             'study_program' => 'Farmasi',
             'department' => 'Program Studi Profesi Apoteker',
             'expertise' => 'Administrasi PKPA',

@@ -39,7 +39,7 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         config()->set('core_farmasi.client_id', 'client');
         config()->set('core_farmasi.client_secret', 'secret');
         config()->set('core_farmasi.app_code', 'kppspa-farmasi');
-        config()->set('my_pspa.student_place_selection_enabled', false);
+        config()->set('my_pkpa.student_place_selection_enabled', false);
 
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
         $this->admin = $this->makeUser('admin03@test.local', ['admin'], 'core-admin-03');
@@ -275,7 +275,7 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/management/pkpa-placement-readiness?program_id='.$program->id)
             ->assertForbidden();
-        $this->get('/')->assertOk()->assertSee('MY PSPA');
+        $this->get('/')->assertOk()->assertSee('MY PKPA');
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/dashboard')->assertRedirect('/admin/dashboard');
     }
 

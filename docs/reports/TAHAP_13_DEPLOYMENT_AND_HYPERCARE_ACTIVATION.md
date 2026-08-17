@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Tahap 13 melakukan audit kesiapan Git, pemeriksaan file sensitif, validasi remote, audit runtime ringan, dan pencatatan blocker sebelum commit/push/deployment MY PSPA.
+Tahap 13 melakukan audit kesiapan Git, pemeriksaan file sensitif, validasi remote, audit runtime ringan, dan pencatatan blocker sebelum commit/push/deployment MY PKPA.
 
 Status: Git preparation selesai, belum push.
 
@@ -14,14 +14,14 @@ Git gate: belum lulus.
 
 Alasan:
 
-- Belum ada instruksi eksplisit "Izinkan commit dan push MY PSPA ke repository GitHub."
-- Remote `origin` saat audit masih mengarah ke repository KP lama, bukan remote MY PSPA yang diminta.
+- Belum ada instruksi eksplisit "Izinkan commit dan push MY PKPA ke repository GitHub."
+- Remote `origin` saat audit masih mengarah ke repository KP lama, bukan remote MY PKPA yang diminta.
 
 Deployment gate: belum lulus.
 
 Alasan:
 
-- Belum ada instruksi eksplisit "Izinkan deployment MY PSPA ke server target."
+- Belum ada instruksi eksplisit "Izinkan deployment MY PKPA ke server target."
 - Server target, URL target, metode akses, database target, environment configuration, Core Farmasi endpoint, storage configuration, queue configuration, dan backup location belum tersedia.
 
 ## Git
@@ -34,7 +34,7 @@ Hasil:
 branch: main
 origin fetch: https://github.com/farhamzah/si-kp-farmasi-ubp.git
 origin push: https://github.com/farhamzah/si-kp-farmasi-ubp.git
-expected MY PSPA remote: https://github.com/farhamzah/kppspa-farmasi.git
+expected MY PKPA remote: https://github.com/farhamzah/kppspa-farmasi.git
 git diff --check: pass
 commit hash: tidak ada commit baru
 push status: tidak dilakukan
@@ -102,7 +102,7 @@ Storage: not tested on target
 
 ## Backup dan Rollback
 
-Backup target belum dilakukan karena target/credential belum tersedia. Rollback plan sudah tersedia di `docs/releases/MY_PSPA_ROLLBACK_PLAN.md`, tetapi belum dibuktikan pada server target.
+Backup target belum dilakukan karena target/credential belum tersedia. Rollback plan sudah tersedia di `docs/releases/MY_PKPA_ROLLBACK_PLAN.md`, tetapi belum dibuktikan pada server target.
 
 Deployment tidak boleh dilanjutkan sebelum backup target, checksum, record count penting, dan restore readiness tersedia.
 
@@ -173,9 +173,9 @@ Hypercare belum aktif karena controlled go-live belum dilakukan.
 
 Rencana hypercare 14 hari tetap tersedia di:
 
-- `docs/releases/MY_PSPA_HYPERCARE_PLAN.md`
-- `docs/hypercare/MY_PSPA_HYPERCARE_LOG.md`
-- `docs/operations/MY_PSPA_HYPERCARE_INCIDENT_MATRIX.md`
+- `docs/releases/MY_PKPA_HYPERCARE_PLAN.md`
+- `docs/hypercare/MY_PKPA_HYPERCARE_LOG.md`
+- `docs/operations/MY_PKPA_HYPERCARE_INCIDENT_MATRIX.md`
 
 Incident nyata:
 
@@ -196,7 +196,7 @@ Tidak ada server testing port `3006` yang perlu dipakai untuk deployment target.
 
 - Izin commit/push eksplisit belum diberikan.
 - Izin deployment eksplisit belum diberikan.
-- Remote `origin` belum sesuai remote MY PSPA.
+- Remote `origin` belum sesuai remote MY PKPA.
 - Server target dan konfigurasi target belum tersedia.
 - Backup target belum dilakukan.
 - Core login nyata seluruh role belum diuji pada target.
@@ -207,4 +207,4 @@ Tidak ada server testing port `3006` yang perlu dipakai untuk deployment target.
 
 ## Rekomendasi
 
-Minta izin eksplisit commit/push dan konfirmasi remote MY PSPA sebelum Git write. Minta izin eksplisit deployment dan lengkapi akses server target sebelum deployment. Setelah target tersedia, jalankan backup, deploy dari commit yang disetujui, smoke test target, audit pascadeploy, lalu aktifkan hypercare 14 hari hanya jika seluruh gate critical lulus.
+Minta izin eksplisit commit/push dan konfirmasi remote MY PKPA sebelum Git write. Minta izin eksplisit deployment dan lengkapi akses server target sebelum deployment. Setelah target tersedia, jalankan backup, deploy dari commit yang disetujui, smoke test target, audit pascadeploy, lalu aktifkan hypercare 14 hari hanya jika seluruh gate critical lulus.

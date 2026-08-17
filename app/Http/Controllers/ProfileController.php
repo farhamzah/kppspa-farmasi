@@ -159,7 +159,7 @@ class ProfileController extends Controller
             : $this->appUserByEmail($request->user()->email);
 
         if (! $appUser) {
-            return back()->withErrors(['core_sync' => 'Akses aplikasi MY PSPA / KPPSPA belum ditemukan di Core.']);
+            return back()->withErrors(['core_sync' => 'Akses aplikasi MY PKPA / MY PKPA belum ditemukan di Core.']);
         }
 
         $report = $projection->project($appUser['user'] ?? [], [

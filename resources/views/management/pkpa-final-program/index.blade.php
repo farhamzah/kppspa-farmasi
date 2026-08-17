@@ -9,7 +9,7 @@
             <div>
                 <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Penyelesaian Program PKPA</p>
                 <h1 class="mt-2 text-3xl font-black text-slate-950">Nilai akhir, remedial, kelengkapan persyaratan, dan kelulusan</h1>
-                <p class="mt-2 max-w-3xl text-sm text-slate-600">Hasil ini adalah hasil akademik Program PKPA dalam MY PSPA. Dokumen resmi universitas mengikuti proses administrasi terpisah.</p>
+                <p class="mt-2 max-w-3xl text-sm text-slate-600">Hasil ini adalah hasil akademik Program PKPA dalam MY PKPA. Dokumen resmi universitas mengikuti proses administrasi terpisah.</p>
             </div>
             <a href="{{ route('management.pkpa-final-program.export') }}" class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Ekspor Rekap</a>
         </div>

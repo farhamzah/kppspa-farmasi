@@ -157,7 +157,7 @@ class PkpaFinalGradeService
             'status' => 'released',
             'released_at' => now(),
             'released_by_core_user_id' => $actor->core_user_id,
-            'student_visible_snapshot' => ['final_score' => $result->final_score, 'maximum_score' => $result->maximum_score, 'decision' => $decision?->decision, 'label' => 'Hasil akademik Program PKPA dalam MY PSPA, bukan dokumen resmi universitas.'],
+            'student_visible_snapshot' => ['final_score' => $result->final_score, 'maximum_score' => $result->maximum_score, 'decision' => $decision?->decision, 'label' => 'Hasil akademik Program PKPA dalam MY PKPA, bukan dokumen resmi universitas.'],
         ]);
         $result->update(['result_status' => 'released', 'released_at' => now(), 'released_by_core_user_id' => $actor->core_user_id]);
         $this->notifications->notifyEnrollment($result->enrollment, 'final_result_released', $release);

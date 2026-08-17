@@ -30,7 +30,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
 
     private function studentRows(): array
     {
-        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PSPA'], []];
+        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PKPA'], []];
         $rows[] = ['NPM', 'Nama', 'Kelompok', 'Wahana', 'Option', 'Tempat', 'Tanggal', 'PD', 'PL', 'Publication'];
         foreach ($this->publication->assignments as $assignment) {
             $rows[] = [
@@ -53,7 +53,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
     private function matrixRows(): array
     {
         $domains = ['Apotek', 'Puskesmas', 'Pedagang Besar Farmasi', 'Rumah Sakit', 'Industri', 'Pemerintahan'];
-        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PSPA'], []];
+        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PKPA'], []];
         $rows[] = array_merge(['NPM', 'Nama'], $domains);
         foreach ($this->publication->assignments->groupBy('student_core_user_id') as $assignments) {
             $first = $assignments->first();
@@ -70,7 +70,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
 
     private function siteRows(): array
     {
-        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PSPA'], []];
+        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PKPA'], []];
         $rows[] = ['Tempat', 'Mahasiswa', 'NPM', 'Tanggal', 'PD', 'PL'];
         foreach ($this->publication->assignments->sortBy('practice_site_name_snapshot') as $assignment) {
             $rows[] = [
@@ -88,7 +88,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
 
     private function supervisorRows(string $type): array
     {
-        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PSPA'], []];
+        $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PKPA'], []];
         $rows[] = ['Pembimbing', 'Mahasiswa', 'Wahana', 'Tempat', 'Tanggal'];
         foreach ($this->publication->assignments as $assignment) {
             $supervisor = $assignment->supervisors->firstWhere('supervisor_type', $type);
@@ -110,7 +110,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
     private function metadataRows(): array
     {
         return [
-            ['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PSPA'],
+            ['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PKPA'],
             [],
             ['Program', $this->publication->program?->name],
             ['Publication', $this->publication->code],

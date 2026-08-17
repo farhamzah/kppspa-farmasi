@@ -110,8 +110,8 @@ class CoreBridgeSyncUiTest extends TestCase
                         'student' => [
                             'id' => 301,
                             'user_id' => 101,
-                            'student_number' => 'PSPA301',
-                            'student_class' => 'PSPA-A',
+                            'student_number' => 'PKPA301',
+                            'student_class' => 'PKPA-A',
                             'name' => 'Nama Core Baru',
                             'email' => $user->email,
                             'active' => true,
@@ -135,7 +135,7 @@ class CoreBridgeSyncUiTest extends TestCase
         $this->assertDatabaseHas('students', [
             'user_id' => $user->id,
             'core_student_id' => 301,
-            'nim' => 'PSPA301',
+            'nim' => 'PKPA301',
         ]);
     }
 

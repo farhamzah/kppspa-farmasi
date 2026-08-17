@@ -11,9 +11,9 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         config()->set('kp_auth.mode', 'legacy');
-        config()->set('app.name', 'MY PSPA');
-        config()->set('my_pspa.local_account_management_enabled', true);
-        config()->set('my_pspa.student_place_selection_enabled', true);
+        config()->set('app.name', 'MY PKPA');
+        config()->set('my_pkpa.local_account_management_enabled', true);
+        config()->set('my_pkpa.student_place_selection_enabled', true);
         config()->set('core_farmasi.app_code', 'kp-farmasi');
     }
 }

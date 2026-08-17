@@ -20,7 +20,7 @@ class PkpaRotationRunService
 
     public function createFromPublication(PkpaPlacementPublication $publication, ?User $actor): array
     {
-        if (! config('my_pspa.rotation_operations_enabled')) {
+        if (! config('my_pkpa.rotation_operations_enabled')) {
             throw ValidationException::withMessages(['operation' => 'Operasional rotasi sedang dinonaktifkan.']);
         }
         if (! $actor?->hasAnyRole(['admin', 'koordinator_kp'])) {

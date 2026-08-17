@@ -65,7 +65,7 @@ class LoginController extends Controller
             $request->session()->forget('active_role');
             $request->session()->regenerateToken();
 
-            Log::error('MY PSPA Core login failed with unhandled exception.', [
+            Log::error('MY PKPA Core login failed with unhandled exception.', [
                 'email' => Str::lower(trim((string) $credentials['email'])),
                 'auth_mode' => config('kp_auth.mode'),
                 'exception' => $exception::class,
@@ -73,7 +73,7 @@ class LoginController extends Controller
             ]);
 
             return back()
-                ->withErrors(['email' => 'Login belum dapat diproses. Silakan coba lagi atau hubungi Admin KPPSPA.'])
+                ->withErrors(['email' => 'Login belum dapat diproses. Silakan coba lagi atau hubungi Admin MY PKPA.'])
                 ->onlyInput('email');
         }
     }
@@ -113,10 +113,10 @@ class LoginController extends Controller
     private function loginFailureMessage(?string $reason): string
     {
         return match ($reason) {
-            'core_app_access_denied' => 'Akun Core Anda belum memiliki akses aplikasi MY PSPA / KPPSPA.',
+            'core_app_access_denied' => 'Akun Core Anda belum memiliki akses aplikasi MY PKPA / MY PKPA.',
             'core_user_inactive' => 'Akun Core Anda tidak aktif. Silakan hubungi Admin.',
-            'legacy_bridge_user_missing' => 'Akun Core valid, tetapi belum terhubung ke akun MY PSPA lokal.',
-            'legacy_user_inactive' => 'Akun MY PSPA Anda tidak aktif. Silakan hubungi Admin.',
+            'legacy_bridge_user_missing' => 'Akun Core valid, tetapi belum terhubung ke akun MY PKPA lokal.',
+            'legacy_user_inactive' => 'Akun MY PKPA Anda tidak aktif. Silakan hubungi Admin.',
             'core_unavailable' => 'Koneksi Core belum tersedia. Silakan coba lagi atau hubungi Admin.',
             default => 'Email atau password tidak sesuai.',
         };

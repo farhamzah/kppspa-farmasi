@@ -47,9 +47,9 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('my_pspa.student_place_selection_enabled', false);
-        config()->set('my_pspa.database_notifications_enabled', true);
-        config()->set('my_pspa.email_notifications_enabled', false);
+        config()->set('my_pkpa.student_place_selection_enabled', false);
+        config()->set('my_pkpa.database_notifications_enabled', true);
+        config()->set('my_pkpa.email_notifications_enabled', false);
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
 
         $this->admin = $this->makeUser('admin05@test.local', ['admin'], 'CORE-ADMIN-05');

@@ -38,7 +38,8 @@ class CoreProfileReadService
                 default => null,
             };
 
-            $profilePhotoUrl = $this->profilePhotoUrl($coreUser->profile_photo_path ?? null);
+            $profilePhotoUrl = $this->proxiedProfilePhotoUrlFor($user)
+                ?: $this->profilePhotoUrl($coreUser->profile_photo_path ?? null);
             $displayName = $this->displayNameFor($coreUser, $linkedProfile, $coreProfileType ?? $profileType) ?? $user->name;
 
             return [
@@ -70,21 +71,8 @@ class CoreProfileReadService
     public function profilePhotoUrlFor(User $user): ?string
     {
         try {
-            if (! $this->shouldReadCore()) {
-                return null;
-            }
-
-            if (! Schema::connection('core')->hasTable('users')) {
-                return null;
-            }
-
-            $coreUser = $this->coreUserFor($user);
-
-            if (! $coreUser || blank($coreUser->profile_photo_path ?? null)) {
-                return null;
-            }
-
-            return $this->profilePhotoUrl($coreUser->profile_photo_path);
+            return $this->proxiedProfilePhotoUrlFor($user)
+                ?: $this->profilePhotoUrlFromCore($user);
         } catch (Throwable) {
             return null;
         }
@@ -418,6 +406,49 @@ class CoreProfileReadService
 
         if ($url) {
             return $url;
+        }
+
+        return $this->localProfilePhotoPath($path) ? route('profile.core-avatar.show') : null;
+    }
+
+    private function profilePhotoUrlFromCore(User $user): ?string
+    {
+        if (! $this->shouldReadCore()) {
+            return null;
+        }
+
+        if (! Schema::connection('core')->hasTable('users')) {
+            return null;
+        }
+
+        $coreUser = $this->coreUserFor($user);
+
+        if (! $coreUser || blank($coreUser->profile_photo_path ?? null)) {
+            return null;
+        }
+
+        return $this->profilePhotoUrl($coreUser->profile_photo_path);
+    }
+
+    public function proxiedProfilePhotoUrlFor(User $user): ?string
+    {
+        if (auth()->id() !== $user->getKey()) {
+            return null;
+        }
+
+        if (! $this->shouldReadCore()) {
+            return null;
+        }
+
+        if (! Schema::connection('core')->hasTable('users')) {
+            return null;
+        }
+
+        $coreUser = $this->coreUserFor($user);
+        $path = $coreUser->profile_photo_path ?? null;
+
+        if (blank($path)) {
+            return null;
         }
 
         return $this->localProfilePhotoPath($path) ? route('profile.core-avatar.show') : null;

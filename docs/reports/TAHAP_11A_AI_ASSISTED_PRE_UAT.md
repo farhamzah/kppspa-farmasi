@@ -28,4 +28,4 @@ Catatan:
 
 Keputusan:
 - Tidak ada Critical/High open defect.
-- Lanjut ke human UAT dengan catatan Pre-UAT di `docs/uat/MY_PSPA_AI_PRE_UAT_DEFECT_LOG.md`.
+- Lanjut ke human UAT dengan catatan Pre-UAT di `docs/uat/MY_PKPA_AI_PRE_UAT_DEFECT_LOG.md`.

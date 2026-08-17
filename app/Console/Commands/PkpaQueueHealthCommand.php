@@ -31,7 +31,7 @@ class PkpaQueueHealthCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('MY PSPA Queue Health');
+        $this->info('MY PKPA Queue Health');
         $this->line('Queue connection: '.$payload['queue_connection']);
         $this->line('Failed jobs: '.$payload['failed_jobs']);
         foreach ($payload['document_jobs'] as $status => $count) {

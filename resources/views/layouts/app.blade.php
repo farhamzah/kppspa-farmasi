@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', config('app.name', 'MY PSPA'))</title>
+    <title>@yield('title', config('app.name', 'MY PKPA'))</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/logo-fakultas-farmasi-ubp.png') }}">
@@ -32,7 +32,7 @@
                     <img src="{{ asset('images/logo-fakultas-farmasi-ubp.png') }}" alt="Logo Fakultas Farmasi UBP" class="h-full w-full object-contain">
                 </div>
                 <div class="hidden lg:block">
-                    <p class="text-sm font-black tracking-widest uppercase text-slate-950">MY PSPA</p>
+                    <p class="text-sm font-black tracking-widest uppercase text-slate-950">MY PKPA</p>
                     <p class="mt-0.5 text-[11px] font-bold text-cyan-700">Farmasi UBP</p>
                 </div>
             </div>
@@ -428,8 +428,8 @@
 
         <!-- Footer -->
         <footer class="border-t border-sky-100 bg-white/70 px-5 py-5 text-center text-xs text-slate-500 md:px-8">
-            <p class="font-bold text-slate-700">MY PSPA</p>
-            <p class="mt-1">Sistem Informasi Program Studi Profesi Apoteker Universitas Buana Perjuangan Karawang</p>
+            <p class="font-bold text-slate-700">MY PKPA</p>
+            <p class="mt-1">Sistem Informasi Praktik Kerja Profesi Apoteker Universitas Buana Perjuangan Karawang</p>
         </footer>
     </div>
 </div>

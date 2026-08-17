@@ -1,8 +1,8 @@
-# TAHAP 13B - Git Commit and Push MY PSPA
+# TAHAP 13B - Git Commit and Push MY PKPA
 
 ## Ringkasan
 
-Project Manager memberikan izin eksplisit untuk konfigurasi ulang remote Git, commit, dan push MY PSPA ke GitHub.
+Project Manager memberikan izin eksplisit untuk konfigurasi ulang remote Git, commit, dan push MY PKPA ke GitHub.
 
 Deployment ke server belum diizinkan dan tidak dilakukan.
 
@@ -98,7 +98,7 @@ credentials/
 Commit message yang digunakan:
 
 ```text
-feat: build MY PSPA controlled go-live release candidate
+feat: build MY PKPA controlled go-live release candidate
 ```
 
 Hash commit final diverifikasi setelah commit melalui `git log -1 --oneline` dan dicatat pada laporan akhir eksekusi.

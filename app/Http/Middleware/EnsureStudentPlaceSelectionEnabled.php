@@ -10,7 +10,7 @@ class EnsureStudentPlaceSelectionEnabled
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless((bool) config('my_pspa.student_place_selection_enabled'), 403, 'Pemilihan tempat oleh mahasiswa dinonaktifkan. Penempatan PKPA ditetapkan oleh Koordinator PKPA.');
+        abort_unless((bool) config('my_pkpa.student_place_selection_enabled'), 403, 'Pemilihan tempat oleh mahasiswa dinonaktifkan. Penempatan PKPA ditetapkan oleh Koordinator PKPA.');
 
         return $next($request);
     }

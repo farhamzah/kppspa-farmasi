@@ -21,7 +21,7 @@ QA final:
 - `php artisan pkpa:document-orphan-audit --json`: pass
 - `php artisan pkpa:integrity-audit --json`: pass, 25 checks, issue_count 0
 - `npm.cmd run e2e`: 16 passed
-- clean SQLite `C:\tmp\my_pspa_tahap11b_clean.sqlite`: pass
+- clean SQLite `C:\tmp\my_pkpa_tahap11b_clean.sqlite`: pass
 
 Defect:
 - Critical open: 0

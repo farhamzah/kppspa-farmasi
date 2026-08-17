@@ -53,7 +53,7 @@ class PkpaAcademicRotationController extends Controller
             'external_reference_url' => ['nullable', 'url'],
             'logbook_entry_id' => ['nullable', 'integer'],
             'attendance_record_id' => ['nullable', 'integer'],
-            'file' => ['nullable', 'file', 'max:'.config('my_pspa.academic_file_max_size_kb', 5120)],
+            'file' => ['nullable', 'file', 'max:'.config('my_pkpa.academic_file_max_size_kb', 5120)],
         ]), $request->file('file'), $request->user());
 
         return back()->with('status', 'Bukti kompetensi disimpan.');
@@ -72,7 +72,7 @@ class PkpaAcademicRotationController extends Controller
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'submission_notes' => ['nullable', 'string'],
-            'file' => ['nullable', 'file', 'max:'.config('my_pspa.academic_file_max_size_kb', 5120)],
+            'file' => ['nullable', 'file', 'max:'.config('my_pkpa.academic_file_max_size_kb', 5120)],
         ]) + ['submit' => true], $request->file('file'), $request->user());
 
         return back()->with('status', 'Submission tugas khusus dikirim.');
@@ -88,7 +88,7 @@ class PkpaAcademicRotationController extends Controller
     public function uploadReport(Request $request, PkpaRotationReport $report): RedirectResponse
     {
         $this->reports->uploadVersion($report, $request->file('file'), $request->validate([
-            'file' => ['required', 'file', 'max:'.config('my_pspa.academic_file_max_size_kb', 5120)],
+            'file' => ['required', 'file', 'max:'.config('my_pkpa.academic_file_max_size_kb', 5120)],
             'change_summary' => ['nullable', 'string'],
             'submission_notes' => ['nullable', 'string'],
         ]), $request->user());

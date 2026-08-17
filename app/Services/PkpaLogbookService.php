@@ -120,14 +120,14 @@ class PkpaLogbookService
         if (! in_array($entry->status, ['draft', 'revision_requested'], true)) {
             throw ValidationException::withMessages(['attachment' => 'Lampiran hanya dapat ditambahkan sebelum logbook dikirim.']);
         }
-        if ($file->getSize() > ((int) config('my_pspa.logbook_attachment_max_kb', 5120) * 1024)) {
+        if ($file->getSize() > ((int) config('my_pkpa.logbook_attachment_max_kb', 5120) * 1024)) {
             throw ValidationException::withMessages(['attachment' => 'Ukuran lampiran melebihi batas.']);
         }
-        $allowed = config('my_pspa.logbook_attachment_allowed_mimes', []);
+        $allowed = config('my_pkpa.logbook_attachment_allowed_mimes', []);
         if (! in_array($file->getMimeType(), $allowed, true)) {
             throw ValidationException::withMessages(['attachment' => 'Tipe lampiran tidak diizinkan.']);
         }
-        $disk = config('my_pspa.logbook_attachment_disk', 'local');
+        $disk = config('my_pkpa.logbook_attachment_disk', 'local');
         $storedName = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
         $path = $file->storeAs('pkpa-logbooks/'.$entry->id, $storedName, $disk);
 

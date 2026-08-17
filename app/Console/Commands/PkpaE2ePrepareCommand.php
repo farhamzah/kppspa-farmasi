@@ -9,7 +9,7 @@ class PkpaE2ePrepareCommand extends Command
 {
     protected $signature = 'pkpa:e2e-prepare {--force : Confirm fixture writes outside testing/local/staging}';
 
-    protected $description = 'Prepare safe MY PSPA browser E2E fixtures without creating production bypass routes.';
+    protected $description = 'Prepare safe MY PKPA browser E2E fixtures without creating production bypass routes.';
 
     public function handle(): int
     {

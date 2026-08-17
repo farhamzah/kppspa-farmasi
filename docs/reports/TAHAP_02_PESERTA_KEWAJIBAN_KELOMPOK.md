@@ -26,7 +26,7 @@ Tahap 02 menambahkan fondasi kepesertaan mahasiswa Program PKPA: enrollment dari
 
 ## Integrasi Core
 
-`PkpaCoreStudentResolver` memakai `CoreFarmasiClient` untuk mencari mahasiswa berdasarkan Core user ID atau NPM, memverifikasi akun aktif, role mahasiswa, dan app access MY PSPA. Snapshot identitas disimpan di enrollment. Sinkronisasi individual dan program memperbarui snapshot tanpa mengubah `core_user_id`.
+`PkpaCoreStudentResolver` memakai `CoreFarmasiClient` untuk mencari mahasiswa berdasarkan Core user ID atau NPM, memverifikasi akun aktif, role mahasiswa, dan app access MY PKPA. Snapshot identitas disimpan di enrollment. Sinkronisasi individual dan program memperbarui snapshot tanpa mengubah `core_user_id`.
 
 Core unavailable atau data tidak ditemukan tidak menghapus snapshot lama dan dicatat sebagai status sync gagal/peringatan.
 
@@ -106,8 +106,8 @@ Controller, request, route, view:
 Test dan dokumentasi:
 
 - `tests/Feature/Tahap02PkpaEnrollmentTest.php`
-- `docs/specs/MY_PSPA_ENROLLMENT_AND_GROUP_SPEC.md`
-- `docs/specs/MY_PSPA_CORE_STUDENT_IMPORT_SPEC.md`
+- `docs/specs/MY_PKPA_ENROLLMENT_AND_GROUP_SPEC.md`
+- `docs/specs/MY_PKPA_CORE_STUDENT_IMPORT_SPEC.md`
 - `docs/prompts/TAHAP_02_PESERTA_KEWAJIBAN_KELOMPOK.md`
 - `docs/reports/TAHAP_02_PESERTA_KEWAJIBAN_KELOMPOK.md`
 

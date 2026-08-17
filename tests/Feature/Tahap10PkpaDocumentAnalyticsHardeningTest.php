@@ -71,7 +71,7 @@ class Tahap10PkpaDocumentAnalyticsHardeningTest extends TestCase
             'is_current' => true,
             'current_key' => 'TYPE:'.$type->id.':PROGRAM:'.$program->id,
             'template_engine' => 'html',
-            'template_content' => 'Dokumen Internal MY PSPA - {{ program.name }} - {{ student.name }} - {{ generated_document.number }}',
+            'template_content' => 'Dokumen Internal MY PKPA - {{ program.name }} - {{ student.name }} - {{ generated_document.number }}',
             'available_placeholders' => PkpaDocumentPlaceholderService::PLACEHOLDERS,
         ]);
         PkpaDocumentNumberingRule::create([
@@ -152,7 +152,7 @@ class Tahap10PkpaDocumentAnalyticsHardeningTest extends TestCase
 
         $this->get('/health')
             ->assertOk()
-            ->assertJson(['status' => 'ok', 'app' => 'MY PSPA'])
+            ->assertJson(['status' => 'ok', 'app' => 'MY PKPA'])
             ->assertHeader('x-content-type-options', 'nosniff')
             ->assertDontSee(config('database.connections.'.config('database.default').'.database'));
 
@@ -162,7 +162,7 @@ class Tahap10PkpaDocumentAnalyticsHardeningTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/admin/health')
             ->assertOk()
-            ->assertJsonPath('app', 'MY PSPA');
+            ->assertJsonPath('app', 'MY PKPA');
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/management/pkpa-analytics')
             ->assertOk()

@@ -85,7 +85,8 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
             ->assertSee('Farmasi S1')
             ->assertSee('Teknologi Sediaan Farmasi')
             ->assertSee('Data Operasional KP')
-            ->assertSee('https://core.test/storage/profile-photos/core.jpg', false)
+            ->assertSee(route('profile.core-avatar.show'), false)
+            ->assertDontSee('https://core.test/storage/profile-photos/core.jpg', false)
             ->assertSee('Belum ada data operasional tambahan')
             ->assertDontSee('CORE LECTURER ID');
 
@@ -101,6 +102,29 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
             ->withSession(['active_role' => 'pembimbing_dalam'])
             ->get('/profile/core-avatar')
             ->assertOk();
+    }
+
+    public function test_role_selection_uses_core_avatar_proxy_when_core_photo_file_is_available(): void
+    {
+        $this->coreLecturerProfile();
+
+        $user = User::create([
+            'name' => 'Legacy Multi',
+            'email' => 'multi-profile@sikp.test',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'profile_completed' => true,
+            'core_user_id' => 10,
+            'avatar_path' => 'https://core.test/storage/profile-photos/core.jpg',
+            'avatar_disk' => 'remote',
+        ]);
+        $user->roles()->sync(Role::whereIn('name', ['admin', 'koordinator_kp'])->pluck('id'));
+
+        $this->actingAs($user)
+            ->get('/pilih-role')
+            ->assertOk()
+            ->assertSee(route('profile.core-avatar.show'), false)
+            ->assertDontSee('https://core.test/storage/profile-photos/core.jpg', false);
     }
 
     public function test_core_managed_profile_fields_are_read_only_from_kp_update(): void

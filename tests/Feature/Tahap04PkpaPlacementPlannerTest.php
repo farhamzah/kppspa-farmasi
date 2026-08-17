@@ -36,7 +36,7 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('my_pspa.student_place_selection_enabled', false);
+        config()->set('my_pkpa.student_place_selection_enabled', false);
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
         $this->admin = $this->makeUser('admin04@test.local', ['admin'], 'core-admin-04');
         $this->koordinator = $this->makeUser('koor04@test.local', ['koordinator_kp'], 'core-koor-04');

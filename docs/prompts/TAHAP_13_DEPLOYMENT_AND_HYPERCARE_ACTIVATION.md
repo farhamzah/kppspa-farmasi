@@ -4,8 +4,8 @@ Tahap 13 meminta audit Git, pemeriksaan file sensitif, commit/push terarah jika 
 
 Gate wajib:
 
-- Commit dan push hanya boleh dilakukan jika Project Manager secara eksplisit mengizinkan commit dan push MY PSPA ke repository GitHub.
-- Deployment hanya boleh dilakukan jika Project Manager secara eksplisit mengizinkan deployment MY PSPA ke server target dan seluruh detail target tersedia.
+- Commit dan push hanya boleh dilakukan jika Project Manager secara eksplisit mengizinkan commit dan push MY PKPA ke repository GitHub.
+- Deployment hanya boleh dilakukan jika Project Manager secara eksplisit mengizinkan deployment MY PKPA ke server target dan seluruh detail target tersedia.
 - Jangan mengubah `apps/core-farmasi`.
 - Jangan mengubah remote tanpa konfirmasi Project Manager.
 - Jangan membuat tag, merge, release, force push, atau deployment tanpa izin.

@@ -60,7 +60,7 @@ class PkpaSupervisorCoreResolver
 
         $access = $this->coreClient->checkUserAppAccess($normalized['core_user_id']);
         if (($access['has_access'] ?? false) !== true) {
-            return ['ok' => false, 'reason' => 'app_access_denied', 'message' => 'Pembimbing belum memiliki app access MY PSPA.', 'person' => $normalized];
+            return ['ok' => false, 'reason' => 'app_access_denied', 'message' => 'Pembimbing belum memiliki app access MY PKPA.', 'person' => $normalized];
         }
 
         return ['ok' => true, 'person' => $normalized + ['app_access' => $access]];

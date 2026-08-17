@@ -1,4 +1,4 @@
-# MY PSPA Backup and Restore
+# MY PKPA Backup and Restore
 
 Backup scope:
 - database aplikasi;
@@ -20,9 +20,9 @@ Jangan hardcode password. Tahap 10 tidak menjalankan backup production nyata.
 # Catatan Simulasi Tahap 11A
 
 Simulasi backup-restore aman dilakukan pada SQLite lokal:
-- source: `C:\tmp\my_pspa_tahap11a_clean.sqlite`
-- backup: `C:\tmp\my_pspa_tahap11a_clean_backup.sqlite`
-- restore: `C:\tmp\my_pspa_tahap11a_restore.sqlite`
+- source: `C:\tmp\my_pkpa_tahap11a_clean.sqlite`
+- backup: `C:\tmp\my_pkpa_tahap11a_clean_backup.sqlite`
+- restore: `C:\tmp\my_pkpa_tahap11a_restore.sqlite`
 - SHA256 sama: `25208F6F567DFE875C6DAC39FD2D44133D595AFFC258AF4BA69BD70316AFA7D3`
 - `php artisan pkpa:integrity-audit --json` pada restore: passed.
 

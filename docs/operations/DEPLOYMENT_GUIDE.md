@@ -1,4 +1,4 @@
-# MY PSPA Deployment Guide
+# MY PKPA Deployment Guide
 
 Checklist teknis:
 - PHP 8.2+, ekstensi PDO, OpenSSL, mbstring, fileinfo, zip.

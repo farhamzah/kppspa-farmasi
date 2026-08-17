@@ -24,7 +24,7 @@ Halaman `management/pkpa-placement-planner` menyediakan matriks desktop, kartu m
 - `php artisan test --filter=Tahap04PkpaPlacementPlannerTest`: 4 test, 47 assertion, hijau.
 - `php artisan test`: 275 test, 1831 assertion, hijau.
 - `npm.cmd run build`: berhasil, Vite build menghasilkan `app-D6Y8mxHk.css` dan `app-UyRVujZY.js`.
-- Clean migration SQLite temporary `C:\tmp\my_pspa_tahap04_clean.sqlite`: `migrate:fresh --seed --force` berhasil, file temporary dihapus setelah QA.
+- Clean migration SQLite temporary `C:\tmp\my_pkpa_tahap04_clean.sqlite`: `migrate:fresh --seed --force` berhasil, file temporary dihapus setelah QA.
 - Browser QA `127.0.0.1:3006`: login koordinator, halaman planner desktop/tablet/mobile, matriks desktop, kartu tablet/mobile, bulk panel, issue list, dan timeline dicek. Tidak ada body horizontal overflow dan console error kosong.
 
 ## Risiko

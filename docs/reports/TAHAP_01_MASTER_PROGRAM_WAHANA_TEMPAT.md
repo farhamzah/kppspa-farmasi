@@ -104,9 +104,9 @@ Dokumentasi:
 
 - `AGENTS.md`
 - `README.md`
-- `docs/specs/MY_PSPA_PROGRAM_AND_MASTER_DATA_SPEC.md`
-- `docs/specs/MY_PSPA_MASTER_SPEC.md`
-- `docs/specs/MY_PSPA_DOMAIN_MIGRATION_MAP.md`
+- `docs/specs/MY_PKPA_PROGRAM_AND_MASTER_DATA_SPEC.md`
+- `docs/specs/MY_PKPA_MASTER_SPEC.md`
+- `docs/specs/MY_PKPA_DOMAIN_MIGRATION_MAP.md`
 - `docs/prompts/TAHAP_01_MASTER_PROGRAM_WAHANA_TEMPAT.md`
 - `docs/reports/TAHAP_01_MASTER_PROGRAM_WAHANA_TEMPAT.md`
 
@@ -128,7 +128,7 @@ Browser QA lokal:
 - Halaman yang dicek: daftar program, form program, konfigurasi enam wahana, daftar wahana, detail Pemerintahan, daftar tempat, form tempat.
 - Viewport yang dicek: desktop 1365x768, tablet 900x1100, mobile 390x844.
 - Hasil: tidak ada horizontal overflow, tidak ada console error, form label dan field terdeteksi, header/sidebar sticky tetap tampil, table berada dalam responsive wrapper, empty state dan action button tampil.
-- `.env` lokal diselaraskan ke `APP_NAME="MY PSPA"` setelah ditemukan title browser masih memakai nama lama.
+- `.env` lokal diselaraskan ke `APP_NAME="MY PKPA"` setelah ditemukan title browser masih memakai nama lama.
 
 Runtime MySQL:
 

@@ -1,6 +1,6 @@
 # Prompt Tahap 01
 
-Bangun fondasi master data MY PSPA di `apps/kppspa-farmasi` tanpa mengubah `apps/core-farmasi`.
+Bangun fondasi master data MY PKPA di `apps/kppspa-farmasi` tanpa mengubah `apps/core-farmasi`.
 
 Scope:
 

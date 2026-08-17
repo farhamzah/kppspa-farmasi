@@ -68,7 +68,7 @@ class PkpaDocumentPlaceholderService
     public function defaultContent(): string
     {
         return implode("\n", [
-            'Dokumen Internal MY PSPA',
+            'Dokumen Internal MY PKPA',
             'Program: {{ program.name }}',
             'Mahasiswa: {{ student.name }}',
             'NPM: {{ student.npm }}',

@@ -273,9 +273,9 @@ class Tahap01PkpaMasterDataTest extends TestCase
 
     public function test_landing_core_baseline_and_war_lock_remain_intact(): void
     {
-        config()->set('my_pspa.student_place_selection_enabled', false);
+        config()->set('my_pkpa.student_place_selection_enabled', false);
 
-        $this->get('/')->assertOk()->assertSee('MY PSPA');
+        $this->get('/')->assertOk()->assertSee('MY PKPA');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/pemilihan-tempat')

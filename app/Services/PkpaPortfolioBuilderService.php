@@ -542,7 +542,7 @@ class PkpaPortfolioBuilderService
         $portfolio->loadMissing(['template.sections', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems']);
         return array_merge([
             'PORTOFOLIO DIGITAL PKPA',
-            'Label: Dokumen internal MY PSPA'.($portfolio->status === 'published' ? ' - Diterbitkan' : ' - Draf internal'),
+            'Label: Dokumen internal MY PKPA'.($portfolio->status === 'published' ? ' - Diterbitkan' : ' - Draf internal'),
             'Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name').' ('.data_get($portfolio->identity_snapshot, 'student_number').')',
             'Program: '.data_get($portfolio->identity_snapshot, 'program').' / '.data_get($portfolio->identity_snapshot, 'academic_year'),
             'Wahana: '.data_get($portfolio->placement_snapshot, 'practice_domain'),
@@ -596,6 +596,6 @@ class PkpaPortfolioBuilderService
 
     private function defaultIntegrityText(): string
     {
-        return 'Saya menyatakan seluruh isi portofolio PKPA ini benar, tidak memuat identitas langsung pasien, dan disusun untuk keperluan akademik internal MY PSPA. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.';
+        return 'Saya menyatakan seluruh isi portofolio PKPA ini benar, tidak memuat identitas langsung pasien, dan disusun untuk keperluan akademik internal MY PKPA. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.';
     }
 }

@@ -37,7 +37,7 @@ class CoreHttpUserProjectionService
         }
 
         if ($kpRoles === []) {
-            $blockers[] = 'Core app access belum memiliki role KPPSPA yang dikenali.';
+            $blockers[] = 'Core app access belum memiliki role MY PKPA yang dikenali.';
         }
 
         if ($blockers !== []) {
@@ -74,7 +74,7 @@ class CoreHttpUserProjectionService
                 ->all();
 
             if ($roleIds === []) {
-                return $this->result(false, null, $kpRoles, $warnings, ['Role lokal KPPSPA belum tersedia.']);
+                return $this->result(false, null, $kpRoles, $warnings, ['Role lokal MY PKPA belum tersedia.']);
             }
 
             $legacyUser->roles()->sync($roleIds);

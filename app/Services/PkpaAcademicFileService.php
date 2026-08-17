@@ -11,8 +11,8 @@ class PkpaAcademicFileService
 {
     public function validateFile(UploadedFile $file, ?array $allowedMimes = null, ?int $maxKb = null): void
     {
-        $allowedMimes ??= config('my_pspa.academic_allowed_mime_types', []);
-        $maxKb ??= (int) config('my_pspa.academic_file_max_size_kb', 5120);
+        $allowedMimes ??= config('my_pkpa.academic_allowed_mime_types', []);
+        $maxKb ??= (int) config('my_pkpa.academic_file_max_size_kb', 5120);
         $blockedExtensions = ['exe', 'bat', 'cmd', 'com', 'js', 'php', 'sh', 'msi'];
 
         if ($file->getSize() > $maxKb * 1024) {
@@ -29,7 +29,7 @@ class PkpaAcademicFileService
     public function store(UploadedFile $file, string $directory, ?array $allowedMimes = null, ?int $maxKb = null): array
     {
         $this->validateFile($file, $allowedMimes, $maxKb);
-        $disk = config('my_pspa.academic_file_disk', 'local');
+        $disk = config('my_pkpa.academic_file_disk', 'local');
         $storedName = Str::uuid()->toString().'.'.$file->getClientOriginalExtension();
         $path = $file->storeAs(trim($directory, '/'), $storedName, $disk);
 

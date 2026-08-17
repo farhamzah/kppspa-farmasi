@@ -10,7 +10,7 @@ class PkpaIntegrityAuditCommand extends Command
 {
     protected $signature = 'pkpa:integrity-audit {--json : Output JSON}';
 
-    protected $description = 'Dry-run data integrity audit for MY PSPA PKPA records.';
+    protected $description = 'Dry-run data integrity audit for MY PKPA PKPA records.';
 
     public function handle(): int
     {
@@ -63,7 +63,7 @@ class PkpaIntegrityAuditCommand extends Command
         if ($this->option('json')) {
             $this->line(json_encode($payload, JSON_PRETTY_PRINT));
         } else {
-            $this->info('MY PSPA PKPA Integrity Audit - dry-run');
+            $this->info('MY PKPA PKPA Integrity Audit - dry-run');
             $this->line('Status: '.$payload['status']);
             $this->line('Open issues: '.$summary['issue_count']);
             $this->line('Critical: '.$summary['critical_open'].' | High: '.$summary['high_open'].' | Medium: '.$summary['medium_open'].' | Low: '.$summary['low_open']);

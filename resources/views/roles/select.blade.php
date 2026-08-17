@@ -63,7 +63,7 @@
                 @else
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         @foreach($roles as $role)
-                            @php($meta = $roleMeta[$role->name] ?? ['label' => $role->label, 'icon' => strtoupper(substr($role->label, 0, 2)), 'tone' => 'from-cyan-600 to-teal-600', 'description' => $role->description ?: 'Akses aplikasi MY PSPA Farmasi UBP.'])
+                            @php($meta = $roleMeta[$role->name] ?? ['label' => $role->label, 'icon' => strtoupper(substr($role->label, 0, 2)), 'tone' => 'from-cyan-600 to-teal-600', 'description' => $role->description ?: 'Akses aplikasi MY PKPA Farmasi UBP.'])
                             <form method="POST" action="{{ route('role.set', $role) }}" class="group flex min-h-[250px] flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-cyan-300 hover:shadow-xl hover:shadow-cyan-900/10">
                                 @csrf
                                 <div class="flex items-start gap-4">

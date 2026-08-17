@@ -38,7 +38,7 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         config()->set('core_farmasi.client_id', 'client');
         config()->set('core_farmasi.client_secret', 'secret');
         config()->set('core_farmasi.app_code', 'kppspa-farmasi');
-        config()->set('my_pspa.student_place_selection_enabled', false);
+        config()->set('my_pkpa.student_place_selection_enabled', false);
 
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
         $this->admin = $this->makeUser('admin@test.local', ['admin'], 'core-admin-1');

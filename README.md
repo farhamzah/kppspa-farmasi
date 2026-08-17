@@ -1,6 +1,6 @@
-# MY PSPA
+# MY PKPA
 
-MY PSPA adalah Sistem Informasi Program Studi Profesi Apoteker untuk pengelolaan Praktik Kerja Profesi Apoteker (PKPA) Fakultas Farmasi UBP.
+MY PKPA adalah Sistem Informasi Praktik Kerja Profesi Apoteker untuk pengelolaan Praktik Kerja Profesi Apoteker (PKPA) Fakultas Farmasi UBP.
 
 ## Status Tahap 11A
 
@@ -16,8 +16,8 @@ php artisan pkpa:document-orphan-audit --json
 
 Laporan utama:
 - `docs/reports/TAHAP_11A_AI_ASSISTED_PRE_UAT.md`
-- `docs/uat/MY_PSPA_AI_ASSISTED_PRE_UAT_RESULT.md`
-- `docs/uat/MY_PSPA_HUMAN_UAT_HANDOFF.md`
+- `docs/uat/MY_PKPA_AI_ASSISTED_PRE_UAT_RESULT.md`
+- `docs/uat/MY_PKPA_HUMAN_UAT_HANDOFF.md`
 
 ## Status Tahap 11B
 
@@ -34,8 +34,8 @@ Framework browser: Playwright. Test mencakup desktop 1366x768, desktop-wide 1920
 
 Laporan utama:
 - `docs/reports/TAHAP_11B_PRE_UAT_CONDITION_CLOSURE.md`
-- `docs/reports/MY_PSPA_BROWSER_E2E_REPORT.md`
-- `docs/uat/MY_PSPA_STAGING_UAT_CHECKLIST.md`
+- `docs/reports/MY_PKPA_BROWSER_E2E_REPORT.md`
+- `docs/uat/MY_PKPA_STAGING_UAT_CHECKLIST.md`
 
 ## Status Tahap 12A
 
@@ -59,10 +59,10 @@ php artisan pkpa:hypercare-status --json
 
 Laporan utama:
 - `docs/reports/TAHAP_12A_CONTROLLED_GO_LIVE_AND_HYPERCARE.md`
-- `docs/releases/MY_PSPA_HUMAN_UAT_WAIVER.md`
-- `docs/releases/MY_PSPA_CONTROLLED_GO_LIVE_CHECKLIST.md`
-- `docs/releases/MY_PSPA_HYPERCARE_PLAN.md`
-- `docs/hypercare/MY_PSPA_HYPERCARE_LOG.md`
+- `docs/releases/MY_PKPA_HUMAN_UAT_WAIVER.md`
+- `docs/releases/MY_PKPA_CONTROLLED_GO_LIVE_CHECKLIST.md`
+- `docs/releases/MY_PKPA_HYPERCARE_PLAN.md`
+- `docs/hypercare/MY_PKPA_HYPERCARE_LOG.md`
 
 ## Ruang Lingkup
 
@@ -91,8 +91,8 @@ Login memvalidasi password ke Core Farmasi, membaca app-access role dari Core, l
 
 - Registrasi lokal tidak disediakan.
 - Reset password lokal tidak disediakan.
-- Manajemen akun lokal dinonaktifkan secara default melalui `MY_PSPA_LOCAL_ACCOUNT_MANAGEMENT_ENABLED=false`.
-- War/pemilihan tempat oleh mahasiswa dinonaktifkan secara default melalui `MY_PSPA_STUDENT_PLACE_SELECTION_ENABLED=false`.
+- Manajemen akun lokal dinonaktifkan secara default melalui `MY_PKPA_LOCAL_ACCOUNT_MANAGEMENT_ENABLED=false`.
+- War/pemilihan tempat oleh mahasiswa dinonaktifkan secara default melalui `MY_PKPA_STUDENT_PLACE_SELECTION_ENABLED=false`.
 - Penempatan PKPA disusun oleh Koordinator PKPA.
 
 ## Master PKPA Tahap 01
@@ -199,7 +199,7 @@ Tahap 08 menambahkan penilaian per rotasi/wahana: skema, komponen, rubrik, asses
 
 ## Nilai Akhir dan Kelulusan PKPA Tahap 09
 
-Tahap 09 menambahkan penyelesaian program: skema nilai akhir, agregasi nilai wahana finalized, completion requirement, remedial, kalkulasi final, keputusan kelulusan, release hasil akhir, dan portal hasil akhir mahasiswa. Hasil ini adalah hasil akademik dalam MY PSPA, bukan dokumen resmi universitas.
+Tahap 09 menambahkan penyelesaian program: skema nilai akhir, agregasi nilai wahana finalized, completion requirement, remedial, kalkulasi final, keputusan kelulusan, release hasil akhir, dan portal hasil akhir mahasiswa. Hasil ini adalah hasil akademik dalam MY PKPA, bukan dokumen resmi universitas.
 
 Konfigurasi tambahan:
 
@@ -229,14 +229,14 @@ Gunakan database development/testing. Jangan memakai Core production untuk autom
 
 ## Data Dummy Belajar PKPA
 
-Untuk menanam data dummy MY PSPA end-to-end pada database lokal/demo:
+Untuk menanam data dummy MY PKPA end-to-end pada database lokal/demo:
 
 ```bash
 php artisan db:seed --class=PkpaDemoEndToEndSeeder --force
 ```
 
-Seeder ini idempotent dan membuat contoh alur belajar dari program PKPA, peserta, enam requirement wahana, kelompok, publikasi penempatan, rotasi selesai, nilai wahana finalized, sampai hasil akhir released. Akun uji lokal dapat memakai `MY_PSPA_TEST_SUPERADMIN_PASSWORD` di `.env` development bila perlu mengatur password khusus tanpa menyimpannya di repository.
+Seeder ini idempotent dan membuat contoh alur belajar dari program PKPA, peserta, enam requirement wahana, kelompok, publikasi penempatan, rotasi selesai, nilai wahana finalized, sampai hasil akhir released. Akun uji lokal dapat memakai `MY_PKPA_TEST_SUPERADMIN_PASSWORD` di `.env` development bila perlu mengatur password khusus tanpa menyimpannya di repository.
 
 ## Dokumen, Analytics, Hardening, dan UAT Tahap 10
 
-MY PSPA kini memiliki fondasi Dokumen Internal PKPA, template berversi, penomoran configurable, generation DOCX/PDF/XLSX/CSV pada private storage, portal dokumen mahasiswa, Pelaporan dan Analytics, health check, security headers, rate limit download/export, queue health, orphan file audit dry-run, serta dokumen operasi dan UAT. Status production tetap `Ready with condition` sampai UAT real, queue/mail production, backup restore, dan browser matrix selesai.
+MY PKPA kini memiliki fondasi Dokumen Internal PKPA, template berversi, penomoran configurable, generation DOCX/PDF/XLSX/CSV pada private storage, portal dokumen mahasiswa, Pelaporan dan Analytics, health check, security headers, rate limit download/export, queue health, orphan file audit dry-run, serta dokumen operasi dan UAT. Status production tetap `Ready with condition` sampai UAT real, queue/mail production, backup restore, dan browser matrix selesai.

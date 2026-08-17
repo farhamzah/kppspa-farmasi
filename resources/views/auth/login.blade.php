@@ -1,7 +1,7 @@
 @extends('layouts.guest')
 
 @section('content')
-@php($heroImage = asset('images/my-pspa/hero-pkpa-pspa-v2.png'))
+@php($heroImage = asset('images/my-pkpa/hero-pkpa-workspace-v2.png'))
 <div class="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-slate-950 px-4 py-5 text-slate-900 sm:px-6 lg:h-screen lg:px-8 lg:py-4">
     <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(13,148,136,0.42),rgba(15,23,42,0.82)_42%,rgba(20,184,166,0.24))]"></div>
     <div class="absolute inset-x-0 top-0 h-32 bg-linear-to-b from-white/10 to-transparent"></div>
@@ -18,15 +18,15 @@
                         <img src="{{ asset('images/logo-fakultas-farmasi-ubp.png') }}" alt="Logo Fakultas Farmasi UBP" class="h-full w-full object-contain">
                     </div>
                     <div>
-                        <p class="text-sm font-bold uppercase text-teal-100">MY PSPA</p>
-                        <p class="mt-1 text-sm text-slate-300">Sistem Informasi Program Studi Profesi Apoteker</p>
+                        <p class="text-sm font-bold uppercase text-teal-100">MY PKPA</p>
+                        <p class="mt-1 text-sm text-slate-300">Sistem Informasi Praktik Kerja Profesi Apoteker</p>
                     </div>
                 </div>
 
                 <div class="mt-8 grid items-start gap-5 xl:mt-10 xl:grid-cols-[minmax(0,1fr)_210px]">
                     <div class="min-w-0">
                     <p class="inline-flex rounded-full border border-teal-300/30 bg-teal-300/10 px-3 py-1 text-xs font-semibold uppercase text-teal-100">Portal PKPA Farmasi</p>
-                    <h1 class="mt-4 max-w-lg text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">Masuk ke MY PSPA</h1>
+                    <h1 class="mt-4 max-w-lg text-3xl font-black leading-tight text-white sm:text-4xl lg:text-5xl">Masuk ke MY PKPA</h1>
                     <p class="mt-4 max-w-lg text-sm leading-6 text-slate-200">
                         Akses dashboard sesuai peran Anda untuk mengelola peserta, tempat praktik, pembimbing, logbook, laporan, ujian, dan nilai PKPA.
                     </p>
@@ -103,7 +103,7 @@
         <section class="flex items-center bg-white px-6 py-7 sm:px-10 lg:px-12">
             <div class="w-full">
                 <div class="mb-5">
-                    <p class="text-sm font-semibold uppercase text-teal-700">Akses MY PSPA</p>
+                    <p class="text-sm font-semibold uppercase text-teal-700">Akses MY PKPA</p>
                     <h2 class="mt-2 text-3xl font-black text-slate-950">Masuk ke Portal PKPA</h2>
                     <p class="mt-2 text-sm leading-6 text-slate-500">Gunakan akun Core Farmasi. Dashboard akan mengikuti peran yang diberikan untuk Anda.</p>
                 </div>
@@ -180,7 +180,7 @@
 
                 <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                     <p>Belum punya akun, lupa password, atau peran PKPA belum sesuai? Kelola melalui <span class="font-bold text-slate-900">Core Farmasi</span>.</p>
-                    @php($accountUrls = config('my_pspa.account_urls', []))
+                    @php($accountUrls = config('my_pkpa.account_urls', []))
                     <div class="mt-3 flex flex-wrap gap-2">
                         @if($accountUrls['register'] ?? null)
                             <a href="{{ $accountUrls['register'] }}" class="rounded-lg border border-teal-200 bg-white px-3 py-1.5 text-xs font-bold text-teal-700">Daftar akun</a>

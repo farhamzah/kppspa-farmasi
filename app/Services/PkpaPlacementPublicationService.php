@@ -22,7 +22,7 @@ class PkpaPlacementPublicationService
 
     public function publish(PkpaPlacementPlan $plan, array $data, ?User $actor): PkpaPlacementPublication
     {
-        if (! config('my_pspa.publication_enabled')) {
+        if (! config('my_pkpa.publication_enabled')) {
             throw ValidationException::withMessages(['publication' => 'Publikasi penempatan sedang dinonaktifkan.']);
         }
         if (! $actor?->hasRole('koordinator_kp')) {

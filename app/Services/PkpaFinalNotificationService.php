@@ -11,7 +11,7 @@ class PkpaFinalNotificationService
 {
     public function notifyEnrollment(PkpaEnrollment $enrollment, string $eventType, Model $entity, array $recipientTypes = ['student']): void
     {
-        if (! config('my_pspa.final_database_notifications_enabled')) {
+        if (! config('my_pkpa.final_database_notifications_enabled')) {
             return;
         }
 

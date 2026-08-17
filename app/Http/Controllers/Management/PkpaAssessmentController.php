@@ -176,7 +176,7 @@ class PkpaAssessmentController extends Controller
 
         return response()->streamDownload(function () use ($assessments) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Rekap Penilaian Per Wahana PKPA - MY PSPA']);
+            fputcsv($handle, ['Rekap Penilaian Per Wahana PKPA - MY PKPA']);
             fputcsv($handle, ['Mahasiswa Core', 'Wahana', 'Tempat', 'Status Assessment', 'Completion', 'Final Score', 'Release']);
             foreach ($assessments as $assessment) {
                 fputcsv($handle, [

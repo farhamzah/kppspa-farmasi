@@ -7,7 +7,7 @@
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Dokumen PKPA</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">Dokumen yang diterbitkan untuk Anda</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">Dokumen di halaman ini adalah Dokumen Internal MY PSPA atau draft terbit sesuai statusnya. File akademik tetap disimpan privat.</p>
+        <p class="mt-2 max-w-3xl text-sm text-slate-600">Dokumen di halaman ini adalah Dokumen Internal MY PKPA atau draft terbit sesuai statusnya. File akademik tetap disimpan privat.</p>
     </section>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">

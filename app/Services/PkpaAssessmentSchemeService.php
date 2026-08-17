@@ -35,7 +35,7 @@ class PkpaAssessmentSchemeService
             'rounding_precision' => $data['rounding_precision'] ?? 2,
             'rounding_mode' => $data['rounding_mode'] ?? 'half_up',
             'status' => $data['status'] ?? 'draft',
-            'hide_other_assessor_scores_until_submit' => $data['hide_other_assessor_scores_until_submit'] ?? config('my_pspa.hide_other_assessor_scores_until_submit'),
+            'hide_other_assessor_scores_until_submit' => $data['hide_other_assessor_scores_until_submit'] ?? config('my_pkpa.hide_other_assessor_scores_until_submit'),
             'require_academic_readiness' => $data['require_academic_readiness'] ?? true,
             'created_by_core_user_id' => $actor?->core_user_id,
             'updated_by_core_user_id' => $actor?->core_user_id,

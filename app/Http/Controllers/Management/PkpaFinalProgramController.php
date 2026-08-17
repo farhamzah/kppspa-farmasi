@@ -119,7 +119,7 @@ class PkpaFinalProgramController extends Controller
         $results = PkpaFinalGradeResult::with('enrollment')->get();
         return response()->streamDownload(function () use ($results) {
             $h = fopen('php://output', 'w');
-            fputcsv($h, ['Rekap Hasil Akhir Program PKPA - MY PSPA']);
+            fputcsv($h, ['Rekap Hasil Akhir Program PKPA - MY PKPA']);
             fputcsv($h, ['Core User', 'Final Score', 'Status', 'Released At']);
             foreach ($results as $result) {
                 fputcsv($h, [$result->enrollment?->core_user_id, $result->final_score, $result->result_status, $result->released_at]);

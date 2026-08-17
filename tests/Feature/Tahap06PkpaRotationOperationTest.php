@@ -51,8 +51,8 @@ class Tahap06PkpaRotationOperationTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('my_pspa.rotation_operations_enabled', true);
-        config()->set('my_pspa.logbook_attachment_disk', 'local');
+        config()->set('my_pkpa.rotation_operations_enabled', true);
+        config()->set('my_pkpa.logbook_attachment_disk', 'local');
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
         $this->admin = $this->makeUser('admin06@test.local', ['admin'], 'CORE-ADMIN-06');
         $this->koordinator = $this->makeUser('koor06@test.local', ['koordinator_kp'], 'CORE-KOOR-06');

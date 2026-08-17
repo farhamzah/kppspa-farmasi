@@ -87,7 +87,7 @@ class PkpaPortfolioTemplateSeeder extends Seeder
             ],
             'integrity_pact' => [
                 'version' => 'v1',
-                'text' => 'Saya menyatakan portofolio PKPA ini disusun jujur, tidak memuat identitas langsung pasien, dan digunakan untuk keperluan akademik internal MY PSPA. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.',
+                'text' => 'Saya menyatakan portofolio PKPA ini disusun jujur, tidak memuat identitas langsung pasien, dan digunakan untuk keperluan akademik internal MY PKPA. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.',
             ],
         ]);
 
@@ -107,7 +107,7 @@ class PkpaPortfolioTemplateSeeder extends Seeder
                     'private_files' => in_array($sourceType, ['evidence_gallery', 'attachment_list'], true),
                 ],
                 'content_schema' => $this->schemaFor($sourceType),
-                'static_content' => $sourceType === 'static_content' ? 'Konten pola '.$title.' dikelola oleh Pembuat Portofolio MY PSPA.' : null,
+                'static_content' => $sourceType === 'static_content' ? 'Konten pola '.$title.' dikelola oleh Pembuat Portofolio MY PKPA.' : null,
             ]);
         }
     }

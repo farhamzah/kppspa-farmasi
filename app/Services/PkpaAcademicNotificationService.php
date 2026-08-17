@@ -17,10 +17,10 @@ class PkpaAcademicNotificationService
             ->flatMap(fn (string $type) => $this->recipientsFor($run, $type))
             ->unique(fn (array $recipient) => $recipient['type'].':'.$recipient['core_user_id'])
             ->each(function (array $recipient) use ($eventType, $entity) {
-                if (config('my_pspa.academic_database_notifications_enabled')) {
+                if (config('my_pkpa.academic_database_notifications_enabled')) {
                     $this->createDelivery($eventType, $entity, $recipient, 'database');
                 }
-                if (config('my_pspa.academic_email_notifications_enabled')) {
+                if (config('my_pkpa.academic_email_notifications_enabled')) {
                     $this->createDelivery($eventType, $entity, $recipient, 'mail');
                 }
             });

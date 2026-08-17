@@ -1,7 +1,7 @@
 @php
     $logo = asset('images/logo-fakultas-farmasi-ubp.png');
-    $heroImage = asset('images/my-pspa/hero-pkpa-pspa-v2.png');
-    $accountUrls = config('my_pspa.account_urls', []);
+    $heroImage = asset('images/my-pkpa/hero-pkpa-workspace-v2.png');
+    $accountUrls = config('my_pkpa.account_urls', []);
     $wahana = [
         ['Apotek', 'Pelayanan kefarmasian komunitas dan manajemen apotek.'],
         ['Puskesmas', 'Pelayanan primer, program kesehatan masyarakat, dan farmasi klinik dasar.'],
@@ -28,7 +28,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>MY PSPA - Sistem Informasi Program Studi Profesi Apoteker</title>
+    <title>MY PKPA - Sistem Informasi Praktik Kerja Profesi Apoteker</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     <style>
@@ -508,9 +508,9 @@
     <header class="navbar">
         <div class="container">
             <div class="nav-inner">
-                <a class="brand" href="#beranda" aria-label="Beranda MY PSPA">
+                <a class="brand" href="#beranda" aria-label="Beranda MY PKPA">
                     <span class="brand-logo"><img src="{{ $logo }}" alt="Logo Fakultas Farmasi UBP"></span>
-                    <span><strong>MY PSPA</strong><small>Farmasi UBP Karawang</small></span>
+                    <span><strong>MY PKPA</strong><small>Farmasi UBP Karawang</small></span>
                 </a>
                 <nav class="nav-links" aria-label="Navigasi landing">
                     <a class="is-active" href="#beranda">Beranda</a>
@@ -541,9 +541,9 @@
         <section class="hero">
             <div class="container hero-grid">
                 <section class="hero-panel" aria-labelledby="landing-title">
-                    <span class="eyebrow">{!! $icons['spark'] !!} Sistem Informasi Program Studi Profesi Apoteker</span>
-                    <h1 id="landing-title">MY PSPA <span class="accent">Portal PKPA UBP</span></h1>
-                    <p class="lead">Sistem terpadu untuk mengelola Program Studi Profesi Apoteker, mulai dari pembekalan, kesiapan tempat praktik, penempatan enam wahana, logbook, laporan, ujian, sampai nilai akhir.</p>
+                    <span class="eyebrow">{!! $icons['spark'] !!} Sistem Informasi Praktik Kerja Profesi Apoteker</span>
+                    <h1 id="landing-title">MY PKPA <span class="accent">Portal PKPA UBP</span></h1>
+                    <p class="lead">Sistem terpadu untuk mengelola Praktik Kerja Profesi Apoteker, mulai dari pembekalan, kesiapan tempat praktik, penempatan enam wahana, logbook, laporan, ujian, sampai nilai akhir.</p>
                     <div class="hero-actions">
                         <a class="btn btn-primary" href="{{ route('login') }}">{!! $icons['login'] !!}<span>Masuk ke Portal</span></a>
                         <a class="btn btn-secondary" href="#panduan">{!! $icons['book'] !!}<span>Lihat Panduan</span></a>
@@ -565,7 +565,7 @@
                     </div>
                 </section>
 
-                <aside class="login-card" aria-label="Login MY PSPA">
+                <aside class="login-card" aria-label="Login MY PKPA">
                     <div class="login-head">
                         <span class="icon-box">{!! $icons['lock'] !!}</span>
                         <div>
@@ -602,7 +602,7 @@
             </div>
 
             <div class="container">
-                <div class="glass-strip" aria-label="Nilai utama MY PSPA">
+                <div class="glass-strip" aria-label="Nilai utama MY PKPA">
                     <article class="feature-item"><span class="icon-box">{!! $icons['shield'] !!}</span><span><strong>Terhubung Core Farmasi</strong><span>Akun, password, status, dan peran mengikuti Core Farmasi.</span></span></article>
                     <article class="feature-item"><span class="icon-box">{!! $icons['calendar'] !!}</span><span><strong>Rotasi PKPA</strong><span>Jadwal dan penempatan dipantau per wahana.</span></span></article>
                     <article class="feature-item"><span class="icon-box">{!! $icons['doc'] !!}</span><span><strong>Logbook & Laporan</strong><span>Bukti kegiatan dan dokumen tersusun rapi.</span></span></article>
@@ -669,7 +669,7 @@
                     </div>
                     <div class="info-grid" style="grid-template-columns:1fr">
                         @foreach (['Pengumuman PKPA', 'Jadwal Pembekalan', 'Publikasi Penempatan', 'Informasi Mitra'] as $info)
-                            <article class="info-card"><strong>{{ $info }}</strong><span>Konten akan mengikuti pengelolaan publik MY PSPA.</span></article>
+                            <article class="info-card"><strong>{{ $info }}</strong><span>Konten akan mengikuti pengelolaan publik MY PKPA.</span></article>
                         @endforeach
                     </div>
                     <div class="core-links">
@@ -693,7 +693,7 @@
                     </div>
                 </div>
                 <div class="faq-grid">
-                    <article class="faq-card"><strong>Bagaimana cara login?</strong><span>Gunakan akun Core Farmasi yang sudah diberi akses aplikasi MY PSPA.</span></article>
+                    <article class="faq-card"><strong>Bagaimana cara login?</strong><span>Gunakan akun Core Farmasi yang sudah diberi akses aplikasi MY PKPA.</span></article>
                     <article class="faq-card"><strong>Siapa menentukan tempat praktik?</strong><span>Penempatan disusun oleh Koordinator PKPA, bukan sistem rebut kuota atau siapa cepat dia dapat.</span></article>
                     <article class="faq-card"><strong>Bagaimana jika peran belum muncul?</strong><span>Hubungi administrator Core Farmasi atau pengelola Program PKPA.</span></article>
                 </div>
@@ -705,7 +705,7 @@
         <div class="container footer-grid">
             <a class="brand" href="#beranda">
                 <span class="brand-logo"><img src="{{ $logo }}" alt="Logo Fakultas Farmasi UBP"></span>
-                <span><strong>MY PSPA</strong><small>Farmasi UBP Karawang</small></span>
+                <span><strong>MY PKPA</strong><small>Farmasi UBP Karawang</small></span>
             </a>
             <nav class="footer-links" aria-label="Quick links footer">
                 <a href="#beranda">Beranda</a>
@@ -714,7 +714,7 @@
                 <a href="{{ route('login') }}">Masuk Portal</a>
             </nav>
             <div>
-                <strong>Sistem Informasi Program Studi Profesi Apoteker</strong>
+                <strong>Sistem Informasi Praktik Kerja Profesi Apoteker</strong>
                 <p>Platform resmi pengelolaan PKPA Fakultas Farmasi UBP Karawang.</p>
             </div>
         </div>

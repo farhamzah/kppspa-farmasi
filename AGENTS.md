@@ -1,7 +1,7 @@
-# AGENTS.md - MY PSPA
+# AGENTS.md - MY PKPA
 
 ## 1. Nama Project
-MY PSPA - Sistem Informasi Program Studi Profesi Apoteker.
+MY PKPA - Sistem Informasi Praktik Kerja Profesi Apoteker.
 
 ## 2. Tujuan Aplikasi
 Aplikasi ini dibuat untuk mengelola proses Praktik Kerja Profesi Apoteker (PKPA) mulai dari program PKPA, kepesertaan, wahana, tempat praktik, rotasi, penempatan, pembimbing, logbook, laporan, ujian, penilaian, monitoring, rekap, dokumen, dan pengumuman.
@@ -55,7 +55,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 
 ## 11. Aturan Modul User dan Import
 - Akun, password, reset password, status akun, dan role assignment utama dikelola Core Farmasi.
-- MY PSPA hanya boleh menyimpan local identity reference/projection minimal seperti `core_user_id`, cache nama/email, status lokal teknis, dan waktu sinkron.
+- MY PKPA hanya boleh menyimpan local identity reference/projection minimal seperti `core_user_id`, cache nama/email, status lokal teknis, dan waktu sinkron.
 - Import lama yang membuat akun/password lokal dinonaktifkan pada Tahap 00; kebutuhan berikutnya harus menjadi import kepesertaan atau referensi pengguna Core.
 - Jangan membuat akun lokal tanpa `core_user_id`, kecuali akun teknis development yang terdokumentasi.
 - Profil akademik lokal boleh dipertahankan sementara untuk relasi legacy, tetapi identitas kunci harus diarahkan ke Core.
@@ -76,7 +76,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Mahasiswa hanya eligible untuk pemilihan tempat jika pendaftaran sudah `terverifikasi` dan semua dokumen wajib disetujui.
 
 ## 14. Aturan Penempatan PKPA
-- MY PSPA tidak memakai war, first come first served, waiting list aktif, atau pemilihan tempat oleh mahasiswa.
+- MY PKPA tidak memakai war, first come first served, waiting list aktif, atau pemilihan tempat oleh mahasiswa.
 - Penempatan dibuat oleh Koordinator PKPA.
 - Kode/tabel legacy pemilihan tempat dipertahankan sementara untuk migrasi, tetapi route aktif harus dikunci dengan feature flag.
 - Mahasiswa melihat hasil penempatan setelah dipublikasikan.
@@ -264,7 +264,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Publikasi jadwal, notifikasi, surat, logbook rotasi, presensi, laporan rotasi, nilai, dan perubahan setelah publikasi bukan scope Tahap 04.
 ### 14i. Aturan Dokumen dan Production Hardening PKPA
 
-- Dokumen PKPA adalah Dokumen Internal MY PSPA kecuali nomor, template, dan penandatangan sudah dikonfigurasi oleh pengelola.
+- Dokumen PKPA adalah Dokumen Internal MY PKPA kecuali nomor, template, dan penandatangan sudah dikonfigurasi oleh pengelola.
 - Jangan membuat kop, pejabat, nomor surat, tanda tangan, atau klaim dokumen resmi universitas secara palsu.
 - File dokumen dan file akademik harus disimpan di private disk dan diunduh melalui route authorized.
 - Published document tidak boleh ditimpa; gunakan versi baru, cancelled, atau superseded.

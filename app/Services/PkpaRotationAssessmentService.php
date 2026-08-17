@@ -55,7 +55,7 @@ class PkpaRotationAssessmentService
                     'rounding_mode_snapshot' => $scheme->rounding_mode,
                     'status' => 'in_progress',
                     'completion_status' => 'incomplete',
-                    'moderation_status' => config('my_pspa.assessment_moderation_enabled') ? 'pending' : 'not_required',
+                    'moderation_status' => config('my_pkpa.assessment_moderation_enabled') ? 'pending' : 'not_required',
                     'started_at' => now(),
                     'created_by_core_user_id' => $actor?->core_user_id,
                     'updated_by_core_user_id' => $actor?->core_user_id,
@@ -267,7 +267,7 @@ class PkpaRotationAssessmentService
 
     public function release(PkpaRotationGradeResult $result, ?User $actor): PkpaGradeRelease
     {
-        if (! config('my_pspa.grade_release_enabled') || ! $actor?->hasRole('koordinator_kp')) {
+        if (! config('my_pkpa.grade_release_enabled') || ! $actor?->hasRole('koordinator_kp')) {
             throw ValidationException::withMessages(['authorization' => 'Release nilai hanya oleh Koordinator PKPA.']);
         }
         if ($result->releases()->where('status', 'released')->exists()) {
