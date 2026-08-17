@@ -64,12 +64,12 @@ class StagingRehearsalCheckCommand extends Command
             $this->check('core_write_disabled', true, 'KP tidak boleh menulis ke database Core.'),
             $this->check('tu_runtime_bridge_closed', ! filled(config('services.tu_farmasi.endpoint')), 'Runtime endpoint TU harus tetap kosong sampai approval gate final.'),
             $this->check('safa_runtime_bridge_closed', ! filled(config('services.safa.endpoint')), 'Runtime endpoint SAFA harus tetap kosong sampai approval gate final.'),
-            $this->check('auth_mode_known', in_array(config('kp_auth.mode'), ['legacy', 'core_bridge', 'core_bridge_with_legacy_fallback'], true), 'KP_AUTH_MODE tidak dikenali.'),
+            $this->check('auth_mode_known', in_array(config('kp_auth.mode'), ['legacy', 'core_http', 'core_bridge', 'core_bridge_with_legacy_fallback'], true), 'KP_AUTH_MODE tidak dikenali.'),
             $this->check('master_data_read_mode_known', in_array(config('kp_master_data.read_mode'), ['legacy', 'core_preferred', 'core_only'], true), 'KP_MASTER_DATA_READ_MODE tidak dikenali.'),
             $this->check(
                 'master_data_core_bridge_aligned',
                 config('kp_auth.mode') === 'legacy' || config('kp_master_data.read_mode') !== 'legacy',
-                'Jika KP_AUTH_MODE memakai Core bridge, KP_MASTER_DATA_READ_MODE harus core_preferred atau core_only pada VPS staging.'
+                'Jika KP_AUTH_MODE memakai Core, KP_MASTER_DATA_READ_MODE harus core_preferred atau core_only pada VPS staging.'
             ),
             $this->check('vps_env_example_exists', File::exists(base_path('.env.vps.example')), '.env.vps.example wajib tersedia sebagai template aman VPS.'),
             $this->warning('app_debug_should_be_false_on_staging', config('app.debug') === false, 'Staging/UAT sebaiknya memakai APP_DEBUG=false untuk rehearsal production.'),

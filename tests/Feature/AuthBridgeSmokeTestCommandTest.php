@@ -51,7 +51,7 @@ class AuthBridgeSmokeTestCommandTest extends TestCase
 
         $this->artisan('kp:auth-mode')
             ->expectsOutputToContain('Current mode: legacy')
-            ->expectsOutputToContain('Allowed modes: legacy, core_bridge, core_bridge_with_legacy_fallback')
+            ->expectsOutputToContain('Allowed modes: legacy, core_http, core_bridge, core_bridge_with_legacy_fallback')
             ->assertSuccessful();
     }
 

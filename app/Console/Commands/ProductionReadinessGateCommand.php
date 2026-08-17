@@ -49,12 +49,12 @@ class ProductionReadinessGateCommand extends Command
             $this->check('tu_write_disabled', true, 'Write bridge TU belum boleh aktif sebelum approval gate final.'),
             $this->check('safa_write_disabled', true, 'Write bridge SAFA belum boleh aktif sebelum approval gate final.'),
             $this->check('sso_token_url_disabled', true, 'SSO/autologin/token URL tidak boleh aktif.'),
-            $this->check('auth_mode_known', in_array(config('kp_auth.mode'), ['legacy', 'core_bridge', 'core_bridge_with_legacy_fallback'], true), 'KP_AUTH_MODE tidak dikenali.'),
+            $this->check('auth_mode_known', in_array(config('kp_auth.mode'), ['legacy', 'core_http', 'core_bridge', 'core_bridge_with_legacy_fallback'], true), 'KP_AUTH_MODE tidak dikenali.'),
             $this->check('master_data_read_mode_known', in_array(config('kp_master_data.read_mode'), ['legacy', 'core_preferred', 'core_only'], true), 'KP_MASTER_DATA_READ_MODE tidak dikenali.'),
             $this->check(
                 'master_data_core_bridge_aligned',
                 config('kp_auth.mode') === 'legacy' || config('kp_master_data.read_mode') !== 'legacy',
-                'Jika KP_AUTH_MODE memakai Core bridge, KP_MASTER_DATA_READ_MODE harus core_preferred atau core_only sebelum production.'
+                'Jika KP_AUTH_MODE memakai Core, KP_MASTER_DATA_READ_MODE harus core_preferred atau core_only sebelum production.'
             ),
             $this->check('core_read_mode_known', in_array(config('core_farmasi.read_mode'), ['legacy', 'core_preferred', 'core_only'], true), 'KP_CORE_READ_MODE tidak dikenali.'),
             $this->check('core_http_ssl_verify', ! config('core_farmasi.enabled') || (bool) config('core_farmasi.verify_ssl'), 'KP_CORE_VERIFY_SSL harus true bila Core HTTP aktif.'),

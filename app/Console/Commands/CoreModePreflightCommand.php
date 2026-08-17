@@ -18,7 +18,7 @@ use Throwable;
 class CoreModePreflightCommand extends Command
 {
     protected $signature = 'kp:core-mode-preflight
-        {--auth-mode= : Requested auth mode: legacy, core_bridge, core_bridge_with_legacy_fallback}
+        {--auth-mode= : Requested auth mode: legacy, core_http, core_bridge, core_bridge_with_legacy_fallback}
         {--master-data-mode= : Requested master data read mode: legacy, core_preferred, core_only}
         {--email= : Optional email to inspect}
         {--show-samples : Show sample display data}
@@ -28,6 +28,7 @@ class CoreModePreflightCommand extends Command
 
     private array $allowedAuthModes = [
         'legacy',
+        'core_http',
         'core_bridge',
         'core_bridge_with_legacy_fallback',
     ];
@@ -87,7 +88,7 @@ class CoreModePreflightCommand extends Command
                 'core_users' => CoreUser::query()->count(),
                 'core_students' => DB::connection('core')->table('students')->count(),
                 'core_lecturers' => DB::connection('core')->table('lecturers')->count(),
-                'kp_app_accesses' => CoreUserAppAccess::query()->where('app_code', 'kp-farmasi')->where('is_active', true)->count(),
+                'kp_app_accesses' => CoreUserAppAccess::query()->where('app_code', $this->appCode())->where('is_active', true)->count(),
                 'legacy_users_mapped' => User::query()->whereNotNull('core_user_id')->count(),
                 'legacy_students_mapped' => Student::query()->whereNotNull('core_student_id')->count(),
                 'legacy_lecturers_mapped' => Lecturer::query()->whereNotNull('core_lecturer_id')->count(),
@@ -169,7 +170,7 @@ class CoreModePreflightCommand extends Command
             ->first();
         $roles = $admin?->roles->pluck('name')->values()->all() ?? [];
         $accesses = $admin?->appAccesses
-            ->where('app_code', 'kp-farmasi')
+            ->where('app_code', $this->appCode())
             ->where('is_active', true)
             ->pluck('role_slug')
             ->values()
@@ -247,7 +248,7 @@ class CoreModePreflightCommand extends Command
             ->first();
         $legacyUser = $coreUser ? User::query()->where('core_user_id', $coreUser->id)->first() : null;
         $hasKpAccess = $coreUser
-            ? $coreUser->appAccesses->where('app_code', 'kp-farmasi')->where('is_active', true)->isNotEmpty()
+            ? $coreUser->appAccesses->where('app_code', $this->appCode())->where('is_active', true)->isNotEmpty()
             : false;
 
         if (! $coreUser) {
@@ -263,7 +264,7 @@ class CoreModePreflightCommand extends Command
         }
 
         if ($coreUser && ! $hasKpAccess) {
-            $blockers[] = "Core user {$email} has no active kp-farmasi app access.";
+            $blockers[] = "Core user {$email} has no active {$this->appCode()} app access.";
         }
 
         if ($coreUser && ! $legacyUser) {
@@ -297,6 +298,11 @@ class CoreModePreflightCommand extends Command
             'core_lecturers' => $this->safeCount(DB::connection('core'), 'lecturers'),
             'core_user_app_accesses' => $this->safeCount(DB::connection('core'), 'user_app_accesses'),
         ];
+    }
+
+    private function appCode(): string
+    {
+        return (string) config('core_farmasi.app_code', 'kppspa-farmasi');
     }
 
     private function safeCount($connection, string $table): ?int

@@ -13,7 +13,7 @@ class AuthModeCommand extends Command
     public function handle(): int
     {
         $mode = config('kp_auth.mode', 'legacy');
-        $allowed = ['legacy', 'core_bridge', 'core_bridge_with_legacy_fallback'];
+        $allowed = ['legacy', 'core_http', 'core_bridge', 'core_bridge_with_legacy_fallback'];
 
         $this->info('KP auth mode');
         $this->line('Current mode: '.$mode);

@@ -31,7 +31,7 @@ class ProductionReadinessGateCommandTest extends TestCase
         config()->set('queue.default', 'database');
         config()->set('cache.default', 'array');
         config()->set('mail.default', 'smtp');
-        config()->set('kp_auth.mode', 'core_bridge');
+        config()->set('kp_auth.mode', 'core_http');
         config()->set('kp_master_data.read_mode', 'core_preferred');
         config()->set('core_farmasi.read_mode', 'core_preferred');
         config()->set('core_farmasi.enabled', true);
@@ -46,7 +46,7 @@ class ProductionReadinessGateCommandTest extends TestCase
             ->assertSuccessful();
     }
 
-    public function test_production_readiness_gate_blocks_core_bridge_with_legacy_master_data(): void
+    public function test_production_readiness_gate_blocks_core_auth_with_legacy_master_data(): void
     {
         config()->set('app.env', 'production');
         config()->set('app.debug', false);
@@ -56,7 +56,7 @@ class ProductionReadinessGateCommandTest extends TestCase
         config()->set('queue.default', 'database');
         config()->set('cache.default', 'array');
         config()->set('mail.default', 'smtp');
-        config()->set('kp_auth.mode', 'core_bridge_with_legacy_fallback');
+        config()->set('kp_auth.mode', 'core_http');
         config()->set('kp_master_data.read_mode', 'legacy');
         config()->set('core_farmasi.read_mode', 'legacy');
         config()->set('services.tu_farmasi.endpoint', null);
