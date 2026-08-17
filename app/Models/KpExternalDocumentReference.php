@@ -62,7 +62,7 @@ class KpExternalDocumentReference extends Model
     {
         static::creating(function (self $reference): void {
             $reference->uuid ??= (string) Str::uuid();
-            $reference->source_app ??= 'kp-farmasi';
+            $reference->source_app ??= (string) config('core_farmasi.app_code', 'kppspa-farmasi');
             $reference->external_app ??= 'tu-farmasi';
         });
     }

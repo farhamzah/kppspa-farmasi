@@ -26,7 +26,7 @@ class CoreFarmasiClientTest extends TestCase
         $this->assertNull($client->getCurrentLeadership(['position_type' => 'dekan']));
         $this->assertSame([
             'has_access' => false,
-            'app_code' => 'kp-farmasi',
+            'app_code' => 'kppspa-farmasi',
             'user_id' => 10,
             'roles' => [],
         ], $client->checkUserAppAccess(10));

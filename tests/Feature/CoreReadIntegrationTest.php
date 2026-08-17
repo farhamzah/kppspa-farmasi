@@ -70,7 +70,7 @@ class CoreReadIntegrationTest extends TestCase
 
         $this->assertNotNull($admin);
         $this->assertSame(['admin-kp'], $service->getUserRoles($admin->id)->pluck('name')->all());
-        $this->assertTrue($service->userHasAppAccess($admin->id, 'kp-farmasi', 'admin-kp'));
+        $this->assertTrue($service->userHasAppAccess($admin->id, 'kppspa-farmasi', 'admin-kp'));
         $this->assertSame('mahasiswa@sikp.test', $student?->user?->email);
         $this->assertSame('koordinator@sikp.test', $lecturer?->user?->email);
         $this->assertSame(4, $service->getKpUsersSummary()['users']);
@@ -190,9 +190,9 @@ class CoreReadIntegrationTest extends TestCase
         DB::connection('core')->table('lecturers')->insert(['id' => 1, 'user_id' => 3, 'lecturer_number' => '0012345601', 'name' => 'Koordinator', 'email' => 'koordinator@sikp.test', 'department_id' => 1, 'study_program_id' => 1, 'active' => true]);
 
         DB::connection('core')->table('user_app_accesses')->insert([
-            ['id' => 1, 'user_id' => 1, 'app_code' => 'kp-farmasi', 'role_slug' => 'admin-kp', 'is_active' => true],
-            ['id' => 2, 'user_id' => 2, 'app_code' => 'kp-farmasi', 'role_slug' => 'mahasiswa', 'is_active' => true],
-            ['id' => 3, 'user_id' => 4, 'app_code' => 'kp-farmasi', 'role_slug' => 'pembimbing-lapangan', 'is_active' => true],
+            ['id' => 1, 'user_id' => 1, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'admin-kp', 'is_active' => true],
+            ['id' => 2, 'user_id' => 2, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa', 'is_active' => true],
+            ['id' => 3, 'user_id' => 4, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'pembimbing-lapangan', 'is_active' => true],
         ]);
     }
 

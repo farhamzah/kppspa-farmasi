@@ -24,7 +24,7 @@ class KpCoreBridgeProvisioningService
         $query = CoreUser::query()
             ->whereHas('appAccesses', function ($query): void {
                 $query
-                    ->where('app_code', 'kp-farmasi')
+                    ->where('app_code', $this->appCode())
                     ->where('is_active', true);
             })
             ->whereNotNull('email')
@@ -162,7 +162,7 @@ class KpCoreBridgeProvisioningService
         }
 
         $coreAppAccessRoles = $coreUser->appAccesses
-            ->where('app_code', 'kp-farmasi')
+            ->where('app_code', $this->appCode())
             ->where('is_active', true)
             ->pluck('role_slug')
             ->filter()
@@ -182,7 +182,7 @@ class KpCoreBridgeProvisioningService
         $kpRoles = CoreRoleTranslator::coreRolesToKp($coreAccessRoles);
 
         if ($coreAppAccessRoles === []) {
-            $blockers[] = "Core user {$email} belum punya app access aktif untuk kp-farmasi.";
+            $blockers[] = "Core user {$email} belum punya app access aktif untuk {$this->appCode()}.";
         }
 
         if ($kpRoles === []) {
@@ -366,6 +366,11 @@ class KpCoreBridgeProvisioningService
     private function normalize(string $email): string
     {
         return strtolower(trim($email));
+    }
+
+    private function appCode(): string
+    {
+        return (string) config('core_farmasi.app_code', 'kppspa-farmasi');
     }
 
     private function coreStudentFor(int $coreUserId, string $email): ?object

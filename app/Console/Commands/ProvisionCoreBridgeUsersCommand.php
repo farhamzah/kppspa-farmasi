@@ -13,7 +13,7 @@ class ProvisionCoreBridgeUsersCommand extends Command
         {--confirm-execute : Confirm write to KP users/user_roles/profile tables}
         {--limit=0 : Limit number of Core users processed; 0 means no limit}';
 
-    protected $description = 'Bulk dry-run or sync KP legacy bridge users from Core kp-farmasi app access';
+    protected $description = 'Bulk dry-run or sync KP legacy bridge users from configured Core app access';
 
     public function handle(KpCoreBridgeProvisioningService $service): int
     {
@@ -35,7 +35,7 @@ class ProvisionCoreBridgeUsersCommand extends Command
 
         $this->info('KP Core bridge bulk provisioning');
         $this->line('Mode: '.$summary['mode']);
-        $this->line('Core users with active kp-farmasi access: '.$summary['total']);
+        $this->line('Core users with active '.config('core_farmasi.app_code', 'kppspa-farmasi').' access: '.$summary['total']);
 
         foreach ($summary['rows'] as $row) {
             if ($row['blockers'] !== []) {

@@ -204,7 +204,7 @@ class CoreBridgeSyncUiTest extends TestCase
             DB::connection('core')->table('user_app_accesses')->insert([
                 'id' => $id * 10 + $index,
                 'user_id' => $id,
-                'app_code' => 'kp-farmasi',
+                'app_code' => 'kppspa-farmasi',
                 'role_slug' => $roleSlug,
                 'is_active' => true,
             ]);

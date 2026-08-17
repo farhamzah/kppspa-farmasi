@@ -57,7 +57,7 @@ class AuthBridgeSmokeTestCommandTest extends TestCase
 
     public function test_smoke_test_fails_safely_when_user_missing(): void
     {
-        $this->artisan('kp:auth-bridge-smoke-test --mode=core_bridge --email=missing@sikp.test --no-write')
+        $this->artisan('kp:auth-bridge-smoke-test --mode=core_http --email=missing@sikp.test --no-write')
             ->expectsOutputToContain('Result: FAIL')
             ->assertFailed();
     }
@@ -68,7 +68,7 @@ class AuthBridgeSmokeTestCommandTest extends TestCase
         $beforeCoreUsers = DB::connection('core')->table('users')->count();
         $beforeLegacyUsers = DB::table('users')->count();
 
-        $this->artisan('kp:auth-bridge-smoke-test --mode=core_bridge --email=admin@sikp.test --no-write')
+        $this->artisan('kp:auth-bridge-smoke-test --mode=core_http --email=admin@sikp.test --no-write')
             ->expectsOutputToContain('Password provided: no')
             ->expectsOutputToContain('Password value stored in report: no')
             ->expectsOutputToContain('Result: PASS')
@@ -82,7 +82,7 @@ class AuthBridgeSmokeTestCommandTest extends TestCase
     {
         $this->seedBridgeUser();
 
-        $this->artisan('kp:auth-bridge-smoke-test --mode=core_bridge --email=admin@sikp.test --password=secret-pass --no-write --report-json')
+        $this->artisan('kp:auth-bridge-smoke-test --mode=core_http --email=admin@sikp.test --password=secret-pass --no-write --report-json')
             ->doesntExpectOutputToContain('secret-pass')
             ->expectsOutputToContain('Result: PASS')
             ->assertSuccessful();
@@ -161,7 +161,7 @@ class AuthBridgeSmokeTestCommandTest extends TestCase
         ]);
         DB::connection('core')->table('user_app_accesses')->insert([
             'user_id' => 1,
-            'app_code' => 'kp-farmasi',
+            'app_code' => 'kppspa-farmasi',
             'role_slug' => 'admin-kp',
             'is_active' => true,
         ]);

@@ -14,7 +14,7 @@ class ProvisionCoreBridgeUserCommand extends Command
         {--confirm-execute : Confirm write to KP users/user_roles}
         {--report-json : Save provisioning report as JSON}';
 
-    protected $description = 'Create or sync a KP legacy bridge user from a Core user and Core kp-farmasi app access';
+    protected $description = 'Create or sync a KP legacy bridge user from a Core user and configured Core app access';
 
     public function handle(KpCoreBridgeProvisioningService $service): int
     {

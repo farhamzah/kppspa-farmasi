@@ -111,7 +111,7 @@ class SyncCoreMappingCommand extends Command
 
         $report['counts']['core']['kp_app_accesses'] = DB::connection('core')
             ->table('user_app_accesses')
-            ->where('app_code', 'kp-farmasi')
+            ->where('app_code', $this->appCode())
             ->count();
     }
 
@@ -216,13 +216,13 @@ class SyncCoreMappingCommand extends Command
 
                 $hasAccess = DB::connection('core')->table('user_app_accesses')
                     ->where('user_id', $coreUser->id)
-                    ->where('app_code', 'kp-farmasi')
+                    ->where('app_code', $this->appCode())
                     ->where('role_slug', 'pembimbing-lapangan')
                     ->where('is_active', true)
                     ->exists();
 
                 if (! $hasAccess) {
-                    $this->mark($report, 'field_supervisors', 'blocker', $fieldSupervisor->id, $coreUser->id, "Core field supervisor {$email} lacks active kp-farmasi pembimbing-lapangan access.", ['email' => $email]);
+                    $this->mark($report, 'field_supervisors', 'blocker', $fieldSupervisor->id, $coreUser->id, "Core field supervisor {$email} lacks active {$this->appCode()} pembimbing-lapangan access.", ['email' => $email]);
                     return;
                 }
 
@@ -358,5 +358,10 @@ class SyncCoreMappingCommand extends Command
     private function normalize(mixed $value): string
     {
         return strtolower(trim((string) $value));
+    }
+
+    private function appCode(): string
+    {
+        return (string) config('core_farmasi.app_code', 'kppspa-farmasi');
     }
 }

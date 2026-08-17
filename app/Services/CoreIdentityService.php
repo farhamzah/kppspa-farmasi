@@ -58,10 +58,15 @@ class CoreIdentityService
             'users' => CoreUser::query()->count(),
             'students' => CoreStudent::query()->count(),
             'lecturers' => CoreLecturer::query()->count(),
-            'kp_app_accesses' => CoreUserAppAccess::query()->where('app_code', 'kp-farmasi')->count(),
-            'kp_active_app_accesses' => CoreUserAppAccess::query()->where('app_code', 'kp-farmasi')->where('is_active', true)->count(),
+            'kp_app_accesses' => CoreUserAppAccess::query()->where('app_code', $this->appCode())->count(),
+            'kp_active_app_accesses' => CoreUserAppAccess::query()->where('app_code', $this->appCode())->where('is_active', true)->count(),
             'local_field_supervisor_profiles' => DB::table('field_supervisors')->count(),
         ];
+    }
+
+    private function appCode(): string
+    {
+        return (string) config('core_farmasi.app_code', 'kppspa-farmasi');
     }
 
     private function normalize(?string $value): string

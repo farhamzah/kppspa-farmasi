@@ -25,7 +25,7 @@ class KpTuDocumentPayloadPreviewService
             ->values();
 
         return [
-            'source_app' => 'kp-farmasi',
+            'source_app' => $this->sourceApp(),
             'contract_version' => 'kp-tu-doc-v1',
             'dry_run' => true,
             'external_request_sent' => false,
@@ -80,7 +80,7 @@ class KpTuDocumentPayloadPreviewService
         $finalReport = $assignment->finalReport;
 
         return [
-            'source_app' => 'kp-farmasi',
+            'source_app' => $this->sourceApp(),
             'source_module' => $this->sourceModule($documentType),
             'source_reference_id' => $this->referenceId($assignment, $documentType),
             'document_type' => $documentType,
@@ -119,10 +119,10 @@ class KpTuDocumentPayloadPreviewService
                 'current_version' => $finalReport->current_version,
                 'latest_file_available' => (bool) $finalReport->latestFile,
                 'file_path_exposed' => false,
-                'download_owner_app' => 'kp-farmasi',
+                'download_owner_app' => $this->sourceApp(),
             ] : [
                 'file_path_exposed' => false,
-                'download_owner_app' => 'kp-farmasi',
+                'download_owner_app' => $this->sourceApp(),
             ],
             'validation_warnings' => $this->warnings($assignment, $documentType),
         ];
@@ -136,6 +136,11 @@ class KpTuDocumentPayloadPreviewService
             'final_report_archive' => 'final_report',
             default => 'assignment',
         };
+    }
+
+    private function sourceApp(): string
+    {
+        return (string) config('core_farmasi.app_code', 'kppspa-farmasi');
     }
 
     private function referenceId(KpAssignment $assignment, string $documentType): string

@@ -52,7 +52,7 @@ class CoreBridgeBulkProvisioningCommandTest extends TestCase
 
         $this->artisan('kp:provision-core-bridge-users')
             ->expectsOutputToContain('dry-run only; no writes performed')
-            ->expectsOutputToContain('Core users with active kp-farmasi access: 2')
+            ->expectsOutputToContain('Core users with active kppspa-farmasi access: 2')
             ->assertSuccessful();
 
         $this->assertDatabaseMissing('users', ['email' => 'student-one@sikp.test']);
@@ -77,7 +77,7 @@ class CoreBridgeBulkProvisioningCommandTest extends TestCase
         $this->coreUser(33, 'no-access@sikp.test', [], false);
 
         $this->artisan('kp:provision-core-bridge-users --execute --confirm-execute')
-            ->expectsOutputToContain('Core users with active kp-farmasi access: 2')
+            ->expectsOutputToContain('Core users with active kppspa-farmasi access: 2')
             ->expectsOutputToContain('student-one@sikp.test: created')
             ->expectsOutputToContain('lecturer-one@sikp.test: created')
             ->assertSuccessful();
@@ -148,7 +148,7 @@ class CoreBridgeBulkProvisioningCommandTest extends TestCase
             DB::connection('core')->table('user_app_accesses')->insert([
                 'id' => $id * 10 + $index,
                 'user_id' => $id,
-                'app_code' => 'kp-farmasi',
+                'app_code' => 'kppspa-farmasi',
                 'role_slug' => $roleSlug,
                 'is_active' => true,
             ]);

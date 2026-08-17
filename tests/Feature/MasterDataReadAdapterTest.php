@@ -373,9 +373,9 @@ class MasterDataReadAdapterTest extends TestCase
         DB::connection('core')->table('students')->insert(['id' => 10, 'user_id' => 1, 'student_number' => '221063120001', 'name' => 'Core Student', 'email' => 'student@sikp.test', 'study_program_id' => 1, 'active' => true]);
         DB::connection('core')->table('lecturers')->insert(['id' => 20, 'user_id' => 2, 'lecturer_number' => '0012345601', 'name' => 'Core Lecturer', 'front_title' => 'Dr.', 'back_title' => 'M.Farm.', 'display_name_with_title' => 'Dr. Core Lecturer, M.Farm.', 'formal_name' => 'Dr. Core Lecturer, M.Farm.', 'email' => 'lecturer@sikp.test', 'department_id' => 1, 'study_program_id' => 1, 'notes' => 'Clinical', 'active' => true]);
         DB::connection('core')->table('user_app_accesses')->insert([
-            ['id' => 1, 'user_id' => 30, 'app_code' => 'kp-farmasi', 'role_slug' => 'admin-kp', 'is_active' => true],
-            ['id' => 2, 'user_id' => 1, 'app_code' => 'kp-farmasi', 'role_slug' => 'mahasiswa', 'is_active' => true],
-            ['id' => 3, 'user_id' => 40, 'app_code' => 'kp-farmasi', 'role_slug' => 'pembimbing-lapangan', 'is_active' => true],
+            ['id' => 1, 'user_id' => 30, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'admin-kp', 'is_active' => true],
+            ['id' => 2, 'user_id' => 1, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa', 'is_active' => true],
+            ['id' => 3, 'user_id' => 40, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'pembimbing-lapangan', 'is_active' => true],
         ]);
 
         User::create(['name' => 'Admin KP', 'email' => 'admin@sikp.test', 'password' => 'hash', 'status' => 'active', 'core_user_id' => 30]);

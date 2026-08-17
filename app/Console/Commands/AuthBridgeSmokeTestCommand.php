@@ -13,7 +13,7 @@ use Throwable;
 class AuthBridgeSmokeTestCommand extends Command
 {
     protected $signature = 'kp:auth-bridge-smoke-test
-        {--mode=core_bridge : Mode to validate: core_bridge or core_bridge_with_legacy_fallback}
+        {--mode=core_http : Mode to validate: core_http, core_bridge, or core_bridge_with_legacy_fallback}
         {--email= : User email to validate}
         {--password= : Optional password to verify against Core hash}
         {--no-write : Run as read-only checklist}
@@ -43,7 +43,9 @@ class AuthBridgeSmokeTestCommand extends Command
         $warnings = [];
         $failures = [];
 
-        $this->check(in_array($mode, ['core_bridge', 'core_bridge_with_legacy_fallback'], true), 'requested_mode_allowed', $checks, $failures, "Unsupported smoke-test mode {$mode}.");
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
+
+        $this->check(in_array($mode, ['core_http', 'core_bridge', 'core_bridge_with_legacy_fallback'], true), 'requested_mode_allowed', $checks, $failures, "Unsupported smoke-test mode {$mode}.");
         $this->check($email !== '', 'email_provided', $checks, $failures, 'Missing --email.');
         $checks['current_auth_mode'] = config('kp_auth.mode', 'legacy');
         $checks['requested_mode'] = $mode;
@@ -75,13 +77,13 @@ class AuthBridgeSmokeTestCommand extends Command
                 }
 
                 $kpAccesses = $coreUser->appAccesses
-                    ->where('app_code', 'kp-farmasi')
+                    ->where('app_code', $appCode)
                     ->where('is_active', true)
                     ->pluck('role_slug')
                     ->values()
                     ->all();
                 $checks['core_kp_app_access_roles'] = $kpAccesses;
-                $this->check(count($kpAccesses) > 0, 'core_kp_app_access_active', $checks, $failures, "Core user {$email} has no active kp-farmasi app access.");
+                $this->check(count($kpAccesses) > 0, 'core_kp_app_access_active', $checks, $failures, "Core user {$email} has no active {$appCode} app access.");
 
                 $legacyUser = User::query()->where('core_user_id', $coreUser->id)->first();
                 $this->check((bool) $legacyUser, 'legacy_user_found', $checks, $failures, "Legacy KP user not found for Core user {$coreUser->id}.");

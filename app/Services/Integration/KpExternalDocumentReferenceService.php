@@ -12,7 +12,7 @@ class KpExternalDocumentReferenceService
         $documents = collect($payload['documents'] ?? []);
 
         return [
-            'source_app' => 'kp-farmasi',
+            'source_app' => $this->sourceApp(),
             'external_app' => 'tu-farmasi',
             'contract_version' => 'kp-tu-external-reference-v1',
             'dry_run' => true,
@@ -68,7 +68,7 @@ class KpExternalDocumentReferenceService
         [$referenceType, $referenceId] = $this->parseSourceReference((string) ($document['source_reference_id'] ?? 'unknown:missing'));
 
         return [
-            'source_app' => 'kp-farmasi',
+            'source_app' => $this->sourceApp(),
             'external_app' => 'tu-farmasi',
             'document_type' => (string) ($document['document_type'] ?? 'unknown'),
             'service_code' => (string) ($document['service_code'] ?? 'UNKNOWN'),
@@ -99,6 +99,11 @@ class KpExternalDocumentReferenceService
         [$type, $id] = array_pad(explode(':', $reference, 2), 2, 'missing');
 
         return [$type ?: 'unknown', $id ?: 'missing'];
+    }
+
+    private function sourceApp(): string
+    {
+        return (string) config('core_farmasi.app_code', 'kppspa-farmasi');
     }
 
     private function sanitizePayloadSnapshot(array $payload): array

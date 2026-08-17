@@ -30,12 +30,13 @@ class CoreHealthCheckCommand extends Command
         }
 
         $summary = $coreIdentity->getKpUsersSummary();
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
         $this->newLine();
         $this->line('Core counts:');
         $this->line('  users: '.$summary['users']);
         $this->line('  students: '.$summary['students']);
         $this->line('  lecturers: '.$summary['lecturers']);
-        $this->line('  user_app_accesses kp-farmasi: '.$summary['kp_app_accesses']);
+        $this->line("  user_app_accesses {$appCode}: ".$summary['kp_app_accesses']);
 
         $admin = $coreIdentity->findUserByEmail('admin@sikp.test');
         $adminRoles = $admin ? $coreIdentity->getUserRoles($admin->id)->pluck('name')->values()->all() : [];
@@ -50,7 +51,7 @@ class CoreHealthCheckCommand extends Command
         $lecturer = CoreLecturer::query()->with('user')->orderBy('id')->first();
         $fieldSupervisor = $coreIdentity->findUserByEmail('lapangan@sikp.test');
         $fieldSupervisorAccess = $fieldSupervisor
-            ? $coreIdentity->userHasAppAccess($fieldSupervisor->id, 'kp-farmasi', 'pembimbing-lapangan')
+            ? $coreIdentity->userHasAppAccess($fieldSupervisor->id, $appCode, 'pembimbing-lapangan')
             : false;
         $localFieldSupervisorProfile = DB::table('field_supervisors')
             ->join('users', 'users.id', '=', 'field_supervisors.user_id')
@@ -62,7 +63,7 @@ class CoreHealthCheckCommand extends Command
         $this->line('  student sample: '.($student ? $student->student_number.' / '.$student->user?->email : 'none'));
         $this->line('  lecturer sample: '.($lecturer ? $lecturer->lecturer_number.' / '.$lecturer->user?->email : 'none'));
         $this->line('  field supervisor Core identity: '.($fieldSupervisor ? 'yes' : 'no'));
-        $this->line('  field supervisor Core kp-farmasi pembimbing-lapangan access: '.($fieldSupervisorAccess ? 'yes' : 'no'));
+        $this->line("  field supervisor Core {$appCode} pembimbing-lapangan access: ".($fieldSupervisorAccess ? 'yes' : 'no'));
         $this->line('  field supervisor profile remains KP-local: '.($localFieldSupervisorProfile ? 'yes' : 'no'));
 
         if (! $admin || ! in_array('admin-kp', $adminRoles, true) || in_array('admin-core', $adminRoles, true) || ! $fieldSupervisor || ! $fieldSupervisorAccess || ! $localFieldSupervisorProfile) {

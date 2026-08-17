@@ -52,7 +52,7 @@ class KpExternalDocumentReferenceTest extends TestCase
         ]);
 
         $this->assertNotNull($reference->uuid);
-        $this->assertSame('kp-farmasi', $reference->source_app);
+        $this->assertSame('kppspa-farmasi', $reference->source_app);
         $this->assertSame('tu-farmasi', $reference->external_app);
         $this->assertTrue($reference->isSafeReferenceUrl());
     }
@@ -73,7 +73,7 @@ class KpExternalDocumentReferenceTest extends TestCase
                     'file_reference' => [
                         'file_path' => 'storage/app/private/laporan.pdf',
                         'token' => 'secret-token',
-                        'download_owner_app' => 'kp-farmasi',
+                        'download_owner_app' => 'kppspa-farmasi',
                     ],
                     'validation_warnings' => [],
                 ],

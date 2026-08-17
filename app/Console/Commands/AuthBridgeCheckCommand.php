@@ -38,8 +38,9 @@ class AuthBridgeCheckCommand extends Command
         }
 
         $coreRoles = $coreUser->roles->pluck('name')->values()->all();
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
         $kpAccesses = $coreUser->appAccesses
-            ->where('app_code', 'kp-farmasi')
+            ->where('app_code', $appCode)
             ->where('is_active', true)
             ->pluck('role_slug')
             ->values()
@@ -50,7 +51,7 @@ class AuthBridgeCheckCommand extends Command
         $this->line('  active: '.($coreUser->active ? 'yes' : 'no'));
         $this->line('  must_change_password: '.($coreUser->must_change_password ? 'yes' : 'no'));
         $this->line('  Core roles: '.($coreRoles ? implode(', ', $coreRoles) : 'none'));
-        $this->line('  kp-farmasi app access roles: '.($kpAccesses ? implode(', ', $kpAccesses) : 'none'));
+        $this->line("  {$appCode} app access roles: ".($kpAccesses ? implode(', ', $kpAccesses) : 'none'));
         $this->line('  has admin-core: '.(in_array('admin-core', $coreRoles, true) || in_array('admin-core', $kpAccesses, true) ? 'yes' : 'no'));
 
         $this->newLine();

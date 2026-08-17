@@ -9,7 +9,7 @@ use Throwable;
 class CoreFarmasiSmokeTestCommand extends Command
 {
     protected $signature = 'kp:core-smoke-test
-        {--user-id= : Core user ID to check kp-farmasi app access}
+        {--user-id= : Core user ID to check configured app access}
         {--position-type=dekan : Leadership position type to resolve}
         {--unit-type=faculty : Leadership unit type to resolve}
         {--unit-id= : Optional leadership unit ID}';

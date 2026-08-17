@@ -151,7 +151,7 @@ class KpCoreMappingSyncCommandTest extends TestCase
         ]);
 
         DB::connection('core')->table('user_app_accesses')->insert([
-            ['id' => 1, 'user_id' => 4, 'app_code' => 'kp-farmasi', 'role_slug' => 'pembimbing-lapangan', 'is_active' => true],
+            ['id' => 1, 'user_id' => 4, 'app_code' => 'kppspa-farmasi', 'role_slug' => 'pembimbing-lapangan', 'is_active' => true],
         ]);
     }
 

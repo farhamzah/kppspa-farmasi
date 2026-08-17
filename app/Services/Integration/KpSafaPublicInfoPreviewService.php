@@ -11,7 +11,7 @@ class KpSafaPublicInfoPreviewService
         $period = $this->period($periodId);
 
         return [
-            'source_app' => 'kp-farmasi',
+            'source_app' => (string) config('core_farmasi.app_code', 'kppspa-farmasi'),
             'contract_version' => 'kp-safa-public-v1',
             'dry_run' => true,
             'external_request_sent' => false,
@@ -95,7 +95,7 @@ class KpSafaPublicInfoPreviewService
                 'body' => $period->description ?: 'Informasi periode Kerja Praktek Farmasi tersedia di aplikasi KP Farmasi UBP.',
                 'type' => 'kp_period',
                 'period_name' => $period->name,
-                'safe_link_target' => 'kp-farmasi-login',
+                'safe_link_target' => 'kppspa-farmasi-login',
                 'token_url' => false,
             ],
         ];
