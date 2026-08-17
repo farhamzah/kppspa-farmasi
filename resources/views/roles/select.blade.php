@@ -5,12 +5,12 @@
     $user = auth()->user();
     $userDisplayName = user_display_name($user);
     $roleMeta = [
-        'admin' => ['label' => 'Admin', 'icon' => 'AD', 'tone' => 'from-slate-700 to-cyan-800', 'description' => 'Kelola user, data master, monitoring, rekap, dan export.'],
-        'koordinator_kp' => ['label' => 'Koordinator KP', 'icon' => 'KP', 'tone' => 'from-cyan-600 to-teal-600', 'description' => 'Kelola periode, kuota, pembimbing, sidang, dan nilai KP.'],
-        'mahasiswa' => ['label' => 'Mahasiswa', 'icon' => 'MH', 'tone' => 'from-emerald-500 to-teal-600', 'description' => 'Daftar KP, upload berkas, pilih tempat, logbook, laporan, sidang, dan nilai.'],
-        'pembimbing_dalam' => ['label' => 'Pembimbing Dalam', 'icon' => 'PD', 'tone' => 'from-sky-600 to-cyan-600', 'description' => 'Pantau mahasiswa bimbingan, laporan, sidang, dan penilaian.'],
-        'pembimbing_lapangan' => ['label' => 'Pembimbing Lapangan', 'icon' => 'PL', 'tone' => 'from-teal-600 to-emerald-600', 'description' => 'Validasi logbook dan nilai lapangan mahasiswa KP.'],
-        'penguji' => ['label' => 'Penguji', 'icon' => 'PG', 'tone' => 'from-indigo-600 to-sky-600', 'description' => 'Lihat jadwal sidang dan input nilai penguji.'],
+        'admin' => ['label' => 'Admin', 'icon' => 'AD', 'tone' => 'from-slate-700 to-cyan-800', 'description' => 'Kelola pengguna, data master, pemantauan, rekap, dan ekspor PKPA.'],
+        'koordinator_kp' => ['label' => 'Koordinator PKPA', 'icon' => 'KP', 'tone' => 'from-cyan-600 to-teal-600', 'description' => 'Kelola program, wahana, peserta, pembimbing, penempatan, rotasi, dan nilai PKPA.'],
+        'mahasiswa' => ['label' => 'Mahasiswa', 'icon' => 'MH', 'tone' => 'from-emerald-500 to-teal-600', 'description' => 'Ikuti pendaftaran PKPA, unggah berkas, lihat penempatan, isi logbook, laporan, portofolio, dan nilai.'],
+        'pembimbing_dalam' => ['label' => 'Pembimbing Dalam', 'icon' => 'PD', 'tone' => 'from-sky-600 to-cyan-600', 'description' => 'Pantau mahasiswa bimbingan, logbook, akademik rotasi, laporan, portofolio, dan penilaian PKPA.'],
+        'pembimbing_lapangan' => ['label' => 'Pembimbing Lapangan', 'icon' => 'PL', 'tone' => 'from-teal-600 to-emerald-600', 'description' => 'Validasi presensi, logbook, capaian kegiatan, laporan, portofolio, dan nilai lapangan PKPA.'],
+        'penguji' => ['label' => 'Penguji', 'icon' => 'PG', 'tone' => 'from-indigo-600 to-sky-600', 'description' => 'Lihat jadwal ujian dan isi penilaian penguji PKPA.'],
     ];
 @endphp
 
@@ -63,7 +63,7 @@
                 @else
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         @foreach($roles as $role)
-                            @php($meta = $roleMeta[$role->name] ?? ['label' => $role->label, 'icon' => strtoupper(substr($role->label, 0, 2)), 'tone' => 'from-cyan-600 to-teal-600', 'description' => $role->description ?: 'Akses aplikasi SI-KP Farmasi UBP.'])
+                            @php($meta = $roleMeta[$role->name] ?? ['label' => $role->label, 'icon' => strtoupper(substr($role->label, 0, 2)), 'tone' => 'from-cyan-600 to-teal-600', 'description' => $role->description ?: 'Akses aplikasi MY PSPA Farmasi UBP.'])
                             <form method="POST" action="{{ route('role.set', $role) }}" class="group flex min-h-[250px] flex-col rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-cyan-300 hover:shadow-xl hover:shadow-cyan-900/10">
                                 @csrf
                                 <div class="flex items-start gap-4">

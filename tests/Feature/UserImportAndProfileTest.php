@@ -224,10 +224,10 @@ class UserImportAndProfileTest extends TestCase
             ->get('/pilih-role')
             ->assertOk()
             ->assertSee('Pilih akses untuk melanjutkan')
-            ->assertSee('Koordinator KP')
+            ->assertSee('Koordinator PKPA')
             ->assertSee('Pembimbing Dalam')
-            ->assertSee('Kelola periode, kuota, pembimbing, sidang, dan nilai KP.')
-            ->assertSee('Pantau mahasiswa bimbingan, laporan, sidang, dan penilaian.');
+            ->assertSee('Kelola program, wahana, peserta, pembimbing, penempatan, rotasi, dan nilai PKPA.')
+            ->assertSee('Pantau mahasiswa bimbingan, logbook, akademik rotasi, laporan, portofolio, dan penilaian PKPA.');
     }
 
     public function test_admin_can_open_import_page(): void
