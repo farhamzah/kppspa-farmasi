@@ -164,6 +164,79 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.student_number', '231001');
     }
 
+    public function test_directory_search_uses_nested_user_id_for_access_checks(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/lecturers')) {
+                return Http::response([
+                    'data' => [[
+                        'id' => 10,
+                        'user_id' => 10,
+                        'name' => 'Profil Dosen',
+                        'user' => [
+                            'id' => 2,
+                            'name' => 'Farhamzah',
+                            'email' => 'farhamzah@ubpkarawang.ac.id',
+                            'active' => true,
+                            'roles' => [['slug' => 'pembimbing_dalam']],
+                        ],
+                    ]],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response([
+                    'data' => [[
+                        'id' => 30,
+                        'user_id' => 30,
+                        'student_number' => '231001',
+                        'name' => 'Profil Mahasiswa',
+                        'user' => [
+                            'id' => 7,
+                            'name' => 'Andi Farmasi',
+                            'email' => 'andi@ubpkarawang.ac.id',
+                            'active' => true,
+                            'roles' => [['slug' => 'mahasiswa']],
+                        ],
+                    ]],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/2/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing-dalam']]], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/7/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/10/access') || str_contains($url, '/internal/apps/kppspa-farmasi/users/30/access')) {
+                return Http::response(['has_access' => false, 'roles' => []], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.lecturers', ['q' => 'farhamzah']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '2')
+            ->assertJsonPath('data.0.name', 'Farhamzah');
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students', ['q' => 'andi']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '7')
+            ->assertJsonPath('data.0.name', 'Andi Farmasi')
+            ->assertJsonPath('data.0.student_number', '231001');
+    }
+
     public function test_non_management_role_cannot_access_core_directory_search(): void
     {
         $student = $this->makeUser('student-directory@test.local', ['mahasiswa'], 'core-student-directory');

@@ -13,6 +13,8 @@
 @php
     $pickerId = 'core-picker-'.md5($fieldName.'|'.$searchUrl.'|'.$placeholder);
     $encodedExtraFields = json_encode($extraFields, JSON_THROW_ON_ERROR);
+    $displayFieldName = $fieldName.'_display';
+    $resolvedDisplayValue = old($displayFieldName, $displayValue ?? $value);
 @endphp
 
 <div
@@ -20,16 +22,18 @@
     data-picker-id="{{ $pickerId }}"
     data-search-url="{{ $searchUrl }}"
     data-hidden-name="{{ $fieldName }}"
+    data-display-name="{{ $displayFieldName }}"
     data-required="{{ $required ? 'true' : 'false' }}"
     data-extra-fields='{{ $encodedExtraFields }}'
 >
     <label for="{{ $pickerId }}-search" class="text-xs font-black uppercase tracking-widest text-slate-500">{{ $fieldLabel }}</label>
     <input type="hidden" name="{{ $fieldName }}" value="{{ $value }}">
+    <input type="hidden" name="{{ $displayFieldName }}" value="{{ $resolvedDisplayValue }}">
     <div class="relative mt-1">
         <input
             id="{{ $pickerId }}-search"
             type="text"
-            value="{{ $displayValue ?? $value }}"
+            value="{{ $resolvedDisplayValue }}"
             placeholder="{{ $placeholder }}"
             autocomplete="off"
             class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
@@ -74,8 +78,10 @@
                 pickers.forEach((root) => {
                     const searchUrl = root.dataset.searchUrl;
                     const hiddenName = root.dataset.hiddenName;
+                    const displayName = root.dataset.displayName;
                     const required = root.dataset.required === 'true';
                     const hiddenInput = root.querySelector(`input[type="hidden"][name="${hiddenName}"]`);
+                    const hiddenDisplayInput = root.querySelector(`input[type="hidden"][name="${displayName}"]`);
                     const searchInput = root.querySelector('input[type="text"]');
                     const resultsBox = root.querySelector('[data-results]');
                     const extraFields = JSON.parse(root.dataset.extraFields || '{}');
@@ -98,6 +104,9 @@
                     const selectItem = (item) => {
                         hiddenInput.value = item.core_user_id ?? '';
                         searchInput.value = [item.name, item.email].filter(Boolean).join(' - ') || item.core_user_id || '';
+                        if (hiddenDisplayInput) {
+                            hiddenDisplayInput.value = searchInput.value;
+                        }
                         setExtraFields(item);
                         hideResults();
                     };
@@ -175,6 +184,9 @@
                     searchInput.addEventListener('focus', () => fetchResults(searchInput.value));
                     searchInput.addEventListener('input', () => {
                         hiddenInput.value = '';
+                        if (hiddenDisplayInput) {
+                            hiddenDisplayInput.value = searchInput.value;
+                        }
                         setExtraFields(null);
                         fetchResults(searchInput.value);
                     });

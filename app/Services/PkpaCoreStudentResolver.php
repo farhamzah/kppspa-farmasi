@@ -64,16 +64,34 @@ class PkpaCoreStudentResolver
         $roles = $student['roles'] ?? $user['roles'] ?? [];
 
         return [
-            'core_user_id' => (string) ($student['core_user_id'] ?? $student['user_id'] ?? $student['id'] ?? $user['id'] ?? ''),
+            'core_user_id' => $this->extractCoreUserId($student, $user),
             'student_number' => $this->studentNumber($student),
-            'name' => $student['name'] ?? $student['full_name'] ?? $student['student_name'] ?? $user['name'] ?? null,
-            'email' => $student['email'] ?? $user['email'] ?? null,
+            'name' => $user['name'] ?? $student['name'] ?? $student['full_name'] ?? $student['student_name'] ?? null,
+            'email' => $user['email'] ?? $student['email'] ?? null,
             'study_program' => $student['study_program'] ?? $student['study_program_name'] ?? null,
             'cohort' => $student['cohort'] ?? $student['cohort_year'] ?? $student['angkatan'] ?? null,
             'academic_status' => $student['academic_status'] ?? $student['student_status'] ?? null,
             'account_status' => (($student['active'] ?? $user['active'] ?? true) === true) ? 'active' : 'inactive',
             'roles' => is_array($roles) ? $roles : [],
         ];
+    }
+
+    private function extractCoreUserId(array $student, array $user): string
+    {
+        foreach ([
+            $student['core_user_id'] ?? null,
+            $user['core_user_id'] ?? null,
+            $user['id'] ?? null,
+            $user['user_id'] ?? null,
+            $student['user_id'] ?? null,
+            $student['id'] ?? null,
+        ] as $candidate) {
+            if (filled($candidate)) {
+                return (string) $candidate;
+            }
+        }
+
+        return '';
     }
 
     private function studentNumber(array $student): ?string

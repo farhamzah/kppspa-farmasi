@@ -72,15 +72,33 @@ class PkpaSupervisorCoreResolver
         $roles = $person['roles'] ?? $user['roles'] ?? [];
 
         return [
-            'core_user_id' => (string) ($person['core_user_id'] ?? $person['user_id'] ?? $person['id'] ?? $user['id'] ?? ''),
-            'name' => $person['name'] ?? $person['full_name'] ?? $person['lecturer_name'] ?? $user['name'] ?? null,
-            'email' => $person['email'] ?? $user['email'] ?? null,
+            'core_user_id' => $this->extractCoreUserId($person, $user),
+            'name' => $user['name'] ?? $person['name'] ?? $person['full_name'] ?? $person['lecturer_name'] ?? null,
+            'email' => $user['email'] ?? $person['email'] ?? null,
             'lecturer_id' => $person['nidn'] ?? $person['nidn_nidk'] ?? $person['nidk'] ?? $person['lecturer_id'] ?? $person['employee_number'] ?? null,
             'professional_id' => $person['professional_id'] ?? $person['license_number'] ?? $person['str_number'] ?? $person['employee_number'] ?? null,
             'account_status' => (($person['active'] ?? $user['active'] ?? true) === true) ? 'active' : 'inactive',
             'roles' => is_array($roles) ? $roles : [],
             'role_snapshot' => $this->roleSnapshot(is_array($roles) ? $roles : []),
         ];
+    }
+
+    private function extractCoreUserId(array $person, array $user): string
+    {
+        foreach ([
+            $person['core_user_id'] ?? null,
+            $user['core_user_id'] ?? null,
+            $user['id'] ?? null,
+            $user['user_id'] ?? null,
+            $person['user_id'] ?? null,
+            $person['id'] ?? null,
+        ] as $candidate) {
+            if (filled($candidate)) {
+                return (string) $candidate;
+            }
+        }
+
+        return '';
     }
 
     private function hasRole(array $person, array $allowed): bool
