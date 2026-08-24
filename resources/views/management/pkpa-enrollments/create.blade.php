@@ -21,6 +21,7 @@
                         :value="old('core_user_id')"
                         :extra-fields="['student_number' => 'student_number']"
                         :query-fields="['program_id' => 'pkpa_program_id']"
+                        :required-context-fields="['program PKPA' => 'pkpa_program_id']"
                     />
                 </div>
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">NPM / NIM</label><input name="student_number" value="{{ old('student_number') }}" readonly class="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700"></div>

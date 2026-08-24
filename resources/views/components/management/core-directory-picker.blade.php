@@ -9,12 +9,14 @@
     'displayValue' => null,
     'extraFields' => [],
     'queryFields' => [],
+    'requiredContextFields' => [],
 ])
 
 @php
     $pickerId = 'core-picker-'.md5($fieldName.'|'.$searchUrl.'|'.$placeholder);
     $encodedExtraFields = json_encode($extraFields, JSON_THROW_ON_ERROR);
     $encodedQueryFields = json_encode($queryFields, JSON_THROW_ON_ERROR);
+    $encodedRequiredContextFields = json_encode($requiredContextFields, JSON_THROW_ON_ERROR);
     $displayFieldName = $fieldName.'_display';
     $resolvedDisplayValue = old($displayFieldName, $displayValue ?? $value);
 @endphp
@@ -28,6 +30,7 @@
     data-required="{{ $required ? 'true' : 'false' }}"
     data-extra-fields='{{ $encodedExtraFields }}'
     data-query-fields='{{ $encodedQueryFields }}'
+    data-required-context-fields='{{ $encodedRequiredContextFields }}'
 >
     <label for="{{ $pickerId }}-search" class="text-xs font-black uppercase tracking-widest text-slate-500">{{ $fieldLabel }}</label>
     <input type="hidden" name="{{ $fieldName }}" value="{{ $value }}">
@@ -89,6 +92,7 @@
                     const resultsBox = root.querySelector('[data-results]');
                     const extraFields = JSON.parse(root.dataset.extraFields || '{}');
                     const queryFields = JSON.parse(root.dataset.queryFields || '{}');
+                    const requiredContextFields = JSON.parse(root.dataset.requiredContextFields || '{}');
                     let requestCounter = 0;
                     let cachedItems = [];
 
@@ -164,7 +168,25 @@
                         }).slice(0, 10);
                     };
 
+                    const missingContextLabels = () => {
+                        return Object.entries(requiredContextFields)
+                            .filter(([, fieldName]) => {
+                                const target = root.closest('form')?.querySelector(`[name="${fieldName}"]`);
+                                const value = target?.value?.trim?.() ?? target?.value ?? '';
+
+                                return value === '';
+                            })
+                            .map(([label]) => label);
+                    };
+
                     const fetchResults = debounce(async (query) => {
+                        const missingLabels = missingContextLabels();
+                        if (missingLabels.length) {
+                            resultsBox.innerHTML = `<div class="rounded-xl px-3 py-2 text-sm text-slate-500">Pilih ${escapeHtml(missingLabels.join(', '))} terlebih dahulu.</div>`;
+                            resultsBox.classList.remove('hidden');
+                            return;
+                        }
+
                         requestCounter += 1;
                         const currentRequest = requestCounter;
                         const params = new URLSearchParams();
