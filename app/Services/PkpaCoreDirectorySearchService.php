@@ -84,15 +84,16 @@ class PkpaCoreDirectorySearchService
                     return null;
                 }
 
+                $access = $this->coreClient->checkUserAppAccess($person['core_user_id']);
+                if (($access['has_access'] ?? false) !== true) {
+                    return null;
+                }
+
                 $allowedRoles = $type === 'internal'
                     ? ['pembimbing_dalam', 'dosen', 'lecturer', 'academic', 'faculty']
                     : ['pembimbing_lapangan', 'field_supervisor', 'preseptor', 'preceptor'];
 
-                if (! $this->personHasRole($person, $allowedRoles)) {
-                    return null;
-                }
-
-                if (! $this->hasAccess($person['core_user_id'])) {
+                if (! $this->personHasRole($person, $allowedRoles) && ! $this->accessHasRole($access, $type)) {
                     return null;
                 }
 
@@ -123,19 +124,32 @@ class PkpaCoreDirectorySearchService
 
     private function personHasRole(array $person, array $allowedRoles): bool
     {
-        return collect($person['roles'] ?? [])
-            ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? $role['code'] ?? null) : $role)
-            ->filter()
-            ->map(fn ($role) => str($role)->lower()->replace(['-', ' '], '_')->toString())
+        return $this->normalizeRoles($person['roles'] ?? [])
             ->contains(fn ($role) => in_array($role, $allowedRoles, true));
     }
 
     private function studentHasRole(array $student): bool
     {
-        return collect($student['roles'] ?? [])
+        return $this->normalizeRoles($student['roles'] ?? [])
+            ->contains(fn ($role) => in_array($role, ['mahasiswa', 'student'], true));
+    }
+
+    private function accessHasRole(array $access, string $type): bool
+    {
+        $allowedRoles = $type === 'internal'
+            ? ['pembimbing_dalam', 'koordinator_kp', 'admin_kp', 'admin_kppspa']
+            : ['pembimbing_lapangan'];
+
+        return $this->normalizeRoles($access['roles'] ?? [])
+            ->contains(fn ($role) => in_array($role, $allowedRoles, true));
+    }
+
+    private function normalizeRoles(array $roles): Collection
+    {
+        return collect($roles)
             ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? $role['code'] ?? null) : $role)
             ->filter()
             ->map(fn ($role) => str($role)->lower()->replace(['-', ' '], '_')->toString())
-            ->contains(fn ($role) => in_array($role, ['mahasiswa', 'student'], true));
+            ->values();
     }
 }

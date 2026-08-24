@@ -44,16 +44,17 @@ class CoreDirectorySearchControllerTest extends TestCase
                         $this->lecturer('CORE-DOSEN-INACTIVE', 'Dosen Nonaktif', ['pembimbing_dalam'], false),
                         $this->lecturer('CORE-DOSEN-NOACCESS', 'Dosen Tanpa Akses', ['pembimbing_dalam']),
                         $this->lecturer('CORE-DOSEN-WRONGROLE', 'Dosen Salah Role', ['mahasiswa']),
+                        $this->lecturer('CORE-DOSEN-APPROLE', 'Dosen Dari Role App', []),
                     ],
                 ], 200);
             }
 
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DOSEN-OK/access')) {
-                return Http::response(['has_access' => true], 200);
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing-dalam']]], 200);
             }
 
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DOSEN-INACTIVE/access')) {
-                return Http::response(['has_access' => true], 200);
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing-dalam']]], 200);
             }
 
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DOSEN-NOACCESS/access')) {
@@ -61,7 +62,11 @@ class CoreDirectorySearchControllerTest extends TestCase
             }
 
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DOSEN-WRONGROLE/access')) {
-                return Http::response(['has_access' => true], 200);
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DOSEN-APPROLE/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing-dalam']]], 200);
             }
 
             return Http::response(null, 404);
@@ -71,9 +76,9 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->getJson(route('management.core-directory.lecturers', ['q' => 'dosen']))
             ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.core_user_id', 'CORE-DOSEN-OK')
-            ->assertJsonPath('data.0.name', 'Dosen Aktif');
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment(['core_user_id' => 'CORE-DOSEN-OK', 'name' => 'Dosen Aktif'])
+            ->assertJsonFragment(['core_user_id' => 'CORE-DOSEN-APPROLE', 'name' => 'Dosen Dari Role App']);
     }
 
     public function test_field_supervisor_directory_only_returns_active_users_with_access(): void
