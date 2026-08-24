@@ -90,6 +90,7 @@
                     const extraFields = JSON.parse(root.dataset.extraFields || '{}');
                     const queryFields = JSON.parse(root.dataset.queryFields || '{}');
                     let requestCounter = 0;
+                    let cachedItems = [];
 
                     const setExtraFields = (item) => {
                         Object.entries(extraFields).forEach(([fieldName, sourceKey]) => {
@@ -143,6 +144,26 @@
                         });
                     };
 
+                    const filterCachedItems = (query) => {
+                        const keyword = (query || '').trim().toLowerCase();
+                        if (keyword === '') {
+                            return cachedItems.slice(0, 10);
+                        }
+
+                        return cachedItems.filter((item) => {
+                            const haystacks = [
+                                item.name,
+                                item.label,
+                                item.email,
+                                item.student_number,
+                                item.identifier,
+                                item.core_user_id,
+                            ].filter(Boolean).map((value) => String(value).toLowerCase());
+
+                            return haystacks.some((value) => value.includes(keyword));
+                        }).slice(0, 10);
+                    };
+
                     const fetchResults = debounce(async (query) => {
                         requestCounter += 1;
                         const currentRequest = requestCounter;
@@ -181,9 +202,23 @@
                                 return;
                             }
 
-                            renderResults(Array.isArray(payload.data) ? payload.data : []);
+                            const items = Array.isArray(payload.data) ? payload.data : [];
+                            if (items.length) {
+                                cachedItems = items;
+                                renderResults(items);
+                                return;
+                            }
+
+                            const fallbackItems = filterCachedItems(query);
+                            renderResults(fallbackItems);
                         } catch (error) {
                             if (currentRequest !== requestCounter) {
+                                return;
+                            }
+
+                            const fallbackItems = filterCachedItems(query);
+                            if (fallbackItems.length) {
+                                renderResults(fallbackItems);
                                 return;
                             }
 
