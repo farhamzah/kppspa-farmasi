@@ -113,7 +113,7 @@
 
                     const renderResults = (items) => {
                         if (!items.length) {
-                            resultsBox.innerHTML = '<div class="rounded-xl px-3 py-2 text-sm text-slate-500">Data tidak ditemukan di Core atau belum punya akses MY PKPA.</div>';
+                            resultsBox.innerHTML = '<div class="rounded-xl px-3 py-2 text-sm text-slate-500">Data tidak ditemukan di Core.</div>';
                             resultsBox.classList.remove('hidden');
                             return;
                         }

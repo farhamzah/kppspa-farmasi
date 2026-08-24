@@ -213,6 +213,48 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.student_number', '231001');
     }
 
+    public function test_student_directory_can_show_initial_user_list_without_query(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [
+                        [
+                            'id' => 17,
+                            'name' => 'Siti Farmasi',
+                            'email' => 'siti@ubpkarawang.ac.id',
+                            'identity_type' => 'student',
+                            'identity_number' => '231010',
+                            'active' => true,
+                            'roles' => ['mahasiswa'],
+                        ],
+                    ],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 1, 'has_more' => false],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students'))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '17')
+            ->assertJsonPath('data.0.name', 'Siti Farmasi')
+            ->assertJsonPath('data.0.student_number', '231010');
+    }
+
     public function test_directory_search_uses_nested_user_id_for_access_checks(): void
     {
         Http::fake(function ($request) {

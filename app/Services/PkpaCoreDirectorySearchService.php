@@ -53,7 +53,7 @@ class PkpaCoreDirectorySearchService
     {
         $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? []);
 
-        if ($items->isEmpty() && filled($query)) {
+        if ($items->isEmpty()) {
             $items = collect($this->coreClient->searchUsers($this->buildParams($query, max($limit * 2, 10)))['data'] ?? []);
         }
 
