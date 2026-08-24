@@ -55,9 +55,6 @@ class PkpaCoreStudentResolver
         }
 
         $access = $this->coreClient->checkUserAppAccess($normalized['core_user_id']);
-        if (($access['has_access'] ?? false) !== true) {
-            return ['ok' => false, 'reason' => 'app_access_denied', 'message' => 'Mahasiswa belum memiliki app access MY PKPA.', 'student' => $normalized];
-        }
 
         return ['ok' => true, 'student' => $normalized + ['app_access' => $access]];
     }

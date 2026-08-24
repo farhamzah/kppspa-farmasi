@@ -61,7 +61,6 @@ class PkpaCoreDirectorySearchService
             ->map(fn ($student) => $this->studentResolver->normalizeStudent((array) $student))
             ->filter(fn (array $student) => $student['account_status'] === 'active')
             ->filter(fn (array $student) => $this->studentHasRole($student))
-            ->filter(fn (array $student) => $this->hasAccess($student['core_user_id']))
             ->unique('core_user_id')
             ->take($limit)
             ->map(fn (array $student) => [

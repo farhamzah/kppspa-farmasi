@@ -120,7 +120,7 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.name', 'Preseptor Aktif');
     }
 
-    public function test_student_directory_only_returns_active_students_with_access(): void
+    public function test_student_directory_returns_active_students_with_student_role(): void
     {
         Http::fake(function ($request) {
             $url = $request->url();
@@ -159,9 +159,10 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->getJson(route('management.core-directory.students', ['q' => 'mahasiswa']))
             ->assertOk()
-            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.core_user_id', 'CORE-MHS-OK')
-            ->assertJsonPath('data.0.student_number', '231001');
+            ->assertJsonPath('data.0.student_number', '231001')
+            ->assertJsonFragment(['core_user_id' => 'CORE-MHS-NOACCESS', 'name' => 'Mahasiswa Tanpa Akses']);
     }
 
     public function test_student_directory_falls_back_to_users_when_student_directory_empty(): void
