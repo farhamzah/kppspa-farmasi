@@ -53,6 +53,10 @@ class PkpaCoreDirectorySearchService
     {
         $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? []);
 
+        if ($items->isEmpty() && filled($query)) {
+            $items = collect($this->coreClient->searchUsers($this->buildParams($query, max($limit * 2, 10)))['data'] ?? []);
+        }
+
         return $items
             ->map(fn ($student) => $this->studentResolver->normalizeStudent((array) $student))
             ->filter(fn (array $student) => $student['account_status'] === 'active')

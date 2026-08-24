@@ -164,6 +164,54 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.student_number', '231001');
     }
 
+    public function test_student_directory_falls_back_to_users_when_student_directory_empty(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [
+                        [
+                            'id' => 7,
+                            'name' => 'Andi Farmasi',
+                            'email' => 'andi@ubpkarawang.ac.id',
+                            'identity_type' => 'student',
+                            'identity_number' => '231001',
+                            'active' => true,
+                            'roles' => ['mahasiswa'],
+                            'app_accesses' => [
+                                ['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa'],
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/7/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students', ['q' => 'andi']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '7')
+            ->assertJsonPath('data.0.name', 'Andi Farmasi')
+            ->assertJsonPath('data.0.student_number', '231001');
+    }
+
     public function test_directory_search_uses_nested_user_id_for_access_checks(): void
     {
         Http::fake(function ($request) {

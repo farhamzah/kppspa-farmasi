@@ -61,7 +61,7 @@ class PkpaCoreStudentResolver
     public function normalizeStudent(array $student): array
     {
         $user = is_array($student['user'] ?? null) ? $student['user'] : [];
-        $roles = $student['roles'] ?? $user['roles'] ?? [];
+        $roles = $this->collectRoles($student, $user);
 
         return [
             'core_user_id' => $this->extractCoreUserId($student, $user),
@@ -152,7 +152,8 @@ class PkpaCoreStudentResolver
     {
         return isset($student['nim']) ? (string) $student['nim']
             : (isset($student['npm']) ? (string) $student['npm']
-            : (isset($student['student_number']) ? (string) $student['student_number'] : null));
+            : (isset($student['student_number']) ? (string) $student['student_number']
+            : ($this->identityNumber($student) ?: null)));
     }
 
     private function hasStudentRole(array $student): bool
@@ -163,5 +164,46 @@ class PkpaCoreStudentResolver
             ->map(fn ($role) => str($role)->lower()->replace(['-', ' '], '_')->toString());
 
         return $roles->contains(fn ($role) => in_array($role, ['mahasiswa', 'student'], true));
+    }
+
+    private function collectRoles(array $student, array $user): array
+    {
+        return collect([
+            $student['roles'] ?? [],
+            $user['roles'] ?? [],
+            $this->appAccessRoles($student),
+            $this->appAccessRoles($user),
+        ])->flatMap(fn ($roles) => is_array($roles) ? $roles : [])
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function appAccessRoles(array $payload): array
+    {
+        $appCode = (string) config('core_farmasi.app_code', 'kppspa-farmasi');
+
+        return collect($payload['app_accesses'] ?? [])
+            ->filter(fn ($access) => is_array($access) && ($access['app_code'] ?? null) === $appCode)
+            ->map(fn ($access) => $access['role_slug'] ?? null)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function identityNumber(array $student): ?string
+    {
+        $identityType = str((string) ($student['identity_type'] ?? ''))
+            ->lower()
+            ->replace(['-', ' '], '_')
+            ->toString();
+
+        if (! in_array($identityType, ['student', 'mahasiswa'], true)) {
+            return null;
+        }
+
+        return filled($student['identity_number'] ?? null)
+            ? (string) $student['identity_number']
+            : null;
     }
 }
