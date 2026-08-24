@@ -18,6 +18,16 @@
     </section>
 
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <div class="rounded-2xl border {{ $review['ready'] ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' }} px-4 py-4">
+            <p class="text-xs font-black uppercase tracking-widest">{{ $review['ready'] ? 'Siap diterbitkan' : 'Perlu pembenahan dulu' }}</p>
+            <p class="mt-1 text-sm font-semibold">
+                @if($review['ready'])
+                    Semua pemeriksaan utama sudah lulus. Koordinator dapat mengunci rancangan untuk publikasi atau langsung kembali ke halaman publikasi.
+                @else
+                    Masih ada butir yang belum lulus. Selesaikan error utama dahulu, lalu periksa ulang sebelum jadwal resmi diterbitkan.
+                @endif
+            </p>
+        </div>
         <div class="grid gap-3 md:grid-cols-2">
             @foreach($review['items'] as $item)
                 <div class="rounded-xl border {{ $item['passed'] ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-rose-200 bg-rose-50 text-rose-800' }} px-4 py-3">

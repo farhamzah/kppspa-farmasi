@@ -19,7 +19,7 @@ class PkpaAssessmentController extends Controller
     public function index(Request $request): View
     {
         return view('field-supervisor.pkpa-assessments.index', [
-            'assignments' => PkpaRotationAssessmentAssessor::with(['assessment.rotationRun.practiceDomain', 'assessment.rotationRun.practiceSite', 'component', 'scores'])
+            'assignments' => PkpaRotationAssessmentAssessor::with(['assessment.rotationRun.enrollment', 'assessment.rotationRun.practiceDomain', 'assessment.rotationRun.practiceSite', 'component', 'scores'])
                 ->where('assessor_type', 'field_supervisor')
                 ->where('core_user_id', $request->user()->core_user_id)
                 ->latest()

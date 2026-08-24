@@ -187,6 +187,27 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
             ->assertSessionHasErrors('plan');
     }
 
+    public function test_options_endpoint_filters_sites_availability_and_supervisors_by_domain(): void
+    {
+        [$program, $plan, $programSite, $availability, $internal, $field] = $this->placementFixture('PKPA-04-E', capacity: 3);
+        $otherSite = $this->createProgramSite($program, 'RS', 'RS-PKPA-04-E', 2);
+        $otherInternal = $this->internal($program, $otherSite->practice_domain_id, 'CORE-DOSEN-RS-04-E');
+        $otherField = $this->field($otherSite->practice_site_id, 'CORE-FIELD-RS-04-E');
+
+        $response = $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson("/management/pkpa-placement-plans/{$plan->id}/options?practice_domain_id={$programSite->practice_domain_id}")
+            ->assertOk();
+
+        $response->assertJsonPath('program_sites.0.id', $programSite->id);
+        $response->assertJsonMissing(['id' => $otherSite->id]);
+        $response->assertJsonPath('program_sites.0.availability.0.id', $availability->id);
+        $response->assertJsonPath('program_sites.0.field_supervisors.0.id', $field->id);
+        $response->assertJsonMissing(['id' => $otherField->id]);
+        $response->assertJsonPath('internal_supervisors.0.id', $internal->id);
+        $response->assertJsonMissing(['id' => $otherInternal->id]);
+    }
+
     private function makeUser(string $email, array $roles, string $coreUserId): User
     {
         $user = User::factory()->create([

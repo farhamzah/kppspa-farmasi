@@ -82,7 +82,15 @@
             <h3 class="text-lg font-black text-slate-950">Tambah Pembimbing Lapangan</h3>
             <form method="POST" action="{{ route('management.pkpa-program-sites.field-supervisors.store', $programSite) }}" class="mt-4 space-y-3">
                 @csrf
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Core User ID</label><input name="core_user_id" required placeholder="CORE-FIELD-001" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
+                <x-management.core-directory-picker
+                    field-name="core_user_id"
+                    field-label="Pembimbing Lapangan Dari Core"
+                    :search-url="route('management.core-directory.field-supervisors')"
+                    placeholder="Ketik nama, email, jabatan, atau Core ID"
+                    helper="Daftar ini hanya menampilkan pengguna Core yang aktif dan sudah memiliki akses MY PKPA."
+                    :required="true"
+                    :value="old('core_user_id')"
+                />
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Jabatan</label><input name="position_title" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
                 <div class="grid gap-3 md:grid-cols-2">
                     <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Beban Maks</label><input type="number" name="maximum_active_students" min="0" value="0" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>

@@ -26,7 +26,7 @@ class PkpaAcademicRotationController extends Controller
     public function index(Request $request): View
     {
         return view('student.pkpa-academics.index', [
-            'runs' => PkpaRotationRun::forStudent($request->user()->core_user_id)->with(['practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->get(),
+            'runs' => PkpaRotationRun::forStudent($request->user()->core_user_id)->with(['practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->withCount(['guidanceSessions'])->get(),
         ]);
     }
 
@@ -34,7 +34,7 @@ class PkpaAcademicRotationController extends Controller
     {
         abort_unless($run->student_core_user_id === $request->user()->core_user_id, 403);
 
-        return view('student.pkpa-academics.show', ['run' => $run->load(['practiceDomain', 'practiceSite', 'competencyRecords.evidences', 'competencyRecords.reviews', 'specialTasks.submissions.reviews', 'rotationReport.versions', 'guidanceSessions', 'academicReadinessReviews'])]);
+        return view('student.pkpa-academics.show', ['run' => $run->load(['practiceDomain', 'practiceSite', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1), 'competencyRecords.evidences', 'competencyRecords.reviews', 'specialTasks.submissions.reviews', 'rotationReport.versions', 'guidanceSessions', 'academicReadinessReviews'])]);
     }
 
     public function markCompetency(Request $request, PkpaRotationCompetencyRecord $record): RedirectResponse

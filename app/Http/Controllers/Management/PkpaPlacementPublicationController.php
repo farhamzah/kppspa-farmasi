@@ -69,7 +69,7 @@ class PkpaPlacementPublicationController extends Controller
             $plan->update(['status' => 'locked', 'updated_by_core_user_id' => $request->user()->core_user_id]);
         }
 
-        return back()->with('status', 'Placement plan dikunci untuk publikasi.');
+        return back()->with('status', 'Rancangan penempatan dikunci untuk publikasi.');
     }
 
     public function publish(Request $request, PkpaPlacementPlan $plan): RedirectResponse
@@ -107,7 +107,7 @@ class PkpaPlacementPublicationController extends Controller
         $this->publicationService->withdraw($publication, $data['withdrawal_reason'], $request->user());
         $this->notificationService->sendPending($request->user());
 
-        return back()->with('status', 'Publication ditarik dan notification dicatat.');
+        return back()->with('status', 'Publikasi ditarik dan notifikasi dicatat.');
     }
 
     public function export(PkpaPlacementPublication $publication): BinaryFileResponse
@@ -148,7 +148,7 @@ class PkpaPlacementPublicationController extends Controller
             'notes' => $data['notes'] ?? null,
         ]), $request->user());
 
-        return redirect()->route('management.pkpa-change-requests.show', $change)->with('status', 'Change request dibuat.');
+        return redirect()->route('management.pkpa-change-requests.show', $change)->with('status', 'Permintaan perubahan dibuat.');
     }
 
     public function showChange(PkpaPlacementChangeRequest $changeRequest): View
@@ -162,14 +162,14 @@ class PkpaPlacementPublicationController extends Controller
     {
         $this->changeService->submit($changeRequest, $request->user());
 
-        return back()->with('status', 'Change request diajukan untuk review.');
+        return back()->with('status', 'Permintaan perubahan diajukan untuk pemeriksaan.');
     }
 
     public function approveChange(Request $request, PkpaPlacementChangeRequest $changeRequest): RedirectResponse
     {
         $this->changeService->approve($changeRequest, $request->user());
 
-        return back()->with('status', 'Change request disetujui.');
+        return back()->with('status', 'Permintaan perubahan disetujui.');
     }
 
     public function rejectChange(Request $request, PkpaPlacementChangeRequest $changeRequest): RedirectResponse
@@ -177,7 +177,7 @@ class PkpaPlacementPublicationController extends Controller
         $data = $request->validate(['rejection_reason' => ['required', 'string']]);
         $this->changeService->reject($changeRequest, $data['rejection_reason'], $request->user());
 
-        return back()->with('status', 'Change request ditolak.');
+        return back()->with('status', 'Permintaan perubahan ditolak.');
     }
 
     public function applyChange(Request $request, PkpaPlacementChangeRequest $changeRequest): RedirectResponse
@@ -185,6 +185,6 @@ class PkpaPlacementPublicationController extends Controller
         $publication = $this->changeService->apply($changeRequest, $request->user());
         $this->notificationService->sendPending($request->user());
 
-        return redirect()->route('management.pkpa-publications.show', $publication)->with('status', 'Revisi publication diterapkan.');
+        return redirect()->route('management.pkpa-publications.show', $publication)->with('status', 'Revisi publikasi diterapkan.');
     }
 }

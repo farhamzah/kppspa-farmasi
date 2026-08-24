@@ -190,4 +190,19 @@ class PkpaRotationRun extends Model
     {
         return $this->supervisorHistories->first(fn ($supervisor) => $supervisor->supervisor_type === $type && $supervisor->status === 'active');
     }
+
+    public function studentDisplayName(): string
+    {
+        return (string) ($this->enrollment?->student_name_snapshot ?: $this->student_core_user_id ?: '-');
+    }
+
+    public function studentDisplaySecondary(): string
+    {
+        $parts = array_values(array_filter([
+            $this->enrollment?->student_number,
+            $this->student_core_user_id,
+        ], fn ($value) => filled($value)));
+
+        return $parts !== [] ? implode(' / ', $parts) : '-';
+    }
 }

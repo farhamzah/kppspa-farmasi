@@ -32,7 +32,7 @@ class PkpaAcademicRotationController extends Controller
     {
         return view('management.pkpa-academics.index', [
             'programDomains' => PkpaProgramDomain::with(['program', 'practiceDomain', 'activeCompetencySet', 'activeReportTemplate'])->get(),
-            'runs' => PkpaRotationRun::with(['practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->latest()->paginate(20),
+            'runs' => PkpaRotationRun::with(['enrollment', 'practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->latest()->paginate(20),
             'summary' => [
                 'runs' => PkpaRotationRun::count(),
                 'without_competency' => PkpaRotationRun::doesntHave('competencyRecords')->count(),
@@ -137,15 +137,17 @@ class PkpaAcademicRotationController extends Controller
 
     public function export()
     {
-        $runs = PkpaRotationRun::with(['practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'guidanceSessions', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->get();
+        $runs = PkpaRotationRun::with(['enrollment', 'practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'guidanceSessions', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->get();
 
         return response()->streamDownload(function () use ($runs) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Mahasiswa Core', 'Wahana', 'Tempat', 'Kompetensi Verified/Required', 'Tugas Approved/Required', 'Laporan', 'Bimbingan', 'Readiness']);
+            fputcsv($handle, ['Mahasiswa', 'NPM', 'Core ID', 'Wahana', 'Tempat', 'Kompetensi Verified/Required', 'Tugas Approved/Required', 'Laporan', 'Bimbingan', 'Readiness']);
             foreach ($runs as $run) {
                 $requiredCompetencies = $run->competencyRecords->where('is_required_snapshot', true);
                 $requiredTasks = $run->specialTasks->where('is_required_snapshot', true);
                 fputcsv($handle, [
+                    $run->studentDisplayName(),
+                    $run->enrollment?->student_number,
                     $run->student_core_user_id,
                     $run->practiceDomain?->name,
                     $run->practiceSite?->name,

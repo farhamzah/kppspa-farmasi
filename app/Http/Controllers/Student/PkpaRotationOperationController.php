@@ -24,6 +24,7 @@ class PkpaRotationOperationController extends Controller
         return view('student.pkpa-operations.index', [
             'runs' => PkpaRotationRun::forStudent($request->user()->core_user_id)
                 ->with(['practiceDomain', 'practiceSite', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)])
+                ->withCount(['attendanceRecords', 'logbookEntries'])
                 ->latest()
                 ->get(),
         ]);
@@ -34,7 +35,14 @@ class PkpaRotationOperationController extends Controller
         abort_unless($run->student_core_user_id === $request->user()->core_user_id, 403);
 
         return view('student.pkpa-operations.show', [
-            'run' => $run->load(['practiceDomain', 'practiceSite', 'attendanceRecords', 'logbookEntries.attachments', 'logbookEntries.reviews']),
+            'run' => $run->load([
+                'practiceDomain',
+                'practiceSite',
+                'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1),
+                'attendanceRecords.correctionRequests',
+                'logbookEntries.attachments',
+                'logbookEntries.reviews',
+            ]),
         ]);
     }
 

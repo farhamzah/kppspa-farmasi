@@ -183,17 +183,17 @@
                 <aside class="space-y-4">
                     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                         <h3 class="text-base font-black text-slate-950">Bulk Placement</h3>
-                        <form id="bulk-form" method="POST" action="{{ route('management.pkpa-placement-plans.bulk.preview', $plan) }}" class="mt-3 grid gap-3">
+                        <form id="bulk-form" method="POST" action="{{ route('management.pkpa-placement-plans.bulk.preview', $plan) }}" class="mt-3 grid gap-3" data-placement-bulk-form data-options-url="{{ route('management.pkpa-placement-plans.options', $plan) }}">
                             @csrf
-                            <select name="practice_domain_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required>
+                            <select name="practice_domain_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-domain-select required>
                                 <option value="">Pilih wahana</option>
                                 @foreach($domains as $domain)<option value="{{ $domain->practice_domain_id }}">{{ $domain->practiceDomain?->name }}</option>@endforeach
                             </select>
-                            <select name="pkpa_program_site_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required>
+                            <select name="pkpa_program_site_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-site-select required>
                                 <option value="">Pilih tempat</option>
                                 @foreach($programSites as $site)<option value="{{ $site->id }}">{{ $site->practiceDomain?->name }} - {{ $site->practiceSite?->name }}</option>@endforeach
                             </select>
-                            <select name="pkpa_site_availability_period_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required>
+                            <select name="pkpa_site_availability_period_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-availability-select required>
                                 <option value="">Pilih availability</option>
                                 @foreach($programSites as $site)
                                     @foreach($site->availabilityPeriods as $period)
@@ -201,10 +201,11 @@
                                     @endforeach
                                 @endforeach
                             </select>
-                            <div class="grid grid-cols-2 gap-2"><input type="date" name="start_date" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required><input type="date" name="end_date" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required></div>
-                            <select name="internal_supervisor_eligibility_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required><option value="">Pembimbing Dalam</option>@foreach($internalSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceDomain?->name }}</option>@endforeach</select>
-                            <select name="site_field_supervisor_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" required><option value="">Pembimbing Lapangan</option>@foreach($fieldSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceSite?->name }}</option>@endforeach</select>
+                            <div class="grid grid-cols-2 gap-2"><input type="date" name="start_date" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-start-date required><input type="date" name="end_date" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-end-date required></div>
+                            <select name="internal_supervisor_eligibility_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-internal-select required><option value="">Pembimbing Dalam</option>@foreach($internalSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceDomain?->name }}</option>@endforeach</select>
+                            <select name="site_field_supervisor_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-field-select required><option value="">Pembimbing Lapangan</option>@foreach($fieldSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceSite?->name }}</option>@endforeach</select>
                             <select name="overwrite_mode" class="rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="empty_only">Hanya isi yang kosong</option><option value="overwrite_draft">Timpa assignment draft</option></select>
+                            <p class="text-xs text-slate-500">Pilih wahana lebih dulu. Tempat, availability, dan pembimbing akan mengikuti pilihan tersebut agar tidak salah pilih.</p>
                             <button class="rounded-xl bg-slate-950 px-3 py-2 text-sm font-black text-white">Pratinjau Massal</button>
                         </form>
                     </section>
@@ -246,3 +247,163 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const refreshAssignmentForm = (form) => {
+        const siteSelect = form.querySelector('[data-program-site-select]');
+        const availabilitySelect = form.querySelector('[data-availability-select]');
+        const fieldSelect = form.querySelector('[data-field-supervisor-select]');
+        const startInput = form.querySelector('[data-start-date-input]');
+        const endInput = form.querySelector('[data-end-date-input]');
+
+        if (!siteSelect || !availabilitySelect || !fieldSelect) {
+            return;
+        }
+
+        const selectedSiteOption = siteSelect.options[siteSelect.selectedIndex];
+        const selectedSiteId = selectedSiteOption?.value ?? '';
+
+        Array.from(availabilitySelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                return;
+            }
+
+            const matches = option.dataset.programSiteId === selectedSiteId;
+            option.hidden = !matches;
+            if (!matches && option.selected) {
+                availabilitySelect.value = '';
+            }
+        });
+
+        Array.from(fieldSelect.options).forEach((option, index) => {
+            if (index === 0) {
+                option.hidden = false;
+                return;
+            }
+
+            const matches = option.dataset.practiceSiteId === selectedSiteOption?.dataset.practiceSiteId;
+            option.hidden = !matches;
+            if (!matches && option.selected) {
+                fieldSelect.value = '';
+            }
+        });
+
+        const selectedAvailability = availabilitySelect.options[availabilitySelect.selectedIndex];
+        if (selectedAvailability?.dataset.startDate && !startInput.value) {
+            startInput.value = selectedAvailability.dataset.startDate;
+        }
+        if (selectedAvailability?.dataset.endDate && !endInput.value) {
+            endInput.value = selectedAvailability.dataset.endDate;
+        }
+    };
+
+    document.querySelectorAll('[data-placement-assignment-form]').forEach((form) => {
+        const siteSelect = form.querySelector('[data-program-site-select]');
+        const availabilitySelect = form.querySelector('[data-availability-select]');
+        if (siteSelect) {
+            siteSelect.addEventListener('change', () => refreshAssignmentForm(form));
+        }
+        if (availabilitySelect) {
+            availabilitySelect.addEventListener('change', () => refreshAssignmentForm(form));
+        }
+        refreshAssignmentForm(form);
+    });
+
+    const bulkForm = document.querySelector('[data-placement-bulk-form]');
+    if (!bulkForm) {
+        return;
+    }
+
+    const domainSelect = bulkForm.querySelector('[data-bulk-domain-select]');
+    const siteSelect = bulkForm.querySelector('[data-bulk-site-select]');
+    const availabilitySelect = bulkForm.querySelector('[data-bulk-availability-select]');
+    const internalSelect = bulkForm.querySelector('[data-bulk-internal-select]');
+    const fieldSelect = bulkForm.querySelector('[data-bulk-field-select]');
+    const startInput = bulkForm.querySelector('[data-bulk-start-date]');
+    const endInput = bulkForm.querySelector('[data-bulk-end-date]');
+    let cachedOptions = [];
+
+    const fillSelect = (select, placeholder, items, formatter) => {
+        const current = select.value;
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        items.forEach((item) => {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = formatter(item);
+            if (item.practice_site_id) {
+                option.dataset.practiceSiteId = item.practice_site_id;
+            }
+            if (item.start_date) {
+                option.dataset.startDate = item.start_date;
+            }
+            if (item.end_date) {
+                option.dataset.endDate = item.end_date;
+            }
+            select.appendChild(option);
+        });
+        if (current && items.some((item) => String(item.id) === current)) {
+            select.value = current;
+        }
+    };
+
+    const refreshBulkDependents = () => {
+        const site = cachedOptions.find((item) => String(item.id) === siteSelect.value);
+        fillSelect(
+            availabilitySelect,
+            'Pilih availability',
+            site?.availability ?? [],
+            (item) => `${item.label} / sisa ${item.capacity?.available ?? 0} dari ${item.capacity?.usable ?? 0}`
+        );
+        fillSelect(
+            fieldSelect,
+            'Pembimbing Lapangan',
+            site?.field_supervisors ?? [],
+            (item) => `${item.label} / max ${item.maximum_active_students ?? '?'}`
+        );
+
+        const availability = (site?.availability ?? []).find((item) => String(item.id) === availabilitySelect.value) ?? site?.availability?.[0];
+        if (availability && !startInput.value) {
+            startInput.value = availability.start_date ?? '';
+        }
+        if (availability && !endInput.value) {
+            endInput.value = availability.end_date ?? '';
+        }
+    };
+
+    domainSelect?.addEventListener('change', async () => {
+        const domainId = domainSelect.value;
+        cachedOptions = [];
+        fillSelect(siteSelect, 'Memuat tempat...', [], () => '');
+        fillSelect(availabilitySelect, 'Pilih availability', [], () => '');
+        fillSelect(internalSelect, 'Memuat pembimbing dalam...', [], () => '');
+        fillSelect(fieldSelect, 'Pembimbing Lapangan', [], () => '');
+
+        if (!domainId) {
+            fillSelect(siteSelect, 'Pilih tempat', [], () => '');
+            fillSelect(internalSelect, 'Pembimbing Dalam', [], () => '');
+            return;
+        }
+
+        const url = new URL(bulkForm.dataset.optionsUrl, window.location.origin);
+        url.searchParams.set('practice_domain_id', domainId);
+
+        const response = await fetch(url.toString(), {
+            headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+            credentials: 'same-origin',
+        });
+        const payload = await response.json();
+        cachedOptions = Array.isArray(payload.program_sites) ? payload.program_sites : [];
+
+        fillSelect(siteSelect, 'Pilih tempat', cachedOptions, (item) => item.label || item.name || '-');
+        fillSelect(internalSelect, 'Pembimbing Dalam', Array.isArray(payload.internal_supervisors) ? payload.internal_supervisors : [], (item) => item.label || item.name || '-');
+        refreshBulkDependents();
+    });
+
+    siteSelect?.addEventListener('change', refreshBulkDependents);
+    availabilitySelect?.addEventListener('change', refreshBulkDependents);
+})();
+</script>
+@endpush

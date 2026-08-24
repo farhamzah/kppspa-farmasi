@@ -6,6 +6,7 @@
 @php
     $publicationStatusLabels = ['publishing' => 'Diproses', 'published' => 'Diterbitkan', 'superseded' => 'Digantikan', 'withdrawn' => 'Ditarik'];
     $assignmentStatusLabels = ['scheduled' => 'Terjadwal', 'revised' => 'Direvisi', 'cancelled' => 'Dibatalkan'];
+    $notificationStatusLabels = ['sent' => 'Terkirim', 'pending' => 'Menunggu', 'failed' => 'Gagal', 'skipped' => 'Dilewati'];
 @endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
@@ -28,9 +29,13 @@
         <div class="mt-5 grid gap-3 md:grid-cols-5">
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Penempatan</p><p class="text-xl font-black">{{ $publication->assignments->count() }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Mahasiswa</p><p class="text-xl font-black">{{ $publication->assignments->pluck('student_core_user_id')->unique()->count() }}</p></div>
-            <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Acknowledge</p><p class="text-xl font-black">{{ $acks->where('acknowledgement_type', 'acknowledged')->count() }}</p></div>
+            <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Sudah Konfirmasi</p><p class="text-xl font-black">{{ $acks->where('acknowledgement_type', 'acknowledged')->count() }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Terkini</p><p class="text-xl font-black">{{ $publication->is_current ? 'Ya' : 'Tidak' }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Terbit</p><p class="text-xl font-black">{{ optional($publication->published_at)->format('d M Y') ?: '-' }}</p></div>
+        </div>
+        <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
+            <p class="font-black text-slate-950">Ringkasan publikasi</p>
+            <p class="mt-1">Halaman ini adalah salinan resmi yang dibaca portal mahasiswa dan pembimbing. Jika ada perubahan setelah terbit, gunakan menu revisi agar riwayat lama tetap aman untuk audit.</p>
         </div>
     </section>
 
@@ -61,7 +66,7 @@
             <h3 class="text-lg font-black text-slate-950">Notifikasi</h3>
             <div class="mt-3 space-y-2">
                 @forelse($notifications as $delivery)
-                    <div class="rounded-xl border border-slate-200 px-4 py-3 text-sm">{{ ['placement_published' => 'Jadwal diterbitkan', 'placement_revised' => 'Jadwal direvisi', 'placement_withdrawn' => 'Jadwal ditarik'][$delivery->event_type] ?? $delivery->event_type }} / {{ $delivery->channel === 'mail' ? 'Email' : 'Dalam Aplikasi' }} / {{ ['sent' => 'terkirim', 'pending' => 'menunggu', 'failed' => 'gagal', 'skipped' => 'dilewati'][$delivery->status] ?? $delivery->status }} ke {{ $delivery->recipient_name_snapshot ?: $delivery->recipient_core_user_id }}</div>
+                    <div class="rounded-xl border border-slate-200 px-4 py-3 text-sm">{{ ['placement_published' => 'Jadwal diterbitkan', 'placement_revised' => 'Jadwal direvisi', 'placement_withdrawn' => 'Jadwal ditarik'][$delivery->event_type] ?? $delivery->event_type }} / {{ $delivery->channel === 'mail' ? 'Email' : 'Dalam Aplikasi' }} / {{ $notificationStatusLabels[$delivery->status] ?? $delivery->status }} ke {{ $delivery->recipient_name_snapshot ?: $delivery->recipient_core_user_id }}</div>
                 @empty
                     <p class="text-sm text-slate-500">Belum ada notifikasi untuk publikasi ini.</p>
                 @endforelse
@@ -76,6 +81,8 @@
                     <textarea name="withdrawal_reason" rows="3" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Alasan penarikan"></textarea>
                     <button class="rounded-xl bg-rose-700 px-4 py-2 text-sm font-black text-white">Tarik Publikasi</button>
                 </form>
+            @else
+                <p class="mt-4 text-sm text-slate-500">Publikasi hanya bisa ditarik jika statusnya masih diterbitkan dan Anda sedang masuk sebagai Koordinator PKPA.</p>
             @endif
         </div>
     </section>

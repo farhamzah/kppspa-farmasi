@@ -15,7 +15,7 @@
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div class="mb-5 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-sm leading-6 text-cyan-950">
-            Pilih program dan wahana, lalu masukkan ID pengguna Core milik dosen. Data ini membuat dosen tersebut tersedia sebagai pilihan Pembimbing Dalam saat penyusunan penempatan PKPA.
+            Pilih program dan wahana, lalu cari dosen dari Core. Hanya dosen yang sudah aktif dan memiliki akses MY PKPA yang akan muncul sebagai pilihan Pembimbing Dalam.
         </div>
         <form method="POST" action="{{ route('management.pkpa-internal-supervisors.store') }}" class="space-y-4">
             @csrf
@@ -23,7 +23,15 @@
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Program PKPA</label><select name="pkpa_program_id" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Pilih program</option>@foreach($programs as $program)<option value="{{ $program->id }}" @selected(old('pkpa_program_id') == $program->id)>{{ $program->code }} - {{ $program->name }}</option>@endforeach</select></div>
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Wahana</label><select name="practice_domain_id" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Pilih wahana</option>@foreach($domains as $domain)<option value="{{ $domain->id }}" @selected(old('practice_domain_id') == $domain->id)>{{ $domain->name }}</option>@endforeach</select></div>
             </div>
-            <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">ID Pengguna Core</label><input name="core_user_id" value="{{ old('core_user_id') }}" required placeholder="Contoh: CORE-DOSEN-001" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><p class="mt-2 text-xs text-slate-500">Nama, email, peran, dan status akun diambil dari Core. Sistem tidak membuat akun lokal atau password baru.</p></div>
+            <x-management.core-directory-picker
+                field-name="core_user_id"
+                field-label="Dosen Dari Core"
+                :search-url="route('management.core-directory.lecturers')"
+                placeholder="Ketik nama dosen, email, NIDN, atau Core ID"
+                helper="Nama, email, dan peran dosen diambil dari Core. Sistem tidak membuat akun lokal atau password baru."
+                :required="true"
+                :value="old('core_user_id')"
+            />
             <div class="grid gap-4 md:grid-cols-3">
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Maks. Mahasiswa Aktif</label><input type="number" name="maximum_active_students" min="0" value="{{ old('maximum_active_students', 0) }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-xs text-slate-500">0 berarti tidak dibatasi.</p></div>
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Maks. per Program</label><input type="number" name="maximum_students_per_program" min="0" value="{{ old('maximum_students_per_program', 0) }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-xs text-slate-500">0 berarti tidak dibatasi.</p></div>

@@ -21,7 +21,7 @@ class PkpaRotationOperationController extends Controller
     {
         return view('internal-supervisor.pkpa-operations.index', [
             'runs' => PkpaRotationRun::forSupervisor('internal', $request->user()->core_user_id)
-                ->with(['practiceDomain', 'practiceSite', 'logbookEntries'])
+                ->with(['practiceDomain', 'practiceSite', 'enrollment', 'logbookEntries'])
                 ->latest()
                 ->get(),
         ]);
@@ -31,7 +31,7 @@ class PkpaRotationOperationController extends Controller
     {
         abort_unless($run->supervisorHistories()->where('supervisor_type', 'internal')->where('core_user_id', $request->user()->core_user_id)->where('status', 'active')->exists(), 403);
 
-        return view('internal-supervisor.pkpa-operations.show', ['run' => $run->load(['practiceDomain', 'practiceSite', 'attendanceRecords', 'logbookEntries.attachments', 'logbookEntries.reviews'])]);
+        return view('internal-supervisor.pkpa-operations.show', ['run' => $run->load(['practiceDomain', 'practiceSite', 'enrollment', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1), 'attendanceRecords', 'logbookEntries.attachments', 'logbookEntries.reviews'])]);
     }
 
     public function reviewLogbook(Request $request, PkpaLogbookEntry $entry): RedirectResponse

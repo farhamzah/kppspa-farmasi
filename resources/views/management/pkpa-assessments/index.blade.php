@@ -118,7 +118,10 @@
                 <tbody class="divide-y divide-slate-100">
                     @foreach ($assessments as $assessment)
                         <tr>
-                            <td class="px-3 py-3 font-bold">{{ $assessment->rotationRun?->student_core_user_id }}</td>
+                            <td class="px-3 py-3">
+                                <div class="font-bold text-slate-900">{{ $assessment->rotationRun?->studentDisplayName() ?? '-' }}</div>
+                                <div class="text-xs text-slate-500">{{ $assessment->rotationRun?->studentDisplaySecondary() ?? '-' }}</div>
+                            </td>
                             <td class="px-3 py-3">{{ $assessment->rotationRun?->practiceDomain?->name }}</td>
                             <td class="px-3 py-3">{{ $assessment->status }} · {{ $assessment->completion_status }}</td>
                             <td class="px-3 py-3">{{ $assessment->gradeResult?->final_score ?? '-' }}</td>
@@ -143,7 +146,8 @@
         <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($runs as $run)
                 <div class="rounded-2xl border border-slate-100 p-4">
-                    <p class="font-black text-slate-900">{{ $run->student_core_user_id }}</p>
+                    <p class="font-black text-slate-900">{{ $run->studentDisplayName() }}</p>
+                    <p class="text-xs text-slate-500">{{ $run->studentDisplaySecondary() }}</p>
                     <p class="text-sm text-slate-500">{{ $run->practiceDomain?->name }} · {{ $run->practiceSite?->name }}</p>
                     <p class="mt-1 text-xs text-slate-500">Kesiapan: {{ $run->academicReadinessReviews->first()?->status ?? '-' }}</p>
                     <form method="POST" action="{{ route('management.pkpa-rotation-assessments.store', $run) }}" class="mt-3">

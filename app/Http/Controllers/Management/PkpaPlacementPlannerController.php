@@ -53,7 +53,7 @@ class PkpaPlacementPlannerController extends Controller
             'progress' => $plan ? $this->planService->progress($plan->loadMissing('program')) : null,
             'domains' => $program?->domains()->with('practiceDomain')->where('is_active', true)->orderBy('sort_order')->get() ?? collect(),
             'enrollments' => $program ? $this->enrollments($request, $program, $plan) : collect(),
-            'programSites' => $program?->programSites()->with(['practiceSite', 'availabilityPeriods', 'practiceDomain', 'practiceDomainOption'])->where('is_active', true)->whereIn('status', ['ready', 'active'])->get() ?? collect(),
+            'programSites' => $program?->programSites()->with(['practiceSite.fieldSupervisors', 'availabilityPeriods', 'practiceDomain', 'practiceDomainOption'])->where('is_active', true)->whereIn('status', ['ready', 'active'])->get() ?? collect(),
             'internalSupervisors' => $program?->internalSupervisorEligibilities()->where('status', 'active')->get() ?? collect(),
             'fieldSupervisors' => PkpaSiteFieldSupervisor::query()->where('status', 'active')->get(),
             'latestRun' => $plan?->validationRuns()->with('issues.assignment.enrollment', 'issues.assignment.practiceDomain')->latest()->first(),
@@ -191,17 +191,37 @@ class PkpaPlacementPlannerController extends Controller
             ->get()
             ->map(fn (PkpaProgramSite $site) => [
                 'id' => $site->id,
+                'practice_site_id' => $site->practice_site_id,
                 'name' => $site->practiceSite?->name,
+                'label' => trim(($site->practiceSite?->name ?? '').($site->practiceDomainOption ? ' / '.$site->practiceDomainOption->name : '')),
                 'option_id' => $site->practice_domain_option_id,
                 'availability' => $site->availabilityPeriods->map(fn ($period) => [
                     'id' => $period->id,
                     'label' => $period->start_date->format('d M Y').' - '.$period->end_date->format('d M Y'),
                     'capacity' => $this->capacityService->usage($plan, $period),
-                ]),
+                    'start_date' => $period->start_date?->toDateString(),
+                    'end_date' => $period->end_date?->toDateString(),
+                ])->values(),
+                'field_supervisors' => $site->practiceSite?->fieldSupervisors()
+                    ->where('status', 'active')
+                    ->get()
+                    ->map(fn (PkpaSiteFieldSupervisor $supervisor) => [
+                        'id' => $supervisor->id,
+                        'practice_site_id' => $supervisor->practice_site_id,
+                        'name' => $supervisor->name_snapshot,
+                        'label' => trim(($supervisor->name_snapshot ?? '').($supervisor->position_title ? ' / '.$supervisor->position_title : '')),
+                        'maximum_active_students' => $supervisor->maximum_active_students,
+                    ])->values(),
             ]);
-        $internal = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $plan->pkpa_program_id)->where('practice_domain_id', $domainId)->where('status', 'active')->get();
+        $internal = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $plan->pkpa_program_id)->where('practice_domain_id', $domainId)->where('status', 'active')->get()
+            ->map(fn (PkpaInternalSupervisorEligibility $supervisor) => [
+                'id' => $supervisor->id,
+                'name' => $supervisor->name_snapshot,
+                'label' => trim(($supervisor->name_snapshot ?? '').' / max '.($supervisor->maximum_active_students ?? '?')),
+                'maximum_active_students' => $supervisor->maximum_active_students,
+            ])->values();
 
-        return response()->json(['program_sites' => $programSites, 'internal_supervisors' => $internal]);
+        return response()->json(['program_sites' => $programSites->values(), 'internal_supervisors' => $internal]);
     }
 
     private function selectedPlan(Request $request, PkpaProgram $program): ?PkpaPlacementPlan

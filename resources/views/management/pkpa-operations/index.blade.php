@@ -85,7 +85,10 @@
                 <tbody class="divide-y divide-slate-100">
                     @forelse($runs as $run)
                         <tr>
-                            <td class="px-4 py-3 font-black text-slate-900">{{ $run->student_core_user_id }}</td>
+                            <td class="px-4 py-3">
+                                <div class="font-black text-slate-900">{{ $run->studentDisplayName() }}</div>
+                                <div class="text-xs text-slate-500">{{ $run->studentDisplaySecondary() }}</div>
+                            </td>
                             <td class="px-4 py-3">{{ $run->practiceDomain?->name }}<br><span class="text-xs text-slate-500">{{ $run->practiceSite?->name }}</span></td>
                             <td class="px-4 py-3">{{ $run->scheduled_start_date?->format('d M Y') }} - {{ $run->scheduled_end_date?->format('d M Y') }}</td>
                             <td class="px-4 py-3">{{ $statusLabels[$run->status] ?? $run->status }} / {{ $syncLabels[$run->publication_sync_status] ?? $run->publication_sync_status }}</td>

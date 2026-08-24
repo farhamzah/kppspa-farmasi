@@ -15,6 +15,26 @@
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Permintaan perubahan</p>
         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $change->request_number }}</h2>
         <p class="mt-1 text-sm text-slate-500">Publikasi sumber {{ $change->publication->code }} / status {{ $changeStatusLabels[$change->status] ?? $change->status }} / tipe {{ $changeTypeLabels[$change->request_type] ?? $change->request_type }}</p>
+        <div class="mt-4 rounded-2xl border {{ in_array($change->status, ['approved', 'applied'], true) ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : (in_array($change->status, ['rejected', 'failed'], true) ? 'border-rose-200 bg-rose-50 text-rose-900' : 'border-amber-200 bg-amber-50 text-amber-900') }} px-4 py-4 text-sm">
+            <p class="font-black">
+                {{ $change->status === 'draft' ? 'Masih draf' : ($change->status === 'submitted' ? 'Menunggu keputusan' : ($change->status === 'approved' ? 'Siap diterapkan' : ($change->status === 'applied' ? 'Sudah diterapkan' : 'Perlu tindak lanjut'))) }}
+            </p>
+            <p class="mt-1">
+                @if($change->status === 'draft')
+                    Periksa lagi isi usulan, lalu ajukan untuk pemeriksaan.
+                @elseif($change->status === 'submitted')
+                    Permintaan ini sudah diajukan dan tinggal menunggu persetujuan Koordinator PKPA.
+                @elseif($change->status === 'approved')
+                    Perubahan sudah disetujui. Langkah berikutnya adalah menerapkan revisi agar publikasi baru terbentuk.
+                @elseif($change->status === 'applied')
+                    Revisi sudah diterapkan ke publikasi resmi. Riwayat permintaan ini tetap disimpan untuk audit.
+                @elseif($change->status === 'rejected')
+                    Permintaan ini ditolak. Lihat alasan penolakan sebelum membuat revisi baru.
+                @else
+                    Permintaan ini belum selesai diproses. Periksa kembali detail item perubahan.
+                @endif
+            </p>
+        </div>
         <div class="mt-5 flex flex-wrap gap-2">
             @if($change->status === 'draft')
                 <form method="POST" action="{{ route('management.pkpa-change-requests.submit', $change) }}">@csrf<button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Ajukan Pemeriksaan</button></form>
@@ -41,6 +61,12 @@
                             <p class="text-sm text-slate-500">{{ $item->oldAssignment?->practice_domain_name_snapshot }} / {{ $item->oldAssignment?->practice_site_name_snapshot }}</p>
                         </div>
                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{{ $changeTypeLabels[$item->change_type] ?? $item->change_type }}</span>
+                    </div>
+                    <div class="mt-3 rounded-xl bg-slate-50 px-3 py-3 text-sm text-slate-700">
+                        <p><span class="font-black text-slate-900">Alasan:</span> {{ $change->reason ?: '-' }}</p>
+                        @if(filled($item->notes))
+                            <p class="mt-1"><span class="font-black text-slate-900">Catatan:</span> {{ $item->notes }}</p>
+                        @endif
                     </div>
                     <div class="mt-3 grid gap-3 md:grid-cols-2">
                         <div class="rounded-xl bg-slate-50 p-3 text-sm"><p class="font-black text-slate-700">Sebelum</p><pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ json_encode($item->before_snapshot, JSON_PRETTY_PRINT) }}</pre></div>

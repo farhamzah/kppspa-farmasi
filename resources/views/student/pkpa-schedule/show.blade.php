@@ -3,7 +3,8 @@
 @section('page_title', 'Detail Jadwal PKPA')
 
 @section('content')
-@php($acknowledged = $assignment->acknowledgements()->where('core_user_id', auth()->user()->core_user_id)->where('acknowledgement_type', 'acknowledged')->exists())
+@php($acknowledged = $assignment->acknowledged_count > 0)
+@php($acknowledgement = $assignment->acknowledgements->first())
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -14,6 +15,20 @@
                 <p class="mt-1 text-sm text-slate-500">{{ $assignment->practice_site_name_snapshot }} / {{ optional($assignment->start_date)->format('d M Y') }} - {{ optional($assignment->end_date)->format('d M Y') }}</p>
             </div>
             <span class="rounded-full {{ $acknowledged ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }} px-3 py-1 text-xs font-black">{{ $acknowledged ? 'Sudah Dibaca' : 'Belum Dibaca' }}</span>
+        </div>
+        <div class="mt-4 grid gap-3 md:grid-cols-3">
+            <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-black uppercase tracking-widest text-slate-500">Publikasi</p>
+                <p class="mt-1 font-black text-slate-950">{{ $assignment->publication->title }}</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-black uppercase tracking-widest text-slate-500">Hari Efektif</p>
+                <p class="mt-1 font-black text-slate-950">{{ $assignment->effective_days_snapshot }} hari</p>
+            </div>
+            <div class="rounded-xl bg-slate-50 px-4 py-3">
+                <p class="text-xs font-black uppercase tracking-widest text-slate-500">Jam Praktik</p>
+                <p class="mt-1 font-black text-slate-950">{{ $assignment->practice_hours_snapshot ?: '-' }} jam</p>
+            </div>
         </div>
     </section>
 
@@ -43,12 +58,18 @@
     </section>
 
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h3 class="text-lg font-black text-slate-950">Acknowledgement</h3>
-        <p class="mt-1 text-sm text-slate-500">Saya telah membaca informasi penempatan ini. Pernyataan ini hanya menandai jadwal sudah dibaca, bukan approval atau persetujuan perubahan.</p>
-        <form method="POST" action="{{ route('student.pkpa-schedule.acknowledge', $assignment) }}" class="mt-4">
-            @csrf
-            <button class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white">Saya telah membaca jadwal ini</button>
-        </form>
+        <h3 class="text-lg font-black text-slate-950">Konfirmasi Baca Jadwal</h3>
+        <p class="mt-1 text-sm text-slate-500">Gunakan tombol ini setelah Anda memeriksa lokasi, rentang tanggal, dan pembimbing. Konfirmasi ini hanya menandai jadwal sudah dibaca.</p>
+        @if($acknowledged)
+            <div class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                Jadwal ini sudah Anda tandai dibaca{{ $acknowledgement?->acknowledged_at ? ' pada '. $acknowledgement->acknowledged_at->format('d M Y H:i') : '' }}.
+            </div>
+        @else
+            <form method="POST" action="{{ route('student.pkpa-schedule.acknowledge', $assignment) }}" class="mt-4">
+                @csrf
+                <button class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white">Saya Sudah Membaca Jadwal Ini</button>
+            </form>
+        @endif
     </section>
 </div>
 @endsection

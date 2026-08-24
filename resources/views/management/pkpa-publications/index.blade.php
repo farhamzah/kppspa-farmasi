@@ -6,6 +6,8 @@
 @php
     $publicationStatusLabels = ['publishing' => 'Diproses', 'published' => 'Diterbitkan', 'superseded' => 'Digantikan', 'withdrawn' => 'Ditarik'];
     $changeStatusLabels = ['draft' => 'Draf', 'submitted' => 'Diajukan', 'under_review' => 'Diperiksa', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'applied' => 'Diterapkan', 'failed' => 'Gagal'];
+    $notificationStatusLabels = ['sent' => 'Terkirim', 'pending' => 'Menunggu', 'failed' => 'Gagal', 'skipped' => 'Dilewati'];
+    $currentPublication = $publications->sortByDesc(fn ($publication) => (int) $publication->is_current)->first();
 @endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
@@ -47,6 +49,16 @@
                             <form method="POST" action="{{ route('management.pkpa-placement-plans.publication-lock', $plan) }}">@csrf<button class="rounded-xl border border-amber-200 px-4 py-2 text-sm font-black text-amber-700">Kunci untuk Publikasi</button></form>
                         @endif
                     </div>
+                    <div class="mt-5 rounded-2xl border {{ ($review['ready'] ?? false) ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' }} px-4 py-4">
+                        <p class="text-xs font-black uppercase tracking-widest">{{ ($review['ready'] ?? false) ? 'Status saat ini' : 'Perhatian sebelum publikasi' }}</p>
+                        <p class="mt-1 text-sm font-semibold">
+                            @if($review['ready'] ?? false)
+                                Rancangan ini sudah layak diterbitkan. Lanjutkan ke panel kanan untuk membuat jadwal resmi.
+                            @else
+                                Rancangan ini belum siap diterbitkan. Buka pemeriksaan ulang dan selesaikan butir yang belum lulus lebih dulu.
+                            @endif
+                        </p>
+                    </div>
                 @else
                     <div class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Belum ada rancangan valid atau locked untuk program ini.</div>
                 @endif
@@ -70,6 +82,13 @@
                     <p class="mt-3 text-sm text-slate-500">Hanya Koordinator PKPA yang dapat melakukan publikasi final.</p>
                 @endif
             </div>
+        </section>
+
+        <section class="grid gap-4 md:grid-cols-4">
+            <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase tracking-widest text-slate-500">Versi publikasi</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $publications->count() }}</p></div>
+            <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase tracking-widest text-slate-500">Publikasi aktif</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $publications->where('status', 'published')->count() }}</p></div>
+            <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase tracking-widest text-slate-500">Permintaan perubahan</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $changeRequests->count() }}</p></div>
+            <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase tracking-widest text-slate-500">Notifikasi terakhir</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $notifications->count() }}</p></div>
         </section>
 
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -103,7 +122,11 @@
                 <h3 class="text-lg font-black text-slate-950">Permintaan Perubahan</h3>
                 <div class="mt-3 space-y-2">
                     @forelse($changeRequests as $change)
-                        <a href="{{ route('management.pkpa-change-requests.show', $change) }}" class="block rounded-xl border border-slate-200 px-4 py-3 text-sm"><span class="font-black text-slate-950">{{ $change->request_number }}</span><span class="ml-2 text-slate-500">{{ $changeStatusLabels[$change->status] ?? $change->status }}</span></a>
+                        <a href="{{ route('management.pkpa-change-requests.show', $change) }}" class="block rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                            <span class="font-black text-slate-950">{{ $change->request_number }}</span>
+                            <span class="ml-2 text-slate-500">{{ $changeStatusLabels[$change->status] ?? $change->status }}</span>
+                            <span class="mt-1 block text-xs text-slate-500">{{ $change->reason ?: 'Tanpa alasan tambahan' }}</span>
+                        </a>
                     @empty
                         <p class="text-sm text-slate-500">Belum ada permintaan perubahan.</p>
                     @endforelse
@@ -113,7 +136,11 @@
                 <h3 class="text-lg font-black text-slate-950">Notifikasi Terakhir</h3>
                 <div class="mt-3 space-y-2">
                     @forelse($notifications as $delivery)
-                        <div class="rounded-xl border border-slate-200 px-4 py-3 text-sm"><span class="font-black">{{ $delivery->channel === 'mail' ? 'Email' : 'Dalam Aplikasi' }}</span> ke {{ $delivery->recipient_name_snapshot ?: $delivery->recipient_core_user_id }} <span class="text-slate-500">({{ ['sent' => 'terkirim', 'pending' => 'menunggu', 'failed' => 'gagal', 'skipped' => 'dilewati'][$delivery->status] ?? $delivery->status }})</span></div>
+                        <div class="rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                            <span class="font-black">{{ $delivery->channel === 'mail' ? 'Email' : 'Dalam Aplikasi' }}</span>
+                            ke {{ $delivery->recipient_name_snapshot ?: $delivery->recipient_core_user_id }}
+                            <span class="text-slate-500">({{ $notificationStatusLabels[$delivery->status] ?? $delivery->status }})</span>
+                        </div>
                     @empty
                         <p class="text-sm text-slate-500">Belum ada notifikasi.</p>
                     @endforelse

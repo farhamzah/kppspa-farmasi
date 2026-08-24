@@ -27,7 +27,7 @@ class PkpaRotationOperationController extends Controller
     public function index(Request $request): View
     {
         $runQuery = PkpaRotationRun::query()
-            ->with(['program', 'practiceDomain', 'practiceSite', 'requirement.programDomain.activeOperationRule', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)])
+            ->with(['program', 'enrollment', 'practiceDomain', 'practiceSite', 'requirement.programDomain.activeOperationRule', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)])
             ->latest();
 
         return view('management.pkpa-operations.index', [
@@ -119,15 +119,17 @@ class PkpaRotationOperationController extends Controller
 
     public function export()
     {
-        $runs = PkpaRotationRun::with(['program', 'practiceDomain', 'practiceSite', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)])->get();
+        $runs = PkpaRotationRun::with(['program', 'enrollment', 'practiceDomain', 'practiceSite', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)])->get();
         $filename = 'monitoring_operasional_pkpa_'.now()->format('Ymd_His').'.csv';
 
         return response()->streamDownload(function () use ($runs) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Program', 'Mahasiswa Core', 'Wahana', 'Tempat', 'Periode', 'Status Rotasi', 'Status Sinkron', 'Progress']);
+            fputcsv($handle, ['Program', 'Mahasiswa', 'NPM', 'Core ID', 'Wahana', 'Tempat', 'Periode', 'Status Rotasi', 'Status Sinkron', 'Progress']);
             foreach ($runs as $run) {
                 fputcsv($handle, [
                     $run->program?->code,
+                    $run->studentDisplayName(),
+                    $run->enrollment?->student_number,
                     $run->student_core_user_id,
                     $run->practiceDomain?->name,
                     $run->practiceSite?->name,

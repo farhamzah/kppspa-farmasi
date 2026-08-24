@@ -24,7 +24,7 @@ class PkpaAcademicRotationController extends Controller
     public function index(Request $request): View
     {
         return view('internal-supervisor.pkpa-academics.index', [
-            'runs' => PkpaRotationRun::forSupervisor('internal', $request->user()->core_user_id)->with(['practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks.submissions', 'rotationReport', 'guidanceSessions'])->get(),
+            'runs' => PkpaRotationRun::forSupervisor('internal', $request->user()->core_user_id)->with(['enrollment', 'practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks.submissions', 'rotationReport', 'guidanceSessions'])->get(),
         ]);
     }
 

@@ -31,8 +31,8 @@ class PkpaAssessmentController extends Controller
         return view('management.pkpa-assessments.index', [
             'programDomains' => PkpaProgramDomain::with(['program', 'practiceDomain', 'activeAssessmentScheme.components'])->get(),
             'schemes' => PkpaAssessmentScheme::with('programDomain.practiceDomain', 'components')->latest()->limit(20)->get(),
-            'assessments' => PkpaRotationAssessment::with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores', 'gradeResult'])->latest()->paginate(15),
-            'runs' => PkpaRotationRun::with(['practiceDomain', 'practiceSite', 'rotationAssessment', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->latest()->limit(30)->get(),
+            'assessments' => PkpaRotationAssessment::with(['rotationRun.enrollment', 'rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores', 'gradeResult'])->latest()->paginate(15),
+            'runs' => PkpaRotationRun::with(['enrollment', 'practiceDomain', 'practiceSite', 'rotationAssessment', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->latest()->limit(30)->get(),
             'summary' => [
                 'schemes' => PkpaAssessmentScheme::count(),
                 'assessments' => PkpaRotationAssessment::count(),
@@ -172,14 +172,16 @@ class PkpaAssessmentController extends Controller
 
     public function export()
     {
-        $assessments = PkpaRotationAssessment::with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores', 'gradeResult'])->get();
+        $assessments = PkpaRotationAssessment::with(['rotationRun.enrollment', 'rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores', 'gradeResult'])->get();
 
         return response()->streamDownload(function () use ($assessments) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Rekap Penilaian Per Wahana PKPA - MY PKPA']);
-            fputcsv($handle, ['Mahasiswa Core', 'Wahana', 'Tempat', 'Status Assessment', 'Completion', 'Final Score', 'Release']);
+            fputcsv($handle, ['Mahasiswa', 'NPM', 'Core ID', 'Wahana', 'Tempat', 'Status Assessment', 'Completion', 'Final Score', 'Release']);
             foreach ($assessments as $assessment) {
                 fputcsv($handle, [
+                    $assessment->rotationRun?->studentDisplayName(),
+                    $assessment->rotationRun?->enrollment?->student_number,
                     $assessment->rotationRun?->student_core_user_id,
                     $assessment->rotationRun?->practiceDomain?->name,
                     $assessment->rotationRun?->practiceSite?->name,
