@@ -29,7 +29,7 @@ class PkpaSupervisorCoreResolver
 
         if (filled($coreUserId)) {
             $person = $type === 'internal'
-                ? ($this->coreClient->getLecturer($coreUserId) ?: $this->coreClient->getUser($coreUserId))
+                ? ($this->coreClient->getUser($coreUserId) ?: $this->coreClient->getLecturer($coreUserId))
                 : $this->coreClient->getUser($coreUserId);
         }
 

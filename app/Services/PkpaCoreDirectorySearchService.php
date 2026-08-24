@@ -51,7 +51,7 @@ class PkpaCoreDirectorySearchService
 
     public function searchStudents(?string $query = null, int $limit = 10): array
     {
-        $items = collect($this->coreClient->searchStudents($this->buildParams($query, $limit))['data'] ?? []);
+        $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? []);
 
         return $items
             ->map(fn ($student) => $this->studentResolver->normalizeStudent((array) $student))
@@ -107,6 +107,17 @@ class PkpaCoreDirectorySearchService
     {
         return array_filter([
             'q' => filled($query) ? trim((string) $query) : null,
+            'limit' => max(1, min($limit, 20)),
+        ], fn ($value) => filled($value));
+    }
+
+    private function buildStudentParams(?string $query, int $limit): array
+    {
+        $query = filled($query) ? trim((string) $query) : null;
+
+        return array_filter([
+            'q' => $query,
+            'student_number' => $query,
             'limit' => max(1, min($limit, 20)),
         ], fn ($value) => filled($value));
     }

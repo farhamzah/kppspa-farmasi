@@ -16,7 +16,7 @@ class PkpaCoreStudentResolver
 
         $student = null;
         if (filled($coreUserId)) {
-            $student = $this->coreClient->getStudent($coreUserId) ?: $this->coreClient->getUser($coreUserId);
+            $student = $this->resolveByCoreUserId((string) $coreUserId);
         }
 
         if (! $student && filled($studentNumber)) {
@@ -74,6 +74,60 @@ class PkpaCoreStudentResolver
             'account_status' => (($student['active'] ?? $user['active'] ?? true) === true) ? 'active' : 'inactive',
             'roles' => is_array($roles) ? $roles : [],
         ];
+    }
+
+    private function resolveByCoreUserId(string $coreUserId): ?array
+    {
+        $user = $this->coreClient->getUser($coreUserId);
+
+        if (is_array($user)) {
+            $matchedStudent = $this->findStudentProfileForCoreUser($coreUserId, $user);
+            if (is_array($matchedStudent)) {
+                $matchedStudent['user'] = is_array($matchedStudent['user'] ?? null)
+                    ? array_replace($matchedStudent['user'], $user)
+                    : $user;
+
+                return $matchedStudent;
+            }
+
+            return $user;
+        }
+
+        $student = $this->coreClient->getStudent($coreUserId);
+        if (! is_array($student)) {
+            return null;
+        }
+
+        $normalized = $this->normalizeStudent($student);
+
+        return $normalized['core_user_id'] === $coreUserId ? $student : null;
+    }
+
+    private function findStudentProfileForCoreUser(string $coreUserId, array $user): ?array
+    {
+        $queries = array_values(array_filter([
+            $user['email'] ?? null,
+            $user['name'] ?? null,
+            $coreUserId,
+        ], fn ($value) => filled($value)));
+
+        foreach ($queries as $query) {
+            $matches = $this->coreClient->searchStudents([
+                'q' => $query,
+                'student_number' => $query,
+                'limit' => 20,
+            ])['data'] ?? [];
+
+            $matched = collect($matches)->first(function ($item) use ($coreUserId) {
+                return $this->normalizeStudent((array) $item)['core_user_id'] === $coreUserId;
+            });
+
+            if (is_array($matched)) {
+                return $matched;
+            }
+        }
+
+        return null;
     }
 
     private function extractCoreUserId(array $student, array $user): string
