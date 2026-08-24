@@ -402,13 +402,17 @@ class CoreProfileReadService
             return null;
         }
 
+        if ($this->localProfilePhotoPath($path)) {
+            return route('profile.core-avatar.show');
+        }
+
         $url = app(CoreFarmasiClient::class)->publicUrl($path);
 
         if ($url) {
             return $url;
         }
 
-        return $this->localProfilePhotoPath($path) ? route('profile.core-avatar.show') : null;
+        return null;
     }
 
     private function profilePhotoUrlFromCore(User $user): ?string

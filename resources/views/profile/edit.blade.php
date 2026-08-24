@@ -14,17 +14,7 @@
             <div class="flex flex-col items-center text-center">
                 <div class="relative group">
                     <div class="absolute inset-0 rounded-[2rem] bg-linear-to-tr from-cyan-600 to-teal-400 opacity-75 blur-md transition duration-300 group-hover:opacity-100"></div>
-                    <div class="relative flex h-28 w-28 items-center justify-center rounded-[1.8rem] bg-white p-1 ring-4 ring-white shadow-xl">
-                        @if($coreOfficialProfile && data_get($coreOfficialProfile, 'user.profile_photo_url'))
-                            <img src="{{ data_get($coreOfficialProfile, 'user.profile_photo_url') }}" alt="Foto profil" class="h-full w-full rounded-[1.5rem] object-cover object-[center_10%]">
-                        @elseif($user->hasAvatar())
-                            <img src="{{ $user->avatarUrl() }}" alt="Foto profil" class="h-full w-full rounded-[1.5rem] object-cover object-[center_10%]">
-                        @else
-                            <div class="flex h-full w-full items-center justify-center rounded-[1.5rem] bg-gradient-to-br from-cyan-50 to-teal-50 text-3xl font-black text-cyan-700">
-                                {{ $user->initials() }}
-                            </div>
-                        @endif
-                    </div>
+                    <x-ui.avatar :user="$user" size="xl" class="relative bg-white p-1 ring-4 ring-white shadow-xl" />
                 </div>
 
                 <h3 class="mt-5 text-xl font-black tracking-tight text-slate-900 leading-tight">

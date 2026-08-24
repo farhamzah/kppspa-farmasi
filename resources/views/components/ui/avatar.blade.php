@@ -11,7 +11,7 @@
         'xl' => 'h-28 w-28 text-3xl rounded-[1.75rem]',
     ];
     $class = $sizes[$size] ?? $sizes['md'];
-    $coreAvatarUrl = $user?->core_user_id ? app(\App\Services\CoreProfileReadService::class)->profilePhotoUrlFor($user) : null;
+    $coreAvatarUrl = $user ? app(\App\Services\CoreProfileReadService::class)->profilePhotoUrlFor($user) : null;
     $avatarUrl = $coreAvatarUrl ?: ($user->hasAvatar() ? $user->avatarUrl() : null);
 @endphp
 
