@@ -24,6 +24,10 @@ class PkpaCoreStudentResolver
                 ->first(fn ($item) => $this->studentNumber($item) === (string) $studentNumber);
         }
 
+        if (! $student && filled($studentNumber)) {
+            $student = $this->findStudentUserByNumber((string) $studentNumber);
+        }
+
         if (! $student && filled($query)) {
             $student = collect($this->coreClient->searchStudents(['q' => $query, 'limit' => 10])['data'] ?? [])->first();
         }
@@ -128,6 +132,26 @@ class PkpaCoreStudentResolver
         }
 
         return null;
+    }
+
+    private function findStudentUserByNumber(string $studentNumber): ?array
+    {
+        $matches = $this->coreClient->searchUsers([
+            'q' => $studentNumber,
+            'limit' => 20,
+        ])['data'] ?? [];
+
+        $matched = collect($matches)->first(function ($item) use ($studentNumber) {
+            $normalized = $this->normalizeStudent((array) $item);
+
+            if ($normalized['student_number'] !== $studentNumber) {
+                return false;
+            }
+
+            return $this->hasStudentRole($normalized);
+        });
+
+        return is_array($matched) ? $matched : null;
     }
 
     private function extractCoreUserId(array $student, array $user): string
