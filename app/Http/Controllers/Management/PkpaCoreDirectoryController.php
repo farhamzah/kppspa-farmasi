@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Management;
 
 use App\Http\Controllers\Controller;
+use App\Models\PkpaProgram;
 use App\Services\PkpaCoreDirectorySearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,8 +36,16 @@ class PkpaCoreDirectoryController extends Controller
     {
         $this->authorizeDirectoryAccess($request);
 
+        $program = $request->filled('program_id')
+            ? PkpaProgram::find($request->integer('program_id'))
+            : null;
+
         return response()->json([
-            'data' => $this->searchService->searchStudents($request->string('q')->toString(), (int) $request->integer('limit', 10)),
+            'data' => $this->searchService->searchStudents(
+                $request->string('q')->toString(),
+                (int) $request->integer('limit', 10),
+                $program,
+            ),
         ]);
     }
 

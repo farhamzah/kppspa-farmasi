@@ -8,11 +8,13 @@
     'value' => null,
     'displayValue' => null,
     'extraFields' => [],
+    'queryFields' => [],
 ])
 
 @php
     $pickerId = 'core-picker-'.md5($fieldName.'|'.$searchUrl.'|'.$placeholder);
     $encodedExtraFields = json_encode($extraFields, JSON_THROW_ON_ERROR);
+    $encodedQueryFields = json_encode($queryFields, JSON_THROW_ON_ERROR);
     $displayFieldName = $fieldName.'_display';
     $resolvedDisplayValue = old($displayFieldName, $displayValue ?? $value);
 @endphp
@@ -25,6 +27,7 @@
     data-display-name="{{ $displayFieldName }}"
     data-required="{{ $required ? 'true' : 'false' }}"
     data-extra-fields='{{ $encodedExtraFields }}'
+    data-query-fields='{{ $encodedQueryFields }}'
 >
     <label for="{{ $pickerId }}-search" class="text-xs font-black uppercase tracking-widest text-slate-500">{{ $fieldLabel }}</label>
     <input type="hidden" name="{{ $fieldName }}" value="{{ $value }}">
@@ -85,6 +88,7 @@
                     const searchInput = root.querySelector('input[type="text"]');
                     const resultsBox = root.querySelector('[data-results]');
                     const extraFields = JSON.parse(root.dataset.extraFields || '{}');
+                    const queryFields = JSON.parse(root.dataset.queryFields || '{}');
                     let requestCounter = 0;
 
                     const setExtraFields = (item) => {
@@ -147,6 +151,13 @@
                             params.set('q', query.trim());
                         }
                         params.set('limit', '10');
+                        Object.entries(queryFields).forEach(([queryKey, fieldName]) => {
+                            const target = root.closest('form')?.querySelector(`[name="${fieldName}"]`);
+                            const value = target?.value?.trim?.() ?? target?.value ?? '';
+                            if (value !== '') {
+                                params.set(queryKey, value);
+                            }
+                        });
 
                         resultsBox.innerHTML = '<div class="rounded-xl px-3 py-2 text-sm text-slate-500">Memuat data Core...</div>';
                         resultsBox.classList.remove('hidden');

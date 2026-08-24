@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PkpaProgram;
 use Illuminate\Support\Collection;
 
 class PkpaCoreDirectorySearchService
@@ -49,7 +50,7 @@ class PkpaCoreDirectorySearchService
             ->all();
     }
 
-    public function searchStudents(?string $query = null, int $limit = 10): array
+    public function searchStudents(?string $query = null, int $limit = 10, ?PkpaProgram $program = null): array
     {
         $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? []);
 
@@ -61,6 +62,7 @@ class PkpaCoreDirectorySearchService
             ->map(fn ($student) => $this->studentResolver->normalizeStudent((array) $student))
             ->filter(fn (array $student) => $student['account_status'] === 'active')
             ->filter(fn (array $student) => $this->studentHasRole($student))
+            ->filter(fn (array $student) => $this->matchesProgramCohort($student, $program))
             ->unique('core_user_id')
             ->take($limit)
             ->map(fn (array $student) => [
@@ -75,6 +77,54 @@ class PkpaCoreDirectorySearchService
             ])
             ->values()
             ->all();
+    }
+
+    private function matchesProgramCohort(array $student, ?PkpaProgram $program): bool
+    {
+        if (! $program) {
+            return true;
+        }
+
+        $year = $this->extractProgramYear($program);
+        if (! $year) {
+            return true;
+        }
+
+        $yearSuffix = substr((string) $year, -2);
+        $email = str((string) ($student['email'] ?? ''))->lower()->toString();
+        $studentNumber = preg_replace('/\D+/', '', (string) ($student['student_number'] ?? ''));
+
+        if ($email !== '' && str_contains($email, 'ap'.$yearSuffix.'.')) {
+            return true;
+        }
+
+        if ($studentNumber !== '' && str_starts_with($studentNumber, $yearSuffix)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function extractProgramYear(PkpaProgram $program): ?int
+    {
+        $candidates = [
+            $program->code,
+            $program->name,
+            $program->cohort_name,
+            $program->academic_year,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (! is_string($candidate) || trim($candidate) === '') {
+                continue;
+            }
+
+            if (preg_match('/\b(20\d{2})\b/', $candidate, $matches) === 1) {
+                return (int) $matches[1];
+            }
+        }
+
+        return null;
     }
 
     private function filterSupervisors(Collection $items, string $type): Collection

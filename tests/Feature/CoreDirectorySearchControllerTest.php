@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Models\PkpaProgram;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -336,6 +337,62 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->withSession(['active_role' => 'mahasiswa'])
             ->getJson(route('management.core-directory.students'))
             ->assertForbidden();
+    }
+
+    public function test_student_directory_filters_results_by_selected_program_cohort(): void
+    {
+        $program = PkpaProgram::create([
+            'code' => 'PKPA-2026-G1',
+            'name' => 'PKPA Farmasi UBP 2026 Gelombang 1',
+            'academic_year' => '2026/2027',
+            'cohort_name' => 'Profesi Apoteker 2026',
+            'status' => 'draft',
+            'is_active' => true,
+        ]);
+
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response(['data' => [], 'meta' => []], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [
+                        [
+                            'id' => 398,
+                            'name' => 'Andina Sahara Agustin',
+                            'email' => 'ap26.andinaagustin@mhs.ubpkarawang.ac.id',
+                            'identity_type' => 'student',
+                            'identity_number' => '26416248901006',
+                            'active' => true,
+                            'roles' => ['mahasiswa'],
+                        ],
+                        [
+                            'id' => 270,
+                            'name' => 'Ananda Sofiana Sandi',
+                            'email' => 'fm24.anandasandi@mhs.ubpkarawang.ac.id',
+                            'identity_type' => 'student',
+                            'identity_number' => '24416248201082',
+                            'active' => true,
+                            'roles' => ['mahasiswa'],
+                        ],
+                    ],
+                    'meta' => [],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students', ['q' => 'andi', 'program_id' => $program->id]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '398')
+            ->assertJsonPath('data.0.email', 'ap26.andinaagustin@mhs.ubpkarawang.ac.id');
     }
 
     private function makeUser(string $email, array $roles, string $coreUserId): User
