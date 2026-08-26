@@ -133,11 +133,11 @@ class DashboardController extends Controller
             'tempat_tanpa_availability' => PkpaProgramSite::where('is_active', true)->whereIn('status', ['ready', 'active'])->whereDoesntHave('availabilityPeriods', fn ($query) => $query->whereIn('status', ['available', 'full']))->count(),
             'kapasitas_rencana' => PkpaSiteAvailabilityPeriod::whereIn('status', ['available', 'full'])->sum('maximum_students'),
             'availability_aktif' => PkpaSiteAvailabilityPeriod::whereIn('status', ['available', 'full'])->count(),
-            'pembimbing_dalam_aktif' => PkpaInternalSupervisorEligibility::where('status', 'active')->count(),
+            'pembimbing_dalam_aktif' => PkpaInternalSupervisorEligibility::where('status', 'active')->distinct('core_user_id')->count('core_user_id'),
             'pembimbing_lapangan_aktif' => PkpaSiteFieldSupervisor::where('status', 'active')->count(),
-            'pembimbing_perlu_sync' => PkpaInternalSupervisorEligibility::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->count()
+            'pembimbing_perlu_sync' => PkpaInternalSupervisorEligibility::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->distinct('core_user_id')->count('core_user_id')
                 + PkpaSiteFieldSupervisor::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->count(),
-            'akun_core_nonaktif_pembimbing' => PkpaInternalSupervisorEligibility::where('core_account_status_snapshot', 'inactive')->count()
+            'akun_core_nonaktif_pembimbing' => PkpaInternalSupervisorEligibility::where('core_account_status_snapshot', 'inactive')->distinct('core_user_id')->count('core_user_id')
                 + PkpaSiteFieldSupervisor::where('core_account_status_snapshot', 'inactive')->count(),
         ];
     }

@@ -15,6 +15,7 @@ use App\Models\PkpaRotationAssignment;
 use App\Models\PkpaSiteFieldSupervisor;
 use App\Services\PkpaPlacementBulkActionService;
 use App\Services\PkpaPlacementCapacityService;
+use App\Services\PkpaInternalSupervisorService;
 use App\Services\PkpaPlacementPlanService;
 use App\Services\PkpaPlacementTimelineService;
 use App\Services\PkpaPlacementValidationService;
@@ -34,6 +35,7 @@ class PkpaPlacementPlannerController extends Controller
         private readonly PkpaPlacementValidationService $validationService,
         private readonly PkpaPlacementTimelineService $timelineService,
         private readonly PkpaPlacementCapacityService $capacityService,
+        private readonly PkpaInternalSupervisorService $internalSupervisorService,
     ) {
     }
 
@@ -44,6 +46,10 @@ class PkpaPlacementPlannerController extends Controller
             ->orderByDesc('id')
             ->first();
         $plan = $program ? $this->selectedPlan($request, $program) : null;
+
+        if ($program) {
+            $this->internalSupervisorService->bootstrapProgram($program, ['status' => 'active'], $request->user());
+        }
 
         return view('management.pkpa-placement-planner.index', [
             'programs' => PkpaProgram::orderByDesc('id')->get(),
@@ -183,6 +189,7 @@ class PkpaPlacementPlannerController extends Controller
 
     public function options(Request $request, PkpaPlacementPlan $plan)
     {
+        $this->internalSupervisorService->bootstrapProgram($plan->program, ['status' => 'active'], $request->user());
         $domainId = $request->integer('practice_domain_id');
         $programSites = $plan->program->programSites()->with(['practiceSite', 'availabilityPeriods'])
             ->where('practice_domain_id', $domainId)

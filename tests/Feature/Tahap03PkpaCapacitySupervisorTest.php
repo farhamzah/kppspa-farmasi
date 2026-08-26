@@ -180,12 +180,10 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
     public function test_internal_supervisor_eligibility_and_unavailability(): void
     {
         $program = $this->createProgram('PKPA-03-D');
-        $apotek = PkpaPracticeDomain::where('code', 'APT')->firstOrFail();
+        $activeDomainCount = $program->domains()->where('is_active', true)->count();
 
         $payload = [
             'pkpa_program_id' => $program->id,
-            'practice_domain_id' => $apotek->id,
-            'core_user_id' => 'CORE-DOSEN-1',
             'maximum_active_students' => 12,
             'maximum_students_per_program' => 20,
             'status' => 'active',
@@ -195,19 +193,15 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
             ->post('/management/pkpa-internal-supervisors', $payload)
             ->assertRedirect();
 
+        $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::count());
+
         $eligibility = PkpaInternalSupervisorEligibility::firstOrFail();
         $this->assertSame('Dosen Satu', $eligibility->name_snapshot);
         $this->assertSame('core-koor-03', $eligibility->created_by_core_user_id);
 
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post('/management/pkpa-internal-supervisors', $payload)
-            ->assertSessionHasErrors('core_user_id');
-
-        foreach (['CORE-FIELD-1', 'CORE-INACTIVE', 'CORE-NOACCESS', 'CORE-MISSING'] as $badCoreId) {
-            $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
-                ->post('/management/pkpa-internal-supervisors', array_merge($payload, ['core_user_id' => $badCoreId]))
-                ->assertSessionHasErrors('core_user_id');
-        }
+            ->assertRedirect();
 
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-internal-supervisors/{$eligibility->id}/unavailability", [
@@ -215,18 +209,18 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
                 'end_date' => '2026-03-05',
                 'reason' => 'Pelatihan',
             ])->assertRedirect();
-        $this->assertDatabaseHas('pkpa_supervisor_unavailability_periods', ['internal_supervisor_eligibility_id' => $eligibility->id, 'reason' => 'Pelatihan']);
+        $this->assertSame($activeDomainCount, \App\Models\PkpaSupervisorUnavailabilityPeriod::where('supervisor_type', 'internal')->where('reason', 'Pelatihan')->count());
 
         $this->fakeCore(['CORE-DOSEN-1' => $this->corePerson('CORE-DOSEN-1', 'Dosen Satu Baru', ['pembimbing_dalam'])]);
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-internal-supervisors/{$eligibility->id}/sync")
             ->assertRedirect();
-        $this->assertSame('Dosen Satu Baru', $eligibility->fresh()->name_snapshot);
+        $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::where('name_snapshot', 'Dosen Satu Baru')->count());
 
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-internal-supervisors/{$eligibility->id}/deactivate")
             ->assertRedirect();
-        $this->assertSame('inactive', $eligibility->fresh()->status);
+        $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::where('status', 'inactive')->count());
     }
 
     public function test_readiness_dashboard_requires_capacity_and_supervisors_without_creating_placement(): void
@@ -260,8 +254,6 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post('/management/pkpa-internal-supervisors', [
                 'pkpa_program_id' => $program->id,
-                'practice_domain_id' => $programSite->practice_domain_id,
-                'core_user_id' => 'CORE-DOSEN-1',
                 'status' => 'active',
             ])->assertRedirect();
 
@@ -374,6 +366,33 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
 
         Http::fake(function ($request) {
             $url = $request->url();
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                return Http::response([
+                    'data' => collect($this->coreUsers)
+                        ->filter(fn ($person, $id) => $id !== 'CORE-NOACCESS')
+                        ->map(fn ($person, $id) => [
+                            'user_id' => $id,
+                            'app_code' => 'kppspa-farmasi',
+                            'roles' => $person['roles'],
+                            'user' => [
+                                'id' => $person['core_user_id'],
+                                'name' => $person['name'],
+                                'email' => $person['email'],
+                                'active' => $person['active'],
+                            ],
+                            'profiles' => [
+                                'lecturer' => [
+                                    'nidn' => $person['employee_number'],
+                                    'lecturer_number' => $person['employee_number'],
+                                    'employee_number' => $person['employee_number'],
+                                ],
+                            ],
+                        ])
+                        ->values()
+                        ->all(),
+                    'meta' => ['page' => 1, 'limit' => 500, 'total' => count($this->coreUsers), 'has_more' => false],
+                ], 200);
+            }
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-NOACCESS/access')) {
                 return Http::response(['has_access' => false, 'roles' => []], 200);
             }

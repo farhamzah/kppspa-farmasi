@@ -95,7 +95,7 @@ class PkpaPlacementReadinessService
                 'groups' => $program->studentGroups()->where('is_active', true)->count(),
                 'active_sites' => $program->programSites()->where('is_active', true)->whereIn('status', ['ready', 'active'])->count(),
                 'availability_periods' => $program->programSites()->withCount('availabilityPeriods')->get()->sum('availability_periods_count'),
-                'internal_supervisors' => PkpaInternalSupervisorEligibility::where('pkpa_program_id', $program->id)->where('status', 'active')->count(),
+                'internal_supervisors' => PkpaInternalSupervisorEligibility::where('pkpa_program_id', $program->id)->where('status', 'active')->distinct('core_user_id')->count('core_user_id'),
                 'field_supervisors' => $program->programSites->sum(fn ($site) => $site->activeFieldSupervisorsCount()),
                 'ungrouped_participants' => $ungrouped,
                 'critical' => $critical,
