@@ -9,6 +9,7 @@ use App\Models\PkpaEnrollment;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -228,26 +229,36 @@ class CoreDirectorySearchControllerTest extends TestCase
 
             if (str_contains($url, '/internal/directory/users')) {
                 return Http::response([
-                    'data' => [
-                        [
-                            'id' => 17,
-                            'name' => 'Siti Farmasi',
-                            'email' => 'siti@ubpkarawang.ac.id',
-                            'identity_type' => 'student',
-                            'identity_number' => '231010',
-                            'active' => true,
-                            'roles' => ['mahasiswa'],
-                            'app_accesses' => [
-                                ['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa'],
-                            ],
-                        ],
-                    ],
-                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 1, 'has_more' => false],
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
                 ], 200);
             }
 
-            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/17/access')) {
-                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                return Http::response([
+                    'data' => [[
+                        'user_id' => 17,
+                        'app_code' => 'kppspa-farmasi',
+                        'roles' => [
+                            ['slug' => 'mahasiswa', 'name' => 'Mahasiswa'],
+                        ],
+                        'user' => [
+                            'id' => 17,
+                            'name' => 'Siti Farmasi',
+                            'email' => 'siti@ubpkarawang.ac.id',
+                            'active' => true,
+                        ],
+                        'profiles' => [
+                            'student' => [
+                                'id' => 201,
+                                'user_id' => 17,
+                                'student_number' => '231010',
+                                'active' => true,
+                            ],
+                        ],
+                    ]],
+                    'meta' => ['page' => 1, 'limit' => 100, 'total' => 1, 'has_more' => false],
+                ], 200);
             }
 
             return Http::response(null, 404);
@@ -384,6 +395,9 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.core_user_id', '396')
             ->assertJsonPath('data.0.name', 'Syfa Dwi Andini')
             ->assertJsonPath('data.0.student_number', '26416248901008');
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/internal/apps/kppspa-farmasi/users'));
+        Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/internal/apps/kppspa-farmasi/users/396/access'));
     }
 
     public function test_directory_search_uses_nested_user_id_for_access_checks(): void

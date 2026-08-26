@@ -53,8 +53,11 @@ class PkpaCoreDirectorySearchService
 
     public function searchStudents(?string $query = null, int $limit = 10, ?PkpaProgram $program = null): array
     {
-        $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? [])
-            ->merge($this->fallbackStudentDirectoryItems($query, $limit));
+        $knownAppAccesses = $this->studentAppAccessMap($query, $limit);
+        $items = filled($query)
+            ? collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? [])
+                ->merge($this->fallbackStudentDirectoryItems($query, $limit, $knownAppAccesses))
+            : $knownAppAccesses->values();
 
         return $items
             ->map(function ($student) {
@@ -69,10 +72,14 @@ class PkpaCoreDirectorySearchService
             })
             ->filter(fn (array $student) => $student['account_status'] === 'active')
             ->filter(fn (array $student) => $this->studentHasRole($student))
-            ->map(function (array $student) use ($program) {
+            ->map(function (array $student) use ($program, $knownAppAccesses) {
                 $access = is_array($student['_app_access'] ?? null)
                     ? $student['_app_access']
-                    : $this->coreClient->checkUserAppAccess($student['core_user_id']);
+                    : ($knownAppAccesses->get((string) ($student['core_user_id'] ?? ''))['_app_access'] ?? null);
+
+                if (! is_array($access)) {
+                    $access = $this->coreClient->checkUserAppAccess($student['core_user_id']);
+                }
 
                 return $student + [
                     'has_app_access' => ($access['has_access'] ?? false) === true,
@@ -101,17 +108,12 @@ class PkpaCoreDirectorySearchService
             ->all();
     }
 
-    private function fallbackStudentDirectoryItems(?string $query, int $limit): Collection
+    private function fallbackStudentDirectoryItems(?string $query, int $limit, ?Collection $knownAppAccesses = null): Collection
     {
         $directoryUsers = collect($this->coreClient->searchUsers($this->buildParams($query, max($limit * 2, 10)))['data'] ?? []);
-        $appAccessUsers = collect($this->coreClient->listAppAccessUsers([
-            'limit' => max($limit * 10, 100),
-        ])['data'] ?? [])
-            ->map(fn ($item) => $this->normalizeStudentAppAccessItem((array) $item))
-            ->filter()
-            ->when(filled($query), fn (Collection $items) => $items->filter(fn (array $item) => $this->matchesStudentQuery($item, (string) $query)));
+        $appAccessUsers = $knownAppAccesses ?? $this->studentAppAccessMap($query, $limit);
 
-        return $directoryUsers->merge($appAccessUsers);
+        return $directoryUsers->merge($appAccessUsers->values());
     }
 
     private function normalizeStudentAppAccessItem(array $item): ?array
@@ -180,6 +182,22 @@ class PkpaCoreDirectorySearchService
         ])->filter()
             ->map(fn ($value) => str((string) $value)->lower()->toString())
             ->contains(fn (string $value) => str_contains($value, $keyword));
+    }
+
+    private function studentAppAccessMap(?string $query, int $limit): Collection
+    {
+        $params = array_filter([
+            'limit' => max($limit * 5, 100),
+            'role' => 'mahasiswa',
+            'q' => filled($query) ? trim((string) $query) : null,
+        ], fn ($value) => filled($value));
+
+        return collect($this->coreClient->listAppAccessUsers($params)['data'] ?? [])
+            ->map(fn ($item) => $this->normalizeStudentAppAccessItem((array) $item))
+            ->filter()
+            ->when(filled($query), fn (Collection $items) => $items->filter(fn (array $item) => $this->matchesStudentQuery($item, (string) $query)))
+            ->mapWithKeys(fn (array $item) => [(string) ($item['core_user_id'] ?? '') => $item])
+            ->filter(fn ($item, $key) => filled($key));
     }
 
     private function excludeExistingProgramEnrollments(Collection $students, PkpaProgram $program): Collection
