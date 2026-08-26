@@ -4,17 +4,29 @@
 @section('content')
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{{ session('status') }}</div>@endif
+    @if(session('warning'))
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p class="font-black">{{ session('warning') }}</p>
+            @if(session('warning_details'))
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-xs text-amber-900">
+                    @foreach(session('warning_details') as $detail)
+                        <li>{{ $detail }}</li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+    @endif
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
     <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-            <form method="GET" class="grid flex-1 gap-3 md:grid-cols-3 xl:grid-cols-[1fr_180px_150px_150px_150px_150px_auto]">
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Cari</label><input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="NPM, nama, Core ID" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Program</label><select name="program_id" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Semua</option>@foreach($programs as $program)<option value="{{ $program->id }}" @selected(($filters['program_id'] ?? '') == $program->id)>{{ $program->code }}</option>@endforeach</select></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Status</label><select name="status" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Semua</option>@foreach(\App\Models\PkpaEnrollment::STATUSES as $status)<option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>@endforeach</select></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Core</label><select name="core_account_status" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Semua</option><option value="active" @selected(($filters['core_account_status'] ?? '') === 'active')>Aktif</option><option value="inactive" @selected(($filters['core_account_status'] ?? '') === 'inactive')>Nonaktif</option></select></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Kelompok</label><select name="grouped" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Semua</option><option value="yes" @selected(($filters['grouped'] ?? '') === 'yes')>Sudah</option><option value="no" @selected(($filters['grouped'] ?? '') === 'no')>Belum</option></select></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Sinkronisasi</label><select name="sync" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Semua</option><option value="problem" @selected(($filters['sync'] ?? '') === 'problem')>Bermasalah</option></select></div>
-                <button class="self-end rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white">Filter</button>
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <form method="GET" class="grid flex-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(320px,1.5fr)_minmax(180px,1fr)_minmax(160px,0.9fr)_minmax(160px,0.9fr)_minmax(160px,0.9fr)_minmax(180px,0.9fr)_auto]">
+                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Cari</label><input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="NPM, nama mahasiswa, atau Core ID" class="mt-1 h-12 w-full rounded-xl border border-slate-300 px-4 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"></div>
+                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Program</label><select name="program_id" class="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"><option value="">Semua</option>@foreach($programs as $program)<option value="{{ $program->id }}" @selected(($filters['program_id'] ?? '') == $program->id)>{{ $program->code }}</option>@endforeach</select></div>
+                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Status</label><select name="status" class="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"><option value="">Semua</option>@foreach(\App\Models\PkpaEnrollment::STATUSES as $status)<option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ str($status)->replace('_', ' ')->headline() }}</option>@endforeach</select></div>
+                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Core</label><select name="core_account_status" class="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"><option value="">Semua</option><option value="active" @selected(($filters['core_account_status'] ?? '') === 'active')>Aktif</option><option value="inactive" @selected(($filters['core_account_status'] ?? '') === 'inactive')>Nonaktif</option></select></div>
+                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Kelompok</label><select name="grouped" class="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"><option value="">Semua</option><option value="yes" @selected(($filters['grouped'] ?? '') === 'yes')>Sudah</option><option value="no" @selected(($filters['grouped'] ?? '') === 'no')>Belum</option></select></div>
+                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Sinkronisasi</label><select name="sync" class="mt-1 h-12 w-full rounded-xl border border-slate-300 px-3 text-sm shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"><option value="">Semua</option><option value="problem" @selected(($filters['sync'] ?? '') === 'problem')>Bermasalah</option></select></div>
+                <button class="self-end rounded-xl bg-slate-900 px-5 py-3 text-sm font-black text-white">Filter</button>
             </form>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('management.pkpa-enrollments.import') }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Import</a>

@@ -63,14 +63,23 @@ class PkpaEnrollmentController extends Controller
         $program = PkpaProgram::findOrFail($request->validated('pkpa_program_id'));
         $group = $request->filled('pkpa_student_group_id') ? PkpaStudentGroup::findOrFail($request->validated('pkpa_student_group_id')) : null;
         $selectedStudents = collect($request->validated('selected_students', []))
+            ->map(fn ($student) => [
+                'core_user_id' => (string) ($student['core_user_id'] ?? ''),
+                'student_number' => (string) ($student['student_number'] ?? ''),
+                'name' => (string) ($student['name'] ?? ''),
+                'email' => (string) ($student['email'] ?? ''),
+            ])
+            ->filter(fn (array $student) => filled($student['core_user_id']))
+            ->values();
+
+        $selectedStudentIds = $selectedStudents
             ->pluck('core_user_id')
             ->filter()
-            ->map(fn ($id) => (string) $id)
             ->values()
             ->all();
 
-        if (count($selectedStudents) > 0) {
-            $result = $this->enrollmentService->createMany($program, $selectedStudents, $group, $request->user(), $request->validated());
+        if (count($selectedStudentIds) > 0) {
+            $result = $this->enrollmentService->createMany($program, $selectedStudentIds, $group, $request->user(), $request->validated());
             $createdCount = $result['created']->count();
 
             if ($createdCount === 0) {
@@ -80,14 +89,24 @@ class PkpaEnrollmentController extends Controller
             }
 
             $status = "{$createdCount} peserta berhasil ditambahkan.";
-            if ($result['created']->first()?->requirements) {
-                $status .= ' Kewajiban wahana otomatis sudah dibuat.';
-            }
+            $status .= ' Kewajiban wahana otomatis sudah dibuat.';
 
             $redirect = redirect()->route('management.pkpa-enrollments.index')->with('status', $status);
 
             if (count($result['errors']) > 0) {
-                $redirect->with('warning', count($result['errors']).' data dilewati karena sudah terdaftar atau tidak valid.');
+                $errorDetails = collect($result['errors'])
+                    ->map(function (string $message, string $coreUserId) use ($selectedStudents) {
+                        $student = $selectedStudents->firstWhere('core_user_id', $coreUserId);
+                        $label = $student['name'] ?? $student['student_number'] ?? $coreUserId;
+
+                        return trim($label).' : '.$message;
+                    })
+                    ->values()
+                    ->all();
+
+                $redirect
+                    ->with('warning', count($result['errors']).' peserta dilewati. Beberapa data sudah pernah terdaftar atau masih bermasalah di Core.')
+                    ->with('warning_details', array_slice($errorDetails, 0, 12));
             }
 
             return $redirect;

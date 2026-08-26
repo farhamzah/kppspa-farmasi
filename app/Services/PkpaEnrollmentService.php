@@ -6,8 +6,10 @@ use App\Models\PkpaEnrollment;
 use App\Models\PkpaProgram;
 use App\Models\PkpaStudentGroup;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 use Illuminate\Validation\ValidationException;
 
 class PkpaEnrollmentService
@@ -85,6 +87,15 @@ class PkpaEnrollmentService
             } catch (ValidationException $exception) {
                 $message = collect($exception->errors())->flatten()->first() ?? 'Data mahasiswa Core tidak valid.';
                 $errors[$coreUserId] = $message;
+            } catch (Throwable $exception) {
+                Log::warning('PKPA bulk enrollment item failed.', [
+                    'pkpa_program_id' => $program->id,
+                    'core_user_id' => $coreUserId,
+                    'error_class' => $exception::class,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                $errors[$coreUserId] = 'Sistem belum dapat memproses peserta ini. Silakan sinkronkan atau periksa data Core mahasiswa.';
             }
         }
 

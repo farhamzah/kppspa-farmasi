@@ -119,6 +119,44 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         ]);
     }
 
+    public function test_bulk_enrollment_partial_failure_still_redirects_with_warning(): void
+    {
+        $program = $this->createProgram('PKPA-26-PARTIAL');
+
+        $response = $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post('/management/pkpa-enrollments', [
+                'pkpa_program_id' => $program->id,
+                'selected_students' => [
+                    [
+                        'core_user_id' => 'CORE-001',
+                        'student_number' => '231001',
+                        'name' => 'Andi Farmasi',
+                        'email' => 'core-001@student.test',
+                    ],
+                    [
+                        'core_user_id' => 'CORE-INACTIVE',
+                        'student_number' => '231004',
+                        'name' => 'Ina Nonaktif',
+                        'email' => 'core-inactive@student.test',
+                    ],
+                ],
+            ]);
+
+        $response
+            ->assertRedirect('/management/pkpa-enrollments')
+            ->assertSessionHas('status')
+            ->assertSessionHas('warning');
+
+        $this->assertDatabaseHas('pkpa_enrollments', [
+            'pkpa_program_id' => $program->id,
+            'core_user_id' => 'CORE-001',
+        ]);
+        $this->assertDatabaseMissing('pkpa_enrollments', [
+            'pkpa_program_id' => $program->id,
+            'core_user_id' => 'CORE-INACTIVE',
+        ]);
+    }
+
     public function test_core_validation_duplicate_and_authorization_rules(): void
     {
         $program = $this->createProgram('PKPA-26-B');

@@ -13,7 +13,7 @@
         ])
         ->values();
 @endphp
-<div class="max-w-4xl space-y-5">
+<div class="max-w-5xl space-y-5">
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
     @if(session('warning'))<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{{ session('warning') }}</div>@endif
     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
@@ -35,21 +35,21 @@
                                 type="text"
                                 placeholder="Ketik nama mahasiswa, email, NPM, atau Core ID"
                                 autocomplete="off"
-                                class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"
+                                class="mt-1 h-14 w-full rounded-2xl border border-slate-300 px-4 text-base shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
                                 data-student-search
                             >
                             <p class="mt-2 text-xs text-slate-500">Mahasiswa yang sudah terdaftar di program ini otomatis tidak ditampilkan lagi. Gunakan centang untuk memilih beberapa peserta sekaligus.</p>
                         </div>
 
                         <div class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-3" data-bulk-actions>
-                            <div class="flex flex-wrap items-center gap-2">
-                                <button type="button" class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-black text-white" data-select-all-visible>Pilih semua hasil</button>
-                                <button type="button" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700" data-clear-selected>Bersihkan pilihan</button>
-                                <span class="text-xs font-semibold text-slate-500" data-selected-summary>Belum ada peserta dipilih.</span>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button type="button" class="rounded-xl bg-cyan-700 px-4 py-2.5 text-sm font-black text-white" data-select-all-visible>Pilih semua hasil</button>
+                                <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold text-slate-700" data-clear-selected>Bersihkan pilihan</button>
+                                <span class="text-sm font-semibold text-slate-500" data-selected-summary>Belum ada peserta dipilih.</span>
                             </div>
                         </div>
 
-                        <div class="hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" data-search-results></div>
+                        <div class="hidden max-h-[28rem] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" data-search-results></div>
 
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                             <div class="flex items-center justify-between gap-3">
