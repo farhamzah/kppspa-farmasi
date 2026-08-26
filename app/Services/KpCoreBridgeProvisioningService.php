@@ -614,16 +614,18 @@ class KpCoreBridgeProvisioningService
         }
 
         $coreLecturer = (object) $plan['core_lecturer'];
+        $lecturerNumber = $this->normalizeOptionalIdentifier($coreLecturer->nidn ?: $coreLecturer->lecturer_number);
+        $employeeNumber = $this->normalizeOptionalIdentifier($coreLecturer->nip ?? null);
         $legacyLecturer = Lecturer::query()
             ->where('core_lecturer_id', $coreLecturer->id)
             ->orWhere('user_id', $legacyUser->id)
-            ->orWhere('nidn_nip', $coreLecturer->lecturer_number)
+            ->when(filled($lecturerNumber), fn ($query) => $query->orWhere('nidn_nip', $lecturerNumber))
             ->first();
 
         $attributes = [
             'user_id' => $legacyUser->id,
-            'nidn_nip' => $coreLecturer->nidn ?: $coreLecturer->lecturer_number,
-            'employee_number' => $coreLecturer->nip ?: null,
+            'nidn_nip' => $lecturerNumber,
+            'employee_number' => $employeeNumber,
             'study_program' => $coreLecturer->study_program_name,
             'department' => $coreLecturer->department_name,
             'phone' => null,
@@ -643,6 +645,17 @@ class KpCoreBridgeProvisioningService
         }
 
         Lecturer::query()->create($attributes);
+    }
+
+    private function normalizeOptionalIdentifier(mixed $value): ?string
+    {
+        $normalized = trim((string) ($value ?? ''));
+
+        if ($normalized === '' || in_array(strtolower($normalized), ['-', 'n/a', 'na', 'null', 'none'], true)) {
+            return null;
+        }
+
+        return $normalized;
     }
 
     private function syncLegacyFieldSupervisorProfile(User $legacyUser, array $plan): void

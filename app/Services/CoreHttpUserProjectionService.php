@@ -193,7 +193,8 @@ class CoreHttpUserProjectionService
             return;
         }
 
-        $lecturerNumber = $profile['nidn'] ?? $profile['lecturer_number'] ?? null;
+        $lecturerNumber = $this->normalizeOptionalIdentifier($profile['nidn'] ?? $profile['lecturer_number'] ?? null);
+        $employeeNumber = $this->normalizeOptionalIdentifier($profile['nip'] ?? null);
         $department = data_get($profile, 'department.name') ?? $profile['department_name'] ?? null;
         $studyProgram = data_get($profile, 'study_program.name') ?? $profile['study_program_name'] ?? null;
         $lecturer = Lecturer::query()
@@ -205,7 +206,7 @@ class CoreHttpUserProjectionService
         $attributes = [
             'user_id' => $user->id,
             'nidn_nip' => $lecturerNumber,
-            'employee_number' => $profile['nip'] ?? null,
+            'employee_number' => $employeeNumber,
             'study_program' => $studyProgram,
             'department' => $department,
             'phone' => $profile['phone'] ?? null,
@@ -223,6 +224,17 @@ class CoreHttpUserProjectionService
         if (blank($lecturerNumber) || (blank($department) && blank($studyProgram))) {
             $warnings[] = 'Profil dosen Core belum lengkap; lengkapi nomor dosen dan unit di Core Farmasi.';
         }
+    }
+
+    private function normalizeOptionalIdentifier(mixed $value): ?string
+    {
+        $normalized = trim((string) ($value ?? ''));
+
+        if ($normalized === '' || in_array(strtolower($normalized), ['-', 'n/a', 'na', 'null', 'none'], true)) {
+            return null;
+        }
+
+        return $normalized;
     }
 
     /**

@@ -109,6 +109,39 @@ class CoreBridgeProvisioningCommandTest extends TestCase
         ]);
     }
 
+    public function test_execute_treats_placeholder_nip_as_null_when_provisioning_lecturer(): void
+    {
+        $existing = User::create([
+            'name' => 'Dosen Existing',
+            'email' => 'existing-dosen@example.test',
+            'password' => Hash::make('secret'),
+            'status' => 'active',
+            'must_change_password' => false,
+            'profile_completed' => true,
+        ]);
+        $existing->lecturer()->create([
+            'nidn_nip' => '0011223344',
+            'employee_number' => '-',
+            'status' => 'active',
+        ]);
+
+        $this->coreUser(24, 'abdul.aziz@ubpkarawang.ac.id', ['dosen', 'pembimbing-dalam']);
+        $this->coreLecturer(28, 24, '5035770671130353', 'abdul.aziz@ubpkarawang.ac.id', '-');
+
+        $this->artisan('kp:provision-core-bridge-user --email=abdul.aziz@ubpkarawang.ac.id --execute --confirm-execute')
+            ->expectsOutputToContain('Action: created')
+            ->assertSuccessful();
+
+        $user = User::where('email', 'abdul.aziz@ubpkarawang.ac.id')->firstOrFail();
+
+        $this->assertDatabaseHas('lecturers', [
+            'user_id' => $user->id,
+            'nidn_nip' => '5035770671130353',
+            'employee_number' => null,
+            'core_lecturer_id' => 28,
+        ]);
+    }
+
     public function test_execute_creates_legacy_student_profile_when_core_student_exists(): void
     {
         $this->coreUser(22, 'student@sikp.test', ['mahasiswa']);
@@ -411,14 +444,14 @@ class CoreBridgeProvisioningCommandTest extends TestCase
         ]);
     }
 
-    private function coreLecturer(int $id, int $userId, string $lecturerNumber, string $email): void
+    private function coreLecturer(int $id, int $userId, string $lecturerNumber, string $email, string $nip = '416200165'): void
     {
         DB::connection('core')->table('lecturers')->insert([
             'id' => $id,
             'user_id' => $userId,
             'lecturer_number' => $lecturerNumber,
             'nidn' => $lecturerNumber,
-            'nip' => '416200165',
+            'nip' => $nip,
             'email' => $email,
             'active' => true,
         ]);
