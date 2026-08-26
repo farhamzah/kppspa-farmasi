@@ -62,8 +62,20 @@ class PkpaCoreDirectorySearchService
             ->map(fn ($student) => $this->studentResolver->normalizeStudent((array) $student))
             ->filter(fn (array $student) => $student['account_status'] === 'active')
             ->filter(fn (array $student) => $this->studentHasRole($student))
-            ->filter(fn (array $student) => $this->matchesProgramCohort($student, $program))
+            ->map(function (array $student) use ($program) {
+                $access = $this->coreClient->checkUserAppAccess($student['core_user_id']);
+
+                return $student + [
+                    'has_app_access' => ($access['has_access'] ?? false) === true,
+                    'program_match_score' => $this->programMatchScore($student, $program),
+                ];
+            })
+            ->filter(fn (array $student) => $student['has_app_access'] === true)
             ->unique('core_user_id')
+            ->sortBy([
+                ['program_match_score', 'desc'],
+                ['name', 'asc'],
+            ])
             ->take($limit)
             ->map(fn (array $student) => [
                 'core_user_id' => $student['core_user_id'],
@@ -79,15 +91,15 @@ class PkpaCoreDirectorySearchService
             ->all();
     }
 
-    private function matchesProgramCohort(array $student, ?PkpaProgram $program): bool
+    private function programMatchScore(array $student, ?PkpaProgram $program): int
     {
         if (! $program) {
-            return true;
+            return 0;
         }
 
         $year = $this->extractProgramYear($program);
         if (! $year) {
-            return true;
+            return 0;
         }
 
         $yearSuffix = substr((string) $year, -2);
@@ -95,14 +107,14 @@ class PkpaCoreDirectorySearchService
         $studentNumber = preg_replace('/\D+/', '', (string) ($student['student_number'] ?? ''));
 
         if ($email !== '' && str_contains($email, 'ap'.$yearSuffix.'.')) {
-            return true;
+            return 2;
         }
 
         if ($studentNumber !== '' && str_starts_with($studentNumber, $yearSuffix)) {
-            return true;
+            return 1;
         }
 
-        return false;
+        return 0;
     }
 
     private function extractProgramYear(PkpaProgram $program): ?int

@@ -160,10 +160,9 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->getJson(route('management.core-directory.students', ['q' => 'mahasiswa']))
             ->assertOk()
-            ->assertJsonCount(2, 'data')
+            ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.core_user_id', 'CORE-MHS-OK')
-            ->assertJsonPath('data.0.student_number', '231001')
-            ->assertJsonFragment(['core_user_id' => 'CORE-MHS-NOACCESS', 'name' => 'Mahasiswa Tanpa Akses']);
+            ->assertJsonPath('data.0.student_number', '231001');
     }
 
     public function test_student_directory_falls_back_to_users_when_student_directory_empty(): void
@@ -237,10 +236,17 @@ class CoreDirectorySearchControllerTest extends TestCase
                             'identity_number' => '231010',
                             'active' => true,
                             'roles' => ['mahasiswa'],
+                            'app_accesses' => [
+                                ['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa'],
+                            ],
                         ],
                     ],
                     'meta' => ['page' => 1, 'limit' => 10, 'total' => 1, 'has_more' => false],
                 ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/17/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
             }
 
             return Http::response(null, 404);
@@ -368,6 +374,9 @@ class CoreDirectorySearchControllerTest extends TestCase
                             'identity_number' => '26416248901006',
                             'active' => true,
                             'roles' => ['mahasiswa'],
+                            'app_accesses' => [
+                                ['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa'],
+                            ],
                         ],
                         [
                             'id' => 270,
@@ -377,10 +386,17 @@ class CoreDirectorySearchControllerTest extends TestCase
                             'identity_number' => '24416248201082',
                             'active' => true,
                             'roles' => ['mahasiswa'],
+                            'app_accesses' => [
+                                ['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa'],
+                            ],
                         ],
                     ],
                     'meta' => [],
                 ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/398/access') || str_contains($url, '/internal/apps/kppspa-farmasi/users/270/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
             }
 
             return Http::response(null, 404);
@@ -390,9 +406,10 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->withSession(['active_role' => 'admin'])
             ->getJson(route('management.core-directory.students', ['q' => 'andi', 'program_id' => $program->id]))
             ->assertOk()
-            ->assertJsonCount(1, 'data')
+            ->assertJsonCount(2, 'data')
             ->assertJsonPath('data.0.core_user_id', '398')
-            ->assertJsonPath('data.0.email', 'ap26.andinaagustin@mhs.ubpkarawang.ac.id');
+            ->assertJsonPath('data.0.email', 'ap26.andinaagustin@mhs.ubpkarawang.ac.id')
+            ->assertJsonPath('data.1.core_user_id', '270');
     }
 
     private function makeUser(string $email, array $roles, string $coreUserId): User
