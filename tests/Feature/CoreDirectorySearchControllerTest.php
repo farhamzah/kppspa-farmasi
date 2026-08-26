@@ -262,6 +262,129 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.student_number', '231010');
     }
 
+    public function test_student_directory_falls_back_to_app_access_users_when_directory_results_are_empty(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                return Http::response([
+                    'data' => [[
+                        'user_id' => 398,
+                        'app_code' => 'kppspa-farmasi',
+                        'roles' => [
+                            ['slug' => 'mahasiswa', 'name' => 'Mahasiswa'],
+                        ],
+                        'user' => [
+                            'id' => 398,
+                            'name' => 'Andina Sahara Agustin',
+                            'email' => 'ap26.andinaagustin@mhs.ubpkarawang.ac.id',
+                            'active' => true,
+                        ],
+                        'profiles' => [
+                            'student' => [
+                                'id' => 1001,
+                                'user_id' => 398,
+                                'student_number' => '26416248901006',
+                                'study_program' => ['name' => 'Profesi Apoteker'],
+                                'cohort' => '2026',
+                                'active' => true,
+                            ],
+                        ],
+                    ]],
+                    'meta' => ['page' => 1, 'limit' => 100, 'total' => 1, 'has_more' => false],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students', ['q' => 'andina']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '398')
+            ->assertJsonPath('data.0.name', 'Andina Sahara Agustin')
+            ->assertJsonPath('data.0.student_number', '26416248901006')
+            ->assertJsonPath('data.0.email', 'ap26.andinaagustin@mhs.ubpkarawang.ac.id');
+    }
+
+    public function test_student_directory_can_show_initial_results_from_app_access_users_without_query(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                return Http::response([
+                    'data' => [[
+                        'user_id' => 396,
+                        'app_code' => 'kppspa-farmasi',
+                        'roles' => [
+                            ['slug' => 'mahasiswa', 'name' => 'Mahasiswa'],
+                        ],
+                        'user' => [
+                            'id' => 396,
+                            'name' => 'Syfa Dwi Andini',
+                            'email' => 'ap26.syfaandini@mhs.ubpkarawang.ac.id',
+                            'active' => true,
+                        ],
+                        'profiles' => [
+                            'student' => [
+                                'id' => 1002,
+                                'user_id' => 396,
+                                'student_number' => '26416248901008',
+                                'study_program' => ['name' => 'Profesi Apoteker'],
+                                'cohort' => '2026',
+                                'active' => true,
+                            ],
+                        ],
+                    ]],
+                    'meta' => ['page' => 1, 'limit' => 100, 'total' => 1, 'has_more' => false],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students'))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '396')
+            ->assertJsonPath('data.0.name', 'Syfa Dwi Andini')
+            ->assertJsonPath('data.0.student_number', '26416248901008');
+    }
+
     public function test_directory_search_uses_nested_user_id_for_access_checks(): void
     {
         Http::fake(function ($request) {

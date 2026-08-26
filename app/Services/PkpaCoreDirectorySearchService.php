@@ -52,18 +52,26 @@ class PkpaCoreDirectorySearchService
 
     public function searchStudents(?string $query = null, int $limit = 10, ?PkpaProgram $program = null): array
     {
-        $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? []);
-
-        if ($items->isEmpty()) {
-            $items = collect($this->coreClient->searchUsers($this->buildParams($query, max($limit * 2, 10)))['data'] ?? []);
-        }
+        $items = collect($this->coreClient->searchStudents($this->buildStudentParams($query, $limit))['data'] ?? [])
+            ->merge($this->fallbackStudentDirectoryItems($query, $limit));
 
         return $items
-            ->map(fn ($student) => $this->studentResolver->normalizeStudent((array) $student))
+            ->map(function ($student) {
+                $student = (array) $student;
+                $normalized = $this->studentResolver->normalizeStudent($student);
+
+                if (isset($student['_app_access'])) {
+                    $normalized['_app_access'] = $student['_app_access'];
+                }
+
+                return $normalized;
+            })
             ->filter(fn (array $student) => $student['account_status'] === 'active')
             ->filter(fn (array $student) => $this->studentHasRole($student))
             ->map(function (array $student) use ($program) {
-                $access = $this->coreClient->checkUserAppAccess($student['core_user_id']);
+                $access = is_array($student['_app_access'] ?? null)
+                    ? $student['_app_access']
+                    : $this->coreClient->checkUserAppAccess($student['core_user_id']);
 
                 return $student + [
                     'has_app_access' => ($access['has_access'] ?? false) === true,
@@ -89,6 +97,87 @@ class PkpaCoreDirectorySearchService
             ])
             ->values()
             ->all();
+    }
+
+    private function fallbackStudentDirectoryItems(?string $query, int $limit): Collection
+    {
+        $directoryUsers = collect($this->coreClient->searchUsers($this->buildParams($query, max($limit * 2, 10)))['data'] ?? []);
+        $appAccessUsers = collect($this->coreClient->listAppAccessUsers([
+            'limit' => max($limit * 10, 100),
+        ])['data'] ?? [])
+            ->map(fn ($item) => $this->normalizeStudentAppAccessItem((array) $item))
+            ->filter()
+            ->when(filled($query), fn (Collection $items) => $items->filter(fn (array $item) => $this->matchesStudentQuery($item, (string) $query)));
+
+        return $directoryUsers->merge($appAccessUsers);
+    }
+
+    private function normalizeStudentAppAccessItem(array $item): ?array
+    {
+        $user = is_array($item['user'] ?? null) ? $item['user'] : [];
+        $studentProfile = is_array(data_get($item, 'profiles.student')) ? data_get($item, 'profiles.student') : [];
+        $accessRoles = collect($item['roles'] ?? [])
+            ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? $role['code'] ?? null) : $role)
+            ->filter()
+            ->values();
+
+        if ($user === [] && $studentProfile === []) {
+            return null;
+        }
+
+        $coreUserId = $user['id']
+            ?? $item['user_id']
+            ?? $studentProfile['user_id']
+            ?? $item['core_user_id']
+            ?? null;
+
+        if (! filled($coreUserId)) {
+            return null;
+        }
+
+        $payload = array_replace($studentProfile, [
+            'core_user_id' => (string) $coreUserId,
+            'name' => $studentProfile['name'] ?? $user['name'] ?? $item['name'] ?? null,
+            'email' => $studentProfile['email'] ?? $user['email'] ?? $item['email'] ?? null,
+            'active' => $studentProfile['active'] ?? $user['active'] ?? $item['active'] ?? true,
+            'user' => $user,
+            'roles' => array_values(array_filter(array_merge(
+                is_array($studentProfile['roles'] ?? null) ? $studentProfile['roles'] : [],
+                is_array($user['roles'] ?? null) ? $user['roles'] : [],
+                is_array($item['roles'] ?? null) ? $item['roles'] : [],
+            ))),
+            'app_accesses' => $accessRoles
+                ->map(fn ($role) => [
+                    'app_code' => (string) config('core_farmasi.app_code', 'kppspa-farmasi'),
+                    'role_slug' => $role,
+                ])->all(),
+            '_app_access' => [
+                'has_access' => true,
+                'app_code' => (string) config('core_farmasi.app_code', 'kppspa-farmasi'),
+                'user_id' => (string) $coreUserId,
+                'roles' => $accessRoles->map(fn ($role) => ['slug' => $role])->all(),
+            ],
+        ]);
+
+        return $payload;
+    }
+
+    private function matchesStudentQuery(array $item, string $query): bool
+    {
+        $keyword = str($query)->lower()->trim()->toString();
+        if ($keyword === '') {
+            return true;
+        }
+
+        return collect([
+            $item['name'] ?? null,
+            $item['email'] ?? null,
+            $item['student_number'] ?? $item['nim'] ?? $item['npm'] ?? null,
+            $item['core_user_id'] ?? null,
+            data_get($item, 'user.id'),
+        ])->filter()
+            ->map(fn ($value) => str((string) $value)->lower()->toString())
+            ->contains(fn (string $value) => str_contains($value, $keyword));
     }
 
     private function programMatchScore(array $student, ?PkpaProgram $program): int
