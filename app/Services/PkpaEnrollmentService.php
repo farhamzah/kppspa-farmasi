@@ -6,6 +6,7 @@ use App\Models\PkpaEnrollment;
 use App\Models\PkpaProgram;
 use App\Models\PkpaStudentGroup;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -65,6 +66,32 @@ class PkpaEnrollmentService
 
             return $enrollment->load(['requirements.practiceDomain', 'activeGroupMembership.group']);
         });
+    }
+
+    /**
+     * @return array{created: Collection<int, PkpaEnrollment>, errors: array<string, string>}
+     */
+    public function createMany(PkpaProgram $program, array $coreUserIds, ?PkpaStudentGroup $group, ?User $actor, array $sharedCriteria = []): array
+    {
+        $created = collect();
+        $errors = [];
+
+        foreach (collect($coreUserIds)->filter()->map(fn ($id) => (string) $id)->unique()->values() as $coreUserId) {
+            try {
+                $created->push($this->create($program, [
+                    'core_user_id' => $coreUserId,
+                    'notes' => $sharedCriteria['notes'] ?? null,
+                ], $group, $actor));
+            } catch (ValidationException $exception) {
+                $message = collect($exception->errors())->flatten()->first() ?? 'Data mahasiswa Core tidak valid.';
+                $errors[$coreUserId] = $message;
+            }
+        }
+
+        return [
+            'created' => $created,
+            'errors' => $errors,
+        ];
     }
 
     public function cancel(PkpaEnrollment $enrollment, string $reason, ?User $actor): PkpaEnrollment

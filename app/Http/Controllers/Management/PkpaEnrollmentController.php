@@ -62,6 +62,36 @@ class PkpaEnrollmentController extends Controller
     {
         $program = PkpaProgram::findOrFail($request->validated('pkpa_program_id'));
         $group = $request->filled('pkpa_student_group_id') ? PkpaStudentGroup::findOrFail($request->validated('pkpa_student_group_id')) : null;
+        $selectedStudents = collect($request->validated('selected_students', []))
+            ->pluck('core_user_id')
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->values()
+            ->all();
+
+        if (count($selectedStudents) > 0) {
+            $result = $this->enrollmentService->createMany($program, $selectedStudents, $group, $request->user(), $request->validated());
+            $createdCount = $result['created']->count();
+
+            if ($createdCount === 0) {
+                return back()->withInput()->withErrors([
+                    'selected_students' => collect($result['errors'])->values()->first() ?? 'Belum ada peserta yang berhasil ditambahkan.',
+                ]);
+            }
+
+            $status = "{$createdCount} peserta berhasil ditambahkan.";
+            if ($result['created']->first()?->requirements) {
+                $status .= ' Kewajiban wahana otomatis sudah dibuat.';
+            }
+
+            $redirect = redirect()->route('management.pkpa-enrollments.index')->with('status', $status);
+
+            if (count($result['errors']) > 0) {
+                $redirect->with('warning', count($result['errors']).' data dilewati karena sudah terdaftar atau tidak valid.');
+            }
+
+            return $redirect;
+        }
 
         $enrollment = $this->enrollmentService->create($program, $request->validated(), $group, $request->user());
 

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\PkpaProgram;
+use App\Models\PkpaEnrollment;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -533,6 +534,77 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.core_user_id', '398')
             ->assertJsonPath('data.0.email', 'ap26.andinaagustin@mhs.ubpkarawang.ac.id')
             ->assertJsonPath('data.1.core_user_id', '270');
+    }
+
+    public function test_student_directory_hides_students_already_enrolled_in_selected_program(): void
+    {
+        $program = PkpaProgram::create([
+            'code' => 'PKPA-2026-G1',
+            'name' => 'PKPA Farmasi UBP 2026 Gelombang 1',
+            'academic_year' => '2026/2027',
+            'cohort_name' => 'Profesi Apoteker 2026',
+            'status' => 'draft',
+            'is_active' => true,
+        ]);
+
+        PkpaEnrollment::create([
+            'pkpa_program_id' => $program->id,
+            'core_user_id' => '398',
+            'student_number' => '26416248901006',
+            'student_name_snapshot' => 'Andina Sahara Agustin',
+            'student_email_snapshot' => 'ap26.andinaagustin@mhs.ubpkarawang.ac.id',
+            'core_account_status_snapshot' => 'active',
+            'status' => 'active',
+        ]);
+
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/students')) {
+                return Http::response(['data' => [], 'meta' => []], 200);
+            }
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [
+                        [
+                            'id' => 398,
+                            'name' => 'Andina Sahara Agustin',
+                            'email' => 'ap26.andinaagustin@mhs.ubpkarawang.ac.id',
+                            'identity_type' => 'student',
+                            'identity_number' => '26416248901006',
+                            'active' => true,
+                            'roles' => ['mahasiswa'],
+                            'app_accesses' => [['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa']],
+                        ],
+                        [
+                            'id' => 396,
+                            'name' => 'Syfa Dwi Andini',
+                            'email' => 'ap26.syfaandini@mhs.ubpkarawang.ac.id',
+                            'identity_type' => 'student',
+                            'identity_number' => '26416248901008',
+                            'active' => true,
+                            'roles' => ['mahasiswa'],
+                            'app_accesses' => [['app_code' => 'kppspa-farmasi', 'role_slug' => 'mahasiswa']],
+                        ],
+                    ],
+                    'meta' => [],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/398/access') || str_contains($url, '/internal/apps/kppspa-farmasi/users/396/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'mahasiswa']]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.students', ['q' => 'ap26', 'program_id' => $program->id]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '396');
     }
 
     private function makeUser(string $email, array $roles, string $coreUserId): User

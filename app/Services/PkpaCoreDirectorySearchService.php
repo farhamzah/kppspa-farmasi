@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PkpaEnrollment;
 use App\Models\PkpaProgram;
 use Illuminate\Support\Collection;
 
@@ -79,6 +80,7 @@ class PkpaCoreDirectorySearchService
                 ];
             })
             ->filter(fn (array $student) => $student['has_app_access'] === true)
+            ->when($program, fn (Collection $students) => $this->excludeExistingProgramEnrollments($students, $program))
             ->unique('core_user_id')
             ->sortBy([
                 ['program_match_score', 'desc'],
@@ -178,6 +180,30 @@ class PkpaCoreDirectorySearchService
         ])->filter()
             ->map(fn ($value) => str((string) $value)->lower()->toString())
             ->contains(fn (string $value) => str_contains($value, $keyword));
+    }
+
+    private function excludeExistingProgramEnrollments(Collection $students, PkpaProgram $program): Collection
+    {
+        $coreUserIds = $students
+            ->pluck('core_user_id')
+            ->filter()
+            ->map(fn ($id) => (string) $id)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($coreUserIds === []) {
+            return $students;
+        }
+
+        $existing = PkpaEnrollment::withTrashed()
+            ->where('pkpa_program_id', $program->id)
+            ->whereIn('core_user_id', $coreUserIds)
+            ->pluck('core_user_id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        return $students->reject(fn (array $student) => in_array((string) ($student['core_user_id'] ?? ''), $existing, true));
     }
 
     private function programMatchScore(array $student, ?PkpaProgram $program): int

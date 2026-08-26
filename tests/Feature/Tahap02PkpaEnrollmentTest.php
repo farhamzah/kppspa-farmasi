@@ -82,6 +82,43 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         PkpaEnrollmentRequirement::create($government->replicate(['id'])->fill([])->toArray());
     }
 
+    public function test_admin_can_create_multiple_enrollments_in_one_submission(): void
+    {
+        $program = $this->createProgram('PKPA-26-BULK');
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post('/management/pkpa-enrollments', [
+                'pkpa_program_id' => $program->id,
+                'selected_students' => [
+                    [
+                        'core_user_id' => 'CORE-001',
+                        'student_number' => '231001',
+                        'name' => 'Andi Farmasi',
+                        'email' => 'core-001@student.test',
+                    ],
+                    [
+                        'core_user_id' => 'CORE-002',
+                        'student_number' => '231002',
+                        'name' => 'Siti Farmasi',
+                        'email' => 'core-002@student.test',
+                    ],
+                ],
+                'notes' => 'Batch awal',
+            ])->assertRedirect('/management/pkpa-enrollments');
+
+        $this->assertSame(2, PkpaEnrollment::where('pkpa_program_id', $program->id)->count());
+        $this->assertDatabaseHas('pkpa_enrollments', [
+            'pkpa_program_id' => $program->id,
+            'core_user_id' => 'CORE-001',
+            'notes' => 'Batch awal',
+        ]);
+        $this->assertDatabaseHas('pkpa_enrollments', [
+            'pkpa_program_id' => $program->id,
+            'core_user_id' => 'CORE-002',
+            'notes' => 'Batch awal',
+        ]);
+    }
+
     public function test_core_validation_duplicate_and_authorization_rules(): void
     {
         $program = $this->createProgram('PKPA-26-B');
