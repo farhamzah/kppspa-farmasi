@@ -29,7 +29,10 @@ class PkpaPlacementValidationService
                 'created_by_core_user_id' => $actor?->core_user_id,
             ]);
 
-            $assignments = $plan->assignments()->with(['enrollment', 'requirement.practiceDomain', 'programDomain', 'programSite.practiceSite', 'availabilityPeriod', 'supervisors'])->get();
+            $assignments = $plan->assignments()
+                ->whereHas('programDomain', fn ($query) => $query->where('is_active', true))
+                ->with(['enrollment', 'requirement.practiceDomain', 'programDomain', 'programSite.practiceSite', 'availabilityPeriod', 'supervisors'])
+                ->get();
             $validAssignments = 0;
             foreach ($assignments as $assignment) {
                 $issuesBefore = $run->issues()->count();
@@ -104,7 +107,7 @@ class PkpaPlacementValidationService
             $this->issue($run, $assignment, 'FIELD_SUPERVISOR_MISSING', 'error', 'supervisor', 'Pembimbing Lapangan belum dipilih.', 'Pilih Pembimbing Lapangan dari tempat.');
         }
         if ($assignment->requirement?->selection_mode === 'choose_one' && ! $assignment->selected_practice_domain_option_id) {
-            $this->issue($run, $assignment, 'GOVERNMENT_OPTION_MISSING', 'error', 'government_option', 'Pilihan Pemerintahan belum terisi.', 'Pilih tempat Loka POM atau Dinas Kesehatan.');
+            $this->issue($run, $assignment, 'GOVERNMENT_OPTION_MISSING', 'error', 'government_option', 'Pilihan Pemerintahan belum terisi.', 'Pilih tempat Dinas Kesehatan, Puskesmas, atau Loka BPOM.');
         }
     }
 
@@ -139,7 +142,7 @@ class PkpaPlacementValidationService
 
     private function validateStudentOverlaps(PkpaPlacementValidationRun $run, PkpaPlacementPlan $plan): void
     {
-        $assignments = $plan->assignments()->activeForCapacity()->with('practiceDomain')->get()->groupBy('pkpa_enrollment_id');
+        $assignments = $plan->assignments()->activeForCapacity()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->with('practiceDomain')->get()->groupBy('pkpa_enrollment_id');
         foreach ($assignments as $studentAssignments) {
             $items = $studentAssignments->values();
             for ($i = 0; $i < $items->count(); $i++) {
@@ -156,7 +159,7 @@ class PkpaPlacementValidationService
 
     private function validateCapacity(PkpaPlacementValidationRun $run, PkpaPlacementPlan $plan): void
     {
-        $assignments = $plan->assignments()->activeForCapacity()->with('availabilityPeriod')->whereNotNull('pkpa_site_availability_period_id')->get()->groupBy('pkpa_site_availability_period_id');
+        $assignments = $plan->assignments()->activeForCapacity()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->with('availabilityPeriod')->whereNotNull('pkpa_site_availability_period_id')->get()->groupBy('pkpa_site_availability_period_id');
         foreach ($assignments as $items) {
             $availability = $items->first()->availabilityPeriod;
             if (! $availability) {
@@ -179,7 +182,7 @@ class PkpaPlacementValidationService
     {
         $supervisors = PkpaRotationAssignmentSupervisor::query()
             ->where('status', 'active')
-            ->whereHas('assignment', fn ($query) => $query->where('pkpa_placement_plan_id', $plan->id)->whereNotIn('status', ['cancelled', 'superseded']))
+            ->whereHas('assignment', fn ($query) => $query->where('pkpa_placement_plan_id', $plan->id)->whereNotIn('status', ['cancelled', 'superseded'])->whereHas('programDomain', fn ($programDomain) => $programDomain->where('is_active', true)))
             ->with(['assignment', 'internalEligibility', 'fieldSupervisor'])
             ->get()
             ->groupBy(fn ($supervisor) => $supervisor->supervisor_type.':'.$supervisor->core_user_id);

@@ -20,7 +20,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
 
         return [
             new OfficialScheduleSheet('Jadwal Mahasiswa', $this->studentRows()),
-            new OfficialScheduleSheet('Matriks Enam Wahana', $this->matrixRows()),
+            new OfficialScheduleSheet('Matriks Lima Wahana', $this->matrixRows()),
             new OfficialScheduleSheet('Jadwal per Tempat', $this->siteRows()),
             new OfficialScheduleSheet('Jadwal PD', $this->supervisorRows('internal')),
             new OfficialScheduleSheet('Jadwal PL', $this->supervisorRows('field')),
@@ -52,7 +52,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
 
     private function matrixRows(): array
     {
-        $domains = ['Apotek', 'Puskesmas', 'Pedagang Besar Farmasi', 'Rumah Sakit', 'Industri', 'Pemerintahan'];
+        $domains = ['Apotek', 'Pedagang Besar Farmasi', 'Rumah Sakit', 'Industri', 'Pemerintahan'];
         $rows = [['Jadwal Penempatan PKPA - Dipublikasikan melalui MY PKPA'], []];
         $rows[] = array_merge(['NPM', 'Nama'], $domains);
         foreach ($this->publication->assignments->groupBy('student_core_user_id') as $assignments) {

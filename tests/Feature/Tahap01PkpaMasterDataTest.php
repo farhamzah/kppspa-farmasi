@@ -40,11 +40,12 @@ class Tahap01PkpaMasterDataTest extends TestCase
         $this->seed(PkpaMasterSeeder::class);
         $this->seed(PkpaMasterSeeder::class);
 
-        $this->assertSame(6, PkpaPracticeDomain::whereIn('code', ['APT', 'PKM', 'PBF', 'RS', 'IND', 'PEM'])->count());
+        $this->assertSame(5, PkpaPracticeDomain::whereIn('code', ['APT', 'PBF', 'RS', 'IND', 'PEM'])->count());
         $government = PkpaPracticeDomain::where('code', 'PEM')->firstOrFail();
-        $this->assertDatabaseHas('pkpa_practice_domain_options', ['practice_domain_id' => $government->id, 'code' => 'LOKAPOM', 'name' => 'Loka POM']);
+        $this->assertDatabaseHas('pkpa_practice_domain_options', ['practice_domain_id' => $government->id, 'code' => 'LOKAPOM', 'name' => 'Loka BPOM']);
         $this->assertDatabaseHas('pkpa_practice_domain_options', ['practice_domain_id' => $government->id, 'code' => 'DINKES', 'name' => 'Dinas Kesehatan']);
-        $this->assertSame(2, $government->options()->whereIn('code', ['LOKAPOM', 'DINKES'])->count());
+        $this->assertDatabaseHas('pkpa_practice_domain_options', ['practice_domain_id' => $government->id, 'code' => 'PUSKESMAS', 'name' => 'Puskesmas']);
+        $this->assertSame(3, $government->options()->whereIn('code', ['LOKAPOM', 'DINKES', 'PUSKESMAS'])->count());
         $this->assertSame(0, PkpaPracticeSite::count(), 'Seeder produksi tidak boleh membuat tempat praktik palsu.');
     }
 
@@ -59,7 +60,7 @@ class Tahap01PkpaMasterDataTest extends TestCase
         $program = PkpaProgram::where('code', 'PKPA-2026-A')->firstOrFail();
         $this->assertSame('draft', $program->status);
         $this->assertFalse($program->is_active);
-        $this->assertSame(6, $program->domains()->count());
+        $this->assertSame(5, $program->domains()->where('is_active', true)->count());
         $this->assertDatabaseHas('pkpa_programs', ['code' => 'PKPA-2026-A', 'created_by_core_user_id' => 'core-admin-1']);
         $this->assertDatabaseHas('pkpa_master_audits', ['action' => 'program_created', 'actor_core_user_id' => 'core-admin-1']);
 
@@ -142,6 +143,50 @@ class Tahap01PkpaMasterDataTest extends TestCase
 
         $this->assertNull($domain->fresh()->deleted_at);
         $this->assertNull($option->fresh()->deleted_at);
+    }
+
+    public function test_legacy_puskesmas_can_be_cleaned_up_and_counted_under_government(): void
+    {
+        $government = PkpaPracticeDomain::where('code', 'PEM')->firstOrFail();
+        $legacy = PkpaPracticeDomain::create([
+            'code' => 'PKM',
+            'name' => 'Puskesmas',
+            'short_name' => 'PKM',
+            'description' => 'Legacy standalone domain.',
+            'is_system' => true,
+            'is_active' => false,
+            'sort_order' => 60,
+        ]);
+
+        $site = PkpaPracticeSite::create([
+            'practice_domain_id' => $legacy->id,
+            'practice_domain_option_id' => null,
+            'code' => 'PKM-001',
+            'name' => 'Puskesmas Test',
+            'city' => 'Karawang',
+            'province' => 'Jawa Barat',
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-practice-domains');
+
+        $response->assertOk();
+        $domains = $response->viewData('domains');
+        $governmentFromList = $domains->getCollection()->firstWhere('code', 'PEM');
+        $this->assertSame(1, $governmentFromList->display_practice_sites_count);
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->delete("/management/pkpa-practice-domains/{$legacy->id}")
+            ->assertRedirect('/management/pkpa-practice-domains');
+
+        $puskesmasOption = $government->fresh()->options()->where('code', 'PUSKESMAS')->firstOrFail();
+        $site->refresh();
+
+        $this->assertSame($government->id, $site->practice_domain_id);
+        $this->assertSame($puskesmasOption->id, $site->practice_domain_option_id);
+        $this->assertSoftDeleted('pkpa_practice_domains', ['id' => $legacy->id]);
     }
 
     public function test_additional_domain_and_duplicate_code_rules_work(): void

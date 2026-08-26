@@ -101,8 +101,8 @@
                 <section class="min-w-0 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
                     <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                            <h3 class="text-lg font-black text-slate-950">Matriks Mahasiswa x Enam Wahana</h3>
-                            <p class="text-sm text-slate-500">Scroll horizontal hanya di area matriks. Simpan perubahan melalui tombol pada setiap sel.</p>
+                            <h3 class="text-lg font-black text-slate-950">Matriks Mahasiswa x Lima Wahana Utama</h3>
+                            <p class="text-sm text-slate-500">Penempatan dapat disusun bertahap per periode rotasi. Anda bisa menuntaskan Apotek lebih dulu sambil tetap menyiapkan wahana lain untuk periode berikutnya.</p>
                         </div>
                         <div class="flex flex-wrap gap-2 text-xs font-bold">
                             <span class="rounded-full bg-slate-100 px-3 py-1 text-slate-700">Belum ditempatkan</span>

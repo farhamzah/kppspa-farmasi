@@ -11,7 +11,9 @@ class PkpaPracticeDomain extends Model
 {
     use SoftDeletes;
 
-    public const DEFAULT_CODES = ['APT', 'PKM', 'PBF', 'RS', 'IND', 'PEM'];
+    public const DEFAULT_CODES = ['APT', 'PBF', 'RS', 'IND', 'PEM'];
+    public const LEGACY_PUSKESMAS_CODE = 'PKM';
+    public const GOVERNMENT_OPTION_CODES = ['DINKES', 'PUSKESMAS', 'LOKAPOM'];
 
     protected $fillable = [
         'code',
@@ -62,5 +64,15 @@ class PkpaPracticeDomain extends Model
     public function isGovernment(): bool
     {
         return $this->code === 'PEM';
+    }
+
+    public function isLegacyStandalonePuskesmas(): bool
+    {
+        return $this->code === self::LEGACY_PUSKESMAS_CODE;
+    }
+
+    public function canBeDeleted(): bool
+    {
+        return ! $this->is_system || $this->isLegacyStandalonePuskesmas();
     }
 }

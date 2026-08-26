@@ -30,7 +30,7 @@ class PkpaPlacementReviewService
 
         $activeEnrollments = PkpaEnrollment::where('pkpa_program_id', $plan->pkpa_program_id)->where('status', 'active')->withCount('requirements')->get();
         $requiredAssignments = (int) $activeEnrollments->sum('requirements_count');
-        $filledAssignments = $plan->assignments()->whereNotIn('status', ['cancelled', 'superseded'])->count();
+        $filledAssignments = $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereNotIn('status', ['cancelled', 'superseded'])->count();
         $errors = PkpaPlacementValidationIssue::whereHas('run', fn ($query) => $query->where('pkpa_placement_plan_id', $plan->id))
             ->where('severity', 'error')
             ->where('is_resolved', false)
@@ -40,6 +40,7 @@ class PkpaPlacementReviewService
             ->where('is_resolved', false)
             ->count();
         $assignmentWithGovernmentMissing = $plan->assignments()
+            ->whereHas('programDomain', fn ($query) => $query->where('is_active', true))
             ->whereHas('requirement', fn ($query) => $query->where('selection_mode', 'choose_one'))
             ->whereNull('selected_practice_domain_option_id')
             ->count();
@@ -50,8 +51,8 @@ class PkpaPlacementReviewService
             'no_active_errors' => ['label' => 'Tidak ada error aktif', 'passed' => $errors === 0],
             'complete_assignments' => ['label' => 'Seluruh requirement memiliki assignment', 'passed' => $requiredAssignments > 0 && $filledAssignments === $requiredAssignments],
             'government_option' => ['label' => 'Pemerintahan memiliki option', 'passed' => $assignmentWithGovernmentMissing === 0],
-            'supervisors_complete' => ['label' => 'Setiap assignment memiliki PD dan PL', 'passed' => $plan->assignments()->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'internal'))->count() === 0
-                && $plan->assignments()->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'field'))->count() === 0],
+            'supervisors_complete' => ['label' => 'Setiap assignment aktif memiliki PD dan PL', 'passed' => $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'internal'))->count() === 0
+                && $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'field'))->count() === 0],
             'not_published_before' => ['label' => 'Plan belum pernah dipublikasikan current', 'passed' => $plan->publications()->where('status', 'published')->count() === 0],
         ];
 

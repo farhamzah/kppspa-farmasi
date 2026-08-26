@@ -64,7 +64,7 @@
             <figure class="relative mt-6 hidden overflow-hidden rounded-2xl border border-white/12 bg-white/10 shadow-2xl shadow-slate-950/25 lg:block">
                 <img src="{{ $heroImage }}" alt="Mahasiswa dan dosen farmasi mengelola kesiapan PKPA" class="h-52 w-full object-cover">
                 <figcaption class="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-950/80 to-transparent px-4 pb-4 pt-10 text-sm font-bold text-white">
-                    Ruang kerja PKPA untuk enam wahana praktik.
+                    Ruang kerja PKPA untuk lima wahana utama praktik.
                 </figcaption>
             </figure>
 

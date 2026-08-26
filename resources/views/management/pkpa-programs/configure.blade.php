@@ -20,7 +20,7 @@
                         <h3 class="text-lg font-black text-slate-950">{{ $domainConfig->practiceDomain->name }}</h3>
                         <p class="text-sm text-slate-500">{{ $domainConfig->selectionModeLabel() }} · {{ $domainConfig->is_required ? 'Wajib' : 'Opsional' }} · {{ $domainConfig->durationLabel() }}</p>
                         @if($domainConfig->practiceDomain->code === 'PEM')
-                            <p class="mt-2 text-sm font-bold text-cyan-700">Pilihan tersedia: {{ $domainConfig->practiceDomain->options->where('is_active', true)->pluck('name')->join(', ') }}. Mahasiswa nantinya wajib memperoleh salah satu.</p>
+                            <p class="mt-2 text-sm font-bold text-cyan-700">Pilihan tersedia: {{ $domainConfig->practiceDomain->options->where('is_active', true)->pluck('name')->join(', ') }}. Mahasiswa nantinya wajib memperoleh salah satu lokasi Pemerintahan.</p>
                         @endif
                     </div>
                     <span class="rounded-full px-2 py-1 text-xs font-black {{ $domainConfig->isDurationComplete() ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-100' }}">{{ $domainConfig->isDurationComplete() ? 'Lengkap' : 'Belum lengkap' }}</span>

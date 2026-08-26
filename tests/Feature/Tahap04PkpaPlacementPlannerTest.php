@@ -263,7 +263,7 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
     {
         $domain = PkpaPracticeDomain::where('code', $domainCode)->firstOrFail();
         $programDomain = $program->domains()->where('practice_domain_id', $domain->id)->firstOrFail();
-        $option = $domain->isGovernment() ? $domain->options()->where('code', 'LOKAPOM')->first() : null;
+        $option = $domain->isGovernment() ? $domain->options()->where('code', 'PUSKESMAS')->first() : null;
         $site = PkpaPracticeSite::create([
             'practice_domain_id' => $domain->id,
             'practice_domain_option_id' => $option?->id,

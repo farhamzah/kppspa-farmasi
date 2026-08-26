@@ -13,28 +13,22 @@ class PkpaMasterSeeder extends Seeder
     {
         $domains = [
             ['code' => 'APT', 'name' => 'Apotek', 'short_name' => 'Apotek', 'sort_order' => 10],
-            ['code' => 'PKM', 'name' => 'Puskesmas', 'short_name' => 'Puskesmas', 'sort_order' => 20],
-            ['code' => 'PBF', 'name' => 'Pedagang Besar Farmasi', 'short_name' => 'PBF', 'sort_order' => 30],
-            ['code' => 'RS', 'name' => 'Rumah Sakit', 'short_name' => 'RS', 'sort_order' => 40],
-            ['code' => 'IND', 'name' => 'Industri', 'short_name' => 'Industri', 'sort_order' => 50],
-            ['code' => 'PEM', 'name' => 'Pemerintahan', 'short_name' => 'Pemerintahan', 'sort_order' => 60],
+            ['code' => 'PBF', 'name' => 'Pedagang Besar Farmasi', 'short_name' => 'PBF', 'sort_order' => 20],
+            ['code' => 'RS', 'name' => 'Rumah Sakit', 'short_name' => 'RS', 'sort_order' => 30],
+            ['code' => 'IND', 'name' => 'Industri', 'short_name' => 'Industri', 'sort_order' => 40],
+            ['code' => 'PEM', 'name' => 'Pemerintahan', 'short_name' => 'Pemerintahan', 'sort_order' => 50],
         ];
 
         foreach ($domains as $data) {
             $domain = PkpaPracticeDomain::withTrashed()->firstOrNew(['code' => $data['code']]);
 
-            if (! $domain->exists) {
-                $domain->fill([
-                    'name' => $data['name'],
-                    'short_name' => $data['short_name'],
-                    'description' => null,
-                    'is_active' => true,
-                ]);
-            }
-
             $domain->fill([
+                'name' => $data['name'],
+                'short_name' => $data['short_name'],
+                'description' => null,
+                'is_active' => true,
                 'is_system' => true,
-                'sort_order' => $domain->sort_order ?: $data['sort_order'],
+                'sort_order' => $data['sort_order'],
             ]);
             $domain->deleted_at = null;
             $domain->save();
@@ -43,8 +37,9 @@ class PkpaMasterSeeder extends Seeder
         $government = PkpaPracticeDomain::where('code', 'PEM')->firstOrFail();
 
         foreach ([
-            ['code' => 'LOKAPOM', 'name' => 'Loka POM', 'sort_order' => 10],
-            ['code' => 'DINKES', 'name' => 'Dinas Kesehatan', 'sort_order' => 20],
+            ['code' => 'DINKES', 'name' => 'Dinas Kesehatan', 'sort_order' => 10],
+            ['code' => 'PUSKESMAS', 'name' => 'Puskesmas', 'sort_order' => 20],
+            ['code' => 'LOKAPOM', 'name' => 'Loka BPOM', 'sort_order' => 30],
         ] as $data) {
             $option = PkpaPracticeDomainOption::withTrashed()
                 ->where('practice_domain_id', $government->id)
@@ -57,8 +52,11 @@ class PkpaMasterSeeder extends Seeder
                 ]);
 
             $option->fill([
+                'name' => $data['name'],
+                'description' => null,
+                'is_active' => true,
                 'is_system' => true,
-                'sort_order' => $option->sort_order ?: $data['sort_order'],
+                'sort_order' => $data['sort_order'],
             ]);
             $option->deleted_at = null;
             $option->save();

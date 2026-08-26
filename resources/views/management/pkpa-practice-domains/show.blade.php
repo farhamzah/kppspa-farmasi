@@ -7,12 +7,37 @@
     <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-                <div class="flex flex-wrap gap-2">@if($domain->is_system)<span class="rounded-full bg-cyan-50 px-2 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">Wahana Sistem</span>@endif<span class="rounded-full px-2 py-1 text-xs font-black {{ $domain->is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }}">{{ $domain->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
+                <div class="flex flex-wrap gap-2">@if($domain->is_system)<span class="rounded-full bg-cyan-50 px-2 py-1 text-xs font-black text-cyan-700 ring-1 ring-cyan-100">Wahana Sistem</span>@endif @if($domain->isLegacyStandalonePuskesmas())<span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-black text-amber-700 ring-1 ring-amber-100">Legacy Puskesmas</span>@endif <span class="rounded-full px-2 py-1 text-xs font-black {{ $domain->is_active ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-slate-100 text-slate-700 ring-1 ring-slate-200' }}">{{ $domain->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
                 <h2 class="mt-3 text-2xl font-black text-slate-950">{{ $domain->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $domain->code }} · {{ $domain->short_name ?: '-' }}</p>
                 <p class="mt-3 max-w-3xl text-sm text-slate-600">{{ $domain->description ?: 'Belum ada deskripsi.' }}</p>
+                <div class="mt-4 flex flex-wrap gap-3 text-sm">
+                    <div class="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+                        <p class="text-xs font-black uppercase text-slate-500">Pilihan</p>
+                        <p class="font-black text-slate-950">{{ $domain->options->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-100">
+                        <p class="text-xs font-black uppercase text-slate-500">Tempat</p>
+                        <p class="font-black text-slate-950">{{ $domain->display_practice_sites_count ?? $domain->practiceSites->count() }}</p>
+                    </div>
+                </div>
+                @if($domain->isGovernment() && ($domain->display_practice_sites_count ?? $domain->practiceSites->count()) !== $domain->practiceSites->count())
+                    <p class="mt-3 text-xs text-slate-500">Hitungan tempat sudah menggabungkan data Puskesmas legacy yang masih tersisa.</p>
+                @endif
+                @if($domain->isLegacyStandalonePuskesmas())
+                    <p class="mt-3 text-xs text-amber-700">Wahana legacy ini sebaiknya dibersihkan. Saat dihapus, tempat dan mapping aktifnya akan dipindahkan ke sub-wahana Pemerintahan &gt; Puskesmas.</p>
+                @endif
             </div>
-            <a href="{{ route('management.pkpa-practice-domains.edit', $domain) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Edit Wahana</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('management.pkpa-practice-domains.edit', $domain) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Edit Wahana</a>
+                @if($domain->canBeDeleted())
+                    <form method="POST" action="{{ route('management.pkpa-practice-domains.destroy', $domain) }}" onsubmit="return confirm('Hapus wahana ini? Data legacy Puskesmas akan dipindahkan ke Pemerintahan jika diperlukan.');">
+                        @csrf
+                        @method('DELETE')
+                        <button class="rounded-xl border border-rose-200 px-4 py-2 text-sm font-black text-rose-700">Hapus Wahana</button>
+                    </form>
+                @endif
+            </div>
         </div>
     </div>
     <div class="grid gap-5 xl:grid-cols-[1fr_360px]">

@@ -80,7 +80,7 @@ class PkpaPracticeSiteService
 
         $optionId = $data['practice_domain_option_id'] ?? null;
         if ($domain->isGovernment() && blank($optionId)) {
-            throw ValidationException::withMessages(['practice_domain_option_id' => 'Tempat Pemerintahan wajib memilih Loka POM atau Dinas Kesehatan.']);
+            throw ValidationException::withMessages(['practice_domain_option_id' => 'Tempat Pemerintahan wajib memilih Dinas Kesehatan, Puskesmas, atau Loka BPOM.']);
         }
 
         if ($optionId && ! $domain->options()->whereKey($optionId)->exists()) {

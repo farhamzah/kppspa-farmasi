@@ -57,7 +57,7 @@ class PkpaPlacementReadinessService
             if ($programDomain->practiceDomain?->isGovernment()) {
                 $hasGovernmentOption = $sites->contains(fn ($site) => filled($site->practice_domain_option_id));
                 if (! $hasGovernmentOption) {
-                    $issues[] = 'Tempat Pemerintahan belum memiliki Loka POM/Dinas Kesehatan.';
+                    $issues[] = 'Tempat Pemerintahan belum memiliki Dinas Kesehatan, Puskesmas, atau Loka BPOM.';
                 }
             }
             $unsynced = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $program->id)

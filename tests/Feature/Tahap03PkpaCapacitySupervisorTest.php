@@ -307,7 +307,7 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
     private function createSite(string $code, string $domainCode, array $overrides = []): PkpaPracticeSite
     {
         $domain = PkpaPracticeDomain::where('code', $domainCode)->firstOrFail();
-        $option = $domain->isGovernment() ? $domain->options()->where('code', 'LOKAPOM')->first() : null;
+        $option = $domain->isGovernment() ? $domain->options()->where('code', 'PUSKESMAS')->first() : null;
 
         return PkpaPracticeSite::create(array_merge([
             'practice_domain_id' => $domain->id,

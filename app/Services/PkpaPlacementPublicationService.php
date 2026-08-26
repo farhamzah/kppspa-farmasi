@@ -165,6 +165,7 @@ class PkpaPlacementPublicationService
     private function snapshotAssignments(PkpaPlacementPublication $publication, PkpaPlacementPlan $plan): void
     {
         $assignments = $plan->assignments()
+            ->whereHas('programDomain', fn ($query) => $query->where('is_active', true))
             ->with(['enrollment.activeGroupMembership.group', 'requirement', 'practiceDomain', 'selectedOption', 'practiceSite', 'programSite', 'availabilityPeriod', 'supervisors.internalEligibility', 'supervisors.fieldSupervisor'])
             ->whereNotIn('status', ['cancelled', 'superseded'])
             ->get();

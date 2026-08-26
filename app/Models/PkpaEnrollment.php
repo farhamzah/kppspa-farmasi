@@ -58,6 +58,13 @@ class PkpaEnrollment extends Model
 
     public function requirements(): HasMany
     {
+        return $this->hasMany(PkpaEnrollmentRequirement::class)
+            ->whereHas('programDomain', fn (Builder $query) => $query->where('is_active', true))
+            ->orderBy('id');
+    }
+
+    public function allRequirements(): HasMany
+    {
         return $this->hasMany(PkpaEnrollmentRequirement::class)->orderBy('id');
     }
 

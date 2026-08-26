@@ -4,11 +4,10 @@
     $accountUrls = config('my_pkpa.account_urls', []);
     $wahana = [
         ['Apotek', 'Pelayanan kefarmasian komunitas dan manajemen apotek.'],
-        ['Puskesmas', 'Pelayanan primer, program kesehatan masyarakat, dan farmasi klinik dasar.'],
         ['PBF', 'Distribusi sediaan farmasi melalui Pedagang Besar Farmasi.'],
         ['Rumah Sakit', 'Farmasi klinik, instalasi farmasi, dan keselamatan pasien.'],
         ['Industri', 'Produksi, pemastian mutu, registrasi, dan sistem mutu industri.'],
-        ['Pemerintahan', 'Loka POM atau Dinas Kesehatan sesuai penempatan program.'],
+        ['Pemerintahan', 'Rotasi Pemerintahan dibagi ke Dinas Kesehatan, Puskesmas, atau Loka BPOM sesuai penempatan program.'],
     ];
     $guides = ['Panduan PKPA', 'Panduan Logbook', 'Format Laporan', 'SOP dan Formulir', 'Peraturan dan Literatur', 'Informasi Mitra'];
     $icons = [
@@ -543,7 +542,7 @@
                 <section class="hero-panel" aria-labelledby="landing-title">
                     <span class="eyebrow">{!! $icons['spark'] !!} Sistem Informasi Praktik Kerja Profesi Apoteker</span>
                     <h1 id="landing-title">MY PKPA <span class="accent">Portal PKPA UBP</span></h1>
-                    <p class="lead">Sistem terpadu untuk mengelola Praktik Kerja Profesi Apoteker, mulai dari pembekalan, kesiapan tempat praktik, penempatan enam wahana, logbook, laporan, ujian, sampai nilai akhir.</p>
+                    <p class="lead">Sistem terpadu untuk mengelola Praktik Kerja Profesi Apoteker, mulai dari pembekalan, kesiapan tempat praktik, penempatan lima wahana utama, logbook, laporan, ujian, sampai nilai akhir.</p>
                     <div class="hero-actions">
                         <a class="btn btn-primary" href="{{ route('login') }}">{!! $icons['login'] !!}<span>Masuk ke Portal</span></a>
                         <a class="btn btn-secondary" href="#panduan">{!! $icons['book'] !!}<span>Lihat Panduan</span></a>
@@ -551,7 +550,7 @@
                     <div class="trust-row" aria-label="Keunggulan ringkas">
                         <span>Terintegrasi Core Farmasi</span>
                         <span>Akses berbasis peran</span>
-                        <span>Enam wahana terpantau</span>
+                        <span>Lima wahana utama terpantau</span>
                         <span>Audit penempatan siap</span>
                     </div>
                 </section>
@@ -560,7 +559,7 @@
                     <span class="visual-kicker">Ruang Kerja PKPA</span>
                     <img class="student-illustration" src="{{ $heroImage }}" alt="Ilustrasi mahasiswa farmasi menggunakan ruang kerja akademik digital">
                     <div class="visual-floating">
-                        <div class="mini-card"><span class="icon-box small">{!! $icons['doc'] !!}</span><span><strong>Rotasi Terstruktur</strong><small>6 wahana PKPA</small></span></div>
+                        <div class="mini-card"><span class="icon-box small">{!! $icons['doc'] !!}</span><span><strong>Rotasi Terstruktur</strong><small>5 wahana utama PKPA</small></span></div>
                         <div class="mini-card"><span class="icon-box small">{!! $icons['shield'] !!}</span><span><strong>Akses Aman</strong><small>Peran dari Core</small></span></div>
                     </div>
                 </section>
@@ -632,7 +631,7 @@
             <div class="container section-card">
                 <div class="section-head">
                     <div>
-                        <span class="eyebrow">{!! $icons['calendar'] !!} Enam Wahana</span>
+                        <span class="eyebrow">{!! $icons['calendar'] !!} Wahana PKPA</span>
                         <h2>Semua kewajiban wahana PKPA terpantau dalam satu portal.</h2>
                     </div>
                 </div>

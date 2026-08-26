@@ -34,7 +34,7 @@ class PkpaAnalyticsService
                 'active' => (clone $enrollments)->where('status', 'active')->count(),
                 'completed' => (clone $enrollments)->where('status', 'completed')->count(),
                 'cancelled' => (clone $enrollments)->where('status', 'cancelled')->count(),
-                'six_requirements_completed' => (clone $enrollments)->whereDoesntHave('requirements', fn ($query) => $query->where('status', '!=', 'completed'))->count(),
+                'core_requirements_completed' => (clone $enrollments)->whereDoesntHave('requirements', fn ($query) => $query->where('status', '!=', 'completed'))->count(),
             ],
             'placement' => [
                 'assignments' => (clone $assignments)->count(),

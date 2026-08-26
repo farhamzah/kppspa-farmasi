@@ -139,8 +139,8 @@ class PkpaPlacementPlanService
     public function progress(PkpaPlacementPlan $plan): array
     {
         $required = $plan->program?->enrollments()->where('status', 'active')->withCount('requirements')->get()->sum('requirements_count') ?? 0;
-        $filled = $plan->assignments()->whereNotIn('status', ['cancelled', 'superseded'])->count();
-        $valid = $plan->assignments()->where('status', 'valid')->count();
+        $filled = $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereNotIn('status', ['cancelled', 'superseded'])->count();
+        $valid = $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->where('status', 'valid')->count();
 
         return [
             'required' => $required,

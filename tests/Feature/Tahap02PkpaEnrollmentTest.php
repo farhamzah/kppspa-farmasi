@@ -47,7 +47,7 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         $this->fakeCore();
     }
 
-    public function test_admin_and_koordinator_create_enrollment_with_six_requirements(): void
+    public function test_admin_and_koordinator_create_enrollment_with_five_requirements(): void
     {
         $program = $this->createProgram('PKPA-26-A');
 
@@ -64,8 +64,8 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         $this->assertSame('231001', $enrollment->student_number);
         $this->assertSame('Andi Farmasi', $enrollment->student_name_snapshot);
         $this->assertSame('core-admin-1', $enrollment->created_by_core_user_id);
-        $this->assertSame(6, $enrollment->requirements()->count());
-        $this->assertSame(5, $enrollment->requirements()->where('selection_mode', 'direct')->count());
+        $this->assertSame(5, $enrollment->requirements()->count());
+        $this->assertSame(4, $enrollment->requirements()->where('selection_mode', 'direct')->count());
 
         $government = $enrollment->requirements->first(fn ($requirement) => $requirement->practiceDomain?->code === 'PEM');
         $this->assertNotNull($government);
@@ -76,7 +76,7 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         $this->assertDatabaseMissing('pkpa_enrollment_requirements', ['selection_mode' => 'LOKAPOM']);
 
         app(\App\Services\PkpaEnrollmentRequirementService::class)->ensureRequirements($enrollment, $this->admin);
-        $this->assertSame(6, $enrollment->requirements()->count(), 'Requirement harus idempotent.');
+        $this->assertSame(5, $enrollment->requirements()->count(), 'Requirement harus idempotent.');
 
         $this->expectException(QueryException::class);
         PkpaEnrollmentRequirement::create($government->replicate(['id'])->fill([])->toArray());

@@ -85,8 +85,8 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $publication = PkpaPlacementPublication::firstOrFail();
         $this->assertSame('published', $publication->status);
         $this->assertTrue($publication->is_current);
-        $this->assertSame(6, PkpaPublishedAssignment::where('pkpa_placement_publication_id', $publication->id)->count());
-        $this->assertSame(12, PkpaPublishedAssignmentSupervisor::count());
+        $this->assertSame(5, PkpaPublishedAssignment::where('pkpa_placement_publication_id', $publication->id)->count());
+        $this->assertSame(10, PkpaPublishedAssignmentSupervisor::count());
         $this->assertSame(0, KpAssignment::count(), 'Tahap 05 tidak boleh menulis tabel legacy KP assignment.');
 
         app(PkpaPlacementNotificationService::class)->createPublicationNotifications($publication, 'placement_published');
@@ -214,7 +214,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $plan = PkpaPlacementPlan::where('pkpa_program_id', $program->id)->firstOrFail();
         $enrollment = $this->enroll($program, $this->student->core_user_id, '250005');
 
-        foreach (['APT', 'PKM', 'PBF', 'RS', 'IND', 'PEM'] as $index => $domainCode) {
+        foreach (['APT', 'PBF', 'RS', 'IND', 'PEM'] as $index => $domainCode) {
             $programSite = $this->createProgramSite($program, $domainCode, $domainCode.'-'.$code, 4);
             $availability = $programSite->availabilityPeriods()->firstOrFail();
             $internalCore = $domainCode === 'APT' ? $this->internalSupervisor->core_user_id : 'CORE-INTERNAL-05-'.$domainCode;
@@ -228,7 +228,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
                 ->assertRedirect();
         }
 
-        $this->assertSame(6, PkpaRotationAssignment::where('pkpa_placement_plan_id', $plan->id)->count());
+        $this->assertSame(5, PkpaRotationAssignment::where('pkpa_placement_plan_id', $plan->id)->count());
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-placement-plans/{$plan->id}/validate")
             ->assertRedirect();
@@ -273,7 +273,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     {
         $domain = PkpaPracticeDomain::where('code', $domainCode)->firstOrFail();
         $programDomain = $program->domains()->where('practice_domain_id', $domain->id)->firstOrFail();
-        $option = $domain->isGovernment() ? $domain->options()->where('code', 'LOKAPOM')->first() : null;
+        $option = $domain->isGovernment() ? $domain->options()->where('code', 'PUSKESMAS')->first() : null;
         $site = PkpaPracticeSite::create([
             'practice_domain_id' => $domain->id,
             'practice_domain_option_id' => $option?->id,

@@ -137,8 +137,8 @@ class PkpaProgramService
         $configuredCodes = $program->domains->pluck('practiceDomain.code')->filter()->values();
         $government = PkpaPracticeDomain::query()->where('code', 'PEM')->withCount(['activeOptions'])->first();
 
-        $checks['six_domains_available'] = $activeDefaultDomains === 6;
-        $checks['six_program_configs_available'] = $defaultCodes === $configuredCodes->intersect($defaultCodes)->unique()->values()->all();
+        $checks['five_domains_available'] = $activeDefaultDomains === count($defaultCodes);
+        $checks['five_program_configs_available'] = $defaultCodes === $configuredCodes->intersect($defaultCodes)->unique()->values()->all();
         $checks['required_duration_valid'] = $program->domains
             ->where('is_active', true)
             ->where('is_required', true)
@@ -149,8 +149,8 @@ class PkpaProgramService
         $checks['no_duplicate_config'] = $program->domains->count() === $program->domains->pluck('practice_domain_id')->unique()->count();
 
         $labels = [
-            'six_domains_available' => 'Enam wahana default aktif tersedia.',
-            'six_program_configs_available' => 'Enam konfigurasi wahana program tersedia.',
+            'five_domains_available' => 'Lima wahana utama aktif tersedia.',
+            'five_program_configs_available' => 'Lima konfigurasi wahana program tersedia.',
             'required_duration_valid' => 'Durasi seluruh wahana wajib sudah valid.',
             'government_options_valid' => 'Pemerintahan mempunyai minimal dua pilihan aktif.',
             'program_dates_valid' => 'Tanggal program valid.',

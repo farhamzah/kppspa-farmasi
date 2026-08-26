@@ -8,6 +8,7 @@ use App\Http\Requests\Management\Pkpa\StorePkpaPracticeDomainRequest;
 use App\Http\Requests\Management\Pkpa\UpdatePkpaPracticeDomainOptionRequest;
 use App\Http\Requests\Management\Pkpa\UpdatePkpaPracticeDomainRequest;
 use App\Models\PkpaPracticeDomain;
+use App\Models\PkpaPracticeSite;
 use App\Models\PkpaPracticeDomainOption;
 use App\Services\PkpaPracticeDomainService;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +34,23 @@ class PkpaPracticeDomainController extends Controller
             ->paginate(12)
             ->withQueryString();
 
+        $legacyPuskesmas = PkpaPracticeDomain::query()
+            ->where('code', PkpaPracticeDomain::LEGACY_PUSKESMAS_CODE)
+            ->first();
+        $legacyPuskesmasSitesCount = $legacyPuskesmas
+            ? PkpaPracticeSite::query()->where('practice_domain_id', $legacyPuskesmas->id)->count()
+            : 0;
+
+        $domains->getCollection()->transform(function (PkpaPracticeDomain $domain) use ($legacyPuskesmasSitesCount) {
+            $domain->display_practice_sites_count = $domain->practice_sites_count;
+
+            if ($domain->isGovernment()) {
+                $domain->display_practice_sites_count += $legacyPuskesmasSitesCount;
+            }
+
+            return $domain;
+        });
+
         return view('management.pkpa-practice-domains.index', [
             'domains' => $domains,
             'filters' => $request->only(['q', 'active']),
@@ -54,6 +72,19 @@ class PkpaPracticeDomainController extends Controller
     public function show(PkpaPracticeDomain $pkpaPracticeDomain): View
     {
         $pkpaPracticeDomain->load(['options', 'practiceSites']);
+
+        $pkpaPracticeDomain->display_practice_sites_count = $pkpaPracticeDomain->practiceSites()->count();
+        if ($pkpaPracticeDomain->isGovernment()) {
+            $legacyPuskesmas = PkpaPracticeDomain::query()
+                ->where('code', PkpaPracticeDomain::LEGACY_PUSKESMAS_CODE)
+                ->first();
+
+            if ($legacyPuskesmas) {
+                $pkpaPracticeDomain->display_practice_sites_count += PkpaPracticeSite::query()
+                    ->where('practice_domain_id', $legacyPuskesmas->id)
+                    ->count();
+            }
+        }
 
         return view('management.pkpa-practice-domains.show', ['domain' => $pkpaPracticeDomain]);
     }

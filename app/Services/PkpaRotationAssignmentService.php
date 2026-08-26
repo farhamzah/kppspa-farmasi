@@ -199,7 +199,7 @@ class PkpaRotationAssignmentService
             throw ValidationException::withMessages(['pkpa_site_availability_period_id' => 'Availability tidak aktif atau bukan milik tempat ini.']);
         }
         if ($requirement->selection_mode === 'choose_one' && ! $programSite->practice_domain_option_id) {
-            throw ValidationException::withMessages(['selected_practice_domain_option_id' => 'Wahana Pemerintahan wajib memilih Loka POM atau Dinas Kesehatan melalui tempat.']);
+            throw ValidationException::withMessages(['selected_practice_domain_option_id' => 'Wahana Pemerintahan wajib memilih Dinas Kesehatan, Puskesmas, atau Loka BPOM melalui tempat.']);
         }
         if ($requirement->selection_mode === 'direct' && $programSite->practice_domain_option_id) {
             throw ValidationException::withMessages(['selected_practice_domain_option_id' => 'Wahana direct tidak boleh memakai option Pemerintahan.']);
