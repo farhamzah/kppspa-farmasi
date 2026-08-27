@@ -73,7 +73,7 @@ class PkpaSupervisorCoreResolver
 
         return [
             'core_user_id' => $this->extractCoreUserId($person, $user),
-            'name' => $user['name'] ?? $person['name'] ?? $person['full_name'] ?? $person['lecturer_name'] ?? null,
+            'name' => $this->extractDisplayName($person, $user),
             'email' => $user['email'] ?? $person['email'] ?? null,
             'lecturer_id' => $person['nidn'] ?? $person['nidn_nidk'] ?? $person['nidk'] ?? $person['lecturer_id'] ?? $person['employee_number'] ?? null,
             'professional_id' => $person['professional_id'] ?? $person['license_number'] ?? $person['str_number'] ?? $person['employee_number'] ?? null,
@@ -116,5 +116,41 @@ class PkpaSupervisorCoreResolver
             ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? $role['code'] ?? null) : $role)
             ->filter()
             ->implode(',');
+    }
+
+    private function extractDisplayName(array $person, array $user): ?string
+    {
+        foreach ([
+            $person['display_name_with_title'] ?? null,
+            $person['formal_name'] ?? null,
+            $this->composeTitledName($person['front_title'] ?? null, $person['name'] ?? $person['full_name'] ?? $person['lecturer_name'] ?? null, $person['back_title'] ?? null),
+            $user['display_name_with_title'] ?? null,
+            $user['formal_name'] ?? null,
+            $this->composeTitledName($user['front_title'] ?? null, $user['name'] ?? null, $user['back_title'] ?? null),
+            $user['name'] ?? null,
+            $person['name'] ?? null,
+            $person['full_name'] ?? null,
+            $person['lecturer_name'] ?? null,
+        ] as $candidate) {
+            if (filled($candidate)) {
+                return trim((string) $candidate);
+            }
+        }
+
+        return null;
+    }
+
+    private function composeTitledName(mixed $frontTitle, mixed $name, mixed $backTitle): ?string
+    {
+        $name = filled($name) ? trim((string) $name) : null;
+
+        if (! $name) {
+            return null;
+        }
+
+        $front = filled($frontTitle) ? rtrim(trim((string) $frontTitle), '., ') . '.' : null;
+        $back = filled($backTitle) ? trim((string) $backTitle) : null;
+
+        return collect([$front, $name, $back])->filter(fn ($value) => filled($value))->implode(' ');
     }
 }

@@ -189,6 +189,66 @@ class Tahap01PkpaMasterDataTest extends TestCase
         $this->assertSoftDeleted('pkpa_practice_domains', ['id' => $legacy->id]);
     }
 
+    public function test_normalize_government_migration_handles_duplicate_internal_supervisor_eligibility(): void
+    {
+        $government = PkpaPracticeDomain::where('code', 'PEM')->firstOrFail();
+        $legacy = PkpaPracticeDomain::create([
+            'code' => 'PKM',
+            'name' => 'Puskesmas',
+            'short_name' => 'PKM',
+            'description' => 'Legacy standalone domain.',
+            'is_system' => true,
+            'is_active' => true,
+            'sort_order' => 60,
+        ]);
+
+        $program = $this->createProgram();
+
+        $targetId = \DB::table('pkpa_internal_supervisor_eligibilities')->insertGetId([
+            'pkpa_program_id' => $program->id,
+            'practice_domain_id' => $government->id,
+            'core_user_id' => '385',
+            'name_snapshot' => 'apt. Abdul Aziz Syahruddin, S.Farm., MMRS',
+            'email_snapshot' => 'abdul.aziz@ubpkarawang.ac.id',
+            'lecturer_id_snapshot' => '5035770671130353',
+            'core_account_status_snapshot' => 'active',
+            'role_snapshot' => 'pembimbing-dalam',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $legacyId = \DB::table('pkpa_internal_supervisor_eligibilities')->insertGetId([
+            'pkpa_program_id' => $program->id,
+            'practice_domain_id' => $legacy->id,
+            'core_user_id' => '385',
+            'name_snapshot' => 'Abdul Aziz Syahruddin',
+            'email_snapshot' => 'abdul.aziz@ubpkarawang.ac.id',
+            'lecturer_id_snapshot' => '5035770671130353',
+            'core_account_status_snapshot' => 'active',
+            'role_snapshot' => 'pembimbing-dalam',
+            'maximum_active_students' => 8,
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $migration = require base_path('database/migrations/2026_08_26_120000_normalize_pkpa_government_domains.php');
+        $migration->up();
+
+        $this->assertDatabaseHas('pkpa_internal_supervisor_eligibilities', [
+            'id' => $targetId,
+            'practice_domain_id' => $government->id,
+            'core_user_id' => '385',
+            'maximum_active_students' => 8,
+            'deleted_at' => null,
+        ]);
+
+        $this->assertSoftDeleted('pkpa_internal_supervisor_eligibilities', [
+            'id' => $legacyId,
+        ]);
+    }
+
     public function test_additional_domain_and_duplicate_code_rules_work(): void
     {
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])

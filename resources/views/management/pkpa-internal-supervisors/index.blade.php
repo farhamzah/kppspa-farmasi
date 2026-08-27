@@ -40,7 +40,7 @@
                             <span class="rounded-full bg-cyan-50 px-2 py-1 text-xs font-black text-cyan-700">{{ $statusLabels[$eligibility->status] ?? str($eligibility->status)->replace('_', ' ')->headline() }}</span>
                             <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-600">{{ $eligibility->core_account_status_snapshot === 'active' ? 'Akun Core aktif' : ($eligibility->core_account_status_snapshot === 'inactive' ? 'Akun Core nonaktif' : 'Core belum disinkronkan') }}</span>
                         </div>
-                        <h2 class="mt-3 text-xl font-black text-slate-950">{{ $eligibility->name_snapshot ?: $eligibility->core_user_id }}</h2>
+                        <h2 class="mt-3 text-xl font-black text-slate-950">{{ $card['display_name'] ?? ($eligibility->name_snapshot ?: $eligibility->core_user_id) }}</h2>
                         <p class="text-sm text-slate-500">{{ $eligibility->core_user_id }} / {{ $eligibility->email_snapshot ?: '-' }}</p>
                         <p class="mt-2 text-sm text-slate-600">{{ $eligibility->program?->code }} / berlaku untuk {{ $card['domain_count'] }} wahana aktif: {{ $card['domains']->implode(', ') ?: 'Belum ada wahana aktif' }}</p>
                         <p class="mt-1 text-sm text-slate-600">Maks. mahasiswa aktif {{ $eligibility->maximum_active_students ?: 'tidak dibatasi' }} / maks. mahasiswa per program {{ $eligibility->maximum_students_per_program ?: 'tidak dibatasi' }}</p>

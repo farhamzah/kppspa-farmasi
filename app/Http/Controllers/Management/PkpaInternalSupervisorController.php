@@ -7,6 +7,7 @@ use App\Http\Requests\Management\Pkpa\StorePkpaInternalSupervisorRequest;
 use App\Http\Requests\Management\Pkpa\StorePkpaSupervisorUnavailabilityRequest;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaProgram;
+use App\Models\User;
 use App\Services\PkpaInternalSupervisorService;
 use App\Services\PkpaSupervisorAvailabilityService;
 use App\Services\PkpaSupervisorCoreSyncService;
@@ -56,6 +57,24 @@ class PkpaInternalSupervisorController extends Controller
                 ];
             })
             ->values();
+
+        $localUsers = User::query()
+            ->with('lecturer')
+            ->whereIn('core_user_id', $cards->pluck('lead.core_user_id')->filter()->map(fn ($value) => (string) $value)->unique()->all())
+            ->get()
+            ->keyBy(fn (User $user) => (string) $user->core_user_id);
+
+        $cards = $cards->map(function (array $card) use ($localUsers) {
+            /** @var PkpaInternalSupervisorEligibility $lead */
+            $lead = $card['lead'];
+            $localUser = $localUsers->get((string) $lead->core_user_id);
+
+            $card['display_name'] = $localUser
+                ? user_display_name($localUser, 'pembimbing_dalam')
+                : ($lead->name_snapshot ?: $lead->core_user_id);
+
+            return $card;
+        });
 
         return view('management.pkpa-internal-supervisors.index', [
             'eligibilities' => $eligibilities,
