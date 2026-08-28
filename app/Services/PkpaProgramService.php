@@ -70,6 +70,8 @@ class PkpaProgramService
                 ]
             );
         }
+
+        $this->deactivateLegacyStandalonePuskesmasConfig($program, $actor);
     }
 
     public function updateDomainConfiguration(PkpaProgram $program, array $domains, ?User $actor): void
@@ -163,5 +165,25 @@ class PkpaProgramService
             'ready' => ! in_array(false, $checks, true),
             'failed' => collect($checks)->filter(fn (bool $passed) => ! $passed)->keys()->map(fn ($key) => $labels[$key])->all(),
         ];
+    }
+
+    private function deactivateLegacyStandalonePuskesmasConfig(PkpaProgram $program, ?User $actor): void
+    {
+        $legacyDomainIds = PkpaPracticeDomain::withTrashed()
+            ->where('code', PkpaPracticeDomain::LEGACY_PUSKESMAS_CODE)
+            ->pluck('id');
+
+        if ($legacyDomainIds->isEmpty()) {
+            return;
+        }
+
+        $program->domains()
+            ->whereIn('practice_domain_id', $legacyDomainIds)
+            ->where('is_active', true)
+            ->update([
+                'is_active' => false,
+                'updated_by_core_user_id' => $actor?->core_user_id,
+                'updated_at' => now(),
+            ]);
     }
 }

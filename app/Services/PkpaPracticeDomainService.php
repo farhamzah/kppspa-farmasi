@@ -141,7 +141,13 @@ class PkpaPracticeDomainService
     {
         return DB::transaction(function () use ($option, $data, $actor) {
             $old = $option->only(array_keys($data));
-            $option->update($this->normalize($data) + ['updated_by_core_user_id' => $actor?->core_user_id]);
+            $payload = $this->normalize($data) + ['updated_by_core_user_id' => $actor?->core_user_id];
+
+            if ($option->isProtectedSystemOption()) {
+                $payload['is_system'] = true;
+            }
+
+            $option->update($payload);
             $this->audit->record($actor, 'practice_domain_option_updated', $option, $old, $option->only(array_keys($data)));
 
             return $option->refresh();
@@ -150,7 +156,7 @@ class PkpaPracticeDomainService
 
     public function deleteOption(PkpaPracticeDomainOption $option, ?User $actor): void
     {
-        if ($option->is_system) {
+        if ($option->isProtectedSystemOption()) {
             throw ValidationException::withMessages(['option' => 'Pilihan sistem tidak dapat dihapus.']);
         }
 

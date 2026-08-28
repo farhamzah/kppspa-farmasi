@@ -47,4 +47,12 @@ class PkpaPracticeDomainOption extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function isProtectedSystemOption(): bool
+    {
+        $this->loadMissing('practiceDomain');
+
+        return $this->is_system
+            || ($this->practiceDomain?->isGovernment() && in_array($this->code, PkpaPracticeDomain::GOVERNMENT_OPTION_CODES, true));
+    }
 }

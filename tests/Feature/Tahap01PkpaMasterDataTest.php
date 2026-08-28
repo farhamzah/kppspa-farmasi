@@ -128,6 +128,46 @@ class Tahap01PkpaMasterDataTest extends TestCase
         $this->assertDatabaseHas('pkpa_master_audits', ['action' => 'program_activated', 'actor_core_user_id' => 'core-admin-1']);
     }
 
+    public function test_program_configuration_page_handles_legacy_puskesmas_config_without_error(): void
+    {
+        $program = $this->createProgram();
+        $legacy = PkpaPracticeDomain::create([
+            'code' => 'PKM',
+            'name' => 'Puskesmas',
+            'short_name' => 'PKM',
+            'description' => 'Legacy standalone domain.',
+            'is_system' => true,
+            'is_active' => false,
+            'sort_order' => 60,
+        ]);
+
+        $legacy->delete();
+
+        PkpaProgramDomain::create([
+            'pkpa_program_id' => $program->id,
+            'practice_domain_id' => $legacy->id,
+            'is_required' => true,
+            'selection_mode' => 'direct',
+            'minimum_option_count' => 0,
+            'duration_value' => 4,
+            'duration_unit' => 'weeks',
+            'is_active' => true,
+            'sort_order' => 60,
+        ]);
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get("/management/pkpa-programs/{$program->id}/configure")
+            ->assertOk()
+            ->assertSee('atur lama rotasi')
+            ->assertDontSee('Legacy standalone domain.');
+
+        $this->assertDatabaseHas('pkpa_program_domains', [
+            'pkpa_program_id' => $program->id,
+            'practice_domain_id' => $legacy->id,
+            'is_active' => false,
+        ]);
+    }
+
     public function test_system_domain_and_system_options_are_protected(): void
     {
         $domain = PkpaPracticeDomain::where('code', 'PEM')->firstOrFail();

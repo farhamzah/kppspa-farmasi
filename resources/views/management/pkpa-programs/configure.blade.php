@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title', 'Konfigurasi Wahana Program - '.config('app.name'))
-@section('page_title', 'Konfigurasi Wahana dan Durasi')
+@section('title', 'Atur Durasi Rotasi Program - '.config('app.name'))
+@section('page_title', 'Atur Durasi Rotasi Program')
 @section('content')
 <div class="space-y-5">
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
     <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div><h2 class="text-xl font-black text-slate-950">{{ $program->name }}</h2><p class="text-sm text-slate-500">{{ $program->code }} · durasi boleh berbeda per wahana dan belum diisi otomatis.</p></div>
+            <div><h2 class="text-xl font-black text-slate-950">{{ $program->name }}</h2><p class="text-sm text-slate-500">{{ $program->code }} · atur lama rotasi, hari efektif minimum, jam praktik, dan bobot penilaian tiap wahana.</p></div>
             <a href="{{ route('management.pkpa-programs.readiness', $program) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Periksa Kesiapan Program</a>
         </div>
     </div>
@@ -14,13 +14,15 @@
         @csrf
         @method('PUT')
         @foreach($program->domains as $domainConfig)
+            @php($practiceDomain = $domainConfig->practiceDomain)
+            @continue(!$domainConfig->is_active || !$practiceDomain || $practiceDomain->isLegacyStandalonePuskesmas())
             <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <h3 class="text-lg font-black text-slate-950">{{ $domainConfig->practiceDomain->name }}</h3>
+                        <h3 class="text-lg font-black text-slate-950">{{ $practiceDomain->name }}</h3>
                         <p class="text-sm text-slate-500">{{ $domainConfig->selectionModeLabel() }} · {{ $domainConfig->is_required ? 'Wajib' : 'Opsional' }} · {{ $domainConfig->durationLabel() }}</p>
-                        @if($domainConfig->practiceDomain->code === 'PEM')
-                            <p class="mt-2 text-sm font-bold text-cyan-700">Pilihan tersedia: {{ $domainConfig->practiceDomain->options->where('is_active', true)->pluck('name')->join(', ') }}. Mahasiswa nantinya wajib memperoleh salah satu lokasi Pemerintahan.</p>
+                        @if($practiceDomain->code === 'PEM')
+                            <p class="mt-2 text-sm font-bold text-cyan-700">Pilihan tersedia: {{ $practiceDomain->options->where('is_active', true)->pluck('name')->join(', ') }}. Mahasiswa nantinya wajib memperoleh salah satu lokasi Pemerintahan.</p>
                         @endif
                     </div>
                     <span class="rounded-full px-2 py-1 text-xs font-black {{ $domainConfig->isDurationComplete() ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-100' }}">{{ $domainConfig->isDurationComplete() ? 'Lengkap' : 'Belum lengkap' }}</span>

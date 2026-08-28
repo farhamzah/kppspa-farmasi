@@ -51,7 +51,7 @@ class PkpaProgramDomain extends Model
 
     public function practiceDomain(): BelongsTo
     {
-        return $this->belongsTo(PkpaPracticeDomain::class, 'practice_domain_id');
+        return $this->belongsTo(PkpaPracticeDomain::class, 'practice_domain_id')->withTrashed();
     }
 
     public function operationRules(): HasMany
