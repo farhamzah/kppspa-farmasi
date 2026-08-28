@@ -47,6 +47,11 @@ class PkpaScheduleController extends Controller
 
     public function show(Request $request, PkpaPublishedAssignment $assignment): View
     {
+        abort_unless(PkpaPublishedAssignment::query()
+            ->whereKey($assignment->id)
+            ->forSupervisor('internal', $request->user()->core_user_id)
+            ->exists(), 403);
+
         $assignment->load([
             'publication.program',
             'supervisors',
@@ -59,7 +64,6 @@ class PkpaScheduleController extends Controller
                 ->where('core_user_id', $request->user()->core_user_id)
                 ->where('acknowledgement_type', 'acknowledged'),
         ]);
-        abort_unless($assignment->supervisors->contains(fn ($s) => $s->supervisor_type === 'internal' && $s->core_user_id === $request->user()->core_user_id), 403);
         $this->acknowledgementService->record($assignment->publication, $assignment, $request->user(), 'internal_supervisor', 'viewed', $request);
 
         return view('supervisors.pkpa-schedule.show', ['assignment' => $assignment, 'type' => 'internal']);
@@ -67,8 +71,12 @@ class PkpaScheduleController extends Controller
 
     public function acknowledge(Request $request, PkpaPublishedAssignment $assignment): RedirectResponse
     {
+        abort_unless(PkpaPublishedAssignment::query()
+            ->whereKey($assignment->id)
+            ->forSupervisor('internal', $request->user()->core_user_id)
+            ->exists(), 403);
+
         $assignment->load('publication', 'supervisors');
-        abort_unless($assignment->supervisors->contains(fn ($s) => $s->supervisor_type === 'internal' && $s->core_user_id === $request->user()->core_user_id), 403);
         $this->acknowledgementService->record($assignment->publication, $assignment, $request->user(), 'internal_supervisor', 'acknowledged', $request);
 
         return back()->with('status', 'Tanda membaca jadwal berhasil disimpan.');

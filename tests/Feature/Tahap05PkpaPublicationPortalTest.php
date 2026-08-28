@@ -194,6 +194,10 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->get('/pembimbing-dalam/jadwal-pkpa')
             ->assertOk()
             ->assertSee($assignment->student_name_snapshot);
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get("/pembimbing-dalam/jadwal-pkpa/{$assignment->id}")
+            ->assertOk()
+            ->assertSee($assignment->student_name_snapshot);
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/jadwal-pkpa')
