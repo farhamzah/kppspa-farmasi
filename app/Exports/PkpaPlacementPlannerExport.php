@@ -65,8 +65,8 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
                 $assignment->practiceSite?->name,
                 optional($assignment->start_date)->format('d M Y').' - '.optional($assignment->end_date)->format('d M Y'),
                 $assignment->calculated_effective_days.' hari efektif / '.($assignment->calculated_practice_hours ?? '-').' jam',
-                $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot,
-                $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot,
+                $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name,
+                $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name,
                 $assignment->statusLabel(),
                 PkpaPlacementValidationIssue::where('pkpa_rotation_assignment_id', $assignment->id)->where('is_resolved', false)->count(),
             ];
@@ -104,7 +104,7 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
         foreach ($this->plan->assignments()->with(['practiceDomain', 'practiceSite', 'supervisors'])->get()->flatMap->supervisors->groupBy('core_user_id') as $supervisors) {
             $first = $supervisors->first();
             $rows[] = [
-                $first->name_snapshot,
+                $first->display_name,
                 $first->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan',
                 $first->supervisor_type === 'internal' ? $first->assignment?->practiceDomain?->name : $first->assignment?->practiceSite?->name,
                 $supervisors->count(),
@@ -139,8 +139,8 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
         return implode("\n", array_filter([
             $assignment->practiceSite?->name,
             optional($assignment->start_date)->format('d M Y').' - '.optional($assignment->end_date)->format('d M Y'),
-            $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ? 'PD: '.$assignment->supervisors->firstWhere('supervisor_type', 'internal')->name_snapshot : null,
-            $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ? 'PL: '.$assignment->supervisors->firstWhere('supervisor_type', 'field')->name_snapshot : null,
+            $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ? 'PD: '.$assignment->supervisors->firstWhere('supervisor_type', 'internal')->display_name : null,
+            $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name ? 'PL: '.$assignment->supervisors->firstWhere('supervisor_type', 'field')->display_name : null,
             $assignment->statusLabel(),
         ]));
     }

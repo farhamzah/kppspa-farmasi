@@ -29,4 +29,30 @@ class PkpaPublishedAssignmentSupervisor extends Model
     {
         return $this->belongsTo(PkpaPublishedAssignment::class, 'pkpa_published_assignment_id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'core_user_id', 'core_user_id');
+    }
+
+    public function displayName(): string
+    {
+        $this->loadMissing('user.lecturer', 'user.fieldSupervisor');
+
+        if ($this->user) {
+            $role = $this->supervisor_type === 'internal' ? 'pembimbing_dalam' : 'pembimbing_lapangan';
+            $name = user_display_name($this->user, $role);
+
+            if (filled($name)) {
+                return $name;
+            }
+        }
+
+        return $this->name_snapshot ?: 'Pembimbing';
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->displayName();
+    }
 }

@@ -51,8 +51,8 @@
                             <td class="px-3 py-3">{{ $assignment->practice_domain_name_snapshot }}{{ $assignment->practice_domain_option_name_snapshot ? ' / '.$assignment->practice_domain_option_name_snapshot : '' }}</td>
                             <td class="px-3 py-3">{{ $assignment->practice_site_name_snapshot }}</td>
                             <td class="px-3 py-3">{{ optional($assignment->start_date)->format('d M Y') }} - {{ optional($assignment->end_date)->format('d M Y') }}</td>
-                            <td class="px-3 py-3">{{ $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ?: '-' }}</td>
-                            <td class="px-3 py-3">{{ $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ?: '-' }}</td>
+                            <td class="px-3 py-3">{{ $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ?: '-' }}</td>
+                            <td class="px-3 py-3">{{ $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name ?: '-' }}</td>
                             <td class="px-3 py-3">{{ $assignmentStatusLabels[$assignment->status] ?? $assignment->status }}</td>
                         </tr>
                     @endforeach

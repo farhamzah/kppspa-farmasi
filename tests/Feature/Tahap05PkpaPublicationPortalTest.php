@@ -109,12 +109,18 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     {
         $publication = $this->publishedFixture('PKPA-05-B');
         $assignment = $publication->assignments()->with('supervisors')->where('practice_domain_name_snapshot', 'Apotek')->firstOrFail();
+        $this->internalSupervisor->forceFill(['name' => 'apt. Farhamzah, S.Si., M.T.I'])->save();
+        $this->fieldSupervisor->forceFill(['name' => 'apt. Ayda, S.Farm'])->save();
+        $assignment->supervisors()->where('supervisor_type', 'internal')->update(['name_snapshot' => 'Farhamzah']);
+        $assignment->supervisors()->where('supervisor_type', 'field')->update(['name_snapshot' => 'Ayda']);
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/pkpa-saya')
             ->assertOk()
             ->assertSee('Jadwal resmi PKPA')
-            ->assertSee($assignment->practice_site_name_snapshot);
+            ->assertSee($assignment->practice_site_name_snapshot)
+            ->assertSee('apt. Farhamzah, S.Si., M.T.I')
+            ->assertSee('apt. Ayda, S.Farm');
 
         $this->actingAs($this->otherStudent)->withSession(['active_role' => 'mahasiswa'])
             ->get("/mahasiswa/pkpa-saya/{$assignment->id}")
@@ -138,12 +144,16 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
             ->get("/pembimbing-dalam/jadwal-pkpa/{$assignment->id}")
             ->assertOk()
-            ->assertSee('Konfirmasi Baca Jadwal');
+            ->assertSee('Konfirmasi Baca Jadwal')
+            ->assertSee('apt. Farhamzah, S.Si., M.T.I')
+            ->assertSee('apt. Ayda, S.Farm');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get("/pembimbing-lapangan/jadwal-pkpa/{$assignment->id}")
             ->assertOk()
-            ->assertSee($assignment->student_name_snapshot);
+            ->assertSee($assignment->student_name_snapshot)
+            ->assertSee('apt. Farhamzah, S.Si., M.T.I')
+            ->assertSee('apt. Ayda, S.Farm');
 
         $this->actingAs($this->otherSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
             ->get("/pembimbing-dalam/jadwal-pkpa/{$assignment->id}")

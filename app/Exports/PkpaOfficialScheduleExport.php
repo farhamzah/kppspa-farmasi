@@ -41,8 +41,8 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
                 $assignment->practice_domain_option_name_snapshot,
                 $assignment->practice_site_name_snapshot,
                 $assignment->start_date->format('d M Y').' - '.$assignment->end_date->format('d M Y'),
-                $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot,
-                $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot,
+                $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name,
+                $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name,
                 $this->publication->code,
             ];
         }
@@ -78,8 +78,8 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
                 $assignment->student_name_snapshot,
                 $assignment->student_number_snapshot,
                 $assignment->start_date->format('d M Y').' - '.$assignment->end_date->format('d M Y'),
-                $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot,
-                $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot,
+                $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name,
+                $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name,
             ];
         }
 
@@ -96,7 +96,7 @@ class PkpaOfficialScheduleExport implements WithMultipleSheets
                 continue;
             }
             $rows[] = [
-                $supervisor->name_snapshot,
+                $supervisor->display_name,
                 $assignment->student_name_snapshot,
                 $assignment->practice_domain_name_snapshot,
                 $assignment->practice_site_name_snapshot,

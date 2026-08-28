@@ -264,12 +264,19 @@ class PkpaPlacementPublicationService
             ]);
 
             foreach ($assignment->supervisors as $supervisor) {
+                $user = User::query()
+                    ->with(['lecturer', 'fieldSupervisor'])
+                    ->where('core_user_id', $supervisor->core_user_id)
+                    ->first();
+
                 PkpaPublishedAssignmentSupervisor::create([
                     'pkpa_published_assignment_id' => $published->id,
                     'source_assignment_supervisor_id' => $supervisor->id,
                     'supervisor_type' => $supervisor->supervisor_type,
                     'core_user_id' => $supervisor->core_user_id,
-                    'name_snapshot' => $supervisor->name_snapshot,
+                    'name_snapshot' => $user
+                        ? user_display_name($user, $supervisor->supervisor_type === 'internal' ? 'pembimbing_dalam' : 'pembimbing_lapangan')
+                        : $supervisor->name_snapshot,
                     'email_snapshot' => $supervisor->internalEligibility?->email_snapshot ?: $supervisor->fieldSupervisor?->email_snapshot,
                     'role_snapshot' => $supervisor->role_snapshot,
                     'position_snapshot' => $supervisor->fieldSupervisor?->position_title,

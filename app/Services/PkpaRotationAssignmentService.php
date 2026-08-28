@@ -240,12 +240,13 @@ class PkpaRotationAssignmentService
 
         $internal = PkpaInternalSupervisorEligibility::find($data['internal_supervisor_eligibility_id'] ?? null);
         if ($internal) {
+            $internalUser = User::query()->with('lecturer')->where('core_user_id', $internal->core_user_id)->first();
             PkpaRotationAssignmentSupervisor::create([
                 'pkpa_rotation_assignment_id' => $assignment->id,
                 'supervisor_type' => 'internal',
                 'internal_supervisor_eligibility_id' => $internal->id,
                 'core_user_id' => $internal->core_user_id,
-                'name_snapshot' => $internal->name_snapshot,
+                'name_snapshot' => $internalUser ? user_display_name($internalUser, 'pembimbing_dalam') : $internal->name_snapshot,
                 'role_snapshot' => $internal->role_snapshot,
                 'effective_start_date' => $internal->effective_start_date,
                 'effective_end_date' => $internal->effective_end_date,
@@ -258,12 +259,13 @@ class PkpaRotationAssignmentService
 
         $field = PkpaSiteFieldSupervisor::find($data['site_field_supervisor_id'] ?? null);
         if ($field) {
+            $fieldUser = User::query()->with(['lecturer', 'fieldSupervisor'])->where('core_user_id', $field->core_user_id)->first();
             PkpaRotationAssignmentSupervisor::create([
                 'pkpa_rotation_assignment_id' => $assignment->id,
                 'supervisor_type' => 'field',
                 'site_field_supervisor_id' => $field->id,
                 'core_user_id' => $field->core_user_id,
-                'name_snapshot' => $field->name_snapshot,
+                'name_snapshot' => $fieldUser ? user_display_name($fieldUser, 'pembimbing_lapangan') : $field->name_snapshot,
                 'role_snapshot' => $field->role_snapshot,
                 'effective_start_date' => $field->effective_start_date,
                 'effective_end_date' => $field->effective_end_date,
