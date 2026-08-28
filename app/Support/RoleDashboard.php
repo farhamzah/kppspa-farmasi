@@ -27,7 +27,7 @@ class RoleDashboard
             'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Tersedia', 'Pembimbing Dalam', 'Preseptor', 'Peserta PKPA', 'Kelompok PKPA', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
         ],
         'pembimbing_dalam' => [
-            'label' => 'Pembimbing Dalam / Dosen',
+            'label' => 'Pembimbing Dalam',
             'route' => 'pembimbing-dalam.dashboard',
             'path' => '/pembimbing-dalam/dashboard',
             'menu' => ['Dashboard', 'Profil Saya', 'Jadwal PKPA', 'Mahasiswa Bimbingan', 'Pemantauan PKPA', 'Logbook Mahasiswa', 'Akademik PKPA', 'Capaian Kompetensi', 'Pemeriksaan Laporan', 'Review Portofolio', 'Jadwal Sidang', 'Penilaian Pembimbing', 'Penilaian PKPA'],
@@ -37,8 +37,8 @@ class RoleDashboard
             'label' => 'Preseptor',
             'route' => 'pembimbing-lapangan.dashboard',
             'path' => '/pembimbing-lapangan/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Jadwal PKPA', 'Mahasiswa PKPA', 'Operasional PKPA', 'Validasi Logbook', 'Akademik PKPA', 'Daftar Kompetensi', 'Pemeriksaan Laporan', 'Review Portofolio', 'Penilaian Lapangan', 'Penilaian PKPA'],
-            'features' => ['Jadwal PKPA', 'Mahasiswa PKPA', 'Operasional PKPA', 'Validasi Logbook', 'Akademik PKPA', 'Review Portofolio', 'Penilaian Lapangan', 'Penilaian PKPA'],
+            'menu' => ['Dashboard', 'Profil Saya', 'Jadwal PKPA', 'Mahasiswa PKPA', 'Operasional PKPA', 'Validasi Logbook', 'Akademik PKPA', 'Daftar Kompetensi', 'Pemeriksaan Laporan', 'Review Portofolio', 'Penilaian Preseptor', 'Penilaian PKPA'],
+            'features' => ['Jadwal PKPA', 'Mahasiswa PKPA', 'Operasional PKPA', 'Validasi Logbook', 'Akademik PKPA', 'Review Portofolio', 'Penilaian Preseptor', 'Penilaian PKPA'],
         ],
         'penguji' => [
             'label' => 'Penguji',
