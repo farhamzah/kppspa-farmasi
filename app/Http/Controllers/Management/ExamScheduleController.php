@@ -43,7 +43,7 @@ class ExamScheduleController extends Controller
     public function store(ScheduleExamRequest $request, KpExamRequest $examRequest, KpExamService $service): RedirectResponse
     {
         $exam = $service->scheduleExam($request->user(), $examRequest, $request->validated());
-        return redirect()->route('management.exams.show', $exam)->with('status', 'Sidang berhasil dijadwalkan.');
+        return redirect()->route('management.exams.show', $exam)->with('status', 'Ujian berhasil dijadwalkan.');
     }
 
     public function edit(KpExam $exam): View
@@ -54,19 +54,19 @@ class ExamScheduleController extends Controller
     public function update(UpdateExamScheduleRequest $request, KpExam $exam, KpExamService $service): RedirectResponse
     {
         $service->rescheduleExam($request->user(), $exam, $request->validated());
-        return redirect()->route('management.exams.show', $exam)->with('status', 'Jadwal sidang berhasil diperbarui.');
+        return redirect()->route('management.exams.show', $exam)->with('status', 'Jadwal ujian berhasil diperbarui.');
     }
 
     public function cancel(CancelExamRequest $request, KpExam $exam, KpExamService $service): RedirectResponse
     {
         $service->cancelExam($request->user(), $exam, $request->reason);
-        return back()->with('status', 'Sidang berhasil dibatalkan.');
+        return back()->with('status', 'Ujian berhasil dibatalkan.');
     }
 
     public function complete(Request $request, KpExam $exam, KpExamService $service): RedirectResponse
     {
         $service->completeExam($request->user(), $exam, $request->input('note'));
-        return back()->with('status', 'Sidang ditandai selesai.');
+        return back()->with('status', 'Ujian ditandai selesai.');
     }
 
     private function examiners()

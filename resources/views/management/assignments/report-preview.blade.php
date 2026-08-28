@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Penempatan KP</title>
+    <title>Penempatan PKPA</title>
     <style>
         body { color: #0f172a; font-family: Arial, sans-serif; margin: 32px; }
         h1 { font-size: 22px; margin: 0 0 4px; }
@@ -34,7 +34,7 @@
         <a href="{{ url()->previous() }}">Kembali</a>
     </div>
 
-    <h1>Penempatan KP</h1>
+    <h1>Penempatan PKPA</h1>
     <div class="subtitle">MY PKPA Farmasi UBP</div>
 
     <div class="meta">
@@ -47,7 +47,7 @@
     <table>
         <thead>
             <tr>
-                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat KP' => '', 'Pembimbing Dalam' => '', 'Preseptor' => '', 'Status' => '']) as $heading)
+                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat PKPA' => '', 'Pembimbing Dalam' => '', 'Preseptor' => '', 'Status' => '']) as $heading)
                     <th>{{ $heading }}</th>
                 @endforeach
             </tr>

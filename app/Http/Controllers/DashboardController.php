@@ -403,7 +403,7 @@ class DashboardController extends Controller
             $assignment = $request->user()->student?->assignments()->whereIn('status', ['aktif', 'berjalan'])->latest()->first();
             return [
                 'status_pengajuan' => $assignment?->examRequest?->statusLabel() ?? 'Belum diajukan',
-                'jadwal_sidang' => $assignment?->exam?->scheduleLabel() ?? 'Belum dijadwalkan',
+                'jadwal_ujian' => $assignment?->exam?->scheduleLabel() ?? 'Belum dijadwalkan',
             ];
         }
 
@@ -411,22 +411,22 @@ class DashboardController extends Controller
             $lecturerId = $request->user()->lecturer?->id;
 
             if (! $lecturerId) {
-                return ['sidang_terjadwal' => 0];
+                return ['ujian_terjadwal' => 0];
             }
 
-            return ['sidang_terjadwal' => KpExam::where('supervisor_id', $lecturerId)->where('status', 'dijadwalkan')->count()];
+            return ['ujian_terjadwal' => KpExam::where('supervisor_id', $lecturerId)->where('status', 'dijadwalkan')->count()];
         }
 
         if ($role === 'penguji') {
             $lecturerId = $request->user()->lecturer?->id;
 
             if (! $lecturerId) {
-                return ['sidang_ditugaskan' => 0, 'sidang_mendatang' => 0];
+                return ['ujian_ditugaskan' => 0, 'ujian_mendatang' => 0];
             }
 
             return [
-                'sidang_ditugaskan' => KpExam::query()->forExaminer($lecturerId)->count(),
-                'sidang_mendatang' => KpExam::query()->forExaminer($lecturerId)->where('status', 'dijadwalkan')->count(),
+                'ujian_ditugaskan' => KpExam::query()->forExaminer($lecturerId)->count(),
+                'ujian_mendatang' => KpExam::query()->forExaminer($lecturerId)->where('status', 'dijadwalkan')->count(),
             ];
         }
 
@@ -472,10 +472,10 @@ class DashboardController extends Controller
             $lecturerId = $request->user()->lecturer?->id;
 
             if (! $lecturerId) {
-                return ['sidang_belum_submit' => 0];
+                return ['ujian_belum_submit' => 0];
             }
 
-            return ['sidang_belum_submit' => KpExam::query()->forExaminer($lecturerId)->whereDoesntHave('scores', fn ($q) => $q->where('assessor_type', 'penguji')->where('assessor_user_id', $request->user()->id)->whereIn('status', ['submitted', 'locked']))->count()];
+            return ['ujian_belum_submit' => KpExam::query()->forExaminer($lecturerId)->whereDoesntHave('scores', fn ($q) => $q->where('assessor_type', 'penguji')->where('assessor_user_id', $request->user()->id)->whereIn('status', ['submitted', 'locked']))->count()];
         }
 
         return null;

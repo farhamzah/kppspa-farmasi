@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Penempatan KP</title>
+    <title>Penempatan PKPA</title>
     <style>
         @page Section1 { size: 29.7cm 21cm; margin: 1.2cm; }
         body { color: #0f172a; font-family: Arial, sans-serif; font-size: 9pt; }
@@ -20,7 +20,7 @@
 </head>
 <body>
 <div class="Section1">
-    <h1>Penempatan KP</h1>
+    <h1>Penempatan PKPA</h1>
     <p class="subtitle">MY PKPA Farmasi UBP</p>
 
     <table class="meta">
@@ -39,7 +39,7 @@
     <table class="report">
         <thead>
             <tr>
-                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat KP' => '', 'Pembimbing Dalam' => '', 'Preseptor' => '', 'Status' => '']) as $heading)
+                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat PKPA' => '', 'Pembimbing Dalam' => '', 'Preseptor' => '', 'Status' => '']) as $heading)
                     <th>{{ $heading }}</th>
                 @endforeach
             </tr>

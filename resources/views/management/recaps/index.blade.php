@@ -1,12 +1,12 @@
 @extends('layouts.app')
-@section('title','Rekap KP - '.config('app.name'))
-@section('page_title','Rekap KP')
+@section('title','Rekap PKPA - '.config('app.name'))
+@section('page_title','Rekap PKPA')
 @section('content')
 <div class="space-y-6">
     <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pusat Rekap</p>
-        <h2 class="mt-2 text-2xl font-black text-slate-950">Rekap, Pemantauan, dan Ekspor KP</h2>
-        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Gunakan halaman ini untuk membaca ringkasan kemajuan KP, pratinjau cetak, cetak, dan mengunduh data penting dalam format Word, Excel, atau PDF.</p>
+        <h2 class="mt-2 text-2xl font-black text-slate-950">Rekap, Pemantauan, dan Ekspor PKPA</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Gunakan halaman ini untuk membaca ringkasan kemajuan PKPA, pratinjau cetak, cetak, dan mengunduh data penting dalam format Word, Excel, atau PDF.</p>
     </section>
     <section class="grid gap-4 md:grid-cols-3">
         @foreach($summary as $label => $value)
@@ -18,10 +18,10 @@
     </section>
     <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         @foreach([
-            'students' => ['Mahasiswa KP','Rekap status mahasiswa, pendaftaran, pembimbing, sidang, dan nilai.'],
-            'placements' => ['Penempatan KP','Rekap tempat, pembimbing, dan status penempatan.'],
+            'students' => ['Mahasiswa PKPA','Rekap status mahasiswa, pendaftaran, pembimbing, ujian, dan nilai.'],
+            'placements' => ['Penempatan PKPA','Rekap tempat, pembimbing, dan status penempatan.'],
             'logbooks' => ['Logbook','Rekap jumlah dan status logbook per mahasiswa.'],
-            'exams' => ['Sidang','Rekap jadwal dan status sidang KP.'],
+            'exams' => ['Ujian','Rekap jadwal dan status ujian PKPA.'],
             'scores' => ['Nilai','Rekap nilai per sumber penilai dan grade akhir.'],
         ] as $type => [$title, $desc])
             <article class="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100">

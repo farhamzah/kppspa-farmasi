@@ -13,7 +13,7 @@
     $logbookStatuses = [
         'draft' => 'Draf',
         'submitted' => 'Menunggu Validasi',
-        'approved' => 'Disetujui Lapangan',
+        'approved' => 'Disetujui Preseptor',
         'revision_requested' => 'Perlu Revisi',
         'rejected' => 'Ditolak',
         'reviewed_by_internal' => 'Sudah Dimonitor Pembimbing Dalam',

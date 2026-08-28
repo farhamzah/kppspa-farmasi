@@ -4,7 +4,7 @@
 @section('content')
 <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
     <div class="border-b border-slate-100 p-5">
-        <h2 class="text-lg font-black text-slate-950">Mahasiswa Bimbingan Lapangan</h2>
+        <h2 class="text-lg font-black text-slate-950">Mahasiswa Bimbingan Preseptor</h2>
         <p class="mt-1 text-sm text-slate-500">Centang kompetensi ketika mahasiswa sudah mencapai indikator yang ditetapkan koordinator.</p>
     </div>
     <div class="overflow-x-auto">

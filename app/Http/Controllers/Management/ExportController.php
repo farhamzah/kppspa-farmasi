@@ -16,11 +16,11 @@ class ExportController extends Controller
         abort_unless(in_array($type, ['students', 'placements', 'logbooks', 'exams', 'scores'], true), 404);
 
         $filenames = [
-            'students' => 'rekap_mahasiswa_kp.xlsx',
-            'placements' => 'rekap_penempatan_kp.xlsx',
-            'logbooks' => 'rekap_logbook_kp.xlsx',
-            'exams' => 'rekap_sidang_kp.xlsx',
-            'scores' => 'rekap_nilai_kp.xlsx',
+            'students' => 'rekap_mahasiswa_pkpa.xlsx',
+            'placements' => 'rekap_penempatan_pkpa.xlsx',
+            'logbooks' => 'rekap_logbook_pkpa.xlsx',
+            'exams' => 'rekap_ujian_pkpa.xlsx',
+            'scores' => 'rekap_nilai_pkpa.xlsx',
         ];
 
         return Excel::download(new KpRecapExport($service->rows($type, $request)), $filenames[$type]);

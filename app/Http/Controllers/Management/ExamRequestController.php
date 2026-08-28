@@ -36,7 +36,7 @@ class ExamRequestController extends Controller
     public function approve(ReviewExamRequestRequest $request, KpExamRequest $examRequest, KpExamService $service): RedirectResponse
     {
         $service->approveRequest($request->user(), $examRequest, $request->review_note);
-        return back()->with('status', 'Pengajuan sidang berhasil disetujui.');
+        return back()->with('status', 'Pengajuan ujian berhasil disetujui.');
     }
 
     public function revision(ReviewExamRequestRequest $request, KpExamRequest $examRequest, KpExamService $service): RedirectResponse
@@ -45,7 +45,7 @@ class ExamRequestController extends Controller
             throw ValidationException::withMessages(['review_note' => 'Catatan revisi wajib diisi.']);
         }
         $service->requestRevision($request->user(), $examRequest, $request->review_note);
-        return back()->with('status', 'Revisi pengajuan sidang berhasil diminta.');
+        return back()->with('status', 'Revisi pengajuan ujian berhasil diminta.');
     }
 
     public function reject(ReviewExamRequestRequest $request, KpExamRequest $examRequest, KpExamService $service): RedirectResponse
@@ -54,6 +54,6 @@ class ExamRequestController extends Controller
             throw ValidationException::withMessages(['review_note' => 'Catatan penolakan wajib diisi.']);
         }
         $service->rejectRequest($request->user(), $examRequest, $request->review_note);
-        return back()->with('status', 'Pengajuan sidang berhasil ditolak.');
+        return back()->with('status', 'Pengajuan ujian berhasil ditolak.');
     }
 }

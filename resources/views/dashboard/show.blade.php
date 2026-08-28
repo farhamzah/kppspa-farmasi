@@ -344,13 +344,13 @@
         ],
         [
             'label' => 'Ujian terjadwal',
-            'value' => (int) ($examStats['sidang_terjadwal'] ?? $examStats['sidang_mendatang'] ?? $examStats['dijadwalkan'] ?? 0),
+            'value' => (int) ($examStats['ujian_terjadwal'] ?? $examStats['ujian_mendatang'] ?? $examStats['dijadwalkan'] ?? 0),
             'route' => $activeRole === 'penguji' ? 'examiner.pkpa-exams.index' : ($activeRole === 'pembimbing_dalam' ? 'internal-supervisor.pkpa-exams.index' : 'management.pkpa-exams.index'),
             'visible' => in_array($role, ['admin', 'koordinator_kp', 'pembimbing_dalam', 'penguji'], true),
         ],
         [
             'label' => 'Nilai belum dikirim',
-            'value' => (int) ($scoreStats['belum_submit'] ?? $scoreStats['sidang_belum_submit'] ?? 0),
+            'value' => (int) ($scoreStats['belum_submit'] ?? $scoreStats['ujian_belum_submit'] ?? 0),
             'route' => $role === 'penguji' ? 'examiner.assessments.index' : ($role === 'pembimbing_lapangan' ? 'field-supervisor.assessments.index' : 'internal-supervisor.assessments.index'),
             'visible' => in_array($role, ['pembimbing_dalam', 'pembimbing_lapangan', 'penguji'], true),
         ],

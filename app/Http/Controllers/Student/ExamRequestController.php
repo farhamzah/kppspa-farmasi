@@ -27,7 +27,7 @@ class ExamRequestController extends Controller
     {
         $service->submitRequest($request->user(), $this->activeAssignmentOrFail(), $request->request_note);
 
-        return back()->with('status', 'Pengajuan sidang berhasil dikirim.');
+        return back()->with('status', 'Pengajuan ujian berhasil dikirim.');
     }
 
     public function cancel(): RedirectResponse
@@ -37,7 +37,7 @@ class ExamRequestController extends Controller
         abort_unless($examRequest && in_array($examRequest->status, ['draft', 'diajukan', 'revisi'], true), 403);
         app(KpExamService::class)->cancelRequest(request()->user(), $examRequest, 'Dibatalkan oleh mahasiswa.');
 
-        return back()->with('status', 'Pengajuan sidang berhasil dibatalkan.');
+        return back()->with('status', 'Pengajuan ujian berhasil dibatalkan.');
     }
 
     private function activeAssignment(): ?KpAssignment

@@ -42,12 +42,12 @@ class AssessmentController extends Controller
             $service->saveScore($request->user(), $exam->assignment, KpAssessmentComponent::findOrFail($row['component_id']), (float) $row['score'], $row['note'] ?? null);
         }
 
-        return back()->with('status', 'Nilai sidang berhasil disimpan.');
+        return back()->with('status', 'Nilai ujian berhasil disimpan.');
     }
 
     public function submit(KpExam $exam, KpAssessmentService $service): RedirectResponse
     {
         $service->submitScores(request()->user(), $exam->assignment, 'penguji');
-        return back()->with('status', 'Nilai sidang berhasil disubmit.');
+        return back()->with('status', 'Nilai ujian berhasil disubmit.');
     }
 }
