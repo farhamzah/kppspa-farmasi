@@ -12,13 +12,13 @@
             <p><span class="font-semibold">Tempat:</span> {{ $logbook->assignment->place->name }}</p>
             <div><p class="font-semibold">Uraian</p><p class="mt-1 whitespace-pre-line">{{ $logbook->activity_description }}</p></div>
             <div><p class="font-semibold">Hasil Pembelajaran</p><p class="mt-1 whitespace-pre-line">{{ $logbook->learning_outcome ?: '-' }}</p></div>
-            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'internal-supervisor.logbooks.evidence.download'])
+            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'internal-supervisor.pkpa-journals.evidence.download'])
         </div>
     </section>
     <aside class="space-y-5">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <h3 class="font-bold text-slate-950">Tambah Komentar</h3>
-            <form method="POST" action="{{ route('internal-supervisor.logbooks.comments',$logbook) }}" class="mt-4">@csrf<textarea name="comment" rows="4" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><select name="visibility" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="visible_to_student">Terlihat Mahasiswa</option><option value="internal">Internal</option></select><button class="mt-3 w-full rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Simpan Komentar</button></form>
+            <form method="POST" action="{{ route('internal-supervisor.pkpa-journals.comments',$logbook) }}" class="mt-4">@csrf<textarea name="comment" rows="4" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><select name="visibility" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><option value="visible_to_student">Terlihat Mahasiswa</option><option value="internal">Internal</option></select><button class="mt-3 w-full rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Simpan Komentar</button></form>
         </section>
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <h3 class="font-bold text-slate-950">Komentar</h3>

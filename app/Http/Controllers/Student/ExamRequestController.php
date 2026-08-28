@@ -48,7 +48,7 @@ class ExamRequestController extends Controller
     private function activeAssignmentOrFail(): KpAssignment
     {
         $assignment = $this->activeAssignment();
-        abort_unless($assignment, 403, 'Anda belum memiliki penempatan KP aktif.');
+        abort_unless($assignment, 403, 'Anda belum memiliki penempatan PKPA aktif.');
 
         return $assignment;
     }

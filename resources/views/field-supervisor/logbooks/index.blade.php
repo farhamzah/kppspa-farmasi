@@ -124,11 +124,11 @@
                     <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $selectedAssignment->student->user->name }}</h2>
                     <p class="mt-1 text-sm text-slate-500">{{ $selectedAssignment->student->nim ?: '-' }} · {{ $selectedAssignment->place->name }} · {{ $selectedAssignment->period->name }}</p>
                 </div>
-                <a href="{{ route('field-supervisor.logbooks.index', request()->except('assignment')) }}" class="inline-flex rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Tutup Rincian</a>
+                <a href="{{ route('field-supervisor.pkpa-journals.index', request()->except('assignment')) }}" class="inline-flex rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">Tutup Rincian</a>
             </div>
 
             @if($pendingSelectedLogbooks->isNotEmpty())
-                <form method="POST" action="{{ route('field-supervisor.logbooks.bulk-approve') }}" class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
+                <form method="POST" action="{{ route('field-supervisor.pkpa-journals.bulk-approve') }}" class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4">
                     @csrf
                     <input type="hidden" name="assignment_id" value="{{ $selectedAssignment->id }}">
 
@@ -180,7 +180,7 @@
                                 <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $logbook->activity_description }}</p>
                                 <p class="mt-2 text-xs text-slate-500">Diajukan: {{ $logbook->submitted_at?->format('d M Y H:i') ?? '-' }}</p>
                             </div>
-                            <a href="{{ route('field-supervisor.logbooks.show', $logbook) }}" class="inline-flex justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-700/15 hover:bg-cyan-800">
+                            <a href="{{ route('field-supervisor.pkpa-journals.show', $logbook) }}" class="inline-flex justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-700/15 hover:bg-cyan-800">
                                 Validasi
                             </a>
                         </div>

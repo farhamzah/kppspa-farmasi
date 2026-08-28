@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title','Sidang KP - '.config('app.name'))
-@section('page_title','Sidang KP')
+@section('title','Sidang PKPA - '.config('app.name'))
+@section('page_title','Sidang PKPA')
 
 @section('content')
 <div class="space-y-5">
@@ -10,7 +10,7 @@
     @endif
 
     @if(! $assignment)
-        <x-ui.empty-state title="Anda belum memiliki penempatan KP aktif." description="Pengajuan sidang tersedia setelah penempatan dan laporan akhir selesai." />
+        <x-ui.empty-state title="Anda belum memiliki penempatan PKPA aktif." description="Pengajuan sidang tersedia setelah penempatan dan laporan akhir selesai." />
     @else
         @php($isReady = $examEligibility['ready'] ?? false)
         <x-ui.status-stepper :steps="[
@@ -47,9 +47,9 @@
             </div>
 
             @if(! $isReady)
-                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pengajuan sidang dibuka setelah semua logbook KP tervalidasi pembimbing lapangan, minimal 8 bimbingan laporan disetujui pembimbing dalam, dan laporan final disetujui kedua pembimbing.</div>
+                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pengajuan sidang dibuka setelah semua logbook PKPA tervalidasi pembimbing lapangan, minimal 8 bimbingan laporan disetujui pembimbing dalam, dan laporan final disetujui kedua pembimbing.</div>
             @elseif(! $examRequest)
-                <form method="POST" action="{{ route('student.exams.submit') }}" class="mt-5 space-y-3">
+                <form method="POST" action="{{ route('student.pkpa-exams.submit') }}" class="mt-5 space-y-3">
                     @csrf
                     <textarea name="request_note" rows="3" placeholder="Catatan pengajuan opsional" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
                     <button class="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Ajukan Sidang</button>

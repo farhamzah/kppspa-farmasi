@@ -46,15 +46,15 @@ class LogbookController extends Controller
             'ended_at' => ['required', 'date', 'after_or_equal:started_at'],
             'workday_pattern' => ['required', 'in:senin_jumat,senin_sabtu'],
         ], [
-            'started_at.required' => 'Tanggal mulai KP wajib diisi.',
-            'ended_at.required' => 'Tanggal selesai KP wajib diisi.',
-            'ended_at.after_or_equal' => 'Tanggal selesai KP tidak boleh sebelum tanggal mulai.',
+            'started_at.required' => 'Tanggal mulai PKPA wajib diisi.',
+            'ended_at.required' => 'Tanggal selesai PKPA wajib diisi.',
+            'ended_at.after_or_equal' => 'Tanggal selesai PKPA tidak boleh sebelum tanggal mulai.',
             'workday_pattern.in' => 'Pola hari kerja tidak valid.',
         ]);
 
         $assignment->update($data);
 
-        return back()->with('status', 'Periode kerja KP berhasil diperbarui.');
+        return back()->with('status', 'Periode kerja PKPA berhasil diperbarui.');
     }
 
     public function store(StoreKpLogbookRequest $request, KpLogbookService $service): RedirectResponse
@@ -72,7 +72,7 @@ class LogbookController extends Controller
             $service->submit($request->user(), $logbook);
         }
 
-        return redirect()->route('student.logbooks.show', $logbook)->with('status', 'Logbook berhasil disimpan.');
+        return redirect()->route('student.pkpa-journals.show', $logbook)->with('status', 'Logbook PKPA berhasil disimpan.');
     }
 
     public function show(KpLogbook $logbook, KpLogbookService $service): View
@@ -109,7 +109,7 @@ class LogbookController extends Controller
             $service->submit($request->user(), $logbook);
         }
 
-        return redirect()->route('student.logbooks.show', $logbook)->with('status', 'Logbook berhasil diperbarui.');
+        return redirect()->route('student.pkpa-journals.show', $logbook)->with('status', 'Logbook PKPA berhasil diperbarui.');
     }
 
     public function submit(SubmitKpLogbookRequest $request, KpLogbook $logbook, KpLogbookService $service): RedirectResponse
@@ -137,7 +137,7 @@ class LogbookController extends Controller
         $service->deleteEvidence($logbook);
         $logbook->delete();
 
-        return redirect()->route('student.logbooks.index')->with('status', 'Logbook draft berhasil dihapus.');
+        return redirect()->route('student.pkpa-journals.index')->with('status', 'Draf logbook PKPA berhasil dihapus.');
     }
 
     private function activeAssignment(): ?KpAssignment
@@ -154,7 +154,7 @@ class LogbookController extends Controller
         $assignment = $this->activeAssignment();
 
         if (! $assignment) {
-            throw ValidationException::withMessages(['assignment' => 'Anda belum memiliki penempatan KP aktif.']);
+            throw ValidationException::withMessages(['assignment' => 'Anda belum memiliki penempatan PKPA aktif.']);
         }
 
         return $assignment;

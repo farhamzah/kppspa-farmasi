@@ -483,6 +483,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('ujian-pkpa/batalkan-pengajuan', [StudentExamRequestController::class, 'cancel'])->name('pkpa-exams.cancel');
             Route::get('penempatan-kp', [AssignmentController::class, 'show'])->name('assignments.show');
             Route::get('logbook', [LogbookController::class, 'index'])->name('logbooks.index');
+            Route::post('jurnal-pkpa/periode-kerja', [LogbookController::class, 'updateWorkPeriod'])->name('pkpa-journals.work-period.update');
             Route::post('logbook/periode-kerja', [LogbookController::class, 'updateWorkPeriod'])->name('logbooks.work-period.update');
             Route::get('logbook/create', [LogbookController::class, 'create'])->name('logbooks.create');
             Route::post('logbook', [LogbookController::class, 'store'])->name('logbooks.store');

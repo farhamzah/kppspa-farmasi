@@ -38,7 +38,7 @@
                         </span>
                     </td>
                     <td class="whitespace-nowrap text-right">
-                        <a href="{{ route('internal-supervisor.assignments.show', $assignment) }}" class="si-table-action">
+                        <a href="{{ route('internal-supervisor.pkpa-students.show', $assignment) }}" class="si-table-action">
                             Detail
                         </a>
                     </td>

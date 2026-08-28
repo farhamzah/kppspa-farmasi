@@ -10,7 +10,7 @@
     @endif
 
     @if(! $assignment)
-        <x-ui.empty-state title="Anda belum memiliki penempatan KP aktif." description="Laporan akhir dapat diupload setelah penempatan KP aktif atau berjalan." />
+        <x-ui.empty-state title="Anda belum memiliki penempatan PKPA aktif." description="Laporan akhir dapat diunggah setelah penempatan PKPA aktif atau berjalan." />
     @else
         @php
             $guidanceLogs = $assignment->reportGuidanceLogs->sortByDesc('guidance_date');
@@ -62,7 +62,7 @@
                     </div>
 
                     @if(! $report || $report->canBeEditedByStudent())
-                        <form method="POST" action="{{ route('student.final-reports.final-link') }}" class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_260px_auto]">
+                        <form method="POST" action="{{ route('student.pkpa-final-report.final-link') }}" class="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_260px_auto]">
                             @csrf
                             <input name="final_document_url" value="{{ old('final_document_url', $report?->final_document_url) }}" placeholder="https://docs.google.com/..." class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
                             <input name="final_document_label" value="{{ old('final_document_label', $report?->final_document_label) }}" placeholder="Judul/link opsional" class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
@@ -77,7 +77,7 @@
                     <h3 class="text-lg font-black text-slate-950">Unggah Berkas Laporan</h3>
                     <p class="mt-1 text-sm text-slate-500">Opsional jika laporan final memakai Google Docs/Drive. Format PDF, DOC, atau DOCX. Maksimal 10MB.</p>
                     @if(! $report || $report->canBeEditedByStudent())
-                        <form method="POST" action="{{ route('student.final-reports.upload') }}" enctype="multipart/form-data" class="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                        <form method="POST" action="{{ route('student.pkpa-final-report.upload') }}" enctype="multipart/form-data" class="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
                             @csrf
                             <input type="file" name="report_file" class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
                             <input name="note" placeholder="Catatan upload opsional" class="rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
@@ -94,7 +94,7 @@
                                     <p class="font-bold text-slate-950">Versi {{ $file->version }} - {{ $file->original_filename }}</p>
                                     <p class="text-xs text-slate-500">{{ $file->humanFileSize() }} | {{ $file->uploaded_at->format('d M Y H:i') }}</p>
                                 </div>
-                                <a href="{{ route('student.final-reports.files.download',$file) }}" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Unduh</a>
+                                <a href="{{ route('student.pkpa-final-report.files.download',$file) }}" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-bold text-cyan-700">Unduh</a>
                             </div>
                         @empty
                             <p class="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Belum ada file laporan.</p>
@@ -122,7 +122,7 @@
                         <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{{ $report->review_note }}</div>
                     @endif
                     @if($report?->canBeSubmitted())
-                        <form method="POST" action="{{ route('student.final-reports.submit') }}" class="mt-4">
+                        <form method="POST" action="{{ route('student.pkpa-final-report.submit') }}" class="mt-4">
                             @csrf
                             <button onclick="return confirm('Kirim laporan final untuk pemeriksaan kedua pembimbing?')" class="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white">Kirim Final untuk Pemeriksaan</button>
                         </form>
@@ -132,7 +132,7 @@
                 <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                     <h3 class="font-black text-slate-950">Bimbingan Laporan</h3>
                     <p class="mt-1 text-sm text-slate-500">{{ $approvedGuidance }}/8 bimbingan disetujui pembimbing dalam.</p>
-                    <form method="POST" action="{{ route('student.final-reports.guidance.store') }}" class="mt-4 space-y-3">
+                    <form method="POST" action="{{ route('student.pkpa-final-report.guidance.store') }}" class="mt-4 space-y-3">
                         @csrf
                         <input type="date" name="guidance_date" value="{{ old('guidance_date', now()->toDateString()) }}" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">
                         <input name="topic" value="{{ old('topic') }}" placeholder="Topik bimbingan laporan" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm">

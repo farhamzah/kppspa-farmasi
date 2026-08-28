@@ -22,9 +22,9 @@
             <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{{ $logbook->validation_note }}</div>
         @endif
         <div class="mt-6 flex flex-wrap gap-3">
-            @if($logbook->canBeEditedByStudent())<a href="{{ route('student.logbooks.edit',$logbook) }}" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Edit</a>@endif
-            @if($logbook->canBeSubmitted())<form method="POST" action="{{ route('student.logbooks.submit',$logbook) }}">@csrf<button onclick="return confirm('Kirim logbook untuk validasi?')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Kirim</button></form>@endif
-            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'student.logbooks.evidence.download'])
+            @if($logbook->canBeEditedByStudent())<a href="{{ route('student.pkpa-journals.edit',$logbook) }}" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Edit</a>@endif
+            @if($logbook->canBeSubmitted())<form method="POST" action="{{ route('student.pkpa-journals.submit',$logbook) }}">@csrf<button onclick="return confirm('Kirim logbook untuk validasi?')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Kirim</button></form>@endif
+            @include('partials.logbook-evidence-actions', ['downloadRoute' => 'student.pkpa-journals.evidence.download'])
         </div>
     </section>
     <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
