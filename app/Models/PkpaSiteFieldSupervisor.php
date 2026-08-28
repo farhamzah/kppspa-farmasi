@@ -60,4 +60,29 @@ class PkpaSiteFieldSupervisor extends Model
     {
         return $this->hasMany(PkpaRotationAssignmentSupervisor::class, 'site_field_supervisor_id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'core_user_id', 'core_user_id');
+    }
+
+    public function displayName(): string
+    {
+        $this->loadMissing('user.fieldSupervisor');
+
+        if ($this->user) {
+            $name = user_display_name($this->user, 'pembimbing_lapangan');
+
+            if (filled($name)) {
+                return $name;
+            }
+        }
+
+        return $this->name_snapshot ?: 'Preseptor';
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->displayName();
+    }
 }

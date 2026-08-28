@@ -65,4 +65,29 @@ class PkpaInternalSupervisorEligibility extends Model
     {
         return $this->hasMany(PkpaRotationAssignmentSupervisor::class, 'internal_supervisor_eligibility_id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'core_user_id', 'core_user_id');
+    }
+
+    public function displayName(): string
+    {
+        $this->loadMissing('user.lecturer');
+
+        if ($this->user) {
+            $name = user_display_name($this->user, 'pembimbing_dalam');
+
+            if (filled($name)) {
+                return $name;
+            }
+        }
+
+        return $this->name_snapshot ?: 'Pembimbing Dalam';
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->displayName();
+    }
 }

@@ -215,16 +215,16 @@ class PkpaPlacementPlannerController extends Controller
                     ->map(fn (PkpaSiteFieldSupervisor $supervisor) => [
                         'id' => $supervisor->id,
                         'practice_site_id' => $supervisor->practice_site_id,
-                        'name' => $supervisor->name_snapshot,
-                        'label' => trim(($supervisor->name_snapshot ?? '').($supervisor->position_title ? ' / '.$supervisor->position_title : '')),
+                        'name' => $supervisor->display_name,
+                        'label' => trim(($supervisor->display_name ?? '').($supervisor->position_title ? ' / '.$supervisor->position_title : '')),
                         'maximum_active_students' => $supervisor->maximum_active_students,
                     ])->values(),
             ]);
         $internal = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $plan->pkpa_program_id)->where('practice_domain_id', $domainId)->where('status', 'active')->get()
             ->map(fn (PkpaInternalSupervisorEligibility $supervisor) => [
                 'id' => $supervisor->id,
-                'name' => $supervisor->name_snapshot,
-                'label' => trim(($supervisor->name_snapshot ?? '').' / max '.($supervisor->maximum_active_students ?? '?')),
+                'name' => $supervisor->display_name,
+                'label' => trim(($supervisor->display_name ?? '').' / max '.($supervisor->maximum_active_students ?? '?')),
                 'maximum_active_students' => $supervisor->maximum_active_students,
             ])->values();
 

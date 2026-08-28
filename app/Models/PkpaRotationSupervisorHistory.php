@@ -37,4 +37,34 @@ class PkpaRotationSupervisorHistory extends Model
     {
         return $this->belongsTo(PkpaPublishedAssignmentSupervisor::class, 'source_published_assignment_supervisor_id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'core_user_id', 'core_user_id');
+    }
+
+    public function displayName(): string
+    {
+        $this->loadMissing('user.lecturer', 'user.fieldSupervisor', 'sourceSupervisor.user');
+
+        if ($this->user) {
+            $role = $this->supervisor_type === 'internal' ? 'pembimbing_dalam' : 'pembimbing_lapangan';
+            $name = user_display_name($this->user, $role);
+
+            if (filled($name)) {
+                return $name;
+            }
+        }
+
+        if ($this->sourceSupervisor) {
+            return $this->sourceSupervisor->display_name;
+        }
+
+        return $this->name_snapshot ?: 'Pembimbing';
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->displayName();
+    }
 }

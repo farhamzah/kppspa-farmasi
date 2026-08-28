@@ -240,8 +240,8 @@ class PkpaDocumentGenerationService
             if ($first) {
                 $context['student'] = ['name' => $first->student_name_snapshot, 'npm' => $first->student_number_snapshot, 'group' => $first->student_group_snapshot ?: '-'];
                 $context['rotation'] = ['domain' => $first->practice_domain_name_snapshot, 'option' => $first->practice_domain_option_name_snapshot ?: '-', 'site' => $first->practice_site_name_snapshot, 'start_date' => $first->start_date?->toDateString(), 'end_date' => $first->end_date?->toDateString()];
-                $context['internal_supervisor'] = ['name' => $first->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ?: '-'];
-                $context['field_supervisor'] = ['name' => $first->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ?: '-'];
+                $context['internal_supervisor'] = ['name' => $first->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ?: '-'];
+                $context['field_supervisor'] = ['name' => $first->supervisors->firstWhere('supervisor_type', 'field')?->display_name ?: '-'];
             }
             $context['rows'] = $publication->assignments->map(fn (PkpaPublishedAssignment $assignment) => [
                 $assignment->student_number_snapshot,
@@ -262,8 +262,8 @@ class PkpaDocumentGenerationService
             $context['publication'] = ['number' => $assignment->publication?->publication_number];
             $context['student'] = ['name' => $assignment->student_name_snapshot, 'npm' => $assignment->student_number_snapshot, 'group' => $assignment->student_group_snapshot ?: '-'];
             $context['rotation'] = ['domain' => $assignment->practice_domain_name_snapshot, 'option' => $assignment->practice_domain_option_name_snapshot ?: '-', 'site' => $assignment->practice_site_name_snapshot, 'start_date' => $assignment->start_date?->toDateString(), 'end_date' => $assignment->end_date?->toDateString()];
-            $context['internal_supervisor'] = ['name' => $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ?: '-'];
-            $context['field_supervisor'] = ['name' => $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ?: '-'];
+            $context['internal_supervisor'] = ['name' => $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ?: '-'];
+            $context['field_supervisor'] = ['name' => $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name ?: '-'];
             $context['rows'] = [[$assignment->student_number_snapshot, $assignment->student_name_snapshot, $assignment->practice_domain_name_snapshot, $assignment->practice_site_name_snapshot, $assignment->start_date?->toDateString().' - '.$assignment->end_date?->toDateString()]];
         }
 

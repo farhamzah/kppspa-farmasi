@@ -433,9 +433,9 @@ class PkpaPortfolioBuilderService
             'address' => $run->practiceSite?->address,
             'start_date' => $run->scheduled_start_date?->toDateString(),
             'end_date' => $run->scheduled_end_date?->toDateString(),
-            'internal_supervisor' => $internal?->name_snapshot,
+            'internal_supervisor' => $internal?->display_name,
             'internal_supervisor_core_user_id' => $internal?->core_user_id,
-            'field_supervisor' => $field?->name_snapshot,
+            'field_supervisor' => $field?->display_name,
             'field_supervisor_core_user_id' => $field?->core_user_id,
         ];
     }

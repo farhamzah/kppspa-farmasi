@@ -13,8 +13,8 @@
                 <p class="font-black text-slate-950">{{ $assignment->practiceSite?->name }}</p>
                 <p>{{ $assignment->start_date?->format('d M Y') }} - {{ $assignment->end_date?->format('d M Y') }}</p>
                 @if($assignment->selectedOption)<p>{{ $assignment->practiceDomain?->name }} / {{ $assignment->selectedOption?->name }}</p>@endif
-                <p>Pembimbing Dalam: {{ $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ?: '-' }}</p>
-                <p>Preseptor: {{ $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ?: '-' }}</p>
+                <p>Pembimbing Dalam: {{ $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ?: '-' }}</p>
+                <p>Preseptor: {{ $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name ?: '-' }}</p>
             </div>
         @else
             <p class="text-xs text-slate-500">Belum ditempatkan</p>
@@ -47,14 +47,14 @@
                 <select name="internal_supervisor_eligibility_id" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-xs" required>
                     <option value="">Pembimbing Dalam</option>
                     @foreach(($internalOptions[$requirement->practice_domain_id] ?? collect()) as $supervisor)
-                        <option value="{{ $supervisor->id }}" @selected($assignment?->supervisors->firstWhere('supervisor_type', 'internal')?->internal_supervisor_eligibility_id === $supervisor->id)>{{ $supervisor->name_snapshot }} / max {{ $supervisor->maximum_active_students ?? '?' }}</option>
+                        <option value="{{ $supervisor->id }}" @selected($assignment?->supervisors->firstWhere('supervisor_type', 'internal')?->internal_supervisor_eligibility_id === $supervisor->id)>{{ $supervisor->display_name }} / max {{ $supervisor->maximum_active_students ?? '?' }}</option>
                     @endforeach
                 </select>
                 <select name="site_field_supervisor_id" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-xs" data-field-supervisor-select required>
                     <option value="">Preseptor</option>
                     @foreach(($siteOptions[$requirement->practice_domain_id] ?? collect()) as $site)
                         @foreach(($fieldOptions[$site->practice_site_id] ?? collect()) as $supervisor)
-                            <option value="{{ $supervisor->id }}" data-practice-site-id="{{ $site->practice_site_id }}" @selected($assignment?->supervisors->firstWhere('supervisor_type', 'field')?->site_field_supervisor_id === $supervisor->id)>{{ $site->practiceSite?->name }} - {{ $supervisor->name_snapshot }} / max {{ $supervisor->maximum_active_students ?? '?' }}</option>
+                            <option value="{{ $supervisor->id }}" data-practice-site-id="{{ $site->practice_site_id }}" @selected($assignment?->supervisors->firstWhere('supervisor_type', 'field')?->site_field_supervisor_id === $supervisor->id)>{{ $site->practiceSite?->name }} - {{ $supervisor->display_name }} / max {{ $supervisor->maximum_active_students ?? '?' }}</option>
                         @endforeach
                     @endforeach
                 </select>
