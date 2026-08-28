@@ -42,7 +42,7 @@ class ExternalDocumentReferenceController extends Controller
 
         return redirect()
             ->route('management.integration.external-document-references.index', $request->only(['assignment_id', 'document_type', 'limit']))
-            ->with('status', "Draft referensi lokal dibuat/diperbarui: {$result['created']} baru, {$result['updated']} diperbarui. Tidak ada request ke TU.");
+            ->with('status', "Draf referensi lokal PKPA dibuat atau diperbarui: {$result['created']} baru, {$result['updated']} diperbarui. Tidak ada request ke TU.");
     }
 
     public function edit(KpExternalDocumentReference $reference): View
@@ -71,7 +71,7 @@ class ExternalDocumentReferenceController extends Controller
 
         return redirect()
             ->route('management.integration.external-document-references.edit', $reference)
-            ->with('status', 'Reference dokumen eksternal diperbarui di database lokal KP. Tidak ada request ke TU/SAFA.');
+            ->with('status', 'Referensi dokumen eksternal diperbarui di database lokal PKPA. Tidak ada request ke TU/SAFA.');
     }
 
     private function filters(Request $request): array

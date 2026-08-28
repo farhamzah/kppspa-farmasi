@@ -50,14 +50,14 @@ class KpCompetencyController extends Controller
 
         KpCompetency::create($data);
 
-        return back()->with('status', 'Kompetensi KP berhasil ditambahkan.');
+        return back()->with('status', 'Kompetensi PKPA berhasil ditambahkan.');
     }
 
     public function update(Request $request, KpCompetency $competency): RedirectResponse
     {
         $competency->update($this->validated($request));
 
-        return back()->with('status', 'Kompetensi KP berhasil diperbarui.');
+        return back()->with('status', 'Kompetensi PKPA berhasil diperbarui.');
     }
 
     public function destroy(KpCompetency $competency): RedirectResponse
@@ -66,7 +66,7 @@ class KpCompetencyController extends Controller
 
         $competency->delete();
 
-        return back()->with('status', 'Kompetensi KP berhasil dihapus.');
+        return back()->with('status', 'Kompetensi PKPA berhasil dihapus.');
     }
 
     private function validated(Request $request): array

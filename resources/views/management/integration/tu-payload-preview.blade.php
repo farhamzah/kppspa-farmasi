@@ -7,7 +7,7 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Simulasi payload</p>
-                <h2 class="mt-2 text-2xl font-black text-slate-950">Pratinjau Dokumen KP untuk TU</h2>
+                <h2 class="mt-2 text-2xl font-black text-slate-950">Pratinjau Dokumen PKPA untuk TU</h2>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Halaman ini hanya membaca pratinjau payload lokal. Tidak ada permintaan keluar dan tidak ada perubahan data lintas aplikasi.</p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -119,7 +119,7 @@
                 @endif
             </article>
         @empty
-            <section class="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">Belum ada penempatan KP untuk dipratinjau.</section>
+            <section class="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">Belum ada penempatan PKPA untuk dipratinjau.</section>
         @endforelse
     </section>
 </div>

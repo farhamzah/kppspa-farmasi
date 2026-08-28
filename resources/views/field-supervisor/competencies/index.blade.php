@@ -20,7 +20,7 @@
                         <td class="px-4 py-4 text-right"><a href="{{ route('field-supervisor.competencies.show', $assignment) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Checklist</a></td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-10 text-center text-slate-500">Belum ada mahasiswa KP.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-10 text-center text-slate-500">Belum ada mahasiswa PKPA.</td></tr>
                 @endforelse
             </tbody>
         </table>

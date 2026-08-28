@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Panduan Kompetensi KP - '.config('app.name'))
-@section('page_title','Panduan Kompetensi KP')
+@section('title','Panduan Kompetensi PKPA - '.config('app.name'))
+@section('page_title','Panduan Kompetensi PKPA')
 @section('content')
 <div class="space-y-5">
     @if($errors->any())
@@ -11,7 +11,7 @@
         <form method="POST" action="{{ route('management.competencies.store') }}" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             @csrf
             <h2 class="text-lg font-black text-slate-950">Tambah Kompetensi</h2>
-            <p class="mt-1 text-sm text-slate-500">Kompetensi dapat dibuat sebanyak kebutuhan periode KP.</p>
+            <p class="mt-1 text-sm text-slate-500">Kompetensi dapat dibuat sesuai kebutuhan periode PKPA dan wahana terkait.</p>
             <div class="mt-4 grid gap-3">
                 <label class="text-sm font-semibold text-slate-700">Periode
                     <select name="kp_period_id" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
@@ -24,7 +24,7 @@
                 <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
                     <div class="flex flex-wrap items-start justify-between gap-2">
                         <div>
-                            <p class="text-sm font-bold text-slate-800">Tipe Tempat KP</p>
+                            <p class="text-sm font-bold text-slate-800">Tipe Tempat PKPA</p>
                             <p class="mt-0.5 text-xs text-slate-500">Centang beberapa tipe bila kompetensinya sama. Kosongkan untuk semua tipe.</p>
                         </div>
                         <span class="rounded-full bg-white px-2 py-1 text-[11px] font-bold text-cyan-700 ring-1 ring-cyan-100">Multi tipe</span>
@@ -115,7 +115,7 @@
                         </div>
                     </form>
                 @empty
-                    <p class="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Belum ada kompetensi KP.</p>
+                    <p class="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Belum ada kompetensi PKPA.</p>
                 @endforelse
             </div>
         </section>
@@ -143,7 +143,7 @@
                             <td class="px-4 py-4 font-bold text-cyan-700">{{ $done }} / {{ $total }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="px-4 py-10 text-center text-slate-500">Belum ada penempatan KP.</td></tr>
+                        <tr><td colspan="4" class="px-4 py-10 text-center text-slate-500">Belum ada penempatan PKPA.</td></tr>
                     @endforelse
                 </tbody>
             </table>

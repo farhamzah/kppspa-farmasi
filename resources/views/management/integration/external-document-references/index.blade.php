@@ -8,7 +8,7 @@
             <div>
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Local draft only</p>
                 <h2 class="mt-2 text-2xl font-black text-slate-950">Referensi Dokumen Eksternal TU</h2>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Halaman ini menyimpan draft referensi dokumen di database KP saja. Tidak ada sinkronisasi, upload ulang, atau request ke TU.</p>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Halaman ini menyimpan draf referensi dokumen di database lokal PKPA saja. Tidak ada sinkronisasi, unggah ulang, atau request ke TU.</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('management.integration.tu-payload-preview') }}" class="rounded-lg border border-cyan-200 px-4 py-2 text-sm font-semibold text-cyan-700">Periksa TU</a>
@@ -58,13 +58,13 @@
             <button class="self-end rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Pratinjau Draf dari Payload TU</button>
         </form>
 
-        <form method="POST" action="{{ route('management.integration.external-document-references.store-drafts') }}" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4" onsubmit="return confirm('Buat atau perbarui draft referensi lokal KP dari preview payload TU? Tidak ada request ke TU.')">
+        <form method="POST" action="{{ route('management.integration.external-document-references.store-drafts') }}" class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4" onsubmit="return confirm('Buat atau perbarui draf referensi lokal PKPA dari preview payload TU? Tidak ada request ke TU.')">
             @csrf
             <input type="hidden" name="assignment_id" value="{{ $filters['assignment_id'] }}">
             <input type="hidden" name="document_type" value="{{ $filters['document_type'] }}">
             <input type="hidden" name="limit" value="{{ $filters['limit'] }}">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <p class="text-sm font-semibold text-amber-900">Aksi ini hanya membuat atau memperbarui draft reference di database lokal KP. Tidak ada upload, sync, atau HTTP request ke TU.</p>
+                <p class="text-sm font-semibold text-amber-900">Aksi ini hanya membuat atau memperbarui draf referensi di database lokal PKPA. Tidak ada upload, sync, atau HTTP request ke TU.</p>
                 <button class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white">Buat Draf Referensi Lokal</button>
             </div>
         </form>
@@ -95,7 +95,7 @@
                             <td class="px-4 py-4 text-xs text-slate-500">{{ implode('; ', data_get($draft, 'metadata.validation_warnings', [])) ?: '-' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="px-4 py-10 text-center text-slate-500">Belum ada payload TU untuk dipreview.</td></tr>
+                        <tr><td colspan="4" class="px-4 py-10 text-center text-slate-500">Belum ada payload TU untuk dipratinjau.</td></tr>
                     @endforelse
                     </tbody>
                 </table>
@@ -146,7 +146,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="px-4 py-10 text-center text-slate-500">Belum ada draft reference lokal.</td></tr>
+                        <tr><td colspan="9" class="px-4 py-10 text-center text-slate-500">Belum ada draf referensi lokal.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

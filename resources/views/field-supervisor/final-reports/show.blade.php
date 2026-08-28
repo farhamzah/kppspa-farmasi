@@ -27,7 +27,7 @@
 
             <div class="mt-5 grid gap-3 md:grid-cols-3">
                 <div class="rounded-2xl bg-slate-50 p-4">
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Logbook KP</p>
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Logbook PKPA</p>
                     <p class="mt-1 font-black text-slate-950">{{ $approvedLogbooks }} disetujui</p>
                     <p class="mt-1 text-xs text-slate-500">{{ $openLogbooks }} perlu tindak lanjut</p>
                 </div>
@@ -90,7 +90,7 @@
             </section>
             <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <h3 class="font-black text-slate-950">Catatan</h3>
-                <p class="mt-2 text-sm text-slate-600">Validasi laporan final dilakukan setelah mahasiswa mengunggah tautan/berkas final. Validasi logbook KP tetap dilakukan dari menu Validasi Logbook.</p>
+                <p class="mt-2 text-sm text-slate-600">Validasi laporan final dilakukan setelah mahasiswa mengunggah tautan atau berkas final. Validasi logbook PKPA tetap dilakukan dari menu validasi logbook.</p>
             </section>
         </aside>
     </div>

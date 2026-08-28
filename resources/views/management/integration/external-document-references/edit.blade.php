@@ -8,7 +8,7 @@
             <div>
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Manual local linking</p>
                 <h2 class="mt-2 text-2xl font-black text-slate-950">Edit Referensi Dokumen Eksternal TU</h2>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Perubahan hanya disimpan pada tabel lokal KP. Tidak ada request HTTP, upload file, atau write ke TU/Core/SAFA.</p>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Perubahan hanya disimpan pada tabel lokal PKPA. Tidak ada request HTTP, upload file, atau write ke TU/Core/SAFA.</p>
             </div>
             <a href="{{ route('management.integration.external-document-references.index') }}" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700">Kembali</a>
         </div>
@@ -31,7 +31,7 @@
                 </div>
                 <div>
                     <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Nomor Dokumen TU</label>
-                    <input name="external_document_number" value="{{ old('external_document_number', $reference->external_document_number) }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contoh: 120/TU/KP/2026">
+                    <input name="external_document_number" value="{{ old('external_document_number', $reference->external_document_number) }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contoh: 120/TU/PKPA/2026">
                     @error('external_document_number')<p class="mt-1 text-xs font-semibold text-rose-600">{{ $message }}</p>@enderror
                 </div>
                 <div>

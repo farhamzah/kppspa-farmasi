@@ -7,7 +7,7 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pratinjau aman publik</p>
-                <h2 class="mt-2 text-2xl font-black text-slate-950">Pratinjau Informasi Publik KP untuk SAFA</h2>
+                <h2 class="mt-2 text-2xl font-black text-slate-950">Pratinjau Informasi Publik PKPA untuk SAFA</h2>
                 <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">Halaman ini menampilkan whitelist informasi umum yang aman untuk portal publik. Data operasional individual tidak ditampilkan.</p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -91,7 +91,7 @@
 
             <div class="space-y-5">
                 <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-                    <h3 class="text-lg font-black text-slate-950">Pengumuman KP</h3>
+                    <h3 class="text-lg font-black text-slate-950">Pengumuman PKPA</h3>
                     <div class="mt-4 space-y-3">
                         @foreach($payload['announcements'] as $announcement)
                             <div class="rounded-xl border border-slate-200 p-4">
@@ -121,7 +121,7 @@
             </div>
         </section>
     @else
-        <section class="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">Belum ada periode KP untuk dipratinjau.</section>
+        <section class="rounded-2xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">Belum ada periode PKPA untuk dipratinjau.</section>
     @endif
 </div>
 @endsection
