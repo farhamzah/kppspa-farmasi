@@ -15,7 +15,7 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-teal-700">Penempatan Aktif</p>
                     <h2 class="mt-1 text-xl font-bold text-slate-950">{{ $assignment->place->name }}</h2>
-                    <p class="mt-1 text-sm text-slate-500">Pembimbing Dalam: {{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }} | Pembimbing Lapangan: {{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</p>
+                    <p class="mt-1 text-sm text-slate-500">Pembimbing Dalam: {{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }} | Preseptor: {{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</p>
                 </div>
                 <a href="{{ route('student.pkpa-journals.create') }}" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Tambah Logbook</a>
             </div>

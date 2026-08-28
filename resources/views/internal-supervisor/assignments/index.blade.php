@@ -17,7 +17,7 @@
                 <th>Mahasiswa</th>
                 <th>Periode</th>
                 <th>Tempat</th>
-                <th>Pembimbing Lapangan</th>
+                <th>Preseptor</th>
                 <th class="text-center">Status</th>
                 <th class="text-right">Aksi</th>
             </tr>

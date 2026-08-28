@@ -6,7 +6,7 @@
 @php($routePrefix = $type === 'internal' ? 'internal-supervisor' : 'field-supervisor')
 <div class="space-y-5">
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan' }}</p>
+        <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor' }}</p>
         <h2 class="mt-1 text-2xl font-black text-slate-950">Jadwal Bimbingan PKPA</h2>
         <p class="mt-1 text-sm text-slate-500">Daftar ini berasal dari publikasi resmi program. Silakan cek setiap penempatan agar pembimbingan berjalan sesuai jadwal.</p>
         @if($publication)

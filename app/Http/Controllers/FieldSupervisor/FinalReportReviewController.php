@@ -62,7 +62,7 @@ class FinalReportReviewController extends Controller
     {
         $service->approveByFieldSupervisor($request->user(), $report, $request->review_note);
 
-        return back()->with('status', 'Laporan akhir berhasil disetujui pembimbing lapangan.');
+        return back()->with('status', 'Laporan akhir berhasil disetujui preseptor.');
     }
 
     public function revision(ReviewFinalReportRequest $request, KpFinalReport $report, KpFinalReportService $service): RedirectResponse

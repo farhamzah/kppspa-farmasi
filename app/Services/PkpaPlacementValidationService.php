@@ -104,7 +104,7 @@ class PkpaPlacementValidationService
             $this->issue($run, $assignment, 'INTERNAL_SUPERVISOR_MISSING', 'error', 'supervisor', 'Pembimbing Dalam belum dipilih.', 'Pilih Pembimbing Dalam eligible.');
         }
         if (! $assignment->supervisors->firstWhere('supervisor_type', 'field')) {
-            $this->issue($run, $assignment, 'FIELD_SUPERVISOR_MISSING', 'error', 'supervisor', 'Pembimbing Lapangan belum dipilih.', 'Pilih Pembimbing Lapangan dari tempat.');
+            $this->issue($run, $assignment, 'FIELD_SUPERVISOR_MISSING', 'error', 'supervisor', 'Preseptor belum dipilih.', 'Pilih Preseptor dari tempat.');
         }
         if ($assignment->requirement?->selection_mode === 'choose_one' && ! $assignment->selected_practice_domain_option_id) {
             $this->issue($run, $assignment, 'GOVERNMENT_OPTION_MISSING', 'error', 'government_option', 'Pilihan Pemerintahan belum terisi.', 'Pilih tempat Dinas Kesehatan, Puskesmas, atau Loka BPOM.');

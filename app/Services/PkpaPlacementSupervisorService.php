@@ -41,21 +41,21 @@ class PkpaPlacementSupervisorService
         $warnings = [];
 
         if ($supervisor->practice_site_id !== $practiceSiteId) {
-            $errors[] = 'Pembimbing Lapangan bukan milik tempat praktik yang dipilih.';
+            $errors[] = 'Preseptor bukan milik tempat praktik yang dipilih.';
         }
         if ($supervisor->status !== 'active' || $supervisor->core_account_status_snapshot === 'inactive') {
-            $errors[] = 'Pembimbing Lapangan tidak aktif di Core atau MY PKPA.';
+            $errors[] = 'Preseptor tidak aktif di Core atau MY PKPA.';
         }
         if ($this->outsideEffectiveWindow($supervisor->effective_start_date?->toDateString(), $supervisor->effective_end_date?->toDateString(), $startDate, $endDate)) {
-            $errors[] = 'Tanggal penempatan di luar masa efektif Pembimbing Lapangan.';
+            $errors[] = 'Tanggal penempatan di luar masa efektif Preseptor.';
         }
         if ($this->hasFieldUnavailability($supervisor, $startDate, $endDate)) {
-            $errors[] = 'Pembimbing Lapangan memiliki unavailability pada rentang tanggal ini.';
+            $errors[] = 'Preseptor memiliki unavailability pada rentang tanggal ini.';
         }
         if (is_null($supervisor->maximum_active_students)) {
-            $warnings[] = 'Batas beban Pembimbing Lapangan belum dikonfigurasi.';
+            $warnings[] = 'Batas beban Preseptor belum dikonfigurasi.';
         } elseif ($this->fieldLoad($plan, $supervisor, $startDate, $endDate, $excludeAssignmentId) >= $supervisor->maximum_active_students) {
-            $errors[] = 'Beban Pembimbing Lapangan melampaui batas.';
+            $errors[] = 'Beban Preseptor melampaui batas.';
         }
 
         return ['errors' => $errors, 'warnings' => $warnings];

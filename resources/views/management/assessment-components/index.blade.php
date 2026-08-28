@@ -10,7 +10,7 @@
         </div>
         <form class="mt-5 grid gap-3 md:grid-cols-4">
             <select name="period" class="rounded-2xl border-slate-200 text-sm"><option value="">Semua periode</option>@foreach($periods as $period)<option value="{{ $period->id }}" @selected(($filters['period'] ?? '') == $period->id)>{{ $period->name }}</option>@endforeach</select>
-            <select name="assessor_type" class="rounded-2xl border-slate-200 text-sm"><option value="">Semua penilai</option>@foreach(['pembimbing_dalam'=>'Pembimbing Dalam','pembimbing_lapangan'=>'Pembimbing Lapangan','penguji'=>'Penguji'] as $key=>$label)<option value="{{ $key }}" @selected(($filters['assessor_type'] ?? '') === $key)>{{ $label }}</option>@endforeach</select>
+            <select name="assessor_type" class="rounded-2xl border-slate-200 text-sm"><option value="">Semua penilai</option>@foreach(['pembimbing_dalam'=>'Pembimbing Dalam','pembimbing_lapangan'=>'Preseptor','penguji'=>'Penguji'] as $key=>$label)<option value="{{ $key }}" @selected(($filters['assessor_type'] ?? '') === $key)>{{ $label }}</option>@endforeach</select>
             <button class="rounded-2xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Filter</button>
         </form>
     </section>

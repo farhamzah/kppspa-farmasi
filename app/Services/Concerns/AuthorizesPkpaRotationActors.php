@@ -33,7 +33,7 @@ trait AuthorizesPkpaRotationActors
             ->where('core_user_id', $actor->core_user_id)
             ->where('status', 'active')
             ->exists()) {
-            throw ValidationException::withMessages(['authorization' => 'Hanya pembimbing lapangan aktif yang dapat memvalidasi data ini.']);
+            throw ValidationException::withMessages(['authorization' => 'Hanya preseptor aktif yang dapat memvalidasi data ini.']);
         }
     }
 

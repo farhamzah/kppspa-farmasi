@@ -37,7 +37,7 @@ class PkpaPortfolioReviewController extends Controller
     {
         $this->portfolios->review($portfolio, 'field', 'verify', $request->string('comments')->toString(), $request->user());
 
-        return back()->with('status', 'Portofolio diverifikasi Pembimbing Lapangan.');
+        return back()->with('status', 'Portofolio diverifikasi Preseptor.');
     }
 
     public function revision(Request $request, PkpaRotationPortfolio $portfolio)

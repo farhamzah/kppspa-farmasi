@@ -21,7 +21,7 @@
     </section>
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100">
         <h3 class="text-lg font-black">Logbook Tervalidasi Lapangan</h3>
-        <p class="mt-1 text-sm text-slate-500">Tambahkan catatan monitoring akademik setelah logbook lolos pemeriksaan pembimbing lapangan.</p>
+        <p class="mt-1 text-sm text-slate-500">Tambahkan catatan monitoring akademik setelah logbook lolos pemeriksaan preseptor.</p>
         <div class="mt-4 space-y-3">
             @forelse($monitorableEntries as $entry)
                 <form method="POST" action="{{ route('internal-supervisor.pkpa-logbooks.monitoring', $entry) }}" class="rounded-xl bg-slate-50 p-3">

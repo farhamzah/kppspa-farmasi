@@ -21,7 +21,7 @@
         <div class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm shadow-amber-900/5">
             <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Menunggu validasi</p>
             <p class="mt-2 text-3xl font-black text-amber-700">{{ $pendingLogbooks }}</p>
-            <p class="mt-1 text-sm text-slate-500">Perlu dicek pembimbing lapangan.</p>
+            <p class="mt-1 text-sm text-slate-500">Perlu dicek preseptor.</p>
         </div>
         <div class="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm shadow-emerald-900/5">
             <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Total logbook</p>

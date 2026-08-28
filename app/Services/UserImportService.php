@@ -130,7 +130,7 @@ class UserImportService
             ],
             'pembimbing_lapangan' => [
                 ['name', 'email', 'institution_name', 'position', 'phone'],
-                ['Pembimbing Lapangan Contoh', 'lapangan.contoh@sikp.test', 'Apotek Sehat', 'Apoteker Penanggung Jawab', '081234567892'],
+                ['Preseptor Contoh', 'lapangan.contoh@sikp.test', 'Apotek Sehat', 'Apoteker Penanggung Jawab', '081234567892'],
             ],
             default => [
                 ['profile_type', 'identifier', 'name', 'email', 'roles', 'phone', 'study_program', 'semester', 'class_name', 'institution_name', 'position', 'nidn_nip', 'employee_number', 'department', 'expertise'],
@@ -297,7 +297,7 @@ class UserImportService
         }
 
         if ($row['profile_type'] === 'pembimbing_lapangan' && blank($row['institution_name'])) {
-            $errors[] = 'Nama institusi wajib diisi untuk pembimbing lapangan.';
+            $errors[] = 'Nama institusi wajib diisi untuk preseptor.';
         }
 
         return $errors;

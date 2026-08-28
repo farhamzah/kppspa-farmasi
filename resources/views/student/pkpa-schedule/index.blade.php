@@ -51,7 +51,7 @@
                         @foreach($assignment->supervisors as $supervisor)
                             <div class="rounded-xl bg-slate-50 px-3 py-2 text-sm">
                                 <p class="font-black text-slate-950">{{ $supervisor->display_name }}</p>
-                                <p class="text-xs text-slate-500">{{ $supervisor->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan' }}</p>
+                                <p class="text-xs text-slate-500">{{ $supervisor->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor' }}</p>
                             </div>
                         @endforeach
                     </div>

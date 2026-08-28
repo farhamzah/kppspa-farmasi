@@ -209,7 +209,7 @@ class KpCoreBridgeProvisioningService
         $legacyFieldSupervisor = $this->legacyFieldSupervisorFor($legacyUser, $coreExternalPerson, (int) $coreUser->id);
 
         if (in_array('pembimbing_lapangan', $kpRoles, true) && ! $coreExternalPerson) {
-            $warnings[] = "Core user {$email} punya akses pembimbing lapangan, tetapi profil mitra eksternal belum lengkap. KP akan membuat profil pembimbing lapangan minimal dari user Core.";
+            $warnings[] = "Core user {$email} punya akses preseptor, tetapi profil mitra eksternal belum lengkap. PKPA akan membuat profil preseptor minimal dari user Core.";
         }
 
         if ($legacyByCore && $legacyByEmail && ! $legacyByCore->is($legacyByEmail)) {
@@ -676,7 +676,7 @@ class KpCoreBridgeProvisioningService
         $position = $coreExternalPerson?->position_title
             ?: $coreExternalPerson?->profession
             ?: $legacyFieldSupervisor?->position
-            ?: 'Pembimbing Lapangan';
+            ?: 'Preseptor';
         $phone = $coreExternalPerson?->phone ?: $legacyFieldSupervisor?->phone;
         $address = $coreExternalPerson?->address ?: $legacyFieldSupervisor?->address;
         $displayName = $coreExternalPerson?->display_name ?: $legacyFieldSupervisor?->core_display_name;

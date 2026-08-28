@@ -250,7 +250,7 @@ class PkpaPortfolioBuilderService
     {
         $this->ensureStudentOwns($portfolio, $actor);
         if ($portfolio->status !== 'field_verified') {
-            throw ValidationException::withMessages(['status' => 'Portofolio harus diverifikasi Pembimbing Lapangan terlebih dahulu.']);
+            throw ValidationException::withMessages(['status' => 'Portofolio harus diverifikasi Preseptor terlebih dahulu.']);
         }
         $portfolio->update(['status' => 'submitted_to_internal_supervisor']);
 
@@ -547,7 +547,7 @@ class PkpaPortfolioBuilderService
             'Program: '.data_get($portfolio->identity_snapshot, 'program').' / '.data_get($portfolio->identity_snapshot, 'academic_year'),
             'Wahana: '.data_get($portfolio->placement_snapshot, 'practice_domain'),
             'Tempat: '.data_get($portfolio->placement_snapshot, 'practice_site'),
-            'Pembimbing Lapangan: '.data_get($portfolio->placement_snapshot, 'field_supervisor'),
+            'Preseptor: '.data_get($portfolio->placement_snapshot, 'field_supervisor'),
             'Pembimbing Dalam: '.data_get($portfolio->placement_snapshot, 'internal_supervisor'),
             'Daftar Isi',
         ], $portfolio->template->sections->pluck('title')->all(), [
@@ -570,7 +570,7 @@ class PkpaPortfolioBuilderService
     private function ensureFieldSupervisorOwns(PkpaRotationPortfolio $portfolio, User $actor): void
     {
         if (! $actor->hasRole('pembimbing_lapangan') || ! $this->isSupervisor($portfolio, 'field', $actor)) {
-            throw ValidationException::withMessages(['authorization' => 'Portofolio hanya dapat diperiksa Pembimbing Lapangan terkait.']);
+            throw ValidationException::withMessages(['authorization' => 'Portofolio hanya dapat diperiksa Preseptor terkait.']);
         }
     }
 

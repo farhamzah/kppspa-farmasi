@@ -63,7 +63,7 @@ class PkpaRotationOperationController extends Controller
     {
         $this->attendance->submit($record, $request->user());
 
-        return back()->with('status', 'Presensi dikirim ke pembimbing lapangan.');
+        return back()->with('status', 'Presensi dikirim ke preseptor.');
     }
 
     public function requestCorrection(Request $request, PkpaAttendanceRecord $record): RedirectResponse
@@ -102,7 +102,7 @@ class PkpaRotationOperationController extends Controller
     {
         $this->logbooks->submit($entry, $request->user());
 
-        return back()->with('status', 'Logbook dikirim ke pembimbing lapangan.');
+        return back()->with('status', 'Logbook dikirim ke preseptor.');
     }
 
     public function uploadAttachment(Request $request, PkpaLogbookEntry $entry): RedirectResponse

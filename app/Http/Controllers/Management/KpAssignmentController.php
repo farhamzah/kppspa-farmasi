@@ -72,7 +72,7 @@ class KpAssignmentController extends Controller
                 'Periode' => '',
                 'Tempat PKPA' => '',
                 'Pembimbing Dalam' => '',
-                'Pembimbing Lapangan' => '',
+                'Preseptor' => '',
                 'Status' => '',
             ]);
 

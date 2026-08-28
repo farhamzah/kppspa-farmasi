@@ -64,7 +64,7 @@ class KpAssignmentReportService
                     'Periode' => $assignment->period?->name ?? '-',
                     'Tempat KP' => $assignment->place?->name ?? '-',
                     'Pembimbing Dalam' => $internalSupervisorDisplay?->name ?? '-',
-                    'Pembimbing Lapangan' => $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-',
+                    'Preseptor' => $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-',
                     'Status' => $assignment->statusLabel(),
                     'Tanggal Penempatan' => $assignment->assigned_at?->format('d/m/Y H:i') ?? '-',
                     'Catatan' => $assignment->note ?: '-',
@@ -80,7 +80,7 @@ class KpAssignmentReportService
             'Periode' => $this->periodLabel($request),
             'Status' => $this->statusOptions()[$request->input('status')] ?? 'Semua',
             'Pembimbing Dalam' => $request->filled('internal_supervisor') ? $request->internal_supervisor : 'Semua',
-            'Pembimbing Lapangan' => $request->filled('field_supervisor') ? $request->field_supervisor : 'Semua',
+            'Preseptor' => $request->filled('field_supervisor') ? $request->field_supervisor : 'Semua',
             'Urutan' => $this->sortOptions()[$request->input('sort', 'latest')] ?? $this->sortOptions()['latest'],
             'Dicetak pada' => now()->format('d/m/Y H:i'),
         ];

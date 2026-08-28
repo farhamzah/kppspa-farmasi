@@ -41,7 +41,7 @@
                 <label class="text-sm font-semibold text-slate-700">Judul Kompetensi
                     <input name="title" value="{{ old('title') }}" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contoh: Mampu melakukan pelayanan resep">
                 </label>
-                <label class="text-sm font-semibold text-slate-700">Panduan Pembimbing Luar
+                <label class="text-sm font-semibold text-slate-700">Panduan Preseptor
                     <textarea name="description" rows="4" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Tuliskan indikator kompetensi yang harus dicapai mahasiswa.">{{ old('description') }}</textarea>
                 </label>
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -124,7 +124,7 @@
     <section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <div class="border-b border-slate-100 p-5">
             <h2 class="text-lg font-black text-slate-950">Pemantauan Capaian Mahasiswa</h2>
-            <p class="mt-1 text-sm text-slate-500">Admin dan koordinator melihat semua mahasiswa, pembimbing luar yang mencentang capaian.</p>
+            <p class="mt-1 text-sm text-slate-500">Admin dan koordinator melihat semua mahasiswa, preseptor yang mencentang capaian.</p>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">

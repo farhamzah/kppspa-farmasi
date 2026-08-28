@@ -203,7 +203,7 @@
                             </select>
                             <div class="grid grid-cols-2 gap-2"><input type="date" name="start_date" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-start-date required><input type="date" name="end_date" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-end-date required></div>
                             <select name="internal_supervisor_eligibility_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-internal-select required><option value="">Pembimbing Dalam</option>@foreach($internalSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceDomain?->name }}</option>@endforeach</select>
-                            <select name="site_field_supervisor_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-field-select required><option value="">Pembimbing Lapangan</option>@foreach($fieldSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceSite?->name }}</option>@endforeach</select>
+                            <select name="site_field_supervisor_id" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" data-bulk-field-select required><option value="">Preseptor</option>@foreach($fieldSupervisors as $supervisor)<option value="{{ $supervisor->id }}">{{ $supervisor->name_snapshot }} - {{ $supervisor->practiceSite?->name }}</option>@endforeach</select>
                             <select name="overwrite_mode" class="rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="empty_only">Hanya isi yang kosong</option><option value="overwrite_draft">Timpa assignment draft</option></select>
                             <p class="text-xs text-slate-500">Pilih wahana lebih dulu. Tempat, availability, dan pembimbing akan mengikuti pilihan tersebut agar tidak salah pilih.</p>
                             <button class="rounded-xl bg-slate-950 px-3 py-2 text-sm font-black text-white">Pratinjau Massal</button>
@@ -359,7 +359,7 @@
         );
         fillSelect(
             fieldSelect,
-            'Pembimbing Lapangan',
+            'Preseptor',
             site?.field_supervisors ?? [],
             (item) => `${item.label} / max ${item.maximum_active_students ?? '?'}`
         );
@@ -379,7 +379,7 @@
         fillSelect(siteSelect, 'Memuat tempat...', [], () => '');
         fillSelect(availabilitySelect, 'Pilih availability', [], () => '');
         fillSelect(internalSelect, 'Memuat pembimbing dalam...', [], () => '');
-        fillSelect(fieldSelect, 'Pembimbing Lapangan', [], () => '');
+        fillSelect(fieldSelect, 'Preseptor', [], () => '');
 
         if (!domainId) {
             fillSelect(siteSelect, 'Pilih tempat', [], () => '');

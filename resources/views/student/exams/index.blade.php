@@ -47,7 +47,7 @@
             </div>
 
             @if(! $isReady)
-                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pengajuan sidang dibuka setelah semua logbook PKPA tervalidasi pembimbing lapangan, minimal 8 bimbingan laporan disetujui pembimbing dalam, dan laporan final disetujui kedua pembimbing.</div>
+                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pengajuan sidang dibuka setelah semua logbook PKPA tervalidasi preseptor, minimal 8 bimbingan laporan disetujui pembimbing dalam, dan laporan final disetujui kedua pembimbing.</div>
             @elseif(! $examRequest)
                 <form method="POST" action="{{ route('student.pkpa-exams.submit') }}" class="mt-5 space-y-3">
                     @csrf

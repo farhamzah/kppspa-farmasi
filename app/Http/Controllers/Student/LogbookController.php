@@ -116,7 +116,7 @@ class LogbookController extends Controller
     {
         $service->submit($request->user(), $logbook);
 
-        return back()->with('status', 'Logbook dikirim untuk validasi pembimbing lapangan.');
+        return back()->with('status', 'Logbook dikirim untuk validasi preseptor.');
     }
 
     public function download(KpLogbook $logbook, KpLogbookService $service): StreamedResponse

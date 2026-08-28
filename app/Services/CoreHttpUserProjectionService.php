@@ -248,7 +248,7 @@ class CoreHttpUserProjectionService
         }
 
         if (! is_array($profile)) {
-            $warnings[] = 'Profil pembimbing lapangan belum tersedia di Core; lengkapi profil mitra di Core Farmasi.';
+            $warnings[] = 'Profil preseptor belum tersedia di Core; lengkapi profil mitra di Core Farmasi.';
 
             return;
         }
@@ -280,7 +280,7 @@ class CoreHttpUserProjectionService
         $supervisor ? $supervisor->forceFill($attributes)->save() : FieldSupervisor::query()->create($attributes);
 
         if (blank($institution) || blank($position)) {
-            $warnings[] = 'Profil pembimbing lapangan Core belum lengkap; lengkapi institusi dan jabatan di Core Farmasi.';
+            $warnings[] = 'Profil preseptor di Core belum lengkap; lengkapi institusi dan jabatan di Core Farmasi.';
         }
     }
 

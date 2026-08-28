@@ -21,7 +21,7 @@
         <div class="rounded-2xl border border-amber-100 bg-white p-5 shadow-sm shadow-amber-900/5">
             <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Menunggu validasi</p>
             <p class="mt-2 text-3xl font-black text-amber-700">{{ $pendingLogbooks }}</p>
-            <p class="mt-1 text-sm text-slate-500">Diproses pembimbing lapangan.</p>
+            <p class="mt-1 text-sm text-slate-500">Diproses preseptor.</p>
         </div>
         <div class="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm shadow-blue-900/5">
             <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Revisi / ditolak</p>
@@ -53,7 +53,7 @@
                 <thead class="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                     <tr>
                         <th class="px-5 py-3">Mahasiswa</th>
-                        <th class="px-5 py-3">Tempat / Pembimbing Lapangan</th>
+                        <th class="px-5 py-3">Tempat / Preseptor</th>
                         <th class="px-5 py-3">Logbook</th>
                         <th class="px-5 py-3">Terakhir</th>
                         <th class="px-5 py-3">Status</th>

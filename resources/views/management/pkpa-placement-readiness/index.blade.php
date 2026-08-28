@@ -31,7 +31,7 @@
                     'active_sites' => 'Tempat',
                     'availability_periods' => 'Availability',
                     'internal_supervisors' => 'Pembimbing Dalam',
-                    'field_supervisors' => 'Pembimbing Lapangan',
+                    'field_supervisors' => 'Preseptor',
                     'critical' => 'Isu Kritis',
                     'warnings' => 'Peringatan',
                 ] as $key => $label)

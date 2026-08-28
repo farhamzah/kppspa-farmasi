@@ -65,9 +65,9 @@ class PkpaRotationPortfolio extends Model
         return match ($this->status) {
             'draft' => 'Draf',
             'in_progress' => 'Sedang Diisi',
-            'submitted_to_field_supervisor' => 'Dikirim ke Pembimbing Lapangan',
-            'field_revision_requested' => 'Revisi dari Pembimbing Lapangan',
-            'field_verified' => 'Terverifikasi Pembimbing Lapangan',
+            'submitted_to_field_supervisor' => 'Dikirim ke Preseptor',
+            'field_revision_requested' => 'Revisi dari Preseptor',
+            'field_verified' => 'Terverifikasi Preseptor',
             'submitted_to_internal_supervisor' => 'Dikirim ke Pembimbing Dalam',
             'internal_revision_requested' => 'Revisi dari Pembimbing Dalam',
             'approved' => 'Disetujui',

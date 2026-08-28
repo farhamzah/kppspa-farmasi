@@ -61,6 +61,6 @@
 </div>
 <div class="mt-6 flex flex-wrap gap-3">
     <button name="action" value="draft" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Simpan Draf</button>
-    <button name="action" value="submit" onclick="return confirm('Kirim logbook untuk validasi pembimbing lapangan?')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Kirim untuk Validasi</button>
+    <button name="action" value="submit" onclick="return confirm('Kirim logbook untuk validasi preseptor?')" class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white">Kirim untuk Validasi</button>
     <a href="{{ route('student.pkpa-journals.index') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Batal</a>
 </div>

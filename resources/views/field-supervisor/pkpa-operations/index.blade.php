@@ -17,7 +17,7 @@
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-amber-700">Presensi Menunggu</p>
         <p class="mt-3 text-3xl font-black text-amber-700">{{ $pendingAttendance }}</p>
-        <p class="mt-1 text-sm text-slate-500">Perlu pemeriksaan pembimbing lapangan.</p>
+        <p class="mt-1 text-sm text-slate-500">Perlu pemeriksaan preseptor.</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Logbook Menunggu</p>

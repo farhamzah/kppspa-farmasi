@@ -31,7 +31,7 @@
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Kerja Sama</p><p class="mt-1 font-bold">{{ $programSite->practiceSite?->cooperation_start_date?->format('d M Y') ?: '-' }} - {{ $programSite->practiceSite?->cooperation_end_date?->format('d M Y') ?: '-' }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Periode Availability</p><p class="mt-1 font-bold">{{ $programSite->availabilityPeriods->count() }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Kapasitas Rencana</p><p class="mt-1 font-bold">{{ $programSite->availabilityPeriods->whereIn('status', ['available', 'full'])->sum('maximum_students') }}</p></div>
-            <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Pembimbing Lapangan</p><p class="mt-1 font-bold">{{ $programSite->practiceSite?->fieldSupervisors?->where('status', 'active')->count() ?? 0 }}</p></div>
+            <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Preseptor</p><p class="mt-1 font-bold">{{ $programSite->practiceSite?->fieldSupervisors?->where('status', 'active')->count() ?? 0 }}</p></div>
         </div>
     </div>
 
@@ -79,12 +79,12 @@
         </div>
 
         <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <h3 class="text-lg font-black text-slate-950">Tambah Pembimbing Lapangan</h3>
+            <h3 class="text-lg font-black text-slate-950">Tambah Preseptor</h3>
             <form method="POST" action="{{ route('management.pkpa-program-sites.field-supervisors.store', $programSite) }}" class="mt-4 space-y-3">
                 @csrf
                 <x-management.core-directory-picker
                     field-name="core_user_id"
-                    field-label="Pembimbing Lapangan Dari Core"
+                    field-label="Preseptor Dari Core"
                     :search-url="route('management.core-directory.field-supervisors')"
                     placeholder="Ketik nama, email, jabatan, atau Core ID"
                     helper="Daftar ini hanya menampilkan pengguna Core yang aktif dan sudah memiliki akses MY PKPA."
@@ -107,7 +107,7 @@
     </div>
 
     <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <h3 class="text-lg font-black text-slate-950">Pembimbing Lapangan Terhubung</h3>
+        <h3 class="text-lg font-black text-slate-950">Preseptor Terhubung</h3>
         <div class="mt-4 grid gap-4 lg:grid-cols-2">
             @forelse($programSite->practiceSite?->fieldSupervisors ?? [] as $supervisor)
                 <div class="rounded-xl border border-slate-200 p-4">
@@ -141,7 +141,7 @@
                     @endif
                 </div>
             @empty
-                <div class="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">Belum ada pembimbing lapangan dari Core untuk tempat ini.</div>
+                <div class="rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">Belum ada preseptor dari Core untuk tempat ini.</div>
             @endforelse
         </div>
     </div>

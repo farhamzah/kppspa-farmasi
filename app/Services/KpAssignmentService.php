@@ -171,7 +171,7 @@ class KpAssignmentService
     private function ensureFieldSupervisor(FieldSupervisor $fieldSupervisor): void
     {
         if (! $fieldSupervisor->user?->hasRole('pembimbing_lapangan')) {
-            throw ValidationException::withMessages(['field_supervisor_id' => 'Pembimbing lapangan harus memiliki role Pembimbing Lapangan.']);
+            throw ValidationException::withMessages(['field_supervisor_id' => 'Preseptor harus memiliki role Preseptor.']);
         }
 
         if ($fieldSupervisor->status !== 'active') {

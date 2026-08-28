@@ -47,6 +47,6 @@ class PkpaAcademicRotationController extends Controller
     {
         $this->reports->fieldConfirm($report, $request->input('comments'), $request->user());
 
-        return back()->with('status', 'Laporan dikonfirmasi Pembimbing Lapangan.');
+        return back()->with('status', 'Laporan dikonfirmasi Preseptor.');
     }
 }

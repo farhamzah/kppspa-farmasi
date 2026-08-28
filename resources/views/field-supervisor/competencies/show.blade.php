@@ -17,7 +17,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h3 class="text-lg font-black text-slate-950">Capaian Kompetensi</h3>
-                <p class="mt-1 text-sm text-slate-500">Hanya pembimbing luar/lapangan mahasiswa ini yang dapat mengubah checklist.</p>
+                <p class="mt-1 text-sm text-slate-500">Hanya preseptor mahasiswa ini yang dapat mengubah checklist.</p>
             </div>
             <button class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-bold text-white">Simpan Checklist</button>
         </div>
@@ -30,7 +30,7 @@
                         <span class="min-w-0 flex-1">
                             <span class="block font-bold text-slate-950">{{ $competency->title }}</span>
                             @if($competency->description)<span class="mt-1 block text-sm text-slate-500">{{ $competency->description }}</span>@endif
-                            @if($achievement)<span class="mt-2 block text-xs text-emerald-700">Dicek {{ $achievement->achieved_at?->format('d M Y H:i') }} oleh {{ $achievement->checkedBy?->name ?? 'Pembimbing luar' }}</span>@endif
+                            @if($achievement)<span class="mt-2 block text-xs text-emerald-700">Dicek {{ $achievement->achieved_at?->format('d M Y H:i') }} oleh {{ $achievement->checkedBy?->name ?? 'Preseptor' }}</span>@endif
                         </span>
                     </label>
                     <input name="notes[{{ $competency->id }}]" value="{{ old('notes.'.$competency->id, $achievement?->note) }}" class="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Catatan opsional">

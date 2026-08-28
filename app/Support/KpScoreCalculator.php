@@ -16,7 +16,7 @@ class KpScoreCalculator
 
     public const SECTION_LABELS = [
         'kehadiran' => 'Kehadiran dan Logbook',
-        'pembimbing_lapangan' => 'Pembimbing Lapangan',
+        'pembimbing_lapangan' => 'Preseptor',
         'pembimbing_dalam' => 'Pembimbing Dalam',
         'penguji' => 'Penguji Seminar KP',
     ];

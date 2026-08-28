@@ -9,7 +9,7 @@
     </div>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Tempat</th><th class="px-4 py-3">Pembimbing Luar</th><th class="px-4 py-3">Capaian</th><th class="px-4 py-3 text-right">Aksi</th></tr></thead>
+            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Tempat</th><th class="px-4 py-3">Preseptor</th><th class="px-4 py-3">Capaian</th><th class="px-4 py-3 text-right">Aksi</th></tr></thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse($assignments as $assignment)
                     <tr>

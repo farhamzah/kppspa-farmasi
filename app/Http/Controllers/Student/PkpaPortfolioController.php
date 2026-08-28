@@ -125,7 +125,7 @@ class PkpaPortfolioController extends Controller
     {
         $this->portfolios->submit($portfolio, $request->user());
 
-        return back()->with('status', 'Portofolio dikirim ke Pembimbing Lapangan.');
+        return back()->with('status', 'Portofolio dikirim ke Preseptor.');
     }
 
     public function submitToInternal(Request $request, PkpaRotationPortfolio $portfolio)

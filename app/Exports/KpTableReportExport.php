@@ -120,7 +120,7 @@ class KpTableReportExport implements FromArray, ShouldAutoSize, WithEvents
             'Periode' => '',
             'Tempat KP' => '',
             'Pembimbing Dalam' => '',
-            'Pembimbing Lapangan' => '',
+            'Preseptor' => '',
             'Status' => '',
         ]);
     }

@@ -17,7 +17,7 @@
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-emerald-700">Kompetensi Terverifikasi</p>
         <p class="mt-3 text-3xl font-black text-emerald-700">{{ $verifiedCompetencies }}</p>
-        <p class="mt-1 text-sm text-slate-500">Kompetensi yang sudah lolos verifikasi pembimbing lapangan.</p>
+        <p class="mt-1 text-sm text-slate-500">Kompetensi yang sudah lolos verifikasi preseptor.</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Tugas Disetujui</p>

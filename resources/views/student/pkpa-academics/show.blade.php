@@ -28,7 +28,7 @@
         'approved' => 'Disetujui',
         'revision_requested' => 'Perlu Revisi',
         'rejected' => 'Ditolak',
-        'confirmed_by_field' => 'Dikonfirmasi Pembimbing Lapangan',
+        'confirmed_by_field' => 'Dikonfirmasi Preseptor',
     ];
 @endphp
 <div class="space-y-5">

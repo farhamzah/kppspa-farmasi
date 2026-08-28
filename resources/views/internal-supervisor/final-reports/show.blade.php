@@ -20,7 +20,7 @@
             <div class="mt-1 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                     <h2 class="text-2xl font-black text-slate-950">{{ $report->assignment->place->name }}</h2>
-                    <p class="mt-1 text-sm text-slate-500">Pembimbing Lapangan: {{ $report->assignment->fieldSupervisor ? field_supervisor_display_name($report->assignment->fieldSupervisor) : '-' }}</p>
+                    <p class="mt-1 text-sm text-slate-500">Preseptor: {{ $report->assignment->fieldSupervisor ? field_supervisor_display_name($report->assignment->fieldSupervisor) : '-' }}</p>
                 </div>
                 <span class="inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ring-1 {{ $report->statusBadgeClass() }}">{{ $report->statusLabel() }}</span>
             </div>
@@ -32,7 +32,7 @@
                     @if($report->internal_review_note)<p class="mt-2 text-sm text-slate-600">{{ $report->internal_review_note }}</p>@endif
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
-                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pemeriksaan Pembimbing Lapangan</p>
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pemeriksaan Preseptor</p>
                     <p class="mt-1 font-black text-slate-950">{{ $report->fieldReviewStatusLabel() }}</p>
                     @if($report->field_review_note)<p class="mt-2 text-sm text-slate-600">{{ $report->field_review_note }}</p>@endif
                 </div>

@@ -102,7 +102,7 @@ class PkpaRotationReportService
         $run = $report->rotationRun()->with('supervisorHistories')->firstOrFail();
         $this->ensureFieldSupervisor($run, $actor);
         if (! in_array($report->status, ['submitted', 'field_review'], true)) {
-            throw ValidationException::withMessages(['report' => 'Laporan belum siap dikonfirmasi Pembimbing Lapangan.']);
+            throw ValidationException::withMessages(['report' => 'Laporan belum siap dikonfirmasi Preseptor.']);
         }
         $report->update(['status' => 'internal_review', 'field_confirmed_at' => now(), 'field_confirmed_by_core_user_id' => $actor?->core_user_id, 'row_version' => $report->row_version + 1]);
         $this->audit->record($actor, 'pkpa_rotation_report_field_confirmed', $report, null, ['comments' => $comments]);

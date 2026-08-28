@@ -51,14 +51,14 @@
                     @endforeach
                 </select>
                 <select name="site_field_supervisor_id" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-xs" data-field-supervisor-select required>
-                    <option value="">Pembimbing Lapangan</option>
+                    <option value="">Preseptor</option>
                     @foreach(($siteOptions[$requirement->practice_domain_id] ?? collect()) as $site)
                         @foreach(($fieldOptions[$site->practice_site_id] ?? collect()) as $supervisor)
                             <option value="{{ $supervisor->id }}" data-practice-site-id="{{ $site->practice_site_id }}" @selected($assignment?->supervisors->firstWhere('supervisor_type', 'field')?->site_field_supervisor_id === $supervisor->id)>{{ $site->practiceSite?->name }} - {{ $supervisor->name_snapshot }} / max {{ $supervisor->maximum_active_students ?? '?' }}</option>
                         @endforeach
                     @endforeach
                 </select>
-                <p class="text-[11px] text-slate-500">Setelah tempat dipilih, availability dan pembimbing lapangan akan otomatis disaring ke tempat tersebut.</p>
+                <p class="text-[11px] text-slate-500">Setelah tempat dipilih, availability dan preseptor akan otomatis disaring ke tempat tersebut.</p>
                 <textarea name="notes" class="rounded-lg border border-slate-300 px-2 py-2 text-xs" rows="2" placeholder="Catatan">{{ $assignment?->notes }}</textarea>
                 <div class="flex gap-2">
                     <button class="flex-1 rounded-lg bg-cyan-700 px-2 py-2 text-xs font-black text-white">Simpan</button>

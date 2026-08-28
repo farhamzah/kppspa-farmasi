@@ -161,7 +161,7 @@ class User extends Authenticatable
         return match ($role) {
             'koordinator_kp' => 'Koordinator PKPA',
             'pembimbing_dalam' => 'Pembimbing Dalam',
-            'pembimbing_lapangan' => 'Pembimbing Lapangan',
+            'pembimbing_lapangan' => 'Preseptor',
             'mahasiswa' => 'Mahasiswa',
             'admin' => 'Admin',
             'penguji' => 'Penguji',

@@ -96,7 +96,7 @@ class KpAssignment extends Model
             return 'Belum ada pembimbing';
         }
 
-        return ! $this->internal_supervisor_id ? 'Belum ada pembimbing dalam' : 'Belum ada pembimbing lapangan';
+        return ! $this->internal_supervisor_id ? 'Belum ada pembimbing dalam' : 'Belum ada preseptor';
     }
 
     public function isEligibleForExamRequest(): bool
@@ -123,7 +123,7 @@ class KpAssignment extends Model
             ],
             [
                 'key' => 'field_logbook_validated',
-                'label' => 'Logbook KP tervalidasi pembimbing lapangan',
+                'label' => 'Logbook KP tervalidasi preseptor',
                 'ready' => $approvedLogbooks > 0 && $openLogbooks === 0,
                 'description' => $approvedLogbooks.' disetujui, '.$openLogbooks.' perlu tindak lanjut',
             ],
@@ -147,7 +147,7 @@ class KpAssignment extends Model
             ],
             [
                 'key' => 'field_report_approved',
-                'label' => 'Laporan disetujui pembimbing lapangan',
+                'label' => 'Laporan disetujui preseptor',
                 'ready' => $report?->field_review_status === 'disetujui',
                 'description' => $report?->fieldReviewStatusLabel() ?? 'Belum review',
             ],

@@ -71,7 +71,7 @@ class FinalReportController extends Controller
         $report = $service->createOrGetReport($request->user(), $assignment);
         $service->submit($request->user(), $report);
 
-        return back()->with('status', 'Laporan akhir dikirim untuk review pembimbing dalam dan pembimbing lapangan.');
+        return back()->with('status', 'Laporan akhir dikirim untuk review pembimbing dalam dan preseptor.');
     }
 
     public function download(KpFinalReportFile $file, KpFinalReportService $service): StreamedResponse

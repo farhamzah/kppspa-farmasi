@@ -272,7 +272,7 @@
                         @endunless
                     @elseif($profileType === 'pembimbing_lapangan')
                         <div class="md:col-span-2 rounded-2xl border border-cyan-100 bg-cyan-50/60 p-4 text-xs leading-relaxed text-cyan-900 ring-1 ring-cyan-100">
-                            Jika akun ini juga dosen, data dosen resmi tetap dibaca dari Core. Bagian ini hanya mencatat peran operasional sebagai mitra/pembimbing lapangan di tempat KP tertentu.
+                            Jika akun ini juga dosen, data dosen resmi tetap dibaca dari Core. Bagian ini hanya mencatat peran operasional sebagai mitra atau preseptor di tempat PKPA tertentu.
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1.5">Nomor Telepon Aktif</label>
@@ -306,7 +306,7 @@
                                     <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">Belum ada tempat KP aktif untuk ditautkan.</div>
                                 @endforelse
                             </div>
-                            <p class="mt-2 text-[11px] leading-relaxed text-slate-500">Centang satu atau beberapa tempat KP yang terkait dengan peran mitra/pembimbing lapangan akun ini.</p>
+                            <p class="mt-2 text-[11px] leading-relaxed text-slate-500">Centang satu atau beberapa tempat PKPA yang terkait dengan peran mitra atau preseptor akun ini.</p>
                         </div>
                     @else
                         @if($coreManaged)

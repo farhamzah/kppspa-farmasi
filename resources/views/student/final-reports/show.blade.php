@@ -25,7 +25,7 @@
                     <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $assignment->place->name }}</h2>
                     <div class="mt-3 grid gap-2 text-sm text-slate-600 md:grid-cols-2">
                         <p>Pembimbing Dalam: <span class="font-bold text-slate-900">{{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }}</span></p>
-                        <p>Pembimbing Lapangan: <span class="font-bold text-slate-900">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</span></p>
+                        <p>Preseptor: <span class="font-bold text-slate-900">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : '-' }}</span></p>
                     </div>
                 </div>
                 @if($report)
@@ -113,7 +113,7 @@
                             @if($report?->internal_review_note)<p class="mt-2 text-xs text-slate-600">{{ $report->internal_review_note }}</p>@endif
                         </div>
                         <div class="rounded-xl bg-slate-50 p-4">
-                            <p class="text-xs font-black uppercase tracking-widest text-slate-500">Pembimbing Lapangan</p>
+                            <p class="text-xs font-black uppercase tracking-widest text-slate-500">Preseptor</p>
                             <p class="mt-1 font-black text-slate-950">{{ $report?->fieldReviewStatusLabel() ?? 'Belum Diperiksa' }}</p>
                             @if($report?->field_review_note)<p class="mt-2 text-xs text-slate-600">{{ $report->field_review_note }}</p>@endif
                         </div>

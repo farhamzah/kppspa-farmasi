@@ -9,7 +9,7 @@
         'koordinator_kp' => ['label' => 'Koordinator PKPA', 'icon' => 'KP', 'tone' => 'from-cyan-600 to-teal-600', 'description' => 'Kelola program, wahana, peserta, pembimbing, penempatan, rotasi, dan nilai PKPA.'],
         'mahasiswa' => ['label' => 'Mahasiswa', 'icon' => 'MH', 'tone' => 'from-emerald-500 to-teal-600', 'description' => 'Ikuti pendaftaran PKPA, unggah berkas, lihat penempatan, isi logbook, laporan, portofolio, dan nilai.'],
         'pembimbing_dalam' => ['label' => 'Pembimbing Dalam', 'icon' => 'PD', 'tone' => 'from-sky-600 to-cyan-600', 'description' => 'Pantau mahasiswa bimbingan, logbook, akademik rotasi, laporan, portofolio, dan penilaian PKPA.'],
-        'pembimbing_lapangan' => ['label' => 'Pembimbing Lapangan', 'icon' => 'PL', 'tone' => 'from-teal-600 to-emerald-600', 'description' => 'Validasi presensi, logbook, capaian kegiatan, laporan, portofolio, dan nilai lapangan PKPA.'],
+        'pembimbing_lapangan' => ['label' => 'Preseptor', 'icon' => 'PR', 'tone' => 'from-teal-600 to-emerald-600', 'description' => 'Validasi presensi, logbook, capaian kegiatan, laporan, portofolio, dan penilaian lapangan PKPA.'],
         'penguji' => ['label' => 'Penguji', 'icon' => 'PG', 'tone' => 'from-indigo-600 to-sky-600', 'description' => 'Lihat jadwal ujian dan isi penilaian penguji PKPA.'],
     ];
 @endphp

@@ -36,7 +36,7 @@
             <div>
                 <label class="text-sm font-semibold text-slate-700">Tipe Profil</label>
                 <select name="profile_type" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                    @foreach(['mahasiswa' => 'Mahasiswa', 'dosen' => 'Dosen', 'pembimbing_lapangan' => 'Pembimbing Lapangan', 'admin' => 'Admin/Koordinator tanpa profil khusus'] as $value => $label)
+                    @foreach(['mahasiswa' => 'Mahasiswa', 'dosen' => 'Dosen', 'pembimbing_lapangan' => 'Preseptor', 'admin' => 'Admin/Koordinator tanpa profil khusus'] as $value => $label)
                         <option value="{{ $value }}" @selected(old('profile_type', $profileType) === $value)>{{ $label }}</option>
                     @endforeach
                 </select>

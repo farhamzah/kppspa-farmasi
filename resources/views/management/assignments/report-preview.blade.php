@@ -47,7 +47,7 @@
     <table>
         <thead>
             <tr>
-                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat KP' => '', 'Pembimbing Dalam' => '', 'Pembimbing Lapangan' => '', 'Status' => '']) as $heading)
+                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat KP' => '', 'Pembimbing Dalam' => '', 'Preseptor' => '', 'Status' => '']) as $heading)
                     <th>{{ $heading }}</th>
                 @endforeach
             </tr>

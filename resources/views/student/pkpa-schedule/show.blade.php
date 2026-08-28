@@ -48,7 +48,7 @@
             <div class="mt-4 grid gap-3">
                 @foreach($assignment->supervisors as $supervisor)
                     <div class="rounded-xl bg-slate-50 p-4">
-                        <p class="text-xs font-black uppercase text-slate-500">{{ $supervisor->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan' }}</p>
+                        <p class="text-xs font-black uppercase text-slate-500">{{ $supervisor->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor' }}</p>
                         <p class="mt-1 font-black text-slate-950">{{ $supervisor->display_name }}</p>
                         <p class="text-sm text-slate-500">{{ $supervisor->email_snapshot ?: '-' }}</p>
                     </div>

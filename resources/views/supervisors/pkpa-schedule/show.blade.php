@@ -20,7 +20,7 @@
         <div class="mt-4 grid gap-3 md:grid-cols-3">
             <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-black uppercase tracking-widest text-slate-500">Peran Anda</p>
-                <p class="mt-1 font-black text-slate-950">{{ $type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan' }}</p>
+                <p class="mt-1 font-black text-slate-950">{{ $type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor' }}</p>
             </div>
             <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-black uppercase tracking-widest text-slate-500">Publikasi</p>
@@ -50,7 +50,7 @@
             <div class="mt-4 grid gap-3">
                 @foreach($assignment->supervisors as $supervisor)
                     <div class="rounded-xl bg-slate-50 p-4">
-                        <p class="text-xs font-black uppercase text-slate-500">{{ $supervisor->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan' }}</p>
+                        <p class="text-xs font-black uppercase text-slate-500">{{ $supervisor->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor' }}</p>
                         <p class="mt-1 font-black text-slate-950">{{ $supervisor->display_name }}</p>
                     </div>
                 @endforeach

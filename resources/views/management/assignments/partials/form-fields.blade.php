@@ -25,7 +25,7 @@
     </select>
 </div>
 <div>
-    <label class="text-sm font-semibold">Pembimbing Lapangan</label>
+    <label class="text-sm font-semibold">Preseptor</label>
     <select name="field_supervisor_id" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
         <option value="">Belum ditentukan</option>
         @foreach($fieldSupervisors as $supervisor)

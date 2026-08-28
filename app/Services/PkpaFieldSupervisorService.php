@@ -20,13 +20,13 @@ class PkpaFieldSupervisorService
     {
         $resolved = $this->resolver->resolveField($data);
         if (! ($resolved['ok'] ?? false)) {
-            throw ValidationException::withMessages(['core_user_id' => $resolved['message'] ?? 'Pembimbing Lapangan tidak valid.']);
+            throw ValidationException::withMessages(['core_user_id' => $resolved['message'] ?? 'Preseptor tidak valid.']);
         }
         $this->validatePayload($data);
         $person = $resolved['person'];
 
         if (PkpaSiteFieldSupervisor::withTrashed()->where('practice_site_id', $site->id)->where('core_user_id', $person['core_user_id'])->exists()) {
-            throw ValidationException::withMessages(['core_user_id' => 'Pembimbing Lapangan sudah terhubung ke tempat ini.']);
+            throw ValidationException::withMessages(['core_user_id' => 'Preseptor sudah terhubung ke tempat ini.']);
         }
 
         return DB::transaction(function () use ($site, $data, $actor, $person) {

@@ -16,15 +16,15 @@ class RoleDashboard
             'label' => 'Admin',
             'route' => 'admin.dashboard',
             'path' => '/admin/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Kapasitas Tempat', 'Log Kapasitas', 'Pembimbing Dalam', 'Pembimbing Lapangan', 'Persyaratan Dokumen', 'Peserta PKPA', 'Kelompok PKPA', 'Verifikasi Pendaftaran', 'Pembekalan', 'Hasil Pembekalan', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan', 'Penempatan PKPA', 'Log Penempatan', 'Operasional Rotasi', 'Panduan Kompetensi', 'Akademik Rotasi', 'Pemantauan Logbook', 'Log Aktivitas Logbook', 'Pemantauan Laporan', 'Log Laporan', 'Portofolio PKPA', 'Pengajuan Ujian', 'Jadwal Ujian', 'Log Ujian', 'Komponen Penilaian', 'Penilaian PKPA', 'Pemantauan Nilai', 'Log Nilai', 'Penyelesaian PKPA', 'Dokumen PKPA', 'Rekap PKPA', 'Pelaporan Analitik', 'Pemeriksaan Integrasi'],
-            'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Tersedia', 'Pembimbing Dalam', 'Pembimbing Lapangan', 'Peserta PKPA', 'Kelompok PKPA', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
+            'menu' => ['Dashboard', 'Profil Saya', 'Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Kapasitas Tempat', 'Log Kapasitas', 'Pembimbing Dalam', 'Preseptor', 'Persyaratan Dokumen', 'Peserta PKPA', 'Kelompok PKPA', 'Verifikasi Pendaftaran', 'Pembekalan', 'Hasil Pembekalan', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan', 'Penempatan PKPA', 'Log Penempatan', 'Operasional Rotasi', 'Panduan Kompetensi', 'Akademik Rotasi', 'Pemantauan Logbook', 'Log Aktivitas Logbook', 'Pemantauan Laporan', 'Log Laporan', 'Portofolio PKPA', 'Pengajuan Ujian', 'Jadwal Ujian', 'Log Ujian', 'Komponen Penilaian', 'Penilaian PKPA', 'Pemantauan Nilai', 'Log Nilai', 'Penyelesaian PKPA', 'Dokumen PKPA', 'Rekap PKPA', 'Pelaporan Analitik', 'Pemeriksaan Integrasi'],
+            'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Tersedia', 'Pembimbing Dalam', 'Preseptor', 'Peserta PKPA', 'Kelompok PKPA', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
         ],
         'koordinator_kp' => [
             'label' => 'Koordinator PKPA',
             'route' => 'koordinator.dashboard',
             'path' => '/koordinator/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Kapasitas Tempat', 'Log Kapasitas', 'Pembimbing Dalam', 'Pembimbing Lapangan', 'Persyaratan Dokumen', 'Peserta PKPA', 'Kelompok PKPA', 'Verifikasi Pendaftaran', 'Pembekalan', 'Hasil Pembekalan', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan', 'Penempatan PKPA', 'Log Penempatan', 'Operasional Rotasi', 'Panduan Kompetensi', 'Akademik Rotasi', 'Pemantauan Logbook', 'Log Aktivitas Logbook', 'Pemantauan Laporan', 'Log Laporan', 'Portofolio PKPA', 'Pengajuan Ujian', 'Jadwal Ujian', 'Log Ujian', 'Komponen Penilaian', 'Penilaian PKPA', 'Pemantauan Nilai', 'Log Nilai', 'Penyelesaian PKPA', 'Dokumen PKPA', 'Rekap PKPA', 'Pelaporan Analitik', 'Pemeriksaan Integrasi'],
-            'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Tersedia', 'Pembimbing Dalam', 'Pembimbing Lapangan', 'Peserta PKPA', 'Kelompok PKPA', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
+            'menu' => ['Dashboard', 'Profil Saya', 'Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Kapasitas Tempat', 'Log Kapasitas', 'Pembimbing Dalam', 'Preseptor', 'Persyaratan Dokumen', 'Peserta PKPA', 'Kelompok PKPA', 'Verifikasi Pendaftaran', 'Pembekalan', 'Hasil Pembekalan', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan', 'Penempatan PKPA', 'Log Penempatan', 'Operasional Rotasi', 'Panduan Kompetensi', 'Akademik Rotasi', 'Pemantauan Logbook', 'Log Aktivitas Logbook', 'Pemantauan Laporan', 'Log Laporan', 'Portofolio PKPA', 'Pengajuan Ujian', 'Jadwal Ujian', 'Log Ujian', 'Komponen Penilaian', 'Penilaian PKPA', 'Pemantauan Nilai', 'Log Nilai', 'Penyelesaian PKPA', 'Dokumen PKPA', 'Rekap PKPA', 'Pelaporan Analitik', 'Pemeriksaan Integrasi'],
+            'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Tersedia', 'Pembimbing Dalam', 'Preseptor', 'Peserta PKPA', 'Kelompok PKPA', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
         ],
         'pembimbing_dalam' => [
             'label' => 'Pembimbing Dalam / Dosen',
@@ -34,7 +34,7 @@ class RoleDashboard
             'features' => ['Jadwal PKPA', 'Mahasiswa Bimbingan', 'Pemantauan PKPA', 'Logbook Mahasiswa', 'Akademik PKPA', 'Review Portofolio', 'Jadwal Sidang', 'Penilaian Pembimbing', 'Penilaian PKPA'],
         ],
         'pembimbing_lapangan' => [
-            'label' => 'Pembimbing Luar / Lapangan',
+            'label' => 'Preseptor',
             'route' => 'pembimbing-lapangan.dashboard',
             'path' => '/pembimbing-lapangan/dashboard',
             'menu' => ['Dashboard', 'Profil Saya', 'Jadwal PKPA', 'Mahasiswa PKPA', 'Operasional PKPA', 'Validasi Logbook', 'Akademik PKPA', 'Daftar Kompetensi', 'Pemeriksaan Laporan', 'Review Portofolio', 'Penilaian Lapangan', 'Penilaian PKPA'],

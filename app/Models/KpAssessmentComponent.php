@@ -22,7 +22,7 @@ class KpAssessmentComponent extends Model
     {
         return match ($this->assessor_type) {
             'pembimbing_dalam' => 'Pembimbing Dalam',
-            'pembimbing_lapangan' => 'Pembimbing Lapangan',
+            'pembimbing_lapangan' => 'Preseptor',
             'penguji' => 'Penguji',
             default => ucfirst((string) $this->assessor_type),
         };

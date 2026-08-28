@@ -52,7 +52,7 @@ class PkpaPlacementReadinessService
                 $issues[] = 'Belum ada Pembimbing Dalam eligible.';
             }
             if ($fieldMissing > 0) {
-                $issues[] = $fieldMissing.' tempat belum memiliki Pembimbing Lapangan aktif.';
+                $issues[] = $fieldMissing.' tempat belum memiliki Preseptor aktif.';
             }
             if ($programDomain->practiceDomain?->isGovernment()) {
                 $hasGovernmentOption = $sites->contains(fn ($site) => filled($site->practice_domain_option_id));

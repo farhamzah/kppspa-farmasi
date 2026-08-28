@@ -105,7 +105,7 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
             $first = $supervisors->first();
             $rows[] = [
                 $first->display_name,
-                $first->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Pembimbing Lapangan',
+                $first->supervisor_type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor',
                 $first->supervisor_type === 'internal' ? $first->assignment?->practiceDomain?->name : $first->assignment?->practiceSite?->name,
                 $supervisors->count(),
                 '-',

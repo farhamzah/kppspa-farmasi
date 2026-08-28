@@ -111,7 +111,7 @@ class PkpaProgramSiteController extends Controller
     {
         $this->fieldSupervisorService->create($pkpaProgramSite->practiceSite, $request->validated() + ['is_primary_contact' => $request->boolean('is_primary_contact')], $request->user());
 
-        return back()->with('status', 'Pembimbing Lapangan berhasil ditambahkan dari Core.');
+        return back()->with('status', 'Preseptor berhasil ditambahkan dari Core.');
     }
 
     public function syncFieldSupervisor(PkpaProgramSite $pkpaProgramSite, PkpaSiteFieldSupervisor $supervisor, Request $request): RedirectResponse
@@ -119,7 +119,7 @@ class PkpaProgramSiteController extends Controller
         abort_unless((int) $supervisor->practice_site_id === (int) $pkpaProgramSite->practice_site_id, 404);
         $this->syncService->syncField($supervisor, $request->user());
 
-        return back()->with('status', 'Pembimbing Lapangan berhasil disinkronkan.');
+        return back()->with('status', 'Preseptor berhasil disinkronkan.');
     }
 
     public function storeFieldUnavailability(StorePkpaSupervisorUnavailabilityRequest $request, PkpaProgramSite $pkpaProgramSite, PkpaSiteFieldSupervisor $supervisor): RedirectResponse
@@ -127,7 +127,7 @@ class PkpaProgramSiteController extends Controller
         abort_unless((int) $supervisor->practice_site_id === (int) $pkpaProgramSite->practice_site_id, 404);
         $this->supervisorAvailabilityService->createForField($supervisor, $request->validated(), $request->user());
 
-        return back()->with('status', 'Periode tidak tersedia Pembimbing Lapangan berhasil dibuat.');
+        return back()->with('status', 'Periode tidak tersedia preseptor berhasil dibuat.');
     }
 
     public function cancelUnavailability(PkpaSupervisorUnavailabilityPeriod $period, Request $request): RedirectResponse

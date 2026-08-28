@@ -39,7 +39,7 @@
                 <p class="font-bold">{{ $internalSupervisorDisplay?->name ?? 'Belum ada' }}</p>
             </div>
             <div class="rounded-lg bg-slate-50 p-3">
-                <p class="text-xs text-slate-500">Pembimbing Lapangan</p>
+                <p class="text-xs text-slate-500">Preseptor</p>
                 <p class="font-bold">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Belum ada' }}</p>
             </div>
         </div>
