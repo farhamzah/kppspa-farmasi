@@ -30,8 +30,8 @@ class RoleDashboard
             'label' => 'Pembimbing Dalam',
             'route' => 'pembimbing-dalam.dashboard',
             'path' => '/pembimbing-dalam/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Jadwal PKPA', 'Mahasiswa Bimbingan', 'Pemantauan PKPA', 'Logbook Mahasiswa', 'Akademik PKPA', 'Review Portofolio', 'Pemeriksaan Laporan', 'Penilaian PKPA', 'Jadwal Sidang'],
-            'features' => ['Jadwal PKPA', 'Mahasiswa Bimbingan', 'Pemantauan PKPA', 'Logbook Mahasiswa', 'Akademik PKPA', 'Review Portofolio', 'Pemeriksaan Laporan', 'Penilaian PKPA', 'Jadwal Sidang'],
+            'menu' => ['Dashboard', 'Profil Saya', 'Jadwal PKPA', 'Mahasiswa Bimbingan', 'Pemantauan PKPA', 'Logbook Mahasiswa', 'Akademik PKPA', 'Review Portofolio', 'Pemeriksaan Laporan', 'Penilaian PKPA', 'Jadwal Ujian'],
+            'features' => ['Jadwal PKPA', 'Mahasiswa Bimbingan', 'Pemantauan PKPA', 'Logbook Mahasiswa', 'Akademik PKPA', 'Review Portofolio', 'Pemeriksaan Laporan', 'Penilaian PKPA', 'Jadwal Ujian'],
         ],
         'pembimbing_lapangan' => [
             'label' => 'Preseptor',
@@ -44,8 +44,8 @@ class RoleDashboard
             'label' => 'Penguji',
             'route' => 'penguji.dashboard',
             'path' => '/penguji/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Jadwal Sidang', 'Penilaian Sidang'],
-            'features' => ['Jadwal Sidang', 'Detail Mahasiswa Sidang', 'Penilaian Sidang'],
+            'menu' => ['Dashboard', 'Profil Saya', 'Jadwal Ujian', 'Penilaian Ujian'],
+            'features' => ['Jadwal Ujian', 'Detail Mahasiswa Ujian', 'Penilaian Ujian'],
         ],
     ];
 

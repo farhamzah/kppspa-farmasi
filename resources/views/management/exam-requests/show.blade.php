@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Detail Pengajuan Sidang - '.config('app.name'))
-@section('page_title','Detail Pengajuan Sidang')
+@section('title','Detail Pengajuan Ujian - '.config('app.name'))
+@section('page_title','Detail Pengajuan Ujian')
 @section('content')
 <div class="grid gap-5 lg:grid-cols-[1fr_360px]">
     <x-ui.card>
@@ -16,7 +16,7 @@
             <form method="POST" action="{{ route('management.exam-requests.approve',$examRequest) }}" class="mt-4">@csrf<textarea name="review_note" rows="2" placeholder="Catatan opsional" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><button class="mt-3 w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Setujui</button></form>
             <form method="POST" action="{{ route('management.exam-requests.revision',$examRequest) }}" class="mt-4">@csrf<textarea name="review_note" rows="2" required placeholder="Catatan revisi" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><button class="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Minta Revisi</button></form>
             <form method="POST" action="{{ route('management.exam-requests.reject',$examRequest) }}" class="mt-4">@csrf<textarea name="review_note" rows="2" required placeholder="Alasan penolakan" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea><button class="mt-3 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">Tolak</button></form>
-            @if($examRequest->canBeScheduled())<a href="{{ route('management.exam-requests.schedule',$examRequest) }}" class="mt-4 block rounded-lg bg-cyan-700 px-4 py-2 text-center text-sm font-semibold text-white">Jadwalkan Sidang</a>@endif
+            @if($examRequest->canBeScheduled())<a href="{{ route('management.exam-requests.schedule',$examRequest) }}" class="mt-4 block rounded-lg bg-cyan-700 px-4 py-2 text-center text-sm font-semibold text-white">Jadwalkan Ujian</a>@endif
         </x-ui.card>
     </aside>
 </div>

@@ -50,12 +50,15 @@
         'Daftar Kompetensi' => 'Daftar kompetensi PKPA yang perlu dipenuhi mahasiswa.',
         'Pemeriksaan Laporan' => 'Pemeriksaan dokumen akademik dan laporan mahasiswa.',
         'Review Portofolio' => 'Pemeriksaan portofolio PKPA yang diajukan mahasiswa.',
-        'Jadwal Sidang' => 'Agenda ujian atau sidang PKPA yang terkait dengan peran Anda.',
+        'Jadwal Sidang' => 'Agenda ujian PKPA yang terkait dengan peran Anda.',
+        'Jadwal Ujian' => 'Agenda ujian PKPA yang terkait dengan peran Anda.',
         'Penilaian Pembimbing' => 'Input nilai pembimbing dalam.',
         'Penilaian Preseptor' => 'Input nilai preseptor.',
         'Penilaian PKPA' => 'Rekap dan tindak lanjut penilaian PKPA.',
         'Detail Mahasiswa Sidang' => 'Data mahasiswa yang mengikuti ujian PKPA.',
+        'Detail Mahasiswa Ujian' => 'Data mahasiswa yang mengikuti ujian PKPA.',
         'Penilaian Sidang' => 'Input nilai penguji ujian PKPA.',
+        'Penilaian Ujian' => 'Input nilai penguji ujian PKPA.',
         'Manajemen Pengguna' => 'Kelola akun dan peran pengguna PKPA.',
         'Impor Excel' => 'Impor data pengguna secara terstruktur.',
         'Program PKPA' => 'Master program tahunan, periode, dan konfigurasi inti.',
@@ -93,7 +96,7 @@
         'mahasiswa' => 'Pantau administrasi, jadwal wahana, logbook, portofolio, ujian, dan hasil akhir PKPA dari satu dashboard yang ringkas.',
         'pembimbing_dalam' => 'Lihat jadwal bimbingan, pantau kemajuan akademik mahasiswa, dan tuntaskan review portofolio serta penilaian pembimbing.',
         'pembimbing_lapangan' => 'Pantau jadwal mahasiswa di tempat praktik, validasi logbook, dan selesaikan penilaian preseptor sesuai periode rotasi.',
-        'penguji' => 'Fokus pada agenda ujian PKPA, detail mahasiswa yang diuji, dan penyelesaian penilaian sidang.',
+        'penguji' => 'Fokus pada agenda ujian PKPA, detail mahasiswa yang diuji, dan penyelesaian penilaian ujian.',
     ];
 
     $flowStepsByRole = [
@@ -130,7 +133,7 @@
         'penguji' => [
             ['01', 'Agenda', 'Lihat jadwal ujian yang menjadi tanggung jawab Anda'],
             ['02', 'Peserta', 'Pelajari data mahasiswa dan dokumen penunjang ujian'],
-            ['03', 'Penilaian', 'Isi penilaian sidang sesuai komponen yang disediakan'],
+            ['03', 'Penilaian', 'Isi penilaian ujian sesuai komponen yang disediakan'],
             ['04', 'Final', 'Pastikan seluruh nilai penguji terkirim'],
         ],
     ];
@@ -160,6 +163,7 @@
         'Akademik PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-academics.index' : 'internal-supervisor.pkpa-academics.index',
         'Pemeriksaan Laporan' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-final-reports.index' : 'internal-supervisor.pkpa-final-reports.index',
         'Jadwal Sidang' => $activeRole === 'penguji' ? 'examiner.pkpa-exams.index' : ($activeRole === 'pembimbing_dalam' ? 'internal-supervisor.pkpa-exams.index' : 'management.pkpa-exams.index'),
+        'Jadwal Ujian' => $activeRole === 'penguji' ? 'examiner.pkpa-exams.index' : ($activeRole === 'pembimbing_dalam' ? 'internal-supervisor.pkpa-exams.index' : 'management.pkpa-exams.index'),
         'Penilaian Pembimbing' => 'internal-supervisor.assessments.index',
         'Penilaian PKPA' => match ($activeRole) {
             'pembimbing_lapangan' => 'field-supervisor.pkpa-assessments.index',
@@ -170,6 +174,7 @@
         'Validasi Logbook' => 'field-supervisor.pkpa-journals.index',
         'Penilaian Preseptor' => 'field-supervisor.assessments.index',
         'Penilaian Sidang' => 'examiner.assessments.index',
+        'Penilaian Ujian' => 'examiner.assessments.index',
         'Manajemen Pengguna' => 'admin.users.index',
         'Impor Excel' => 'admin.import-users.index',
         'Program PKPA' => 'management.pkpa-programs.index',
@@ -338,7 +343,7 @@
             'visible' => in_array($role, ['admin', 'koordinator_kp', 'pembimbing_dalam'], true),
         ],
         [
-            'label' => 'Sidang terjadwal',
+            'label' => 'Ujian terjadwal',
             'value' => (int) ($examStats['sidang_terjadwal'] ?? $examStats['sidang_mendatang'] ?? $examStats['dijadwalkan'] ?? 0),
             'route' => $activeRole === 'penguji' ? 'examiner.pkpa-exams.index' : ($activeRole === 'pembimbing_dalam' ? 'internal-supervisor.pkpa-exams.index' : 'management.pkpa-exams.index'),
             'visible' => in_array($role, ['admin', 'koordinator_kp', 'pembimbing_dalam', 'penguji'], true),

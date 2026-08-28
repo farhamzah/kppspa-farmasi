@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title','Sidang PKPA - '.config('app.name'))
-@section('page_title','Sidang PKPA')
+@section('title','Ujian PKPA - '.config('app.name'))
+@section('page_title','Ujian PKPA')
 
 @section('content')
 <div class="space-y-5">
@@ -10,12 +10,12 @@
     @endif
 
     @if(! $assignment)
-        <x-ui.empty-state title="Anda belum memiliki penempatan PKPA aktif." description="Pengajuan sidang tersedia setelah penempatan dan laporan akhir selesai." />
+        <x-ui.empty-state title="Anda belum memiliki penempatan PKPA aktif." description="Pengajuan ujian tersedia setelah penempatan dan laporan akhir selesai." />
     @else
         @php($isReady = $examEligibility['ready'] ?? false)
         <x-ui.status-stepper :steps="[
-            ['label' => 'Syarat Sidang', 'state' => $isReady ? 'done' : 'warning', 'description' => $isReady ? 'Lengkap' : 'Belum lengkap'],
-            ['label' => 'Pengajuan Sidang', 'state' => $examRequest ? 'done' : 'pending', 'description' => $examRequest?->statusLabel() ?? 'Belum diajukan'],
+            ['label' => 'Syarat Ujian', 'state' => $isReady ? 'done' : 'warning', 'description' => $isReady ? 'Lengkap' : 'Belum lengkap'],
+            ['label' => 'Pengajuan Ujian', 'state' => $examRequest ? 'done' : 'pending', 'description' => $examRequest?->statusLabel() ?? 'Belum diajukan'],
             ['label' => 'Dijadwalkan', 'state' => $exam ? 'done' : 'pending', 'description' => $exam?->scheduleLabel() ?? 'Menunggu jadwal'],
             ['label' => 'Selesai', 'state' => $exam?->status === 'selesai' ? 'done' : 'pending', 'description' => $exam?->statusLabel() ?? 'Belum selesai'],
         ]" />
@@ -23,7 +23,7 @@
         <x-ui.card>
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-cyan-700">Kesiapan Sidang</p>
+                    <p class="text-xs font-bold uppercase tracking-widest text-cyan-700">Kesiapan Ujian</p>
                     <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $assignment->place->name }}</h2>
                     <p class="mt-1 text-sm text-slate-500">Pembimbing Dalam: {{ $assignment->internalSupervisor ? lecturer_display_name($assignment->internalSupervisor) : '-' }}</p>
                 </div>
@@ -47,12 +47,12 @@
             </div>
 
             @if(! $isReady)
-                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pengajuan sidang dibuka setelah semua logbook PKPA tervalidasi preseptor, minimal 8 bimbingan laporan disetujui pembimbing dalam, dan laporan final disetujui kedua pembimbing.</div>
+                <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">Pengajuan ujian dibuka setelah semua logbook PKPA tervalidasi preseptor, minimal 8 bimbingan laporan disetujui pembimbing dalam, dan laporan final disetujui kedua pembimbing.</div>
             @elseif(! $examRequest)
                 <form method="POST" action="{{ route('student.pkpa-exams.submit') }}" class="mt-5 space-y-3">
                     @csrf
                     <textarea name="request_note" rows="3" placeholder="Catatan pengajuan opsional" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
-                    <button class="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Ajukan Sidang</button>
+                    <button class="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Ajukan Ujian</button>
                 </form>
             @endif
 
@@ -63,7 +63,7 @@
 
         @if($exam)
             <x-ui.card>
-                <h3 class="text-lg font-black text-slate-950">Jadwal Sidang</h3>
+                <h3 class="text-lg font-black text-slate-950">Jadwal Ujian</h3>
                 <div class="mt-4 grid gap-4 md:grid-cols-3">
                     <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">Tanggal & Jam</p><p class="mt-1 font-bold">{{ $exam->scheduleLabel() }}</p></div>
                     <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs text-slate-500">Mode</p><p class="mt-1 font-bold">{{ $exam->modeLabel() }}</p></div>

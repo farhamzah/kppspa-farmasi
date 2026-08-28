@@ -46,7 +46,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-10 text-center text-slate-500">Belum ada laporan mahasiswa bimbingan lapangan.</td>
+                            <td colspan="6" class="py-10 text-center text-slate-500">Belum ada laporan mahasiswa bimbingan preseptor.</td>
                         </tr>
                     @endforelse
                 </tbody>

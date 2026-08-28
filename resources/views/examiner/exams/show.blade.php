@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Detail Sidang Penguji - '.config('app.name'))
-@section('page_title','Detail Sidang')
+@section('title','Detail Ujian Penguji - '.config('app.name'))
+@section('page_title','Detail Ujian')
 @section('content')
 <x-ui.card>
     <p class="text-sm text-slate-500">{{ $exam->assignment->student->user->name }} | {{ $exam->assignment->student->nim ?: '-' }}</p>

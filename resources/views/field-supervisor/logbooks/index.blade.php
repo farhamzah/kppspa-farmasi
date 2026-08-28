@@ -104,7 +104,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-12 text-center text-slate-500">Belum ada mahasiswa bimbingan lapangan yang sesuai filter.</td>
+                            <td colspan="6" class="px-5 py-12 text-center text-slate-500">Belum ada mahasiswa bimbingan preseptor yang sesuai filter.</td>
                         </tr>
                     @endforelse
                 </tbody>

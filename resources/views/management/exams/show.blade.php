@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Detail Jadwal Sidang - '.config('app.name'))
-@section('page_title','Detail Jadwal Sidang')
+@section('title','Detail Jadwal Ujian - '.config('app.name'))
+@section('page_title','Detail Jadwal Ujian')
 @section('content')
 <div class="grid gap-5 lg:grid-cols-[1fr_360px]">
     <x-ui.card>

@@ -100,6 +100,7 @@
                     'Pengajuan Ujian' => 'Evaluasi',
                     'Jadwal Ujian' => 'Evaluasi',
                     'Jadwal Sidang' => 'Evaluasi',
+                    'Jadwal Ujian' => 'Evaluasi',
                     'Log Ujian' => 'Evaluasi',
                     'Komponen Penilaian' => 'Evaluasi',
                     'Penilaian PKPA' => 'Evaluasi',
@@ -107,6 +108,7 @@
                     'Penilaian Preseptor' => 'Evaluasi',
                     'Penilaian Lapangan' => 'Evaluasi',
                     'Penilaian Sidang' => 'Evaluasi',
+                    'Penilaian Ujian' => 'Evaluasi',
                     'Nilai PKPA' => 'Evaluasi',
                     'Pemantauan Nilai' => 'Evaluasi',
                     'Log Nilai' => 'Evaluasi',
@@ -210,7 +212,6 @@
                         'Pembekalan' => in_array($activeRole, ['admin', 'koordinator_kp'], true)
                             ? 'management.orientation-tests.index'
                             : 'student.orientation-tests.index',
-                        'Pengajuan Sidang' => 'management.exam-requests.index',
                         'Pengajuan Ujian' => 'management.exam-requests.index',
                         'Jadwal Sidang' => $activeRole === 'pembimbing_dalam' ? 'internal-supervisor.pkpa-exams.index' : ($activeRole === 'penguji' ? 'examiner.pkpa-exams.index' : 'management.pkpa-exams.index'),
                         'Jadwal Ujian' => $activeRole === 'pembimbing_dalam' ? 'internal-supervisor.pkpa-exams.index' : ($activeRole === 'penguji' ? 'examiner.pkpa-exams.index' : 'management.pkpa-exams.index'),
@@ -230,6 +231,7 @@
                         'Penilaian Preseptor' => 'field-supervisor.assessments.index',
                         'Penilaian Lapangan' => 'field-supervisor.assessments.index',
                         'Penilaian Sidang' => 'examiner.assessments.index',
+                        'Penilaian Ujian' => 'examiner.assessments.index',
                         'Nilai' => 'student.scores.show',
                     ];
                     $activeMap = [
@@ -313,7 +315,6 @@
                         'Ujian' => ['student.pkpa-exams.*'],
                         'Pre/Post Test' => ['student.orientation-tests.*'],
                         'Pembekalan' => ['student.orientation-tests.*', 'management.orientation-tests.*'],
-                        'Pengajuan Sidang' => ['management.exam-requests.*'],
                         'Pengajuan Ujian' => ['management.exam-requests.*'],
                         'Jadwal Sidang' => ['management.pkpa-exams.*', 'internal-supervisor.pkpa-exams.*', 'examiner.pkpa-exams.*'],
                         'Jadwal Ujian' => ['management.pkpa-exams.*', 'internal-supervisor.pkpa-exams.*', 'examiner.pkpa-exams.*'],
@@ -333,6 +334,7 @@
                         'Penilaian Preseptor' => ['field-supervisor.assessments.*'],
                         'Penilaian Lapangan' => ['field-supervisor.assessments.*'],
                         'Penilaian Sidang' => ['examiner.assessments.*'],
+                        'Penilaian Ujian' => ['examiner.assessments.*'],
                         'Nilai' => ['student.scores.*'],
                     ];
                     $mappedRoute = $routeMap[$item] ?? null;

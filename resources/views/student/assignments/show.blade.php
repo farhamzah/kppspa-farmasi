@@ -3,7 +3,7 @@
 @section('page_title','Penempatan PKPA')
 @section('content')
 @if(! $selection && ! $assignment)
-<section class="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200"><h2 class="text-xl font-bold">Anda belum memiliki tempat PKPA</h2><p class="mt-2 text-sm text-slate-500">Silakan mengikuti pemilihan tempat terlebih dahulu.</p></section>
+<section class="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200"><h2 class="text-xl font-bold">Anda belum memiliki penempatan PKPA</h2><p class="mt-2 text-sm text-slate-500">Silakan tunggu penetapan tempat dan pembimbing dari koordinator PKPA.</p></section>
 @elseif(! $assignment)
 <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><h2 class="text-xl font-bold">{{ $selection->place->name }}</h2><p class="mt-2 text-sm text-slate-500">Menunggu penetapan pembimbing oleh koordinator PKPA.</p></section>
 @else

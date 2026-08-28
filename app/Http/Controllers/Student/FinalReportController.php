@@ -95,7 +95,7 @@ class FinalReportController extends Controller
         $assignment = $this->activeAssignment();
 
         if (! $assignment) {
-            throw ValidationException::withMessages(['assignment' => 'Anda belum memiliki penempatan KP aktif.']);
+            throw ValidationException::withMessages(['assignment' => 'Anda belum memiliki penempatan PKPA aktif.']);
         }
 
         return $assignment;
