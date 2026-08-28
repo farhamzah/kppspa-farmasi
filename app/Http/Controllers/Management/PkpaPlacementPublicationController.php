@@ -38,7 +38,15 @@ class PkpaPlacementPublicationController extends Controller
             ->when($request->filled('program_id'), fn ($query) => $query->whereKey($request->program_id))
             ->latest()
             ->first();
-        $plan = $program?->placementPlans()->with('program')->whereIn('status', ['validated', 'locked'])->latest('version_number')->first();
+        $plan = $program?->placementPlans()
+            ->with('program')
+            ->current()
+            ->latest('version_number')
+            ->first()
+            ?? $program?->placementPlans()
+                ->with('program')
+                ->latest('version_number')
+                ->first();
         $review = $plan ? $this->reviewService->review($plan, $request->user(), false) : null;
 
         return view('management.pkpa-publications.index', [

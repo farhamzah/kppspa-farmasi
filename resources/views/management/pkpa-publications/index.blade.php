@@ -35,7 +35,7 @@
             <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pemeriksaan final</p>
                 <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $program->code }} - {{ $program->name }}</h2>
-                <p class="mt-1 text-sm text-slate-500">Publikasi hanya membaca rancangan yang sudah terkunci dan tervalidasi. Portal mahasiswa dan pembimbing membaca salinan resmi, bukan tabel penyusunan.</p>
+                <p class="mt-1 text-sm text-slate-500">Halaman ini menampilkan rancangan current/terbaru untuk pemeriksaan final. Publikasi resmi baru bisa dilakukan setelah seluruh rancangan lulus validasi dan dikunci.</p>
                 @if($plan)
                     <div class="mt-5 grid gap-3 md:grid-cols-4">
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Rancangan</p><p class="mt-1 font-black text-slate-950">v{{ $plan->version_number }}</p></div>
@@ -55,12 +55,12 @@
                             @if($review['ready'] ?? false)
                                 Rancangan ini sudah layak diterbitkan. Lanjutkan ke panel kanan untuk membuat jadwal resmi.
                             @else
-                                Rancangan ini belum siap diterbitkan. Buka pemeriksaan ulang dan selesaikan butir yang belum lulus lebih dulu.
+                                Rancangan ini sudah punya sebagian assignment valid, tetapi publikasi final tetap menunggu seluruh checklist program lulus. Buka pemeriksaan ulang dan selesaikan butir yang belum lulus lebih dulu.
                             @endif
                         </p>
                     </div>
                 @else
-                    <div class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Belum ada rancangan valid atau locked untuk program ini.</div>
+                    <div class="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Belum ada rancangan penempatan untuk program ini.</div>
                 @endif
             </div>
 
