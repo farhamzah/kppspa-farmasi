@@ -87,6 +87,62 @@
         'Pemeriksaan Integrasi' => 'Pemeriksaan integrasi data PKPA ke sistem lain.',
     ];
 
+    $heroDescriptions = [
+        'admin' => 'Kelola fondasi PKPA dari master program, wahana, tempat, pembimbing, hingga publikasi akhir agar semua role menerima jadwal yang sama.',
+        'koordinator_kp' => 'Pantau alur PKPA dari pembekalan, penempatan, sampai publikasi jadwal agar mahasiswa, pembimbing dalam, dan pembimbing lapangan bergerak sinkron.',
+        'mahasiswa' => 'Pantau administrasi, jadwal wahana, logbook, portofolio, ujian, dan hasil akhir PKPA dari satu dashboard yang ringkas.',
+        'pembimbing_dalam' => 'Lihat jadwal bimbingan, pantau kemajuan akademik mahasiswa, dan tuntaskan review portofolio serta penilaian pembimbing.',
+        'pembimbing_lapangan' => 'Pantau jadwal mahasiswa di tempat praktik, validasi logbook, dan selesaikan penilaian lapangan sesuai periode rotasi.',
+        'penguji' => 'Fokus pada agenda ujian PKPA, detail mahasiswa yang diuji, dan penyelesaian penilaian sidang.',
+    ];
+
+    $flowStepsByRole = [
+        'admin' => [
+            ['01', 'Master Program', 'Program, wahana, tempat, dan pembimbing disiapkan'],
+            ['02', 'Peserta', 'Peserta, dokumen, dan pembekalan diverifikasi'],
+            ['03', 'Penempatan', 'Rancangan, publikasi, dan rotasi dijalankan'],
+            ['04', 'Akhir Program', 'Portofolio, ujian, penilaian, dan hasil akhir ditutup'],
+        ],
+        'koordinator_kp' => [
+            ['01', 'Persiapan', 'Program tahunan, wahana, tempat, dan pembimbing ditetapkan'],
+            ['02', 'Administrasi', 'Peserta, kelompok, berkas, dan pembekalan dipantau'],
+            ['03', 'Rotasi', 'Penempatan disusun dan dipublikasikan per periode wahana'],
+            ['04', 'Evaluasi', 'Portofolio, nilai, ujian, dan penyelesaian akhir dikawal'],
+        ],
+        'mahasiswa' => [
+            ['01', 'Administrasi', 'Lengkapi berkas dan ikuti pembekalan'],
+            ['02', 'Jadwal Resmi', 'Cek penempatan dan periode wahana yang dipublikasikan'],
+            ['03', 'Pelaksanaan', 'Isi logbook, tugas akademik, dan portofolio tiap wahana'],
+            ['04', 'Hasil Akhir', 'Ikuti ujian dan pantau nilai hingga dinyatakan selesai'],
+        ],
+        'pembimbing_dalam' => [
+            ['01', 'Jadwal', 'Terima daftar mahasiswa dan jadwal bimbingan resmi'],
+            ['02', 'Pemantauan', 'Pantau aktivitas, logbook, dan capaian akademik'],
+            ['03', 'Review', 'Periksa laporan serta portofolio mahasiswa'],
+            ['04', 'Penilaian', 'Selesaikan penilaian pembimbing dan dukung ujian'],
+        ],
+        'pembimbing_lapangan' => [
+            ['01', 'Penugasan', 'Lihat mahasiswa yang ditempatkan pada lokasi praktik'],
+            ['02', 'Operasional', 'Pantau kehadiran dan kegiatan harian di lapangan'],
+            ['03', 'Validasi', 'Periksa logbook serta dokumen yang perlu konfirmasi'],
+            ['04', 'Penilaian', 'Isi penilaian lapangan sesuai periode yang berjalan'],
+        ],
+        'penguji' => [
+            ['01', 'Agenda', 'Lihat jadwal ujian yang menjadi tanggung jawab Anda'],
+            ['02', 'Peserta', 'Pelajari data mahasiswa dan dokumen penunjang ujian'],
+            ['03', 'Penilaian', 'Isi penilaian sidang sesuai komponen yang disediakan'],
+            ['04', 'Final', 'Pastikan seluruh nilai penguji terkirim'],
+        ],
+    ];
+
+    $heroDescription = $heroDescriptions[$activeRole] ?? 'Pantau modul PKPA sesuai peran aktif Anda dari satu dashboard yang ringkas.';
+    $flowSteps = $flowStepsByRole[$activeRole] ?? [
+        ['01', 'Administrasi', 'Pendaftaran, berkas, dan pembekalan peserta'],
+        ['02', 'Penjadwalan', 'Program, wahana, tempat, dan pembimbing disiapkan'],
+        ['03', 'Pelaksanaan', 'Rotasi wahana, logbook, dan portofolio berjalan'],
+        ['04', 'Evaluasi', 'Penilaian, ujian, dan hasil akhir program'],
+    ];
+
     $featureRoutes = [
         'Pendaftaran PKPA' => 'student.kp-registrations.index',
         'Berkas Persyaratan' => 'student.kp-documents.index',
@@ -323,7 +379,7 @@
                                 </span>
                             </div>
                             <h2 class="mt-3 break-words text-[1.65rem] font-black leading-tight tracking-tight text-slate-950 sm:text-3xl">Selamat datang, {{ $firstName }}</h2>
-                            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Pantau administrasi, jadwal wahana, bimbingan, portofolio, ujian, dan nilai PKPA dari satu dashboard yang ringkas.</p>
+                            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{{ $heroDescription }}</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 sm:flex lg:shrink-0">
@@ -415,15 +471,10 @@
                     <p class="text-[11px] font-black uppercase tracking-widest text-cyan-700">Alur PKPA</p>
                     <h2 class="mt-1 text-lg font-black text-slate-950">Tahapan program</h2>
                 </div>
-                <p class="text-xs text-slate-500">Dari administrasi awal sampai penyelesaian program.</p>
+                <p class="text-xs text-slate-500">Ringkasan alur kerja yang paling relevan untuk peran aktif Anda.</p>
             </div>
             <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                @foreach([
-                    ['01', 'Administrasi', 'Pendaftaran, berkas, dan pembekalan peserta'],
-                    ['02', 'Penjadwalan', 'Program, wahana, tempat, dan pembimbing disiapkan'],
-                    ['03', 'Pelaksanaan', 'Rotasi wahana, logbook, dan portofolio berjalan'],
-                    ['04', 'Evaluasi', 'Penilaian, ujian, dan hasil akhir program'],
-                ] as [$number, $label, $description])
+                @foreach($flowSteps as [$number, $label, $description])
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-700 text-xs font-black text-white">{{ $number }}</span>
                         <p class="mt-3 font-black text-slate-900">{{ $label }}</p>
