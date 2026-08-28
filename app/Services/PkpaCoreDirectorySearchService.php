@@ -35,7 +35,11 @@ class PkpaCoreDirectorySearchService
 
     public function searchFieldSupervisors(?string $query = null, int $limit = 10): array
     {
-        $items = collect($this->coreClient->searchUsers($this->buildParams($query, $limit))['data'] ?? []);
+        $knownAppAccesses = $this->fieldSupervisorAppAccessMap($query, $limit);
+        $items = filled($query)
+            ? collect($this->coreClient->searchUsers($this->buildParams($query, $limit))['data'] ?? [])
+                ->merge($knownAppAccesses->values())
+            : $knownAppAccesses->values();
 
         return $this->filterSupervisors($items, 'field')
             ->map(fn (array $person) => [
@@ -49,6 +53,96 @@ class PkpaCoreDirectorySearchService
             ])
             ->values()
             ->all();
+    }
+
+    private function fieldSupervisorAppAccessMap(?string $query, int $limit): Collection
+    {
+        $params = array_filter([
+            'limit' => max($limit * 5, 100),
+            'role' => 'pembimbing-lapangan',
+            'q' => filled($query) ? trim((string) $query) : null,
+        ], fn ($value) => filled($value));
+
+        return collect($this->coreClient->listAppAccessUsers($params)['data'] ?? [])
+            ->map(fn ($item) => $this->normalizeFieldSupervisorAppAccessItem((array) $item))
+            ->filter()
+            ->when(filled($query), fn (Collection $items) => $items->filter(fn (array $item) => $this->matchesFieldSupervisorQuery($item, (string) $query)))
+            ->mapWithKeys(fn (array $item) => [(string) ($item['core_user_id'] ?? '') => $item])
+            ->filter(fn ($item, $key) => filled($key));
+    }
+
+    private function normalizeFieldSupervisorAppAccessItem(array $item): ?array
+    {
+        $user = is_array($item['user'] ?? null) ? $item['user'] : [];
+        $externalProfile = is_array(data_get($item, 'profiles.external_person')) ? data_get($item, 'profiles.external_person') : [];
+        $accessRoles = collect($item['roles'] ?? [])
+            ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? $role['code'] ?? null) : $role)
+            ->filter()
+            ->values();
+
+        if ($user === [] && $externalProfile === []) {
+            return null;
+        }
+
+        $coreUserId = $user['id']
+            ?? $item['user_id']
+            ?? $externalProfile['user_id']
+            ?? $item['core_user_id']
+            ?? null;
+
+        if (! filled($coreUserId)) {
+            return null;
+        }
+
+        return array_replace($externalProfile, [
+            'core_user_id' => (string) $coreUserId,
+            'name' => $externalProfile['display_name_with_title']
+                ?? $externalProfile['formal_name']
+                ?? $externalProfile['name']
+                ?? $user['name']
+                ?? $item['name']
+                ?? null,
+            'email' => $externalProfile['email'] ?? $user['email'] ?? $item['email'] ?? null,
+            'active' => ($externalProfile['active'] ?? $user['active'] ?? $item['active'] ?? true) === true,
+            'user' => array_replace($user, array_filter([
+                'display_name_with_title' => $externalProfile['display_name_with_title'] ?? null,
+                'formal_name' => $externalProfile['formal_name'] ?? null,
+                'name' => $externalProfile['display_name_with_title']
+                    ?? $externalProfile['formal_name']
+                    ?? $user['name']
+                    ?? null,
+            ], fn ($value) => filled($value))),
+            'roles' => array_values(array_filter(array_merge(
+                is_array($externalProfile['roles'] ?? null) ? $externalProfile['roles'] : [],
+                is_array($user['roles'] ?? null) ? $user['roles'] : [],
+                is_array($item['roles'] ?? null) ? $item['roles'] : [],
+            ))),
+            'app_access' => [
+                'has_access' => true,
+                'app_code' => (string) config('core_farmasi.app_code', 'kppspa-farmasi'),
+                'user_id' => (string) $coreUserId,
+                'roles' => $accessRoles->map(fn ($role) => ['slug' => $role])->all(),
+            ],
+        ]);
+    }
+
+    private function matchesFieldSupervisorQuery(array $item, string $query): bool
+    {
+        $keyword = str($query)->lower()->trim()->toString();
+        if ($keyword === '') {
+            return true;
+        }
+
+        return collect([
+            $item['name'] ?? null,
+            $item['email'] ?? null,
+            $item['position_title'] ?? $item['profession'] ?? null,
+            $item['institution_name'] ?? null,
+            $item['core_user_id'] ?? null,
+            data_get($item, 'user.id'),
+        ])->filter()
+            ->map(fn ($value) => str((string) $value)->lower()->toString())
+            ->contains(fn (string $value) => str_contains($value, $keyword));
     }
 
     public function searchStudents(?string $query = null, int $limit = 10, ?PkpaProgram $program = null): array
@@ -282,7 +376,9 @@ class PkpaCoreDirectorySearchService
                     return null;
                 }
 
-                $access = $this->coreClient->checkUserAppAccess($person['core_user_id']);
+                $access = is_array($item['app_access'] ?? null)
+                    ? $item['app_access']
+                    : $this->coreClient->checkUserAppAccess($person['core_user_id']);
                 if (($access['has_access'] ?? false) !== true) {
                     return null;
                 }

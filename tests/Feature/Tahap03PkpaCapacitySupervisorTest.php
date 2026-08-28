@@ -367,9 +367,41 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         Http::fake(function ($request) {
             $url = $request->url();
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                $queryUserId = $request->data()['user_id'] ?? null;
+                $queryRole = $request->data()['role'] ?? null;
+                $queryKeyword = strtolower(trim((string) ($request->data()['q'] ?? '')));
+
                 return Http::response([
                     'data' => collect($this->coreUsers)
                         ->filter(fn ($person, $id) => $id !== 'CORE-NOACCESS')
+                        ->filter(function ($person, $id) use ($queryUserId, $queryRole, $queryKeyword) {
+                            if (filled($queryUserId) && (string) $id !== (string) $queryUserId && (string) ($person['core_user_id'] ?? '') !== (string) $queryUserId) {
+                                return false;
+                            }
+
+                            $roles = collect($person['roles'] ?? [])
+                                ->map(fn ($role) => $role['slug'] ?? null)
+                                ->filter()
+                                ->values();
+
+                            if (filled($queryRole) && ! $roles->contains(fn ($role) => str($role)->lower()->replace('_', '-')->toString() === str((string) $queryRole)->lower()->replace('_', '-')->toString())) {
+                                return false;
+                            }
+
+                            if ($queryKeyword !== '') {
+                                $haystacks = collect([
+                                    $person['name'] ?? null,
+                                    $person['email'] ?? null,
+                                    $person['core_user_id'] ?? null,
+                                ])->filter()->map(fn ($value) => strtolower((string) $value));
+
+                                if (! $haystacks->contains(fn ($value) => str_contains($value, $queryKeyword))) {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })
                         ->map(fn ($person, $id) => [
                             'user_id' => $id,
                             'app_code' => 'kppspa-farmasi',
@@ -381,11 +413,25 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
                                 'active' => $person['active'],
                             ],
                             'profiles' => [
-                                'lecturer' => [
-                                    'nidn' => $person['employee_number'],
-                                    'lecturer_number' => $person['employee_number'],
-                                    'employee_number' => $person['employee_number'],
-                                ],
+                                'lecturer' => collect($person['roles'])
+                                    ->contains(fn ($role) => ($role['slug'] ?? null) === 'pembimbing_dalam')
+                                    ? [
+                                        'nidn' => $person['employee_number'],
+                                        'lecturer_number' => $person['employee_number'],
+                                        'employee_number' => $person['employee_number'],
+                                    ]
+                                    : null,
+                                'external_person' => collect($person['roles'])
+                                    ->contains(fn ($role) => ($role['slug'] ?? null) === 'pembimbing_lapangan')
+                                    ? [
+                                        'id' => crc32($person['core_user_id']),
+                                        'user_id' => $person['core_user_id'],
+                                        'display_name_with_title' => $person['name'],
+                                        'position_title' => 'Preseptor',
+                                        'institution_name' => 'Mitra PKPA',
+                                        'active' => $person['active'],
+                                    ]
+                                    : null,
                             ],
                         ])
                         ->values()
@@ -397,7 +443,10 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
                 return Http::response(['has_access' => false, 'roles' => []], 200);
             }
             if (str_contains($url, '/internal/apps/kppspa-farmasi/users/')) {
-                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing_dalam']]], 200);
+                $coreUserId = (string) str($url)->after('/internal/apps/kppspa-farmasi/users/')->before('/access');
+                $roles = $this->coreUsers[$coreUserId]['roles'] ?? [];
+
+                return Http::response(['has_access' => true, 'roles' => $roles], 200);
             }
             foreach ($this->coreUsers as $id => $person) {
                 if (str_contains($url, "/internal/directory/lecturers/{$id}") || str_contains($url, "/internal/directory/users/{$id}")) {

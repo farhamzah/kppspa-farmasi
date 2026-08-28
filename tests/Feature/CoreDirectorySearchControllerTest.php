@@ -123,6 +123,111 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonPath('data.0.name', 'Preseptor Aktif');
     }
 
+    public function test_field_supervisor_directory_falls_back_to_app_access_users_when_directory_results_are_empty(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response([
+                    'data' => [],
+                    'meta' => ['page' => 1, 'limit' => 10, 'total' => 0, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                return Http::response([
+                    'data' => [[
+                        'user_id' => 501,
+                        'app_code' => 'kppspa-farmasi',
+                        'roles' => [
+                            ['slug' => 'pembimbing-lapangan', 'name' => 'Pembimbing Lapangan'],
+                        ],
+                        'user' => [
+                            'id' => 501,
+                            'name' => 'Siti Preseptor',
+                            'email' => 'siti.preseptor@mitra.test',
+                            'active' => true,
+                        ],
+                        'profiles' => [
+                            'external_person' => [
+                                'id' => 45,
+                                'user_id' => 501,
+                                'display_name_with_title' => 'apt. Siti Preseptor, S.Farm.',
+                                'institution_name' => 'Apotek Mitra',
+                                'position_title' => 'Apoteker Pendamping',
+                                'active' => true,
+                            ],
+                        ],
+                    ]],
+                    'meta' => ['page' => 1, 'limit' => 100, 'total' => 1, 'has_more' => false],
+                ], 200);
+            }
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/501/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing-lapangan']]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.field-supervisors', ['q' => 'siti']))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '501')
+            ->assertJsonPath('data.0.name', 'apt. Siti Preseptor, S.Farm.')
+            ->assertJsonPath('data.0.email', 'siti.preseptor@mitra.test');
+    }
+
+    public function test_field_supervisor_directory_can_show_initial_results_from_app_access_users_without_query(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users?') || str_ends_with($url, '/internal/apps/kppspa-farmasi/users')) {
+                return Http::response([
+                    'data' => [[
+                        'user_id' => 502,
+                        'app_code' => 'kppspa-farmasi',
+                        'roles' => [
+                            ['slug' => 'pembimbing-lapangan', 'name' => 'Pembimbing Lapangan'],
+                        ],
+                        'user' => [
+                            'id' => 502,
+                            'name' => 'Budi Mitra',
+                            'email' => 'budi.mitra@mitra.test',
+                            'active' => true,
+                        ],
+                        'profiles' => [
+                            'external_person' => [
+                                'id' => 46,
+                                'user_id' => 502,
+                                'display_name_with_title' => 'dr. Budi Mitra',
+                                'institution_name' => 'RS Mitra',
+                                'position_title' => 'Supervisor Klinik',
+                                'active' => true,
+                            ],
+                        ],
+                    ]],
+                    'meta' => ['page' => 1, 'limit' => 100, 'total' => 1, 'has_more' => false],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->getJson(route('management.core-directory.field-supervisors'))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.core_user_id', '502')
+            ->assertJsonPath('data.0.name', 'dr. Budi Mitra')
+            ->assertJsonPath('data.0.identifier', '502');
+    }
+
     public function test_student_directory_returns_active_students_with_student_role(): void
     {
         Http::fake(function ($request) {

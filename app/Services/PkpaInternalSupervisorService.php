@@ -200,6 +200,7 @@ class PkpaInternalSupervisorService
     {
         $user = is_array($item['user'] ?? null) ? $item['user'] : $item;
         $lecturer = is_array(data_get($item, 'profiles.lecturer')) ? data_get($item, 'profiles.lecturer') : [];
+        $employee = is_array(data_get($item, 'profiles.employee')) ? data_get($item, 'profiles.employee') : [];
         $roles = collect($item['roles'] ?? [])
             ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? null) : $role)
             ->filter()
@@ -207,9 +208,9 @@ class PkpaInternalSupervisorService
 
         return [
             'core_user_id' => (string) ($user['id'] ?? $user['core_user_id'] ?? $item['user_id'] ?? ''),
-            'name_snapshot' => $this->extractDisplayName($item, $user, $lecturer) ?? 'Pembimbing Dalam',
+            'name_snapshot' => $this->extractDisplayName($item, $user, $lecturer, $employee) ?? 'Pembimbing Dalam',
             'email_snapshot' => $user['email'] ?? $item['email'] ?? null,
-            'lecturer_id_snapshot' => $lecturer['nidn'] ?? $lecturer['lecturer_number'] ?? $lecturer['employee_number'] ?? $item['lecturer_id'] ?? null,
+            'lecturer_id_snapshot' => $lecturer['nidn'] ?? $lecturer['lecturer_number'] ?? $lecturer['employee_number'] ?? $employee['employee_number'] ?? $item['lecturer_id'] ?? null,
             'core_account_status_snapshot' => 'active',
             'role_snapshot' => $roles ?: 'pembimbing-dalam',
             'maximum_active_students' => $this->normalizeLimit($data['maximum_active_students'] ?? null),
@@ -233,12 +234,15 @@ class PkpaInternalSupervisorService
         return $limit && $limit > 0 ? $limit : null;
     }
 
-    private function extractDisplayName(array $item, array $user, array $lecturer): ?string
+    private function extractDisplayName(array $item, array $user, array $lecturer, array $employee = []): ?string
     {
         foreach ([
             $lecturer['display_name_with_title'] ?? null,
             $lecturer['formal_name'] ?? null,
             $this->composeTitledName($lecturer['front_title'] ?? null, $lecturer['name'] ?? $lecturer['lecturer_name'] ?? null, $lecturer['back_title'] ?? null),
+            $employee['display_name_with_title'] ?? null,
+            $employee['formal_name'] ?? null,
+            $this->composeTitledName($employee['front_title'] ?? null, $employee['name'] ?? $employee['employee_name'] ?? null, $employee['back_title'] ?? null),
             $user['display_name_with_title'] ?? null,
             $user['formal_name'] ?? null,
             $this->composeTitledName($user['front_title'] ?? null, $user['name'] ?? null, $user['back_title'] ?? null),
