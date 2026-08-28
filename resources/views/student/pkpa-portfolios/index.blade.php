@@ -1,13 +1,14 @@
 @extends('layouts.app')
 
 @section('title', 'Portofolio PKPA')
+@section('page_title', 'Portofolio PKPA')
 
 @section('content')
 <div class="space-y-6">
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Portofolio PKPA</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">Portofolio Digital Rotasi</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">Setiap rotasi memiliki portofolio digital yang menggabungkan data penempatan, presensi, Logbook, kompetensi, tugas, laporan, nilai, dan bagian isian mahasiswa.</p>
+        <p class="mt-2 max-w-3xl text-sm text-slate-600">Setiap rotasi memiliki portofolio digital yang menggabungkan data penempatan, presensi, logbook, kompetensi, tugas, laporan, nilai, dan isian refleksi mahasiswa.</p>
     </section>
     <div class="grid gap-4">
         @forelse($portfolios as $portfolio)

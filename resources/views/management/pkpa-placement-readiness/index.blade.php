@@ -54,7 +54,7 @@
                         <div class="rounded-xl bg-slate-50 p-3"><p class="text-xs font-black uppercase text-slate-500">Tempat</p><p class="font-black">{{ $card['sites'] }}</p></div>
                         <div class="rounded-xl bg-slate-50 p-3"><p class="text-xs font-black uppercase text-slate-500">Kapasitas</p><p class="font-black">{{ $card['capacity'] }}</p></div>
                         <div class="rounded-xl bg-slate-50 p-3"><p class="text-xs font-black uppercase text-slate-500">Pembimbing Dalam</p><p class="font-black">{{ $card['internal_supervisors'] }}</p></div>
-                        <div class="rounded-xl bg-slate-50 p-3"><p class="text-xs font-black uppercase text-slate-500">Tempat Tanpa PL</p><p class="font-black">{{ $card['field_missing'] }}</p></div>
+                        <div class="rounded-xl bg-slate-50 p-3"><p class="text-xs font-black uppercase text-slate-500">Tempat Tanpa Preseptor</p><p class="font-black">{{ $card['field_missing'] }}</p></div>
                     </div>
                     @if(count($card['issues']) || count($card['warnings']))
                         <div class="mt-4 grid gap-3 md:grid-cols-2">

@@ -87,8 +87,8 @@
                                 @csrf
                                 <input name="code" placeholder="Kode" class="rounded-xl border-slate-200 text-xs" required>
                                 <input name="name" placeholder="Komponen" class="rounded-xl border-slate-200 text-xs lg:col-span-2" required>
-                                <select name="component_type" class="rounded-xl border-slate-200 text-xs"><option value="field_supervisor_assessment">PL</option><option value="internal_supervisor_assessment">PD</option><option value="special_task">Tugas</option><option value="rotation_report">Laporan</option><option value="custom">Custom</option></select>
-                                <select name="assessor_type" class="rounded-xl border-slate-200 text-xs"><option value="field_supervisor">PL</option><option value="internal_supervisor">PD</option><option value="multiple">PL+PD</option><option value="coordinator">Koordinator</option><option value="system">Sistem</option></select>
+                                <select name="component_type" class="rounded-xl border-slate-200 text-xs"><option value="field_supervisor_assessment">Preseptor</option><option value="internal_supervisor_assessment">Pembimbing Dalam</option><option value="special_task">Tugas</option><option value="rotation_report">Laporan</option><option value="custom">Custom</option></select>
+                                <select name="assessor_type" class="rounded-xl border-slate-200 text-xs"><option value="field_supervisor">Preseptor</option><option value="internal_supervisor">Pembimbing Dalam</option><option value="multiple">Preseptor + Pembimbing Dalam</option><option value="coordinator">Koordinator</option><option value="system">Sistem</option></select>
                                 <input name="weight_percentage" type="number" step="0.0001" placeholder="Bobot" class="rounded-xl border-slate-200 text-xs" required>
                                 <input type="hidden" name="calculation_method" value="direct_score">
                                 <input type="hidden" name="maximum_raw_score" value="100">

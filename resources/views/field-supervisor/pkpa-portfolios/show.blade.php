@@ -1,13 +1,14 @@
 @extends('layouts.app')
 
-@section('title', 'Pemeriksaan Portofolio PL')
+@section('title', 'Pemeriksaan Portofolio Preseptor')
+@section('page_title', 'Pemeriksaan Portofolio')
 
 @section('content')
 <div class="space-y-6">
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Pemeriksaan Portofolio</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">{{ data_get($portfolio->identity_snapshot, 'student_name') }}</h1>
-        <p class="mt-2 text-sm text-slate-600">{{ $portfolio->statusLabel() }}</p>
+        <p class="mt-2 text-sm text-slate-600">{{ $portfolio->statusLabel() }} · {{ $portfolio->practiceDomain?->name }} · {{ data_get($portfolio->placement_snapshot, 'practice_site') }}</p>
     </section>
 
     @if(session('status'))
@@ -19,7 +20,7 @@
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-black text-slate-950">Studi Kasus dan Bukti Kegiatan</h2>
-        <p class="mt-2 text-sm text-slate-600">Studi kasus: {{ $portfolio->caseReports->count() }}. Dokumentasi: {{ $portfolio->documentationItems->count() }}.</p>
+        <p class="mt-2 text-sm text-slate-600">Studi kasus: {{ $portfolio->caseReports->count() }}. Dokumentasi: {{ $portfolio->documentationItems->count() }}. Gunakan catatan revisi bila isi portofolio masih perlu diperjelas atau dilengkapi.</p>
         <div class="mt-4 flex flex-wrap gap-3">
             <form method="POST" action="{{ route('field-supervisor.pkpa-portfolios.verify', $portfolio) }}">
                 @csrf

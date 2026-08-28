@@ -117,7 +117,7 @@ class KpAssignmentService
             $assignment = KpAssignment::query()->with('selection.registration')->lockForUpdate()->findOrFail($assignment->id);
 
             if ($assignment->status === 'dibatalkan') {
-                throw ValidationException::withMessages(['assignment' => 'Penempatan KP ini sudah dibatalkan.']);
+                throw ValidationException::withMessages(['assignment' => 'Penempatan PKPA ini sudah dibatalkan.']);
             }
 
             $oldStatus = $assignment->status;
@@ -175,7 +175,7 @@ class KpAssignmentService
         }
 
         if ($fieldSupervisor->status !== 'active') {
-            throw ValidationException::withMessages(['field_supervisor_id' => 'Pembimbing lapangan harus aktif.']);
+            throw ValidationException::withMessages(['field_supervisor_id' => 'Preseptor harus aktif.']);
         }
     }
 

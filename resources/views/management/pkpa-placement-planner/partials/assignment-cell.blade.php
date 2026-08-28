@@ -13,8 +13,8 @@
                 <p class="font-black text-slate-950">{{ $assignment->practiceSite?->name }}</p>
                 <p>{{ $assignment->start_date?->format('d M Y') }} - {{ $assignment->end_date?->format('d M Y') }}</p>
                 @if($assignment->selectedOption)<p>{{ $assignment->practiceDomain?->name }} / {{ $assignment->selectedOption?->name }}</p>@endif
-                <p>PD: {{ $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ?: '-' }}</p>
-                <p>PL: {{ $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ?: '-' }}</p>
+                <p>Pembimbing Dalam: {{ $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->name_snapshot ?: '-' }}</p>
+                <p>Preseptor: {{ $assignment->supervisors->firstWhere('supervisor_type', 'field')?->name_snapshot ?: '-' }}</p>
             </div>
         @else
             <p class="text-xs text-slate-500">Belum ditempatkan</p>

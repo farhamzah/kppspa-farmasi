@@ -20,11 +20,11 @@ class KpExamService
         if (! $assignment->isEligibleForExamRequest()) {
             $pending = collect($assignment->examEligibility()['items'])->first(fn (array $item): bool => ! $item['ready']);
             throw ValidationException::withMessages([
-                'exam' => 'Pengajuan sidang belum bisa dilakukan. Lengkapi: '.($pending['label'] ?? 'syarat sidang').'.',
+                'exam' => 'Pengajuan ujian belum bisa dilakukan. Lengkapi: '.($pending['label'] ?? 'syarat ujian').'.',
             ]);
         }
         if ($assignment->examRequest()->whereNotIn('status', ['ditolak', 'dibatalkan'])->exists()) {
-            throw ValidationException::withMessages(['exam' => 'Pengajuan sidang untuk penempatan ini sudah ada.']);
+            throw ValidationException::withMessages(['exam' => 'Pengajuan ujian untuk penempatan ini sudah ada.']);
         }
 
         return DB::transaction(function () use ($studentUser, $assignment, $note) {
@@ -72,7 +72,7 @@ class KpExamService
     public function cancelRequest(User $actor, KpExamRequest $request, ?string $note = null): KpExamRequest
     {
         if (! in_array($request->status, ['draft', 'diajukan', 'revisi'], true)) {
-            throw ValidationException::withMessages(['request' => 'Pengajuan sidang ini tidak bisa dibatalkan.']);
+            throw ValidationException::withMessages(['request' => 'Pengajuan ujian ini tidak bisa dibatalkan.']);
         }
 
         $old = $request->status;
@@ -90,7 +90,7 @@ class KpExamService
                 throw ValidationException::withMessages(['request' => 'Pengajuan ini tidak bisa dijadwalkan pada status saat ini.']);
             }
             if ($request->exam()->exists()) {
-                throw ValidationException::withMessages(['request' => 'Sidang untuk pengajuan ini sudah dijadwalkan.']);
+                throw ValidationException::withMessages(['request' => 'Ujian untuk pengajuan ini sudah dijadwalkan.']);
             }
 
             $assignment = $request->assignment;
@@ -116,7 +116,7 @@ class KpExamService
         return DB::transaction(function () use ($actor, $exam, $data) {
             $exam = KpExam::lockForUpdate()->findOrFail($exam->id);
             if (! $exam->canBeRescheduled()) {
-                throw ValidationException::withMessages(['exam' => 'Sidang ini tidak bisa dijadwalkan ulang.']);
+                throw ValidationException::withMessages(['exam' => 'Ujian ini tidak bisa dijadwalkan ulang.']);
             }
             $examinerIds = $this->examinerIdsFrom($data);
             $this->ensureExaminers($examinerIds);

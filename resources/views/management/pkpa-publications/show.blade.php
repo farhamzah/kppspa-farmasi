@@ -43,7 +43,7 @@
         <h3 class="text-lg font-black text-slate-950">Jadwal Resmi</h3>
         <div class="mt-4 overflow-x-auto">
             <table class="min-w-[1100px] w-full text-left text-sm">
-                <thead class="bg-slate-50 text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-3 py-3">Mahasiswa</th><th>Wahana</th><th>Tempat</th><th>Tanggal</th><th>PD</th><th>PL</th><th>Status</th></tr></thead>
+                <thead class="bg-slate-50 text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-3 py-3">Mahasiswa</th><th>Wahana</th><th>Tempat</th><th>Tanggal</th><th>Pembimbing Dalam</th><th>Preseptor</th><th>Status</th></tr></thead>
                 <tbody>
                     @foreach($publication->assignments as $assignment)
                         <tr class="border-t border-slate-200">

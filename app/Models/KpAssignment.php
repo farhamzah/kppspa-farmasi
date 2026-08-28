@@ -117,7 +117,7 @@ class KpAssignment extends Model
         $items = [
             [
                 'key' => 'assignment_active',
-                'label' => 'Penempatan KP aktif',
+                'label' => 'Penempatan PKPA aktif',
                 'ready' => $this->isActive(),
                 'description' => $this->statusLabel(),
             ],

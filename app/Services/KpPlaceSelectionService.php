@@ -48,8 +48,8 @@ class KpPlaceSelectionService
             }
 
             if ($lockedRegistration->assignment()->where('status', '!=', 'dibatalkan')->lockForUpdate()->exists()) {
-                $this->logSelection($lockedRegistration, $lockedQuota, $admin, 'manual_selection_failed_assignment_exists', 'failed', 'Mahasiswa sudah memiliki penempatan KP aktif.');
-                throw ValidationException::withMessages(['kp_registration_id' => 'Mahasiswa sudah memiliki penempatan KP aktif pada periode ini.']);
+                $this->logSelection($lockedRegistration, $lockedQuota, $admin, 'manual_selection_failed_assignment_exists', 'failed', 'Mahasiswa sudah memiliki penempatan PKPA aktif.');
+                throw ValidationException::withMessages(['kp_registration_id' => 'Mahasiswa sudah memiliki penempatan PKPA aktif pada periode ini.']);
             }
 
             $filled = KpPlaceSelection::where('kp_place_quota_id', $lockedQuota->id)->where('status', 'aktif')->lockForUpdate()->count();
@@ -131,8 +131,8 @@ class KpPlaceSelectionService
                 }
 
                 if (KpPlaceSelection::where('kp_period_id', $lockedRegistration->kp_period_id)->where('student_id', $lockedRegistration->student_id)->where('status', 'aktif')->lockForUpdate()->exists()) {
-                    $this->logSelection($lockedRegistration, $lockedQuota, $user, 'selection_failed_already_selected', 'failed', 'Anda sudah memilih tempat KP.', $ip, $userAgent);
-                    throw ValidationException::withMessages(['selection' => 'Anda sudah memilih tempat KP.']);
+                    $this->logSelection($lockedRegistration, $lockedQuota, $user, 'selection_failed_already_selected', 'failed', 'Anda sudah memilih tempat PKPA.', $ip, $userAgent);
+                    throw ValidationException::withMessages(['selection' => 'Anda sudah memilih tempat PKPA.']);
                 }
 
                 $filled = KpPlaceSelection::where('kp_place_quota_id', $lockedQuota->id)->where('status', 'aktif')->lockForUpdate()->count();
@@ -157,12 +157,12 @@ class KpPlaceSelectionService
                     ->where('student_id', $lockedRegistration->student_id)
                     ->update(['status' => 'sudah_memilih', 'resolved_at' => now()]);
 
-                $this->logSelection($lockedRegistration, $lockedQuota, $user, 'selection_success', 'success', 'Mahasiswa berhasil memilih tempat KP.', $ip, $userAgent, ['selection_id' => $selection->id]);
+                $this->logSelection($lockedRegistration, $lockedQuota, $user, 'selection_success', 'success', 'Mahasiswa berhasil memilih tempat PKPA.', $ip, $userAgent, ['selection_id' => $selection->id]);
 
                 return $selection;
             });
         } catch (ValidationException $exception) {
-            $message = collect($exception->errors())->flatten()->first() ?: 'Pemilihan tempat KP gagal.';
+            $message = collect($exception->errors())->flatten()->first() ?: 'Pemilihan tempat PKPA gagal.';
             $action = $this->actionFromMessage($message);
             if ($action === 'selection_failed_quota_full') {
                 $this->joinWaitingListIfNeeded($registration, $ip, $userAgent, $user);
@@ -170,7 +170,7 @@ class KpPlaceSelectionService
             $this->logSelection($registration, $quota, $user, $action, 'failed', $message, $ip, $userAgent);
             throw $exception;
         } catch (Throwable $exception) {
-            $this->logSelection($registration, $quota, $user, 'selection_failed_system_error', 'failed', 'Terjadi kendala sistem saat memilih tempat KP.', $ip, $userAgent, ['error' => $exception->getMessage()]);
+            $this->logSelection($registration, $quota, $user, 'selection_failed_system_error', 'failed', 'Terjadi kendala sistem saat memilih tempat PKPA.', $ip, $userAgent, ['error' => $exception->getMessage()]);
             throw ValidationException::withMessages(['selection' => 'Terjadi kendala sistem. Silakan coba lagi.']);
         }
     }
@@ -185,7 +185,7 @@ class KpPlaceSelectionService
 
             if ($locked->assignment && $locked->assignment->status !== 'dibatalkan') {
                 throw ValidationException::withMessages([
-                    'selection' => 'Pilihan ini sudah menjadi penempatan KP. Batalkan dari halaman Penempatan KP agar pembimbing ikut dilepas.',
+                    'selection' => 'Pilihan ini sudah menjadi penempatan PKPA. Batalkan dari halaman Penempatan PKPA agar pembimbing ikut dilepas.',
                 ]);
             }
 
@@ -268,7 +268,7 @@ class KpPlaceSelectionService
                 'kp_registration_id' => $registration->id,
                 'joined_at' => now(),
                 'status' => 'menunggu',
-                'note' => 'Menunggu kuota tempat KP tersedia.',
+                'note' => 'Menunggu kapasitas tempat PKPA tersedia.',
             ]
         );
 

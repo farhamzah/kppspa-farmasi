@@ -55,7 +55,7 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
     private function detailRows(): array
     {
         $rows = [['Rancangan Internal - Belum Dipublikasikan'], []];
-        $rows[] = ['Mahasiswa', 'NPM', 'Wahana', 'Option', 'Tempat', 'Tanggal', 'Durasi', 'PD', 'PL', 'Status', 'Masalah'];
+        $rows[] = ['Mahasiswa', 'NPM', 'Wahana', 'Pilihan', 'Tempat', 'Tanggal', 'Durasi', 'Pembimbing Dalam', 'Preseptor', 'Status', 'Masalah'];
         foreach ($this->plan->assignments()->with(['enrollment', 'practiceDomain', 'selectedOption', 'practiceSite', 'supervisors'])->get() as $assignment) {
             $rows[] = [
                 $assignment->enrollment?->student_name_snapshot,
@@ -78,7 +78,7 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
     private function capacityRows(): array
     {
         $rows = [['Rancangan Internal - Belum Dipublikasikan'], []];
-        $rows[] = ['Tempat', 'Availability', 'Kapasitas', 'Reserved', 'Terpakai', 'Sisa'];
+        $rows[] = ['Tempat', 'Periode tersedia', 'Kapasitas', 'Cadangan', 'Terpakai', 'Sisa'];
         foreach ($this->plan->program->programSites()->with(['practiceSite', 'availabilityPeriods'])->get() as $site) {
             foreach ($site->availabilityPeriods as $period) {
                 $used = $this->plan->assignments()->where('pkpa_site_availability_period_id', $period->id)->whereNotIn('status', ['cancelled', 'superseded'])->count();
@@ -109,7 +109,7 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
                 $first->supervisor_type === 'internal' ? $first->assignment?->practiceDomain?->name : $first->assignment?->practiceSite?->name,
                 $supervisors->count(),
                 '-',
-                'Draft internal',
+                'Rancangan internal',
             ];
         }
 
@@ -119,7 +119,7 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
     private function issueRows(): array
     {
         $rows = [['Rancangan Internal - Belum Dipublikasikan'], []];
-        $rows[] = ['Mahasiswa', 'Wahana', 'Severity', 'Issue Code', 'Pesan', 'Saran'];
+        $rows[] = ['Mahasiswa', 'Wahana', 'Tingkat', 'Kode masalah', 'Pesan', 'Saran'];
         foreach ($this->plan->validationRuns()->latest()->first()?->issues()->with('assignment.enrollment', 'assignment.practiceDomain')->get() ?? [] as $issue) {
             $rows[] = [
                 $issue->assignment?->enrollment?->student_name_snapshot,
@@ -139,8 +139,8 @@ class PkpaPlacementPlannerExport implements WithMultipleSheets
         return implode("\n", array_filter([
             $assignment->practiceSite?->name,
             optional($assignment->start_date)->format('d M Y').' - '.optional($assignment->end_date)->format('d M Y'),
-            $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ? 'PD: '.$assignment->supervisors->firstWhere('supervisor_type', 'internal')->display_name : null,
-            $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name ? 'PL: '.$assignment->supervisors->firstWhere('supervisor_type', 'field')->display_name : null,
+            $assignment->supervisors->firstWhere('supervisor_type', 'internal')?->display_name ? 'Pembimbing Dalam: '.$assignment->supervisors->firstWhere('supervisor_type', 'internal')->display_name : null,
+            $assignment->supervisors->firstWhere('supervisor_type', 'field')?->display_name ? 'Preseptor: '.$assignment->supervisors->firstWhere('supervisor_type', 'field')->display_name : null,
             $assignment->statusLabel(),
         ]));
     }

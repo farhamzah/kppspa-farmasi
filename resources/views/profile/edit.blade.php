@@ -303,7 +303,7 @@
                                         </span>
                                     </label>
                                 @empty
-                                    <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">Belum ada tempat KP aktif untuk ditautkan.</div>
+                                    <div class="rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">Belum ada tempat PKPA aktif untuk ditautkan.</div>
                                 @endforelse
                             </div>
                             <p class="mt-2 text-[11px] leading-relaxed text-slate-500">Centang satu atau beberapa tempat PKPA yang terkait dengan peran mitra atau preseptor akun ini.</p>
@@ -311,7 +311,7 @@
                     @else
                         @if($coreManaged)
                             <div class="md:col-span-2 rounded-2xl border border-blue-100 bg-blue-50/40 p-5 text-xs leading-relaxed text-blue-900 ring-1 ring-blue-100/50">
-                                Identitas akun admin dikelola dari Core Farmasi. Tidak ada field operasional KP yang perlu diisi untuk role aktif ini.
+                                Identitas akun admin dikelola dari Core Farmasi. Tidak ada field operasional PKPA yang perlu diisi untuk role aktif ini.
                             </div>
                         @else
                             <div class="md:col-span-2">

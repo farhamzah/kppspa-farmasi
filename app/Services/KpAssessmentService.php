@@ -16,19 +16,19 @@ class KpAssessmentService
 {
     public const DEFAULT_COMPONENTS = [
         'pembimbing_lapangan' => [
-            ['Komunikasi dan Kerjasama', 'Kemampuan berkomunikasi, bekerja sama, dan menjaga relasi profesional di tempat KP.', 30, 10],
+            ['Komunikasi dan Kerjasama', 'Kemampuan berkomunikasi, bekerja sama, dan menjaga relasi profesional di tempat PKPA.', 30, 10],
             ['Disiplin Kerja dan Adaptasi', 'Kedisiplinan hadir, menaati aturan, dan beradaptasi dengan lingkungan kerja.', 30, 20],
             ['Penyelesaian Tugas', 'Kualitas penyelesaian tugas praktik dan tanggung jawab pada pekerjaan lapangan.', 40, 30],
         ],
         'pembimbing_dalam' => [
             ['Proses Bimbingan Akademik', 'Konsistensi bimbingan, respons revisi, dan komunikasi akademik dengan pembimbing.', 30, 10],
             ['Laporan Harian', 'Keteraturan, kelengkapan, dan mutu refleksi laporan/log kegiatan harian.', 20, 20],
-            ['Laporan KP', 'Kualitas substansi, sistematika, analisis, dan kesiapan laporan akhir KP.', 50, 30],
+            ['Laporan PKPA', 'Kualitas substansi, sistematika, analisis, dan kesiapan laporan akhir PKPA.', 50, 30],
         ],
         'penguji' => [
             ['Presentasi', 'Kejelasan penyampaian, struktur paparan, dan penggunaan media presentasi.', 20, 10],
             ['Tanya Jawab', 'Ketepatan, ketenangan, dan argumentasi saat menjawab pertanyaan penguji.', 30, 20],
-            ['Penguasaan Materi KP', 'Pemahaman kegiatan, data, metode, hasil, dan konteks tempat KP.', 50, 30],
+            ['Penguasaan Materi PKPA', 'Pemahaman kegiatan, data, metode, hasil, dan konteks tempat PKPA.', 50, 30],
         ],
     ];
 
@@ -79,7 +79,7 @@ class KpAssessmentService
 
         $exam = $component->assessor_type === 'penguji' ? $assignment->exam : null;
         if ($component->assessor_type === 'penguji' && ! $exam) {
-            throw ValidationException::withMessages(['exam' => 'Sidang belum dijadwalkan untuk penilaian penguji.']);
+            throw ValidationException::withMessages(['exam' => 'Ujian belum dijadwalkan untuk penilaian penguji.']);
         }
 
         return DB::transaction(function () use ($assessor, $assignment, $component, $score, $note, $exam) {
