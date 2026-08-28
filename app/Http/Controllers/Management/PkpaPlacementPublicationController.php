@@ -76,8 +76,9 @@ class PkpaPlacementPublicationController extends Controller
         if ($plan->status !== 'locked') {
             $plan->update(['status' => 'locked', 'updated_by_core_user_id' => $request->user()->core_user_id]);
         }
+        $publication = $this->publicationService->syncLockedPlanToPortal($plan, $request->user());
 
-        return back()->with('status', 'Rancangan penempatan dikunci untuk publikasi.');
+        return back()->with('status', 'Rancangan dikunci dan '.$publication->assignments()->count().' assignment valid langsung ditampilkan ke portal.');
     }
 
     public function publish(Request $request, PkpaPlacementPlan $plan): RedirectResponse

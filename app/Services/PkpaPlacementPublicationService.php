@@ -86,6 +86,68 @@ class PkpaPlacementPublicationService
         return $publication;
     }
 
+    public function syncLockedPlanToPortal(PkpaPlacementPlan $plan, ?User $actor): PkpaPlacementPublication
+    {
+        return DB::transaction(function () use ($plan, $actor) {
+            $plan = PkpaPlacementPlan::with(['program', 'assignments.supervisors'])->whereKey($plan->id)->lockForUpdate()->firstOrFail();
+
+            if ($plan->status !== 'locked') {
+                throw ValidationException::withMessages(['plan' => 'Rancangan harus dikunci lebih dulu sebelum ditampilkan ke portal.']);
+            }
+
+            $existing = PkpaPlacementPublication::where('pkpa_placement_plan_id', $plan->id)
+                ->where('status', 'published')
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                return $existing->fresh(['assignments.supervisors']);
+            }
+
+            $review = $this->reviewService->review($plan, $actor, true);
+            $number = ((int) PkpaPlacementPublication::where('pkpa_program_id', $plan->pkpa_program_id)->lockForUpdate()->max('publication_number')) + 1;
+
+            PkpaPlacementPublication::where('pkpa_program_id', $plan->pkpa_program_id)
+                ->where('is_current', true)
+                ->where('status', 'published')
+                ->update(['is_current' => false, 'current_key' => null, 'status' => 'superseded']);
+
+            $publication = PkpaPlacementPublication::create([
+                'pkpa_program_id' => $plan->pkpa_program_id,
+                'pkpa_placement_plan_id' => $plan->id,
+                'publication_number' => $number,
+                'revision_number' => 0,
+                'code' => $this->code($plan, $number, 0),
+                'title' => 'Jadwal Portal '.$plan->program->name,
+                'status' => 'published',
+                'is_current' => true,
+                'current_key' => 'PROGRAM:'.$plan->pkpa_program_id,
+                'effective_at' => now(),
+                'published_at' => now(),
+                'summary' => [
+                    'note' => 'Terbentuk otomatis saat rancangan dikunci. Hanya assignment valid yang ditampilkan ke portal.',
+                ] + $review,
+                'validation_snapshot' => $review,
+                'published_by_core_user_id' => $actor?->core_user_id,
+            ]);
+
+            $this->snapshotAssignments($publication, $plan, true);
+            $publication->update([
+                'summary' => array_merge($publication->summary ?? [], [
+                    'assignments' => $publication->assignments()->count(),
+                    'students' => $publication->assignments()->distinct('student_core_user_id')->count('student_core_user_id'),
+                ]),
+            ]);
+
+            $this->audit->record($actor, 'placement_publication_synced_from_locked_plan', $publication, null, [
+                'code' => $publication->code,
+                'assignments' => $publication->assignments()->count(),
+            ]);
+
+            return $publication->fresh(['assignments.supervisors']);
+        });
+    }
+
     public function withdraw(PkpaPlacementPublication $publication, string $reason, ?User $actor): PkpaPlacementPublication
     {
         if (! $actor?->hasRole('koordinator_kp')) {
@@ -162,12 +224,13 @@ class PkpaPlacementPublicationService
         return $publication;
     }
 
-    private function snapshotAssignments(PkpaPlacementPublication $publication, PkpaPlacementPlan $plan): void
+    private function snapshotAssignments(PkpaPlacementPublication $publication, PkpaPlacementPlan $plan, bool $validOnly = false): void
     {
         $assignments = $plan->assignments()
             ->whereHas('programDomain', fn ($query) => $query->where('is_active', true))
             ->with(['enrollment.activeGroupMembership.group', 'requirement', 'practiceDomain', 'selectedOption', 'practiceSite', 'programSite', 'availabilityPeriod', 'supervisors.internalEligibility', 'supervisors.fieldSupervisor'])
             ->whereNotIn('status', ['cancelled', 'superseded'])
+            ->when($validOnly, fn ($query) => $query->where('status', 'valid'))
             ->get();
 
         foreach ($assignments as $assignment) {

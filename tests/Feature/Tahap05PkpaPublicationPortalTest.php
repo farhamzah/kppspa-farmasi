@@ -150,6 +150,57 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_locking_plan_immediately_exposes_valid_assignments_to_portals(): void
+    {
+        $program = $this->createProgram('PKPA-05-LOCK');
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post('/management/pkpa-placement-planner/plans', ['pkpa_program_id' => $program->id, 'name' => 'Draft Lock Portal'])
+            ->assertRedirect();
+
+        $plan = PkpaPlacementPlan::where('pkpa_program_id', $program->id)->firstOrFail();
+        $enrollment = $this->enroll($program, $this->student->core_user_id, '250105');
+        $programSite = $this->createProgramSite($program, 'APT', 'APT-LOCK', 4);
+        $availability = $programSite->availabilityPeriods()->firstOrFail();
+        $internal = $this->internal($program, $programSite->practice_domain_id, $this->internalSupervisor->core_user_id);
+        $field = $this->field($programSite->practice_site_id, $this->fieldSupervisor->core_user_id);
+        $requirement = $enrollment->requirements()->where('practice_domain_id', $programSite->practice_domain_id)->firstOrFail();
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/assignments", $this->assignmentPayload($requirement, $programSite, $availability, $internal, $field, 0))
+            ->assertRedirect();
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/validate")
+            ->assertRedirect();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/publication-lock")
+            ->assertRedirect();
+
+        $publication = PkpaPlacementPublication::where('pkpa_program_id', $program->id)->firstOrFail();
+        $assignment = $publication->assignments()->with('supervisors')->firstOrFail();
+
+        $this->assertSame('published', $publication->status);
+        $this->assertTrue($publication->is_current);
+        $this->assertSame(1, $publication->assignments()->count());
+        $this->assertSame('Mahasiswa Tahap 05', $assignment->student_name_snapshot);
+        $this->assertTrue($assignment->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'internal' && $supervisor->core_user_id === $this->internalSupervisor->core_user_id));
+        $this->assertTrue($assignment->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'field' && $supervisor->core_user_id === $this->fieldSupervisor->core_user_id));
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/pkpa-saya')
+            ->assertOk()
+            ->assertSee($assignment->practice_site_name_snapshot);
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/jadwal-pkpa')
+            ->assertOk()
+            ->assertSee($assignment->student_name_snapshot);
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/jadwal-pkpa')
+            ->assertOk()
+            ->assertSee($assignment->student_name_snapshot);
+    }
+
     public function test_change_request_creates_new_revision_and_withdrawal_removes_current_publication(): void
     {
         $publication = $this->publishedFixture('PKPA-05-C');

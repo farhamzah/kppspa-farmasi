@@ -35,7 +35,7 @@
             <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pemeriksaan final</p>
                 <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $program->code }} - {{ $program->name }}</h2>
-                <p class="mt-1 text-sm text-slate-500">Halaman ini menampilkan rancangan current/terbaru untuk pemeriksaan final. Publikasi resmi baru bisa dilakukan setelah seluruh rancangan lulus validasi dan dikunci.</p>
+                <p class="mt-1 text-sm text-slate-500">Halaman ini menampilkan rancangan current/terbaru untuk pemeriksaan final. Saat rancangan dikunci, assignment yang sudah valid langsung tampil di portal mahasiswa dan pembimbing. Publikasi final tetap bisa dipakai untuk jadwal lengkap program.</p>
                 @if($plan)
                     <div class="mt-5 grid gap-3 md:grid-cols-4">
                         <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Rancangan</p><p class="mt-1 font-black text-slate-950">v{{ $plan->version_number }}</p></div>
@@ -46,16 +46,16 @@
                     <div class="mt-5 flex flex-wrap gap-2">
                         <a href="{{ route('management.pkpa-placement-plans.final-review', $plan) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Periksa Ulang</a>
                         @if(auth()->user()->hasRole('koordinator_kp'))
-                            <form method="POST" action="{{ route('management.pkpa-placement-plans.publication-lock', $plan) }}">@csrf<button class="rounded-xl border border-amber-200 px-4 py-2 text-sm font-black text-amber-700">Kunci untuk Publikasi</button></form>
+                            <form method="POST" action="{{ route('management.pkpa-placement-plans.publication-lock', $plan) }}">@csrf<button class="rounded-xl border border-amber-200 px-4 py-2 text-sm font-black text-amber-700">Kunci dan Tampilkan ke Portal</button></form>
                         @endif
                     </div>
                     <div class="mt-5 rounded-2xl border {{ ($review['ready'] ?? false) ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900' }} px-4 py-4">
                         <p class="text-xs font-black uppercase tracking-widest">{{ ($review['ready'] ?? false) ? 'Status saat ini' : 'Perhatian sebelum publikasi' }}</p>
                         <p class="mt-1 text-sm font-semibold">
                             @if($review['ready'] ?? false)
-                                Rancangan ini sudah layak diterbitkan. Lanjutkan ke panel kanan untuk membuat jadwal resmi.
+                                Rancangan ini sudah layak diterbitkan. Assignment validnya juga sudah bisa tampil di portal setelah dikunci.
                             @else
-                                Rancangan ini sudah punya sebagian assignment valid, tetapi publikasi final tetap menunggu seluruh checklist program lulus. Buka pemeriksaan ulang dan selesaikan butir yang belum lulus lebih dulu.
+                                Rancangan ini sudah punya sebagian assignment valid. Setelah dikunci, assignment valid tersebut dapat tampil di portal, sedangkan publikasi final tetap menunggu seluruh checklist program lulus.
                             @endif
                         </p>
                     </div>

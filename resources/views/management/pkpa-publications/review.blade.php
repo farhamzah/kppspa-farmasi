@@ -7,7 +7,7 @@
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Checklist publikasi</p>
         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $plan->program->code }} - {{ $plan->name }}</h2>
-        <p class="mt-1 text-sm text-slate-500">Validasi ulang selesai. Jadwal dapat dipublikasikan hanya jika semua checklist utama lulus.</p>
+        <p class="mt-1 text-sm text-slate-500">Validasi ulang selesai. Saat rancangan dikunci, assignment yang sudah valid langsung tampil di portal mahasiswa dan pembimbing. Checklist di bawah tetap membantu menilai kesiapan jadwal lengkap program.</p>
         <div class="mt-5 grid gap-3 md:grid-cols-5">
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Peserta</p><p class="text-xl font-black">{{ $review['participants'] }}</p></div>
             <div class="rounded-xl bg-slate-50 p-4"><p class="text-xs font-black uppercase text-slate-500">Terisi</p><p class="text-xl font-black">{{ $review['filled_assignments'] }} / {{ $review['required_assignments'] }}</p></div>
@@ -22,9 +22,9 @@
             <p class="text-xs font-black uppercase tracking-widest">{{ $review['ready'] ? 'Siap diterbitkan' : 'Perlu pembenahan dulu' }}</p>
             <p class="mt-1 text-sm font-semibold">
                 @if($review['ready'])
-                    Semua pemeriksaan utama sudah lulus. Koordinator dapat mengunci rancangan untuk publikasi atau langsung kembali ke halaman publikasi.
+                    Semua pemeriksaan utama sudah lulus. Koordinator dapat mengunci rancangan agar langsung tampil di portal, lalu lanjut ke halaman publikasi bila perlu menerbitkan jadwal lengkap.
                 @else
-                    Masih ada butir yang belum lulus. Selesaikan error utama dahulu, lalu periksa ulang sebelum jadwal resmi diterbitkan.
+                    Masih ada butir yang belum lulus untuk jadwal lengkap. Namun setelah rancangan dikunci, assignment yang sudah valid tetap bisa ditampilkan di portal.
                 @endif
             </p>
         </div>
@@ -39,7 +39,7 @@
         <div class="mt-5 flex flex-wrap gap-2">
             <a href="{{ route('management.pkpa-publications.index', ['program_id' => $plan->pkpa_program_id]) }}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-700">Kembali</a>
             @if(auth()->user()->hasRole('koordinator_kp'))
-                <form method="POST" action="{{ route('management.pkpa-placement-plans.publication-lock', $plan) }}">@csrf<button class="rounded-xl border border-amber-200 px-4 py-2 text-sm font-black text-amber-700">Kunci untuk Publikasi</button></form>
+                <form method="POST" action="{{ route('management.pkpa-placement-plans.publication-lock', $plan) }}">@csrf<button class="rounded-xl border border-amber-200 px-4 py-2 text-sm font-black text-amber-700">Kunci dan Tampilkan ke Portal</button></form>
             @endif
         </div>
     </section>
