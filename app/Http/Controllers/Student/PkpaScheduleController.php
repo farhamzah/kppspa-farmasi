@@ -56,7 +56,11 @@ class PkpaScheduleController extends Controller
 
     public function show(Request $request, PkpaPublishedAssignment $assignment): View
     {
-        abort_unless($assignment->student_core_user_id === $request->user()->core_user_id, 403);
+        abort_unless(PkpaPublishedAssignment::query()
+            ->whereKey($assignment->id)
+            ->forStudent($request->user()->core_user_id)
+            ->exists(), 403);
+
         $assignment->load([
             'publication.program',
             'supervisors',
@@ -76,7 +80,12 @@ class PkpaScheduleController extends Controller
 
     public function acknowledge(Request $request, PkpaPublishedAssignment $assignment): RedirectResponse
     {
-        abort_unless($assignment->student_core_user_id === $request->user()->core_user_id, 403);
+        abort_unless(PkpaPublishedAssignment::query()
+            ->whereKey($assignment->id)
+            ->forStudent($request->user()->core_user_id)
+            ->exists(), 403);
+
+        $assignment->load('publication', 'supervisors');
         $this->acknowledgementService->record($assignment->publication, $assignment, $request->user(), 'student', 'acknowledged', $request);
 
         return back()->with('status', 'Tanda membaca jadwal berhasil disimpan.');

@@ -160,6 +160,27 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_student_detail_and_acknowledge_allow_numeric_like_core_user_id(): void
+    {
+        $this->student->forceFill(['core_user_id' => '373'])->save();
+        $publication = $this->publishedFixture('PKPA-05-NUM');
+        $assignment = $publication->assignments()->where('student_core_user_id', '373')->firstOrFail();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get("/mahasiswa/pkpa-saya/{$assignment->id}")
+            ->assertOk()
+            ->assertSee($assignment->practice_site_name_snapshot);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/pkpa-saya/{$assignment->id}/acknowledge")
+            ->assertRedirect();
+
+        $this->assertSame(1, PkpaScheduleAcknowledgement::where('pkpa_published_assignment_id', $assignment->id)
+            ->where('core_user_id', '373')
+            ->where('acknowledgement_type', 'acknowledged')
+            ->count());
+    }
+
     public function test_locking_plan_immediately_exposes_valid_assignments_to_portals(): void
     {
         $program = $this->createProgram('PKPA-05-LOCK');
