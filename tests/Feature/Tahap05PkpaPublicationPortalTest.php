@@ -199,6 +199,10 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->get('/pembimbing-lapangan/jadwal-pkpa')
             ->assertOk()
             ->assertSee($assignment->student_name_snapshot);
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get("/pembimbing-lapangan/jadwal-pkpa/{$assignment->id}")
+            ->assertOk()
+            ->assertSee($assignment->student_name_snapshot);
     }
 
     public function test_change_request_creates_new_revision_and_withdrawal_removes_current_publication(): void
