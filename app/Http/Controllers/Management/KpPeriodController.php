@@ -42,7 +42,7 @@ class KpPeriodController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return redirect()->route('management.kp-periods.show', $period)->with('status', 'Periode KP berhasil dibuat.');
+        return redirect()->route('management.kp-periods.show', $period)->with('status', 'Periode PKPA berhasil dibuat.');
     }
 
     public function show(KpPeriod $kpPeriod): View
@@ -61,17 +61,17 @@ class KpPeriodController extends Controller
     {
         $kpPeriod->update($request->validated() + ['updated_by' => $request->user()->id]);
 
-        return redirect()->route('management.kp-periods.show', $kpPeriod)->with('status', 'Periode KP berhasil diperbarui.');
+        return redirect()->route('management.kp-periods.show', $kpPeriod)->with('status', 'Periode PKPA berhasil diperbarui.');
     }
 
     public function destroy(KpPeriod $kpPeriod): RedirectResponse
     {
         if ($kpPeriod->quotas()->exists()) {
-            return back()->withErrors(['period' => 'Periode KP sudah memiliki data kuota, hapus kuota terlebih dahulu jika benar-benar diperlukan.']);
+            return back()->withErrors(['period' => 'Periode PKPA sudah memiliki data kapasitas, hapus kapasitas terlebih dahulu jika benar-benar diperlukan.']);
         }
 
         $kpPeriod->delete();
 
-        return redirect()->route('management.kp-periods.index')->with('status', 'Periode KP berhasil dihapus.');
+        return redirect()->route('management.kp-periods.index')->with('status', 'Periode PKPA berhasil dihapus.');
     }
 }

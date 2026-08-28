@@ -22,27 +22,27 @@ class RecapController extends Controller
 
     public function students(Request $request, KpRecapService $service): View
     {
-        return $this->table('Rekap Mahasiswa KP', 'students', $request, $service);
+        return $this->table('Rekap Mahasiswa PKPA', 'students', $request, $service);
     }
 
     public function placements(Request $request, KpRecapService $service): View
     {
-        return $this->table('Rekap Penempatan KP', 'placements', $request, $service);
+        return $this->table('Rekap Penempatan PKPA', 'placements', $request, $service);
     }
 
     public function logbooks(Request $request, KpRecapService $service): View
     {
-        return $this->table('Rekap Logbook KP', 'logbooks', $request, $service);
+        return $this->table('Rekap Logbook PKPA', 'logbooks', $request, $service);
     }
 
     public function exams(Request $request, KpRecapService $service): View
     {
-        return $this->table('Rekap Sidang KP', 'exams', $request, $service);
+        return $this->table('Rekap Ujian PKPA', 'exams', $request, $service);
     }
 
     public function scores(Request $request, KpRecapService $service): View
     {
-        return $this->table('Rekap Nilai KP', 'scores', $request, $service);
+        return $this->table('Rekap Nilai PKPA', 'scores', $request, $service);
     }
 
     public function preview(string $type, Request $request, KpRecapService $service): View
@@ -110,11 +110,11 @@ class RecapController extends Controller
     private function types(): array
     {
         return [
-            'students' => 'Rekap Mahasiswa KP',
-            'placements' => 'Rekap Penempatan KP',
-            'logbooks' => 'Rekap Logbook KP',
-            'exams' => 'Rekap Sidang KP',
-            'scores' => 'Rekap Nilai KP',
+            'students' => 'Rekap Mahasiswa PKPA',
+            'placements' => 'Rekap Penempatan PKPA',
+            'logbooks' => 'Rekap Logbook PKPA',
+            'exams' => 'Rekap Ujian PKPA',
+            'scores' => 'Rekap Nilai PKPA',
         ];
     }
 

@@ -28,7 +28,7 @@
     </div>
 
     <h1>{{ $title }}</h1>
-    <div class="subtitle">SI-KP Farmasi UBP</div>
+    <div class="subtitle">MY PKPA Farmasi UBP</div>
 
     <div class="meta">
         @foreach($filters as $label => $value)

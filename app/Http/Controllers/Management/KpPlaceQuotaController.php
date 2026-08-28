@@ -52,7 +52,7 @@ class KpPlaceQuotaController extends Controller
 
         $this->log($quota, 'created', null, $quota->quota, null, $quota->is_open, $request->input('notes'), $request->user()->id);
 
-        return redirect()->route('management.kp-place-quotas.show', $quota)->with('status', 'Kuota tempat KP berhasil dibuat.');
+        return redirect()->route('management.kp-place-quotas.show', $quota)->with('status', 'Kapasitas tempat PKPA berhasil dibuat.');
     }
 
     public function show(KpPlaceQuota $kpPlaceQuota): View
@@ -88,15 +88,15 @@ class KpPlaceQuotaController extends Controller
 
         $this->log($kpPlaceQuota, $this->actionFor($oldQuota, $newQuota, $oldIsOpen, $newIsOpen), $oldQuota, $newQuota, $oldIsOpen, $newIsOpen, $request->input('notes'), $request->user()->id);
 
-        return redirect()->route('management.kp-place-quotas.show', $kpPlaceQuota)->with('status', 'Kuota tempat KP berhasil diperbarui.');
+        return redirect()->route('management.kp-place-quotas.show', $kpPlaceQuota)->with('status', 'Kapasitas tempat PKPA berhasil diperbarui.');
     }
 
     public function destroy(Request $request, KpPlaceQuota $kpPlaceQuota): RedirectResponse
     {
-        $this->log($kpPlaceQuota, 'deleted', $kpPlaceQuota->quota, null, $kpPlaceQuota->is_open, null, 'Kuota dihapus.', $request->user()->id);
+        $this->log($kpPlaceQuota, 'deleted', $kpPlaceQuota->quota, null, $kpPlaceQuota->is_open, null, 'Kapasitas dihapus.', $request->user()->id);
         $kpPlaceQuota->delete();
 
-        return redirect()->route('management.kp-place-quotas.index')->with('status', 'Kuota tempat KP berhasil dihapus.');
+        return redirect()->route('management.kp-place-quotas.index')->with('status', 'Kapasitas tempat PKPA berhasil dihapus.');
     }
 
     public function toggleOpen(Request $request, KpPlaceQuota $quota): RedirectResponse
@@ -109,7 +109,7 @@ class KpPlaceQuotaController extends Controller
 
         $this->log($quota, $quota->is_open ? 'opened' : 'closed', $quota->quota, $quota->quota, $oldIsOpen, $quota->is_open, $request->input('note'), $request->user()->id);
 
-        return back()->with('status', 'Status kuota berhasil diperbarui.');
+        return back()->with('status', 'Status kapasitas berhasil diperbarui.');
     }
 
     private function log(KpPlaceQuota $quota, string $action, ?int $oldQuota, ?int $newQuota, ?bool $oldIsOpen, ?bool $newIsOpen, ?string $note, ?int $userId): void

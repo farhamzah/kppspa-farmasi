@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Periode KP - '.config('app.name'))
-@section('page_title', 'Periode KP')
+@section('title', 'Periode PKPA - '.config('app.name'))
+@section('page_title', 'Periode PKPA')
 
 @section('content')
 <div class="space-y-5">
@@ -29,7 +29,7 @@
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <tr><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Pendaftaran</th><th class="px-4 py-3">Pemilihan</th><th class="px-4 py-3">Tanggal KP</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr>
+                    <tr><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Pendaftaran</th><th class="px-4 py-3">Penetapan Tempat</th><th class="px-4 py-3">Tanggal PKPA</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($periods as $period)
@@ -42,7 +42,7 @@
                             <td class="px-4 py-4 text-right"><a href="{{ route('management.kp-periods.show', $period) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Detail</a> <a href="{{ route('management.kp-periods.edit', $period) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Edit</a></td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="px-4 py-10 text-center text-slate-500">Belum ada periode KP.</td></tr>
+                        <tr><td colspan="6" class="px-4 py-10 text-center text-slate-500">Belum ada periode PKPA.</td></tr>
                     @endforelse
                 </tbody>
             </table>

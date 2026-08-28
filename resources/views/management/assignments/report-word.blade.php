@@ -21,7 +21,7 @@
 <body>
 <div class="Section1">
     <h1>Penempatan KP</h1>
-    <p class="subtitle">SI-KP Farmasi UBP</p>
+    <p class="subtitle">MY PKPA Farmasi UBP</p>
 
     <table class="meta">
         @foreach(array_chunk($filters + ['Total data' => $rows->count()], 4, true) as $filterRow)

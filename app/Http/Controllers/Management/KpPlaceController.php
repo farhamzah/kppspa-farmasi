@@ -43,7 +43,7 @@ class KpPlaceController extends Controller
             'updated_by' => $request->user()->id,
         ]);
 
-        return redirect()->route('management.kp-places.show', $place)->with('status', 'Tempat KP berhasil dibuat.');
+        return redirect()->route('management.kp-places.show', $place)->with('status', 'Tempat PKPA berhasil dibuat.');
     }
 
     public function show(KpPlace $kpPlace): View
@@ -62,17 +62,17 @@ class KpPlaceController extends Controller
     {
         $kpPlace->update($request->validated() + ['updated_by' => $request->user()->id]);
 
-        return redirect()->route('management.kp-places.show', $kpPlace)->with('status', 'Tempat KP berhasil diperbarui.');
+        return redirect()->route('management.kp-places.show', $kpPlace)->with('status', 'Tempat PKPA berhasil diperbarui.');
     }
 
     public function destroy(KpPlace $kpPlace): RedirectResponse
     {
         if ($kpPlace->quotas()->exists()) {
-            return back()->withErrors(['place' => 'Tempat KP sudah memiliki data kuota, silakan nonaktifkan jika tidak digunakan.']);
+            return back()->withErrors(['place' => 'Tempat PKPA sudah memiliki data kapasitas, silakan nonaktifkan jika tidak digunakan.']);
         }
 
         $kpPlace->delete();
 
-        return redirect()->route('management.kp-places.index')->with('status', 'Tempat KP berhasil dihapus.');
+        return redirect()->route('management.kp-places.index')->with('status', 'Tempat PKPA berhasil dihapus.');
     }
 }
