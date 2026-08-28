@@ -4,15 +4,15 @@
 @section('content')
 <div class="space-y-6">
     <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
-        <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pembekalan KP</p>
+        <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Pembekalan PKPA</p>
         <h2 class="mt-2 text-2xl font-black text-slate-950">Pre-Test dan Post-Test</h2>
-        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Kerjakan evaluasi pembekalan kerja praktik. Setelah submit, nilai dan pembahasan jawaban akan tampil otomatis.</p>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Kerjakan evaluasi pembekalan PKPA. Setelah submit, nilai dan pembahasan jawaban akan tampil otomatis.</p>
     </section>
 
     @unless($student)
         <section class="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
             <p class="text-xs font-black uppercase tracking-widest text-amber-700">Profil mahasiswa belum tersedia</p>
-            <h3 class="mt-2 text-xl font-black text-slate-950">Akun ini belum terhubung ke data mahasiswa KP.</h3>
+            <h3 class="mt-2 text-xl font-black text-slate-950">Akun ini belum terhubung ke data mahasiswa PKPA.</h3>
             <p class="mt-2 max-w-3xl text-sm leading-6 text-amber-900">
                 Pre/Post Test menyimpan nilai berdasarkan profil mahasiswa. Gunakan akun mahasiswa yang sudah tersinkron dari Core, atau sinkronkan dulu bridge user mahasiswa melalui admin/command provisioning.
             </p>

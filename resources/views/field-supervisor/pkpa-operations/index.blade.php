@@ -12,7 +12,7 @@
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-slate-500">Mahasiswa Binaan</p>
         <p class="mt-3 text-3xl font-black text-slate-950">{{ $totalRuns }}</p>
-        <p class="mt-1 text-sm text-slate-500">Rotasi yang perlu Anda validasi dari sisi lapangan.</p>
+        <p class="mt-1 text-sm text-slate-500">Rotasi yang perlu Anda validasi dari sisi preseptor.</p>
     </article>
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-amber-700">Presensi Menunggu</p>

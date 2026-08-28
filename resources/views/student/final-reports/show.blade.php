@@ -54,7 +54,7 @@
                     <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
                     <h3 class="text-lg font-black text-slate-950">Tautan Laporan Final</h3>
-                            <p class="mt-1 text-sm text-slate-500">Gunakan link Google Docs/Drive final yang sudah disepakati pembimbing. Link ini terlihat oleh pembimbing dalam dan lapangan.</p>
+                            <p class="mt-1 text-sm text-slate-500">Gunakan link Google Docs/Drive final yang sudah disepakati pembimbing. Link ini terlihat oleh pembimbing dalam dan preseptor.</p>
                         </div>
                         @if($report?->final_document_url)
                             <a href="{{ $report->final_document_url }}" target="_blank" rel="noopener" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700">Buka Link</a>

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar KP - '.config('app.name'))
-@section('page_title', 'Daftar KP')
+@section('title', 'Daftar PKPA - '.config('app.name'))
+@section('page_title', 'Daftar PKPA')
 
 @section('content')
 <div class="mx-auto max-w-3xl">
@@ -9,8 +9,8 @@
         @csrf
 
         <x-ui.page-header
-            eyebrow="Pendaftaran Kerja Praktek"
-            title="Buat Pendaftaran KP"
+            eyebrow="Pendaftaran PKPA"
+            title="Buat Pendaftaran PKPA"
             subtitle="Pilih periode yang tersedia dan tambahkan catatan bila ada informasi pendukung untuk koordinator."
         />
 
@@ -23,7 +23,7 @@
 
             <div class="space-y-5">
                 <div>
-                    <label for="kp_period_id" class="si-label">Periode KP</label>
+                    <label for="kp_period_id" class="si-label">Program / Periode PKPA</label>
                     <select id="kp_period_id" name="kp_period_id" class="si-input">
                         @foreach($periods as $period)
                             <option value="{{ $period->id }}">{{ $period->name }}</option>

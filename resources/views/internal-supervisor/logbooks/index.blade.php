@@ -74,7 +74,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 <div class="font-semibold text-slate-800">{{ $assignment->place->name }}</div>
-                                <div class="mt-1 text-xs text-slate-500">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Pembimbing lapangan belum ada' }}</div>
+                                <div class="mt-1 text-xs text-slate-500">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Preseptor belum ada' }}</div>
                             </td>
                             <td class="px-5 py-4">
                                 <div class="flex flex-wrap gap-2">
@@ -89,7 +89,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 @if($assignment->pending_logbooks_count > 0)
-                                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 ring-1 ring-amber-200">Menunggu Lapangan</span>
+                                    <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 ring-1 ring-amber-200">Menunggu Preseptor</span>
                                 @elseif($assignment->revision_logbooks_count > 0)
                                     <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 ring-1 ring-blue-200">Ada Revisi</span>
                                 @elseif($assignment->logbooks_count > 0)
@@ -137,7 +137,7 @@
                                 </div>
                                 <h3 class="mt-2 text-base font-black text-slate-950">{{ $logbook->activity_title }}</h3>
                                 <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $logbook->activity_description }}</p>
-                                <p class="mt-2 text-xs text-slate-500">Diajukan: {{ $logbook->submitted_at?->format('d M Y H:i') ?? '-' }} · Divalidasi lapangan: {{ $logbook->validated_at?->format('d M Y H:i') ?? '-' }}</p>
+                                <p class="mt-2 text-xs text-slate-500">Diajukan: {{ $logbook->submitted_at?->format('d M Y H:i') ?? '-' }} · Divalidasi preseptor: {{ $logbook->validated_at?->format('d M Y H:i') ?? '-' }}</p>
                             </div>
                             <a href="{{ route('internal-supervisor.pkpa-journals.show', $logbook) }}" class="inline-flex justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white shadow-sm shadow-cyan-700/15 hover:bg-cyan-800">
                                 Lihat & Komentar

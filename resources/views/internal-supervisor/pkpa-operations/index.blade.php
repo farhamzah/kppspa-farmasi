@@ -16,7 +16,7 @@
     <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Logbook Siap Dimonitor</p>
         <p class="mt-3 text-3xl font-black text-cyan-700">{{ $readyToMonitor }}</p>
-        <p class="mt-1 text-sm text-slate-500">Logbook yang sudah lolos review lapangan atau sudah pernah Anda cek.</p>
+        <p class="mt-1 text-sm text-slate-500">Logbook yang sudah lolos review preseptor atau sudah pernah Anda cek.</p>
     </article>
 </section>
 <div class="grid gap-4 lg:grid-cols-2">
