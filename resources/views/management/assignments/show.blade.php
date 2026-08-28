@@ -1,13 +1,13 @@
 @extends('layouts.app')
-@section('title','Detail Penempatan KP - '.config('app.name'))
-@section('page_title','Detail Penempatan KP')
+@section('title','Detail Penempatan PKPA - '.config('app.name'))
+@section('page_title','Detail Penempatan PKPA')
 @section('content')
 @php($studentDisplay = app(\App\Services\KpMasterDataReadService::class)->getStudentDisplayData($assignment->student))
 @php($internalSupervisorDisplay = $assignment->internalSupervisor ? app(\App\Services\KpMasterDataReadService::class)->getLecturerDisplayData($assignment->internalSupervisor) : null)
 <div class="space-y-5">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <a href="{{ $backUrl }}" class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:border-cyan-300 hover:text-cyan-700">
-            Kembali ke Penempatan KP
+            Kembali ke Penempatan PKPA
         </a>
         <p class="text-sm text-slate-500">Kelola pembimbing, status, dan riwayat penempatan mahasiswa.</p>
     </div>
@@ -31,7 +31,7 @@
         <p class="mt-1 text-sm text-slate-500">{{ $studentDisplay->studentNumber ?: '-' }} - {{ $assignment->period->name }}</p>
         <div class="mt-6 space-y-3 text-sm">
             <div class="rounded-lg bg-slate-50 p-3">
-                <p class="text-xs text-slate-500">Tempat KP</p>
+                <p class="text-xs text-slate-500">Tempat PKPA</p>
                 <p class="font-bold">{{ $assignment->place->name }}</p>
             </div>
             <div class="rounded-lg bg-slate-50 p-3">

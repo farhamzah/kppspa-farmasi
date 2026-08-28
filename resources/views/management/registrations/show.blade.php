@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Detail Verifikasi Pendaftaran KP - '.config('app.name'))
-@section('page_title', 'Detail Verifikasi Pendaftaran KP')
+@section('title', 'Detail Verifikasi Pendaftaran PKPA - '.config('app.name'))
+@section('page_title', 'Detail Verifikasi Pendaftaran PKPA')
 @section('content')
 @php($studentDisplay = app(\App\Services\KpMasterDataReadService::class)->getStudentDisplayData($registration->student))
 <div class="space-y-5">
@@ -48,7 +48,7 @@
 
             <div class="mt-6 space-y-3">
                 @if($registration->isWaitingVerification())
-                    <form method="POST" action="{{ route('management.kp-registrations.verify', $registration) }}" onsubmit="return confirm('Verifikasi pendaftaran ini?')">
+                    <form method="POST" action="{{ route('management.pkpa-registrations.verify', $registration) }}" onsubmit="return confirm('Verifikasi pendaftaran ini?')">
                         @csrf
                         <textarea name="verification_note" rows="2" placeholder="Catatan verifikasi opsional" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('verification_note') }}</textarea>
                         <button class="mt-2 w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Verifikasi Pendaftaran</button>
@@ -58,12 +58,12 @@
                         Pendaftaran masih draf. Mahasiswa perlu menekan Kirim Pendaftaran sebelum admin/koordinator memverifikasi.
                     </div>
                 @endif
-                <form method="POST" action="{{ route('management.kp-registrations.revision', $registration) }}" onsubmit="return confirm('Minta revisi pendaftaran ini?')">
+                <form method="POST" action="{{ route('management.pkpa-registrations.revision', $registration) }}" onsubmit="return confirm('Minta revisi pendaftaran ini?')">
                     @csrf
                     <textarea name="verification_note" rows="2" placeholder="Catatan revisi pendaftaran" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('verification_note') }}</textarea>
                     <button class="mt-2 w-full rounded-lg border border-amber-200 px-4 py-2 text-sm font-semibold text-amber-700">Minta Revisi</button>
                 </form>
-                <form method="POST" action="{{ route('management.kp-registrations.reject', $registration) }}" onsubmit="return confirm('Tolak pendaftaran ini?')">
+                <form method="POST" action="{{ route('management.pkpa-registrations.reject', $registration) }}" onsubmit="return confirm('Tolak pendaftaran ini?')">
                     @csrf
                     <textarea name="verification_note" rows="2" placeholder="Alasan penolakan pendaftaran" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">{{ old('verification_note') }}</textarea>
                     <button class="mt-2 w-full rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700">Tolak Pendaftaran</button>
@@ -92,24 +92,24 @@
                         </div>
                         @if($document?->file_path)
                             <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="{{ route('management.kp-registrations.documents.preview', [$registration, $document]) }}" target="_blank" rel="noopener" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Pratinjau</a>
-                                <a href="{{ route('management.kp-registrations.documents.download', [$registration, $document]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Unduh</a>
+                                <a href="{{ route('management.pkpa-registrations.documents.preview', [$registration, $document]) }}" target="_blank" rel="noopener" class="rounded-lg border border-cyan-200 px-3 py-1.5 text-xs font-semibold text-cyan-700">Pratinjau</a>
+                                <a href="{{ route('management.pkpa-registrations.documents.download', [$registration, $document]) }}" class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700">Unduh</a>
                                 @if($document->status === 'disetujui')
                                     <span class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">Sudah disetujui</span>
                                 @else
-                                    <form method="POST" action="{{ route('management.kp-registrations.documents.approve', [$registration, $document]) }}" onsubmit="return confirm('Setujui dokumen ini?')">
+                                    <form method="POST" action="{{ route('management.pkpa-registrations.documents.approve', [$registration, $document]) }}" onsubmit="return confirm('Setujui dokumen ini?')">
                                         @csrf
                                         <button class="rounded-lg border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700">Setujui</button>
                                     </form>
                                 @endif
                             </div>
                             <div class="mt-3 grid gap-2 md:grid-cols-2">
-                                <form method="POST" action="{{ route('management.kp-registrations.documents.revision', [$registration, $document]) }}" onsubmit="return confirm('Minta revisi dokumen ini?')">
+                                <form method="POST" action="{{ route('management.pkpa-registrations.documents.revision', [$registration, $document]) }}" onsubmit="return confirm('Minta revisi dokumen ini?')">
                                     @csrf
                                     <input name="review_note" placeholder="Catatan revisi" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs">
                                     <button class="mt-2 w-full rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-700">Revisi</button>
                                 </form>
-                                <form method="POST" action="{{ route('management.kp-registrations.documents.reject', [$registration, $document]) }}" onsubmit="return confirm('Tolak dokumen ini?')">
+                                <form method="POST" action="{{ route('management.pkpa-registrations.documents.reject', [$registration, $document]) }}" onsubmit="return confirm('Tolak dokumen ini?')">
                                     @csrf
                                     <input name="review_note" placeholder="Alasan penolakan" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs">
                                     <button class="mt-2 w-full rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700">Tolak</button>

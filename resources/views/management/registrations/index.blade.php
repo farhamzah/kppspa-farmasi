@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Verifikasi Pendaftaran KP - '.config('app.name'))
-@section('page_title', 'Verifikasi Pendaftaran KP')
+@section('title', 'Verifikasi Pendaftaran PKPA - '.config('app.name'))
+@section('page_title', 'Verifikasi Pendaftaran PKPA')
 @section('content')
 <div class="space-y-5">
     @if(session('status'))
@@ -74,12 +74,12 @@
                                 @endif
                             </td>
                             <td class="px-4 py-4 text-right">
-                                <a href="{{ route('management.kp-registrations.show', ['registration' => $registration, 'return_url' => request()->fullUrl()]) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Periksa</a>
+                                <a href="{{ route('management.pkpa-registrations.show', ['registration' => $registration, 'return_url' => request()->fullUrl()]) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Periksa</a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-10 text-center text-slate-500">Belum ada pendaftaran KP yang perlu ditampilkan.</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-slate-500">Belum ada pendaftaran PKPA yang perlu ditampilkan.</td>
                         </tr>
                     @endforelse
                 </tbody>

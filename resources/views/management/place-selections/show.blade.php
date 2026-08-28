@@ -44,12 +44,12 @@
         @if($selection->status === 'aktif')
             @if($activeAssignment)
                 <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <p class="font-semibold">Pilihan ini sudah menjadi Penempatan KP.</p>
-                    <p class="mt-1">Jika perlu dibatalkan, lakukan dari halaman Penempatan KP agar pembimbing dilepas dan kuota tempat kembali konsisten.</p>
+                    <p class="font-semibold">Pilihan ini sudah menjadi Penempatan PKPA.</p>
+                    <p class="mt-1">Jika perlu dibatalkan, lakukan dari halaman Penempatan PKPA agar pembimbing dilepas dan kuota tempat kembali konsisten.</p>
                 </div>
-                <a href="{{ route('management.kp-assignments.show', ['kp_assignment' => $selection->assignment, 'return_url' => route('management.kp-assignments.index')]) }}" class="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white sm:w-auto">Buka Penempatan KP</a>
+                <a href="{{ route('management.kp-assignments.show', ['kp_assignment' => $selection->assignment, 'return_url' => route('management.pkpa-assignments.index')]) }}" class="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white sm:w-auto">Buka Penempatan PKPA</a>
             @else
-                <form method="POST" action="{{ route('management.place-selections.create-assignment', $selection) }}" class="mt-4" onsubmit="return confirm('Buat penempatan KP dari pilihan ini?')">
+                <form method="POST" action="{{ route('management.place-selections.create-assignment', $selection) }}" class="mt-4" onsubmit="return confirm('Buat penempatan PKPA dari pilihan ini?')">
                     @csrf
                     <button class="w-full rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white sm:w-auto">Buat Penempatan</button>
                 </form>

@@ -86,7 +86,7 @@ class KpRegistrationReviewController extends Controller
         ]);
         $this->log($registration, 'registration_verified', $old, 'terverifikasi', $request->verification_note, $request->user()->id);
 
-        return back()->with('status', 'Pendaftaran KP berhasil diverifikasi.');
+        return back()->with('status', 'Pendaftaran PKPA berhasil diverifikasi.');
     }
 
     public function revision(ReviewKpRegistrationRequest $request, KpRegistration $registration): RedirectResponse
@@ -168,7 +168,7 @@ class KpRegistrationReviewController extends Controller
 
     private function safeRegistrationBackUrl(?string $returnUrl): string
     {
-        $fallback = route('management.kp-registrations.index');
+        $fallback = route('management.pkpa-registrations.index');
 
         if (! $returnUrl) {
             return $fallback;
@@ -182,7 +182,7 @@ class KpRegistrationReviewController extends Controller
             return $fallback;
         }
 
-        if ($returnPath !== '/management/kp-registrations') {
+        if (! in_array($returnPath, ['/management/kp-registrations', '/management/pkpa-registrations'], true)) {
             return $fallback;
         }
 

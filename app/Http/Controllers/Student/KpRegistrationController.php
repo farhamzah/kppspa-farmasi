@@ -64,9 +64,9 @@ class KpRegistrationController extends Controller
         ]);
 
         $this->syncDocuments($registration);
-        $this->log($registration, 'created', null, 'draft', 'Pendaftaran KP dibuat.', $request->user()->id);
+        $this->log($registration, 'created', null, 'draft', 'Pendaftaran PKPA dibuat.', $request->user()->id);
 
-        return redirect()->route('student.kp-registrations.show', $registration)->with('status', 'Pendaftaran KP berhasil dibuat.');
+        return redirect()->route('student.pkpa-registrations.show', $registration)->with('status', 'Pendaftaran PKPA berhasil dibuat.');
     }
 
     public function show(Request $request, KpRegistration $registration): View
@@ -100,7 +100,7 @@ class KpRegistrationController extends Controller
         ]);
         $this->log($registration, 'submitted', $old, 'menunggu_verifikasi', 'Pendaftaran disubmit untuk verifikasi.', $request->user()->id);
 
-        return back()->with('status', 'Pendaftaran KP berhasil disubmit.');
+        return back()->with('status', 'Pendaftaran PKPA berhasil dikirim untuk verifikasi.');
     }
 
     public function cancel(Request $request, KpRegistration $registration): RedirectResponse
@@ -110,7 +110,7 @@ class KpRegistrationController extends Controller
         $registration->update(['status' => 'dibatalkan']);
         $this->log($registration, 'registration_cancelled', $old, 'dibatalkan', 'Pendaftaran dibatalkan mahasiswa.', $request->user()->id);
 
-        return redirect()->route('student.kp-registrations.index')->with('status', 'Pendaftaran KP dibatalkan.');
+        return redirect()->route('student.pkpa-registrations.index')->with('status', 'Pendaftaran PKPA dibatalkan.');
     }
 
     public function download(Request $request, KpRegistration $registration, KpDocument $document): StreamedResponse

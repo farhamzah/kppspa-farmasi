@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title','Penempatan KP - '.config('app.name'))
-@section('page_title','Penempatan KP')
+@section('title','Penempatan PKPA - '.config('app.name'))
+@section('page_title','Penempatan PKPA')
 @section('content')
 @php
     $reportQuery = array_filter([
@@ -28,7 +28,7 @@
     <form method="GET" class="space-y-3">
         <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[1.25fr_1fr_220px_220px]">
             <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cari nama/NIM mahasiswa" class="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <input name="place" value="{{ $filters['place'] ?? '' }}" placeholder="Cari tempat KP" class="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <input name="place" value="{{ $filters['place'] ?? '' }}" placeholder="Cari tempat PKPA" class="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm">
             <select name="period" class="min-h-11 rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 <option value="">Semua Periode</option>
                 @foreach($periods as $period)
@@ -51,10 +51,10 @@
                 @endforeach
             </select>
             <button class="min-h-11 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Filter</button>
-            <a href="{{ route('management.kp-assignments.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Reset</a>
+            <a href="{{ route('management.pkpa-assignments.index') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Reset</a>
         </div>
     </form>
 </section>
-<section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"><div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Tempat</th><th class="px-4 py-3">Pembimbing Dalam</th><th class="px-4 py-3">Pembimbing Lapangan</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse($assignments as $assignment)@php($studentDisplay = app(\App\Services\KpMasterDataReadService::class)->getStudentDisplayData($assignment->student))@php($internalSupervisorDisplay = $assignment->internalSupervisor ? app(\App\Services\KpMasterDataReadService::class)->getLecturerDisplayData($assignment->internalSupervisor) : null)<tr><td class="px-4 py-4"><div class="font-semibold">{{ $studentDisplay->name }}</div><div class="text-xs text-slate-500">{{ $studentDisplay->studentNumber ?: '-' }}</div></td><td class="px-4 py-4">{{ $assignment->period->name }}</td><td class="px-4 py-4">{{ $assignment->place->name }}</td><td class="px-4 py-4">{{ $internalSupervisorDisplay?->name ?? 'Belum ada' }}</td><td class="px-4 py-4">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Belum ada' }}</td><td class="px-4 py-4"><span class="rounded-full {{ $assignment->statusBadgeClass() }} px-2 py-1 text-xs font-semibold">{{ $assignment->statusLabel() }}</span></td><td class="px-4 py-4 text-right"><a href="{{ route('management.kp-assignments.show', ['kp_assignment' => $assignment, 'return_url' => request()->fullUrl()]) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Detail</a></td></tr>@empty<tr><td colspan="7" class="px-4 py-10 text-center text-slate-500">Belum ada penempatan KP.</td></tr>@endforelse</tbody></table></div><div class="border-t px-4 py-3">{{ $assignments->links() }}</div></section>
+<section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200"><div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Tempat</th><th class="px-4 py-3">Pembimbing Dalam</th><th class="px-4 py-3">Pembimbing Lapangan</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr></thead><tbody class="divide-y divide-slate-100">@forelse($assignments as $assignment)@php($studentDisplay = app(\App\Services\KpMasterDataReadService::class)->getStudentDisplayData($assignment->student))@php($internalSupervisorDisplay = $assignment->internalSupervisor ? app(\App\Services\KpMasterDataReadService::class)->getLecturerDisplayData($assignment->internalSupervisor) : null)<tr><td class="px-4 py-4"><div class="font-semibold">{{ $studentDisplay->name }}</div><div class="text-xs text-slate-500">{{ $studentDisplay->studentNumber ?: '-' }}</div></td><td class="px-4 py-4">{{ $assignment->period->name }}</td><td class="px-4 py-4">{{ $assignment->place->name }}</td><td class="px-4 py-4">{{ $internalSupervisorDisplay?->name ?? 'Belum ada' }}</td><td class="px-4 py-4">{{ $assignment->fieldSupervisor ? field_supervisor_display_name($assignment->fieldSupervisor) : 'Belum ada' }}</td><td class="px-4 py-4"><span class="rounded-full {{ $assignment->statusBadgeClass() }} px-2 py-1 text-xs font-semibold">{{ $assignment->statusLabel() }}</span></td><td class="px-4 py-4 text-right"><a href="{{ route('management.kp-assignments.show', ['kp_assignment' => $assignment, 'return_url' => request()->fullUrl()]) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Detail</a></td></tr>@empty<tr><td colspan="7" class="px-4 py-10 text-center text-slate-500">Belum ada penempatan PKPA.</td></tr>@endforelse</tbody></table></div><div class="border-t px-4 py-3">{{ $assignments->links() }}</div></section>
 </div>
 @endsection

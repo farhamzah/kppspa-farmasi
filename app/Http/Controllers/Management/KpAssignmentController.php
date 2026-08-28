@@ -57,11 +57,11 @@ class KpAssignmentController extends Controller
         abort_unless(in_array($format, ['word', 'excel', 'pdf'], true), 404);
 
         $rows = $report->rows($request);
-        $filename = 'penempatan-kp-'.now()->format('Ymd-His');
+        $filename = 'penempatan-pkpa-'.now()->format('Ymd-His');
         $filters = $report->filterSummary($request);
 
         if ($format === 'excel') {
-            return Excel::download(new KpTableReportExport('Penempatan KP', $filters, $rows), $filename.'.xlsx');
+            return Excel::download(new KpTableReportExport('Penempatan PKPA', $filters, $rows), $filename.'.xlsx');
         }
 
         if ($format === 'pdf') {
@@ -70,14 +70,14 @@ class KpAssignmentController extends Controller
                 'Mahasiswa' => '',
                 'NIM' => '',
                 'Periode' => '',
-                'Tempat KP' => '',
+                'Tempat PKPA' => '',
                 'Pembimbing Dalam' => '',
                 'Pembimbing Lapangan' => '',
                 'Status' => '',
             ]);
 
             return response(SimplePdfReport::table(
-                'Penempatan KP',
+                'Penempatan PKPA',
                 $filters + ['Total data' => $rows->count()],
                 $headings,
                 $rows->map(fn ($row) => array_values($row))->all()
@@ -112,7 +112,7 @@ class KpAssignmentController extends Controller
             $request->note
         );
 
-        return redirect()->route('management.kp-assignments.show', $assignment)->with('status', 'Penempatan KP berhasil dibuat.');
+        return redirect()->route('management.pkpa-assignments.index')->with('status', 'Penempatan PKPA berhasil dibuat.');
     }
 
     public function createFromSelection(Request $request, KpPlaceSelection $selection, KpAssignmentService $service): RedirectResponse
@@ -174,7 +174,7 @@ class KpAssignmentController extends Controller
     {
         $service->cancelAssignment($request->user(), $assignment, $request->reason);
 
-        return back()->with('status', 'Penempatan KP berhasil dibatalkan.');
+        return back()->with('status', 'Penempatan PKPA berhasil dibatalkan.');
     }
 
     private function formData(): array
@@ -211,7 +211,7 @@ class KpAssignmentController extends Controller
 
     private function safeAssignmentBackUrl(?string $returnUrl): string
     {
-        $fallback = route('management.kp-assignments.index');
+        $fallback = route('management.pkpa-assignments.index');
 
         if (! $returnUrl) {
             return $fallback;
@@ -225,7 +225,7 @@ class KpAssignmentController extends Controller
             return $fallback;
         }
 
-        if ($returnPath !== '/management/kp-assignments') {
+        if (! in_array($returnPath, ['/management/kp-assignments', '/management/pkpa-assignments'], true)) {
             return $fallback;
         }
 
