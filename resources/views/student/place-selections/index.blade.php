@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Pemilihan Tempat KP - '.config('app.name'))
-@section('page_title', 'Pemilihan Tempat KP')
+@section('title', 'Penetapan Tempat PKPA - '.config('app.name'))
+@section('page_title', 'Penetapan Tempat PKPA')
 @section('content')
 <div class="si-page">
     @if(session('status'))<div class="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-sm">{{ session('status') }}</div>@endif
@@ -11,15 +11,15 @@
         <div class="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-center">
             <div>
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Waktu Server: {{ $serverNow->format('d M Y H:i:s') }}</p>
-                <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Pilih Tempat KP</h2>
-                <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-600">Pilih tempat kerja praktek dengan sistem first come first served. Setelah memilih, pilihan terkunci dan hanya Admin/Koordinator yang dapat mengubahnya.</p>
+                <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-950 md:text-4xl">Tempat PKPA</h2>
+                <p class="mt-4 max-w-3xl text-sm leading-7 text-slate-600">Halaman ini menampilkan periode penetapan tempat PKPA. Jika program membuka pilihan mandiri, Anda dapat memilih tempat yang tersedia. Jika penempatan diatur koordinator, hasilnya akan muncul otomatis di sini.</p>
             </div>
             <div class="rounded-2xl border border-cyan-100 bg-white/80 p-4 shadow-sm backdrop-blur">
                 <p class="text-xs font-bold uppercase tracking-widest text-cyan-700">Alur pemilihan</p>
                 <div class="mt-4 space-y-3">
                     <div class="flex items-center gap-3 text-sm font-semibold text-slate-700"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-700 text-white">1</span>Profil lengkap</div>
                     <div class="flex items-center gap-3 text-sm font-semibold text-slate-700"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-700 text-white">2</span>Pendaftaran terverifikasi</div>
-                    <div class="flex items-center gap-3 text-sm font-semibold text-slate-700"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-700 text-white">3</span>Pilih kuota tersedia</div>
+                    <div class="flex items-center gap-3 text-sm font-semibold text-slate-700"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-700 text-white">3</span>Tunggu penetapan atau pilih tempat</div>
                 </div>
             </div>
         </div>
@@ -27,7 +27,7 @@
 
     @if(! auth()->user()->isProfileComplete())
         <div class="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-900 shadow-sm">
-            Lengkapi profil terlebih dahulu sebelum memilih tempat KP.
+            Lengkapi profil terlebih dahulu sebelum melanjutkan proses tempat PKPA.
         </div>
     @endif
 
@@ -40,7 +40,7 @@
                     <p class="mt-1 text-sm text-slate-500">Pemilihan: {{ $period->selection_start_at?->format('d M Y H:i') ?? '-' }} - {{ $period->selection_end_at?->format('d M Y H:i') ?? '-' }}</p>
                     <p class="mt-1 text-sm text-slate-500">Status: {{ $periodRegistration?->selectionStatusLabel() ?? 'Belum eligible' }}</p>
                 </div>
-                <a href="{{ route('student.place-selections.show', $period) }}" class="si-btn si-btn-primary">Lihat Tempat</a>
+                <a href="{{ route('student.place-selections.show', $period) }}" class="si-btn si-btn-primary">Lihat Detail</a>
             </div>
         </section>
     @empty
@@ -51,7 +51,7 @@
                 </svg>
             </div>
             <h3 class="mt-5 text-xl font-black text-slate-950">Belum ada periode yang bisa dipilih</h3>
-            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Pastikan profil dan pendaftaran KP Anda sudah terverifikasi. Periode pemilihan akan tampil otomatis saat dibuka oleh program.</p>
+            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Pastikan profil dan pendaftaran PKPA Anda sudah terverifikasi. Periode penetapan tempat akan tampil otomatis saat dibuka oleh program.</p>
         </section>
     @endforelse
 </div>

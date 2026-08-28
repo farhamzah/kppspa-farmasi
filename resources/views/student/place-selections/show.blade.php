@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Daftar Tempat KP - '.config('app.name'))
-@section('page_title', 'Daftar Tempat KP')
+@section('title', 'Tempat PKPA - '.config('app.name'))
+@section('page_title', 'Tempat PKPA')
 @section('content')
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</div>@endif
@@ -19,22 +19,22 @@
         </div>
         @if(! $period->isSelectionOpen())
             <div class="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                {{ $period->selection_start_at && now()->lt($period->selection_start_at) ? 'Jadwal pemilihan tempat belum dibuka.' : 'Jadwal pemilihan tempat sudah ditutup.' }}
+                {{ $period->selection_start_at && now()->lt($period->selection_start_at) ? 'Jadwal penetapan tempat belum dibuka.' : 'Jadwal penetapan tempat sudah ditutup.' }}
             </div>
         @endif
     </section>
 
     @if($activeSelection)
         <section class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
-            <p class="text-xs font-semibold uppercase tracking-widest text-emerald-700">Terikat Tempat KP</p>
+            <p class="text-xs font-semibold uppercase tracking-widest text-emerald-700">Tempat PKPA Aktif</p>
             <h3 class="mt-2 text-xl font-bold text-emerald-950">{{ $activeSelection->place->name }}</h3>
             <p class="mt-1 text-sm text-emerald-800">{{ $activeSelection->place->typeLabel() }} · {{ $activeSelection->place->city ?: '-' }}</p>
-            <p class="mt-2 text-sm text-emerald-700">Dipilih pada {{ $activeSelection->selected_at?->format('d M Y H:i') }}. Pilihan tidak dapat diubah sendiri.</p>
+            <p class="mt-2 text-sm text-emerald-700">Ditetapkan pada {{ $activeSelection->selected_at?->format('d M Y H:i') }}. Perubahan tempat dilakukan oleh admin atau koordinator.</p>
         </section>
     @elseif($waiting?->status === 'menunggu')
         <section class="rounded-2xl border border-amber-200 bg-amber-50 p-6">
             <h3 class="text-lg font-bold text-amber-900">Anda berada di daftar tunggu</h3>
-            <p class="mt-2 text-sm text-amber-800">Silakan cek kembali jika Admin/Koordinator membuka atau menambah kuota.</p>
+            <p class="mt-2 text-sm text-amber-800">Silakan cek kembali jika admin atau koordinator memperbarui kapasitas atau penetapan tempat.</p>
         </section>
     @endif
 
@@ -51,18 +51,18 @@
                 </div>
                 <p class="mt-3 text-sm text-slate-600">{{ $quota->place->address ?: 'Alamat belum diisi.' }}</p>
                 <div class="mt-4 grid grid-cols-3 gap-3 text-center">
-                    <div class="rounded-lg bg-slate-50 p-3"><p class="text-xs text-slate-500">Kuota</p><p class="font-bold">{{ $quota->quota }}</p></div>
+                    <div class="rounded-lg bg-slate-50 p-3"><p class="text-xs text-slate-500">Kapasitas</p><p class="font-bold">{{ $quota->quota }}</p></div>
                     <div class="rounded-lg bg-slate-50 p-3"><p class="text-xs text-slate-500">Terisi</p><p class="font-bold">{{ $quota->filledCount() }}</p></div>
                     <div class="rounded-lg bg-slate-50 p-3"><p class="text-xs text-slate-500">Sisa</p><p class="font-bold">{{ $quota->remainingQuota() }}</p></div>
                 </div>
-                <form method="POST" action="{{ route('student.place-selections.select', $quota) }}" class="mt-4" onsubmit="return confirm('Pilihan tidak dapat diubah sendiri setelah dikonfirmasi. Perubahan hanya dapat dilakukan oleh Admin/Koordinator.')">
+                <form method="POST" action="{{ route('student.place-selections.select', $quota) }}" class="mt-4" onsubmit="return confirm('Setelah dikonfirmasi, perubahan tempat hanya dapat dilakukan oleh admin atau koordinator.')">
                     @csrf
-                    <button @disabled(! $canSelect) class="w-full rounded-lg px-4 py-2 text-sm font-semibold {{ $canSelect ? 'bg-teal-600 text-white' : 'cursor-not-allowed bg-slate-100 text-slate-400' }}">Pilih Tempat Ini</button>
+                    <button @disabled(! $canSelect) class="w-full rounded-lg px-4 py-2 text-sm font-semibold {{ $canSelect ? 'bg-teal-600 text-white' : 'cursor-not-allowed bg-slate-100 text-slate-400' }}">Pilih / Konfirmasi Tempat</button>
                 </form>
             </div>
         @empty
             <div class="rounded-2xl bg-white p-10 text-center shadow-sm ring-1 ring-slate-200 lg:col-span-2">
-                <p class="font-semibold text-slate-950">Belum ada kuota tempat KP untuk periode ini.</p>
+                <p class="font-semibold text-slate-950">Belum ada kapasitas tempat PKPA untuk periode ini.</p>
             </div>
         @endforelse
     </section>
@@ -70,7 +70,7 @@
     @if(! $activeSelection && $quotas->isNotEmpty() && $quotas->every(fn($quota) => $quota->isFull() || ! $quota->is_open))
         <form method="POST" action="{{ route('student.place-selections.waiting-list') }}" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             @csrf
-            <p class="text-sm text-slate-600">Semua kuota sedang penuh atau ditutup. Anda dapat masuk daftar tunggu.</p>
+            <p class="text-sm text-slate-600">Semua kapasitas sedang penuh atau ditutup. Anda dapat masuk daftar tunggu.</p>
             <button class="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white">Masuk Daftar Tunggu</button>
         </form>
     @endif

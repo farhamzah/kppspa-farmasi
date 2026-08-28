@@ -63,13 +63,13 @@ class PlaceSelectionMonitoringController extends Controller
                 'Mahasiswa' => '',
                 'NIM' => '',
                 'Periode' => '',
-                'Tempat KP' => '',
+                'Tempat PKPA' => '',
                 'Waktu Pilih' => '',
                 'Status' => '',
             ]);
 
             return response(SimplePdfReport::table(
-                'Monitoring Pemilihan Tempat KP',
+                'Monitoring Penetapan Tempat PKPA',
                 $report->filterSummary($request),
                 $headings,
                 $rows->map(fn ($row) => array_values($row))->all()
@@ -114,14 +114,14 @@ class PlaceSelectionMonitoringController extends Controller
             $request->reason
         );
 
-        return redirect()->route('management.place-selections.show', $selection)->with('status', 'Tempat KP mahasiswa berhasil dipilihkan secara manual.');
+        return redirect()->route('management.place-selections.show', $selection)->with('status', 'Tempat PKPA mahasiswa berhasil ditetapkan secara manual.');
     }
 
     public function cancel(CancelSelectionRequest $request, KpPlaceSelection $selection, KpPlaceSelectionService $service): RedirectResponse
     {
         $service->cancelSelection($request->user(), $selection, $request->reason);
 
-        return back()->with('status', 'Pilihan tempat KP berhasil dibatalkan.');
+        return back()->with('status', 'Penetapan tempat PKPA berhasil dibatalkan.');
     }
 
     public function move(KpPlaceSelection $selection): View
@@ -139,7 +139,7 @@ class PlaceSelectionMonitoringController extends Controller
     {
         $newSelection = $service->moveSelection($request->user(), $selection, KpPlaceQuota::findOrFail($request->kp_place_quota_id), $request->reason);
 
-        return redirect()->route('management.place-selections.show', $newSelection)->with('status', 'Pilihan tempat KP berhasil dipindahkan.');
+        return redirect()->route('management.place-selections.show', $newSelection)->with('status', 'Penetapan tempat PKPA berhasil dipindahkan.');
     }
 
     private function eligibleManualRegistrations()

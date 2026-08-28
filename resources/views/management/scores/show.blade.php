@@ -12,7 +12,7 @@
     <section class="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-100">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-                <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Rekap nilai KP</p>
+                <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Rekap nilai PKPA</p>
                 <h2 class="mt-2 text-2xl font-black text-slate-950">{{ $assignment->student->user->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $assignment->student->nim }} - {{ $assignment->place->name }}</p>
             </div>

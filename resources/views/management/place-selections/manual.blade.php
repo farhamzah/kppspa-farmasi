@@ -9,8 +9,8 @@
 
     <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-            <h2 class="text-xl font-bold text-slate-950">Pilihkan Tempat KP</h2>
-            <p class="mt-1 text-sm text-slate-500">Gunakan untuk mahasiswa terverifikasi yang ditunjuk langsung oleh koordinator/admin tanpa war ticket.</p>
+            <h2 class="text-xl font-bold text-slate-950">Tetapkan Tempat PKPA</h2>
+            <p class="mt-1 text-sm text-slate-500">Gunakan untuk mahasiswa terverifikasi yang ditetapkan langsung oleh koordinator atau admin.</p>
         </div>
         <a href="{{ route('management.place-selections.index') }}" class="inline-flex rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Kembali</a>
     </div>
@@ -46,16 +46,16 @@
 
         <div>
             <label class="text-sm font-semibold text-slate-700">Alasan / Catatan Koordinator</label>
-            <textarea name="reason" rows="4" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contoh: Mahasiswa ditunjuk langsung untuk tempat KP ini berdasarkan arahan koordinator.">{{ old('reason') }}</textarea>
+            <textarea name="reason" rows="4" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contoh: Mahasiswa ditetapkan langsung ke tempat PKPA ini sesuai arahan koordinator.">{{ old('reason') }}</textarea>
         </div>
 
         <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Penempatan manual tidak menunggu jadwal war ticket, tetapi tetap membutuhkan pendaftaran yang sudah terverifikasi dan kuota tempat yang masih tersedia.
+            Penetapan manual tidak menunggu mekanisme pilihan mandiri, tetapi tetap membutuhkan pendaftaran yang sudah terverifikasi dan kapasitas tempat yang masih tersedia.
         </div>
 
         <div class="flex justify-end gap-2">
             <a href="{{ route('management.place-selections.index') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Batal</a>
-            <button class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white" onclick="return confirm('Pilihkan tempat KP ini untuk mahasiswa?')">Simpan Pilihan Manual</button>
+            <button class="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white" onclick="return confirm('Tetapkan tempat PKPA ini untuk mahasiswa?')">Simpan Penetapan Manual</button>
         </div>
     </form>
 </section>

@@ -18,7 +18,7 @@
 
         <div class="mt-6 space-y-3 text-sm">
             <div class="rounded-lg bg-slate-50 p-3">
-                <p class="text-xs text-slate-500">Tempat KP</p>
+                <p class="text-xs text-slate-500">Tempat PKPA</p>
                 <p class="font-bold">{{ $selection->place->name }}</p>
             </div>
             <div class="rounded-lg bg-slate-50 p-3">

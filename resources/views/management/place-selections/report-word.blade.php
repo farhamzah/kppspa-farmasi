@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Pemantauan Pemilihan Tempat KP</title>
+    <title>Pemantauan Penetapan Tempat PKPA</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 11pt; }
         h1 { font-size: 18pt; margin-bottom: 4px; }
@@ -13,8 +13,8 @@
     </style>
 </head>
 <body>
-    <h1>Pemantauan Pemilihan Tempat KP</h1>
-    <p>SI-KP Farmasi UBP</p>
+    <h1>Pemantauan Penetapan Tempat PKPA</h1>
+    <p>MY PKPA Farmasi UBP</p>
 
     <div class="meta">
         @foreach($filters as $label => $value)
@@ -25,7 +25,7 @@
     <table>
         <thead>
             <tr>
-                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat KP' => '', 'Waktu Pilih' => '', 'Status' => '']) as $heading)
+                @foreach(array_keys($rows->first() ?? ['No' => '', 'Mahasiswa' => '', 'NIM' => '', 'Periode' => '', 'Tempat PKPA' => '', 'Waktu Pilih' => '', 'Status' => '']) as $heading)
                     <th>{{ $heading }}</th>
                 @endforeach
             </tr>

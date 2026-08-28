@@ -69,7 +69,7 @@ class PlaceSelectionController extends Controller
 
         $selection = $service->selectPlace($request->user(), $registration, $quota, $request->ip(), $request->userAgent());
 
-        return redirect()->route('student.place-selections.show', $selection->period)->with('status', 'Tempat KP berhasil dipilih. Pilihan sudah terkunci.');
+        return redirect()->route('student.place-selections.show', $selection->period)->with('status', 'Tempat PKPA berhasil dikonfirmasi. Perubahan selanjutnya dilakukan melalui admin atau koordinator.');
     }
 
     public function joinWaitingList(Request $request, KpPlaceSelectionService $service): RedirectResponse
