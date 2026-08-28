@@ -37,7 +37,7 @@
         'Laporan Akhir' => 'Dokumen laporan atau keluaran akhir yang sedang diperiksa.',
         'Portofolio PKPA' => 'Penyusunan portofolio PKPA per wahana secara bertahap.',
         'Ujian' => 'Pengajuan, jadwal, dan pelaksanaan ujian PKPA.',
-        'Nilai PKPA' => 'Rekap nilai PKPA dari pembimbing, lapangan, dan ujian.',
+        'Nilai PKPA' => 'Rekap nilai PKPA dari pembimbing dalam, preseptor, dan ujian.',
         'Hasil Akhir PKPA' => 'Status kelulusan dan penyelesaian akhir program.',
         'Mahasiswa Bimbingan' => 'Daftar mahasiswa yang menjadi tanggung jawab pembimbing dalam.',
         'Mahasiswa PKPA' => 'Daftar mahasiswa yang terhubung ke preseptor.',
