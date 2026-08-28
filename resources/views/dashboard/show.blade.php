@@ -26,81 +26,126 @@
     };
 
     $featureDescriptions = [
-        'Pendaftaran KP' => 'Pengajuan dan status verifikasi pendaftaran.',
         'Pendaftaran PKPA' => 'Pengajuan dan status verifikasi pendaftaran PKPA.',
-        'Berkas Persyaratan' => 'Kelengkapan dokumen awal mahasiswa.',
-        'Berkas KP' => 'Berkas administrasi Kerja Praktek.',
+        'Berkas Persyaratan' => 'Kelengkapan dokumen awal peserta PKPA.',
         'Berkas PKPA' => 'Berkas administrasi PKPA.',
-        'Pemilihan Tempat KP' => 'Pilihan tempat dan kuota KP.',
-        'Logbook' => 'Catatan aktivitas harian KP.',
-        'Laporan Akhir' => 'Pemeriksaan dan persetujuan laporan akhir.',
-        'Sidang' => 'Pengajuan, jadwal, dan pelaksanaan sidang.',
-        'Nilai' => 'Input dan publikasi nilai KP.',
-        'Mahasiswa Bimbingan' => 'Daftar mahasiswa yang dibimbing.',
-        'Logbook Mahasiswa' => 'Pemantauan logbook mahasiswa bimbingan.',
-        'Pemeriksaan Laporan' => 'Pemeriksaan laporan akhir mahasiswa.',
-        'Jadwal Sidang' => 'Agenda sidang yang terkait dengan peran Anda.',
+        'Pembekalan' => 'Pretest, posttest, dan hasil pembekalan sebelum PKPA berjalan.',
+        'PKPA Saya' => 'Jadwal resmi PKPA yang sudah diterbitkan ke portal.',
+        'Penempatan PKPA' => 'Ringkasan penempatan resmi per wahana dan tempat praktik.',
+        'Logbook' => 'Catatan aktivitas harian PKPA per wahana.',
+        'Akademik Rotasi' => 'Kompetensi, tugas, dan keluaran akademik tiap rotasi.',
+        'Laporan Akhir' => 'Dokumen laporan atau keluaran akhir yang sedang diperiksa.',
+        'Portofolio PKPA' => 'Penyusunan portofolio PKPA per wahana secara bertahap.',
+        'Ujian' => 'Pengajuan, jadwal, dan pelaksanaan ujian PKPA.',
+        'Nilai PKPA' => 'Rekap nilai PKPA dari pembimbing, lapangan, dan ujian.',
+        'Hasil Akhir PKPA' => 'Status kelulusan dan penyelesaian akhir program.',
+        'Mahasiswa Bimbingan' => 'Daftar mahasiswa yang menjadi tanggung jawab pembimbing dalam.',
+        'Mahasiswa PKPA' => 'Daftar mahasiswa yang terhubung ke pembimbing lapangan.',
+        'Pemantauan PKPA' => 'Pantau jadwal, progres, dan aktivitas mahasiswa bimbingan.',
+        'Operasional PKPA' => 'Jadwal operasional rotasi yang berjalan di tempat praktik.',
+        'Logbook Mahasiswa' => 'Pemantauan logbook mahasiswa yang dibimbing.',
+        'Validasi Logbook' => 'Validasi aktivitas harian mahasiswa PKPA.',
+        'Akademik PKPA' => 'Kompetensi, tugas, dan capaian akademik yang perlu dipantau.',
+        'Capaian Kompetensi' => 'Pantau capaian kompetensi mahasiswa per rotasi.',
+        'Daftar Kompetensi' => 'Daftar kompetensi PKPA yang perlu dipenuhi mahasiswa.',
+        'Pemeriksaan Laporan' => 'Pemeriksaan dokumen akademik dan laporan mahasiswa.',
+        'Review Portofolio' => 'Pemeriksaan portofolio PKPA yang diajukan mahasiswa.',
+        'Jadwal Sidang' => 'Agenda ujian atau sidang PKPA yang terkait dengan peran Anda.',
         'Penilaian Pembimbing' => 'Input nilai pembimbing dalam.',
-        'Mahasiswa KP' => 'Daftar mahasiswa KP lapangan.',
-        'Validasi Logbook' => 'Validasi aktivitas harian mahasiswa.',
-        'Catatan Lapangan' => 'Catatan pembimbing lapangan.',
         'Penilaian Lapangan' => 'Input nilai pembimbing lapangan.',
-        'Detail Mahasiswa Sidang' => 'Data mahasiswa yang diuji.',
-        'Penilaian Sidang' => 'Input nilai penguji sidang.',
-        'Manajemen Pengguna' => 'Kelola akun dan peran pengguna KP.',
+        'Penilaian PKPA' => 'Rekap dan tindak lanjut penilaian PKPA.',
+        'Detail Mahasiswa Sidang' => 'Data mahasiswa yang mengikuti ujian PKPA.',
+        'Penilaian Sidang' => 'Input nilai penguji ujian PKPA.',
+        'Manajemen Pengguna' => 'Kelola akun dan peran pengguna PKPA.',
         'Impor Excel' => 'Impor data pengguna secara terstruktur.',
-        'Program PKPA' => 'Master program dan konfigurasi wahana.',
+        'Program PKPA' => 'Master program tahunan, periode, dan konfigurasi inti.',
+        'Wahana PKPA' => 'Kelola lima wahana utama dan sub wahana pemerintahan.',
+        'Tempat Praktik' => 'Master mitra, lokasi, dan identitas tempat praktik.',
         'Peserta PKPA' => 'Kepesertaan mahasiswa dari Core Farmasi.',
         'Kelompok PKPA' => 'Kelompok mahasiswa untuk persiapan penempatan.',
-        'Periode KP' => 'Pengaturan periode Kerja Praktek.',
-        'Tempat KP' => 'Master tempat dan mitra KP.',
-        'Tempat Tersedia' => 'Kapasitas tempat per Program PKPA.',
-        'Kesiapan Penempatan' => 'Daftar kesiapan sebelum penyusunan penempatan.',
+        'Tempat Tersedia' => 'Ketersediaan tempat, kapasitas, dan pembimbing lapangan per program.',
+        'Kapasitas Tempat' => 'Kuota operasional per tempat dan per periode rotasi.',
+        'Log Kapasitas' => 'Riwayat perubahan kapasitas tempat praktik.',
+        'Pembimbing Dalam' => 'Pool dosen pembimbing dalam yang berlaku untuk program aktif.',
+        'Pembimbing Lapangan' => 'Koneksi pembimbing lapangan dari Core pada tempat tersedia.',
+        'Kesiapan Penempatan' => 'Daftar kesiapan sebelum penyusunan penempatan PKPA.',
         'Penyusunan Penempatan' => 'Matriks dan rancangan draf penempatan PKPA.',
-        'Publikasi Penempatan' => 'Pemeriksaan final, publikasi jadwal resmi, dan revisi.',
-        'PKPA Saya' => 'Jadwal resmi PKPA yang sudah diterbitkan.',
+        'Publikasi Penempatan' => 'Penguncian rancangan dan penayangan jadwal resmi ke portal.',
         'Jadwal PKPA' => 'Jadwal bimbingan PKPA resmi.',
-        'Kuota Tempat KP' => 'Kuota pendaftaran tiap tempat KP.',
-        'Verifikasi Berkas' => 'Pemeriksaan berkas pendaftaran.',
-        'Rekap' => 'Rekap operasional dan ekspor data KP.',
+        'Persyaratan Dokumen' => 'Aturan berkas yang wajib dipenuhi peserta.',
+        'Verifikasi Pendaftaran' => 'Pemeriksaan administrasi pendaftaran peserta PKPA.',
+        'Rekap PKPA' => 'Rekap operasional dan ekspor data PKPA.',
+        'Hasil Pembekalan' => 'Monitoring hasil pembekalan seluruh peserta.',
+        'Panduan Kompetensi' => 'Master kompetensi, capaian, dan penugasan wahana.',
+        'Pemantauan Logbook' => 'Monitoring logbook lintas peserta dan wahana.',
+        'Pemantauan Laporan' => 'Monitoring dokumen laporan dan revisinya.',
+        'Komponen Penilaian' => 'Pengaturan komponen nilai untuk pembimbing dan ujian.',
+        'Pemantauan Nilai' => 'Monitoring progres input nilai PKPA.',
+        'Penyelesaian PKPA' => 'Tahap akhir kelulusan, remedial, dan penutupan program.',
+        'Dokumen PKPA' => 'Arsip dokumen resmi PKPA yang dapat diunduh.',
+        'Pelaporan Analitik' => 'Ringkasan kinerja program dan data analitik PKPA.',
+        'Pemeriksaan Integrasi' => 'Pemeriksaan integrasi data PKPA ke sistem lain.',
     ];
 
     $featureRoutes = [
-        'Pendaftaran KP' => 'student.kp-registrations.index',
         'Pendaftaran PKPA' => 'student.kp-registrations.index',
         'Berkas Persyaratan' => 'student.kp-documents.index',
-        'Berkas KP' => 'student.kp-documents.index',
         'Berkas PKPA' => 'student.kp-documents.index',
-        'Pemilihan Tempat KP' => 'student.place-selections.index',
         'Logbook' => 'student.logbooks.index',
+        'Akademik Rotasi' => 'student.pkpa-academics.index',
         'Laporan Akhir' => 'student.final-reports.show',
-        'Sidang' => 'student.exams.index',
-        'Nilai' => 'student.scores.show',
+        'Portofolio PKPA' => $activeRole === 'mahasiswa' ? 'student.pkpa-portfolios.index' : 'management.pkpa-portfolios.index',
+        'Ujian' => 'student.exams.index',
+        'Nilai PKPA' => 'student.pkpa-grades.index',
+        'Hasil Akhir PKPA' => 'student.pkpa-final-results.index',
         'Mahasiswa Bimbingan' => 'internal-supervisor.assignments.index',
+        'Pemantauan PKPA' => 'internal-supervisor.pkpa-operations.index',
         'Logbook Mahasiswa' => 'internal-supervisor.logbooks.index',
+        'Akademik PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-academics.index' : 'internal-supervisor.pkpa-academics.index',
         'Pemeriksaan Laporan' => 'internal-supervisor.final-reports.index',
         'Jadwal Sidang' => $activeRole === 'penguji' ? 'examiner.exams.index' : ($activeRole === 'pembimbing_dalam' ? 'internal-supervisor.exams.index' : 'management.exams.index'),
         'Penilaian Pembimbing' => 'internal-supervisor.assessments.index',
-        'Mahasiswa KP' => 'field-supervisor.assignments.index',
+        'Penilaian PKPA' => match ($activeRole) {
+            'pembimbing_lapangan' => 'field-supervisor.pkpa-assessments.index',
+            'pembimbing_dalam' => 'internal-supervisor.pkpa-assessments.index',
+            default => 'management.pkpa-assessments.index',
+        },
         'Validasi Logbook' => 'field-supervisor.logbooks.index',
         'Penilaian Lapangan' => 'field-supervisor.assessments.index',
         'Penilaian Sidang' => 'examiner.assessments.index',
         'Manajemen Pengguna' => 'admin.users.index',
         'Impor Excel' => 'admin.import-users.index',
         'Program PKPA' => 'management.pkpa-programs.index',
+        'Wahana PKPA' => 'management.pkpa-practice-domains.index',
+        'Tempat Praktik' => 'management.pkpa-practice-sites.index',
+        'Tempat Tersedia' => 'management.pkpa-program-sites.index',
+        'Kapasitas Tempat' => 'management.kp-place-quotas.index',
+        'Log Kapasitas' => 'management.kp-quota-logs.index',
+        'Pembimbing Dalam' => 'management.pkpa-internal-supervisors.index',
+        'Pembimbing Lapangan' => 'management.pkpa-program-sites.index',
         'Peserta PKPA' => 'management.pkpa-enrollments.index',
         'Kelompok PKPA' => 'management.pkpa-student-groups.index',
-        'Periode KP' => 'management.kp-periods.index',
-        'Tempat KP' => 'management.kp-places.index',
-        'Tempat Tersedia' => 'management.pkpa-program-sites.index',
         'Kesiapan Penempatan' => 'management.pkpa-placement-readiness.index',
         'Penyusunan Penempatan' => 'management.pkpa-placement-planner.index',
         'Publikasi Penempatan' => 'management.pkpa-publications.index',
         'PKPA Saya' => 'student.pkpa-schedule.index',
         'Jadwal PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-schedule.index' : 'internal-supervisor.pkpa-schedule.index',
-        'Kuota Tempat KP' => 'management.kp-place-quotas.index',
-        'Verifikasi Berkas' => 'management.kp-registrations.index',
-        'Rekap' => 'management.recaps.index',
+        'Pembekalan' => in_array($activeRole, ['admin', 'koordinator_kp'], true) ? 'management.orientation-tests.index' : 'student.orientation-tests.index',
+        'Hasil Pembekalan' => 'management.orientation-tests.index',
+        'Persyaratan Dokumen' => 'management.document-requirements.index',
+        'Verifikasi Pendaftaran' => 'management.kp-registrations.index',
+        'Operasional PKPA' => 'field-supervisor.pkpa-operations.index',
+        'Operasional Rotasi' => 'management.pkpa-operations.index',
+        'Panduan Kompetensi' => 'management.competencies.index',
+        'Pemantauan Logbook' => 'management.logbooks.index',
+        'Pemantauan Laporan' => 'management.final-reports.index',
+        'Komponen Penilaian' => 'management.assessment-components.index',
+        'Pemantauan Nilai' => 'management.scores.index',
+        'Penyelesaian PKPA' => 'management.pkpa-final-program.index',
+        'Dokumen PKPA' => $activeRole === 'mahasiswa' ? 'student.pkpa-documents.index' : 'management.pkpa-documents.index',
+        'Rekap PKPA' => 'management.recaps.index',
+        'Pelaporan Analitik' => 'management.pkpa-analytics.index',
+        'Pemeriksaan Integrasi' => 'management.integration.tu-payload-preview',
     ];
 
     $summarySections = collect([
@@ -111,14 +156,12 @@
         ['title' => 'Ringkasan Publikasi PKPA', 'description' => 'Publikasi aktif, snapshot resmi, konfirmasi baca, dan pengiriman notifikasi.', 'stats' => $pkpaPublicationStats ?? null, 'tone' => 'emerald'],
         ['title' => 'Ringkasan Jadwal PKPA Saya', 'description' => 'Jadwal resmi dan konfirmasi baca mahasiswa.', 'stats' => $studentPkpaScheduleStats ?? null, 'tone' => 'cyan'],
         ['title' => 'Ringkasan Jadwal Bimbingan PKPA', 'description' => 'Jadwal resmi yang terhubung ke akun pembimbing.', 'stats' => $supervisorPkpaScheduleStats ?? null, 'tone' => 'cyan'],
-        ['title' => 'Ringkasan Kerja Praktek', 'description' => 'Periode, tempat, dan kuota yang sedang tersedia.', 'stats' => $kpStats, 'tone' => 'sky'],
-        ['title' => 'Ringkasan Pendaftaran KP', 'description' => 'Status pendaftaran dan verifikasi berkas mahasiswa.', 'stats' => $registrationStats, 'tone' => 'indigo'],
-        ['title' => 'Ringkasan Pemilihan Tempat', 'description' => 'Pilihan tempat, daftar tunggu, dan sisa kuota.', 'stats' => $selectionStats, 'tone' => 'cyan'],
-        ['title' => 'Ringkasan Penempatan KP', 'description' => 'Status penempatan dan pembimbing Kerja Praktek.', 'stats' => $assignmentStats, 'tone' => 'teal'],
-        ['title' => 'Ringkasan Logbook KP', 'description' => 'Aktivitas harian dan validasi kegiatan KP.', 'stats' => $logbookStats, 'tone' => 'emerald'],
-        ['title' => 'Ringkasan Laporan Akhir', 'description' => 'Unggah, pemeriksaan, revisi, dan persetujuan laporan.', 'stats' => $finalReportStats, 'tone' => 'amber'],
-        ['title' => 'Ringkasan Sidang KP', 'description' => 'Pengajuan, jadwal, dan status pelaksanaan sidang.', 'stats' => $examStats, 'tone' => 'violet'],
-        ['title' => 'Ringkasan Nilai KP', 'description' => 'Kelengkapan input, finalisasi, dan publikasi nilai.', 'stats' => $scoreStats, 'tone' => 'rose'],
+        ['title' => 'Ringkasan Administrasi PKPA', 'description' => 'Status pendaftaran, verifikasi berkas, dan kesiapan peserta.', 'stats' => $registrationStats, 'tone' => 'indigo'],
+        ['title' => 'Ringkasan Penempatan PKPA', 'description' => 'Status penempatan aktif dan keterhubungan pembimbing PKPA.', 'stats' => $assignmentStats, 'tone' => 'teal'],
+        ['title' => 'Ringkasan Logbook PKPA', 'description' => 'Aktivitas harian mahasiswa dan status validasi logbook.', 'stats' => $logbookStats, 'tone' => 'emerald'],
+        ['title' => 'Ringkasan Laporan dan Portofolio', 'description' => 'Dokumen akademik, revisi, dan persetujuan keluaran PKPA.', 'stats' => $finalReportStats, 'tone' => 'amber'],
+        ['title' => 'Ringkasan Ujian PKPA', 'description' => 'Pengajuan, jadwal, dan status pelaksanaan ujian PKPA.', 'stats' => $examStats, 'tone' => 'violet'],
+        ['title' => 'Ringkasan Nilai PKPA', 'description' => 'Kelengkapan input, finalisasi, dan publikasi nilai PKPA.', 'stats' => $scoreStats, 'tone' => 'rose'],
     ])->filter(fn ($section) => filled($section['stats']))->values();
 
     $primaryStats = $summarySections
@@ -280,7 +323,7 @@
                                 </span>
                             </div>
                             <h2 class="mt-3 break-words text-[1.65rem] font-black leading-tight tracking-tight text-slate-950 sm:text-3xl">Selamat datang, {{ $firstName }}</h2>
-                            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Pantau status pendaftaran, berkas, bimbingan, sidang, dan nilai dari satu dashboard yang ringkas.</p>
+                            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Pantau administrasi, jadwal wahana, bimbingan, portofolio, ujian, dan nilai PKPA dari satu dashboard yang ringkas.</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 sm:flex lg:shrink-0">
@@ -369,17 +412,17 @@
         <div class="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-5">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-[11px] font-black uppercase tracking-widest text-cyan-700">Alur KP</p>
-                    <h2 class="mt-1 text-lg font-black text-slate-950">Tahapan utama</h2>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-cyan-700">Alur PKPA</p>
+                    <h2 class="mt-1 text-lg font-black text-slate-950">Tahapan program</h2>
                 </div>
-                <p class="text-xs text-slate-500">Dari pendaftaran sampai nilai akhir.</p>
+                <p class="text-xs text-slate-500">Dari administrasi awal sampai penyelesaian program.</p>
             </div>
             <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 @foreach([
-                    ['01', 'Pendaftaran', 'Berkas dan verifikasi awal'],
-                    ['02', 'Tempat', 'Pilihan tempat dan kuota'],
-                    ['03', 'Bimbingan', 'Logbook dan laporan akhir'],
-                    ['04', 'Sidang & Nilai', 'Jadwal, ujian, dan finalisasi'],
+                    ['01', 'Administrasi', 'Pendaftaran, berkas, dan pembekalan peserta'],
+                    ['02', 'Penjadwalan', 'Program, wahana, tempat, dan pembimbing disiapkan'],
+                    ['03', 'Pelaksanaan', 'Rotasi wahana, logbook, dan portofolio berjalan'],
+                    ['04', 'Evaluasi', 'Penilaian, ujian, dan hasil akhir program'],
                 ] as [$number, $label, $description])
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                         <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-700 text-xs font-black text-white">{{ $number }}</span>
@@ -416,7 +459,7 @@
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p class="text-[11px] font-black uppercase tracking-widest text-cyan-700">Status Mahasiswa</p>
-                    <h2 class="mt-1 text-lg font-black text-slate-950">Status Pendaftaran KP</h2>
+                    <h2 class="mt-1 text-lg font-black text-slate-950">Status Administrasi PKPA</h2>
                     <p class="mt-1 text-sm text-slate-500">{{ $studentRegistration->period->name ?? '-' }}</p>
                 </div>
                 <span class="rounded-md {{ $studentRegistration->statusBadgeClass() }} px-3 py-1 text-xs font-black">{{ $studentRegistration->statusLabel() }}</span>
@@ -424,7 +467,7 @@
             <div class="mt-5 grid gap-3 md:grid-cols-3">
                 <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100"><p class="text-xs font-bold text-slate-500">Kemajuan Berkas</p><p class="mt-2 text-2xl font-black text-slate-950">{{ $studentRegistration->progressPercentage() }}%</p></div>
                 <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100"><p class="text-xs font-bold text-slate-500">Verifikasi</p><p class="mt-2 font-black text-slate-950">{{ $studentRegistration->isVerified() ? 'Terverifikasi' : 'Belum selesai' }}</p></div>
-                <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100"><p class="text-xs font-bold text-slate-500">Pemilihan Tempat</p><p class="mt-2 font-black text-slate-950">{{ $studentRegistration->selectionStatusLabel() }}</p>@if($studentRegistration->activePlaceSelection)<p class="mt-1 text-xs text-slate-500">{{ $studentRegistration->activePlaceSelection->place->name }}</p>@endif</div>
+                <div class="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100"><p class="text-xs font-bold text-slate-500">Status Penempatan</p><p class="mt-2 font-black text-slate-950">{{ $studentRegistration->selectionStatusLabel() }}</p>@if($studentRegistration->activePlaceSelection)<p class="mt-1 text-xs text-slate-500">{{ $studentRegistration->activePlaceSelection->place->name }}</p>@endif</div>
             </div>
         </section>
     @endif
