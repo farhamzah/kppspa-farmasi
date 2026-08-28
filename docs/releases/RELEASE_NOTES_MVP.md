@@ -13,7 +13,7 @@ SI-KP Farmasi UBP sudah mencakup alur utama Kerja Praktek Farmasi: user manageme
 - Pendaftaran KP dan verifikasi berkas.
 - Pemilihan tempat KP first come first served berbasis kuota.
 - Penempatan KP dan penentuan pembimbing.
-- Logbook KP dan validasi pembimbing lapangan.
+- Logbook KP dan validasi preseptor.
 - Laporan akhir KP dan review pembimbing dalam.
 - Pengajuan dan penjadwalan sidang KP.
 - Penilaian KP dan nilai akhir.
@@ -25,7 +25,7 @@ SI-KP Farmasi UBP sudah mencakup alur utama Kerja Praktek Farmasi: user manageme
 - Admin
 - Koordinator KP
 - Pembimbing Dalam
-- Pembimbing Lapangan
+- Preseptor
 - Penguji
 
 ## Akun Demo
@@ -39,7 +39,7 @@ Password development: `password`.
 | Mahasiswa berjalan | `mahasiswa2@sikp.test` |
 | Pembimbing Dalam 1 | `dosen@sikp.test` |
 | Pembimbing Dalam 2 | `dosen2@sikp.test` |
-| Pembimbing Lapangan | `lapangan@sikp.test` |
+| Preseptor | `lapangan@sikp.test` |
 | Penguji | `penguji@sikp.test` |
 
 Akun dan password demo hanya untuk development/UAT internal, tidak boleh dipakai production.
@@ -67,3 +67,4 @@ php artisan serve
 - Export PDF resmi/berita acara belum ada.
 - Aturan bobot nilai masih fleksibel/default dan perlu disesuaikan kebijakan resmi.
 - Integrasi SSO kampus belum ada.
+

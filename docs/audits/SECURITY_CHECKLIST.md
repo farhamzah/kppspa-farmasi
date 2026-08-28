@@ -10,7 +10,7 @@
 ## Authorization
 - [x] Mahasiswa hanya mengakses data miliknya.
 - [x] Pembimbing Dalam hanya mengakses mahasiswa bimbingannya.
-- [x] Pembimbing Lapangan hanya mengakses mahasiswa tugasnya.
+- [x] Preseptor hanya mengakses mahasiswa tugasnya.
 - [x] Penguji hanya mengakses sidang/nilai yang ditugaskan.
 - [x] Admin/Koordinator mengakses area management sesuai kebutuhan.
 
@@ -44,3 +44,4 @@
 ## TODO / Known Issue
 - Route `storage/{path}` bawaan Laravel hanya untuk kebutuhan local/development. File upload modul KP tetap melalui route protected. Pada production, pastikan file private tidak disajikan langsung dari public web root.
 - Notifikasi email/WhatsApp belum production-ready.
+

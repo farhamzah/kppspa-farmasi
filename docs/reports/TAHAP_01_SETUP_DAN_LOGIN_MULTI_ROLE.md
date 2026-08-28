@@ -10,7 +10,7 @@ Tahap 1 telah membuat fondasi aplikasi Laravel SI-KP Farmasi UBP. Fondasi yang d
 - Multi-role dengan halaman "Pilih Akses".
 - Session `active_role`.
 - Redirect dashboard otomatis berdasarkan role aktif.
-- Dashboard awal untuk mahasiswa, admin, koordinator KP, pembimbing dalam, pembimbing lapangan, dan penguji.
+- Dashboard awal untuk mahasiswa, admin, koordinator KP, pembimbing dalam, preseptor, dan penguji.
 - Layout aplikasi setelah login dengan sidebar, topbar, content area, dan footer.
 - Halaman Profil Saya.
 - Middleware `CheckUserActive`, `EnsureRoleSelected`, dan `CheckRole`.
@@ -79,7 +79,7 @@ Role yang tersedia:
 - Admin
 - Koordinator KP
 - Pembimbing Dalam / Dosen
-- Pembimbing Luar / Lapangan
+- Preseptor
 - Penguji
 
 Dashboard setiap role dilindungi middleware. User tidak dapat membuka dashboard role lain hanya dengan mengganti URL.
@@ -126,7 +126,7 @@ Pastikan database MySQL/MariaDB `sikp_farmasi_ubp` tersedia atau izinkan Laravel
 - Pilih role Koordinator KP; pastikan masuk Dashboard Koordinator KP.
 - Dari topbar, klik Ganti Role; pilih role lain yang dimiliki.
 - Login sebagai `dosen@sikp.test`; pastikan dapat memilih Pembimbing Dalam atau Penguji.
-- Login sebagai `lapangan@sikp.test`; pastikan masuk Dashboard Pembimbing Lapangan.
+- Login sebagai `lapangan@sikp.test`; pastikan masuk Dashboard Preseptor.
 - Coba akses URL dashboard role lain; pastikan ditolak 403.
 - Buka Profil Saya dan pastikan data user serta role tampil.
 - Klik Logout dan pastikan kembali ke halaman login.
@@ -139,3 +139,4 @@ Migration dan seeder MySQL berhasil dijalankan pada database `sikp_farmasi_ubp`.
 
 ## 13. Rekomendasi Tahap Berikutnya
 Tahap berikutnya adalah: Tahap 2 - Manajemen User dan Import Excel.
+

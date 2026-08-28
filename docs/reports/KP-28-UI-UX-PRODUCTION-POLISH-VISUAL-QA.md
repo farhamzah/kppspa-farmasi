@@ -19,7 +19,7 @@ Diubah:
 
 ## Polish Yang Dikerjakan
 - Menghapus menu placeholder production dari role:
-  - `Catatan Lapangan` pada Pembimbing Lapangan.
+  - `Catatan Lapangan` pada Preseptor.
   - `Detail Mahasiswa` pada Penguji.
 - Menambahkan test agar dashboard semua role tidak menampilkan badge `Segera`.
 - Menambahkan command read-only `php artisan kp:ui-readiness-check`.
@@ -96,3 +96,4 @@ KP-29 sebaiknya menjalankan visual QA manual di browser normal:
 4. Form upload dokumen/laporan/logbook.
 5. Halaman review integrasi TU/SAFA.
 6. Capture screenshot evidence dan catat sign-off UAT.
+

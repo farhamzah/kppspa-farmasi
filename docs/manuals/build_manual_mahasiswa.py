@@ -135,7 +135,7 @@ def build() -> None:
             "Upload dokumen persyaratan di menu Berkas KP.",
             "Tunggu dokumen dan pendaftaran diverifikasi oleh Admin atau Koordinator KP.",
             "Saat jadwal pemilihan dibuka, pilih tempat KP di menu Pemilihan Tempat KP.",
-            "Pantau Penempatan KP untuk melihat tempat, pembimbing dalam, dan pembimbing lapangan.",
+            "Pantau Penempatan KP untuk melihat tempat, pembimbing dalam, dan preseptor.",
             "Isi Logbook KP selama pelaksanaan kerja praktek.",
             "Upload Laporan Akhir, ajukan Sidang bila sudah memenuhi syarat, lalu cek Nilai setelah dipublish.",
         ],
@@ -231,7 +231,7 @@ def build() -> None:
         doc,
         [
             "Setelah pemilihan diproses, mahasiswa dapat melihat tempat KP resmi pada menu Penempatan KP.",
-            "Halaman ini menampilkan tempat KP, pembimbing dalam, pembimbing lapangan, dan status penempatan.",
+            "Halaman ini menampilkan tempat KP, pembimbing dalam, preseptor, dan status penempatan.",
             "Jika pembimbing belum tampil, tunggu Admin atau Koordinator KP menetapkan pembimbing.",
         ],
     )
@@ -314,3 +314,4 @@ def build() -> None:
 
 if __name__ == "__main__":
     build()
+

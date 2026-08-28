@@ -25,6 +25,7 @@ Keputusan:
 Catatan viewport dan browser login lintas role telah ditutup secara teknis memakai Playwright E2E:
 - 16/16 browser tests passed.
 - Viewport: desktop 1366x768, desktop-wide 1920x1080, tablet 768x1024, mobile 390x844.
-- Role: Guest, Admin, Koordinator multi-role, Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan.
+- Role: Guest, Admin, Koordinator multi-role, Mahasiswa, Pembimbing Dalam, Preseptor.
 
 Status terbaru: Siap Human UAT dengan kondisi.
+

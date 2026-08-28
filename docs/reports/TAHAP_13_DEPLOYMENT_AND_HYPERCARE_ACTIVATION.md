@@ -122,7 +122,7 @@ Role yang wajib diuji sebelum controlled go-live:
 - Koordinator PKPA
 - Mahasiswa
 - Pembimbing Dalam
-- Pembimbing Lapangan
+- Preseptor
 - User multi-role bila ada
 
 ## Smoke Test
@@ -136,7 +136,7 @@ Status per role:
 - Koordinator: not tested on target
 - Mahasiswa: not tested on target
 - Pembimbing Dalam: not tested on target
-- Pembimbing Lapangan: not tested on target
+- Preseptor: not tested on target
 - File upload/download: not tested on target
 - Queue target: not tested on target
 
@@ -208,3 +208,4 @@ Tidak ada server testing port `3006` yang perlu dipakai untuk deployment target.
 ## Rekomendasi
 
 Minta izin eksplisit commit/push dan konfirmasi remote MY PKPA sebelum Git write. Minta izin eksplisit deployment dan lengkapi akses server target sebelum deployment. Setelah target tersedia, jalankan backup, deploy dari commit yang disetujui, smoke test target, audit pascadeploy, lalu aktifkan hypercare 14 hari hanya jika seluruh gate critical lulus.
+

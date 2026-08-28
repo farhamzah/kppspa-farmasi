@@ -3,7 +3,7 @@
 Tanggal eksekusi: 2026-07-17
 
 Scope:
-- Guest, Admin PKPA, Koordinator PKPA, Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, Penguji bila tersedia, multi-role, no-access, dan inactive account.
+- Guest, Admin PKPA, Koordinator PKPA, Mahasiswa, Pembimbing Dalam, Preseptor, Penguji bila tersedia, multi-role, no-access, dan inactive account.
 - Alur utama PKPA Tahap 00 sampai Tahap 10.
 - Regression, browser smoke, role access, data integrity, queue/document audit, backup-restore simulation, UX/accessibility smoke.
 
@@ -23,3 +23,4 @@ Kriteria blocker:
 - Protected route bocor ke role tidak berhak.
 - Health route membocorkan detail sensitif.
 - Dokumen private dapat diunduh tanpa ownership/role yang benar.
+

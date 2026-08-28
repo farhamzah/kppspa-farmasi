@@ -13,7 +13,7 @@ Audit dilakukan pada Tahap 12 menggunakan `php artisan route:list`.
 | Management KP | `/management/*` | `auth`, `active`, `role.selected`, `role:admin,koordinator_kp` | Periode, kuota, verifikasi, assignment, logbook, laporan, sidang, nilai, rekap, dan export dilindungi Admin/Koordinator. |
 | Mahasiswa | `/mahasiswa/*` | `auth`, `active`, `role.selected`, `role:mahasiswa` | Pendaftaran, berkas, pemilihan, penempatan, logbook, laporan, sidang, nilai hanya untuk Mahasiswa. |
 | Pembimbing Dalam | `/pembimbing-dalam/*` | `auth`, `active`, `role.selected`, `role:pembimbing_dalam` | Akses mahasiswa bimbingan, logbook, laporan, sidang, dan nilai sesuai pembimbing. |
-| Pembimbing Lapangan | `/pembimbing-lapangan/*` | `auth`, `active`, `role.selected`, `role:pembimbing_lapangan` | Akses mahasiswa tugas lapangan, validasi logbook, dan nilai lapangan. |
+| Preseptor | `/pembimbing-lapangan/*` | `auth`, `active`, `role.selected`, `role:pembimbing_lapangan` | Akses mahasiswa tugas lapangan, validasi logbook, dan nilai lapangan. |
 | Penguji | `/penguji/*` | `auth`, `active`, `role.selected`, `role:penguji` | Akses jadwal sidang dan penilaian penguji. |
 
 ## Catatan Route Berisiko
@@ -49,3 +49,4 @@ Hasil final:
 - Route framework seperti `/up` dan `storage/{path}` dicatat sebagai route bawaan. File upload aplikasi KP tetap diarahkan melalui storage non-public dan controller download protected.
 
 Tidak ada perubahan route yang diperlukan pada Tahap 13. Checklist keamanan route ditambahkan ke dokumentasi production readiness agar route baru pada fase berikutnya tetap wajib memakai middleware sesuai area.
+

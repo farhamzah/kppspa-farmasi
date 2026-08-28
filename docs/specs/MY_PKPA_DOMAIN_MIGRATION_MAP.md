@@ -100,7 +100,7 @@ Mapping konseptual:
 
 - `kp_place_quotas` -> `pkpa_site_availability_periods` untuk PKPA baru, dengan kapasitas berbasis periode availability.
 - mapping tempat ke program -> `pkpa_program_sites`.
-- pembimbing lapangan legacy -> `pkpa_site_field_supervisors` berbasis `core_user_id`.
+- preseptor legacy -> `pkpa_site_field_supervisors` berbasis `core_user_id`.
 - pembimbing dalam legacy -> `pkpa_internal_supervisor_eligibilities` berbasis `core_user_id`.
 - konflik pembimbing -> `pkpa_supervisor_unavailability_periods`.
 - audit/sync Core pembimbing -> `pkpa_supervisor_sync_logs`.
@@ -148,3 +148,4 @@ Modul akademik rotasi menggunakan tabel `pkpa_*` baru dan tidak memigrasikan tab
 ## Catatan Tahap 10
 
 Tidak ada migrasi tabel legacy `kp_*` pada Tahap 10. Dokumen dan analytics PKPA memakai tabel `pkpa_*` baru serta snapshot publication/final result. Mapping domain lama hanya menjadi referensi, bukan sumber dokumen resmi internal.
+

@@ -8,7 +8,7 @@ Memastikan MVP SI-KP Farmasi UBP dapat digunakan untuk demo internal dan validas
 - Koordinator KP
 - Mahasiswa
 - Pembimbing Dalam
-- Pembimbing Lapangan
+- Preseptor
 - Penguji
 
 ## Alur yang Diuji
@@ -40,3 +40,4 @@ MVP siap untuk UAT/demo internal. Hasil final UAT perlu dicatat menggunakan `doc
 - Upload/download file berjalan sesuai hak akses.
 - Alur KP utama dapat diselesaikan.
 - Tidak ada blocker pada dashboard, pendaftaran, verifikasi, pemilihan, assignment, logbook, laporan, sidang, nilai, dan rekap.
+

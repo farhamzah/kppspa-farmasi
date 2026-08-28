@@ -11,7 +11,7 @@ Menyediakan sistem informasi terpusat untuk mengelola proses Kerja Praktek Farma
 - Admin
 - Koordinator KP
 - Pembimbing Dalam / Dosen
-- Pembimbing Luar / Lapangan
+- Preseptor
 - Penguji
 
 Sistem mendukung multi-role sehingga satu user dapat memiliki lebih dari satu peran.
@@ -58,7 +58,7 @@ Sistem mendukung multi-role sehingga satu user dapat memiliki lebih dari satu pe
 - Akun pengguna dibuat oleh Admin melalui form manual atau import Excel, bukan registrasi mandiri.
 - Admin dapat memberi satu atau banyak role pada user.
 - Admin dapat mengelola status akun, reset password development, dan melihat kelengkapan profil.
-- Admin dapat import Excel untuk mahasiswa, dosen, pembimbing lapangan, atau mixed.
+- Admin dapat import Excel untuk mahasiswa, dosen, preseptor, atau mixed.
 - User melengkapi profil masing-masing setelah login.
 - Data profil dipisah ke tabel `students`, `lecturers`, dan `field_supervisors`.
 - Modul manajemen user dan profil menjadi fondasi untuk modul KP berikutnya seperti pendaftaran, tempat KP, logbook, sidang, dan penilaian.
@@ -96,22 +96,22 @@ Sistem mendukung multi-role sehingga satu user dapat memiliki lebih dari satu pe
 
 ## Fondasi Penempatan KP dan Pembimbing
 - Mahasiswa yang sudah memilih tempat KP dapat dibuatkan penempatan KP resmi.
-- Setiap penempatan memiliki satu tempat KP, satu Pembimbing Dalam/Dosen, dan satu Pembimbing Lapangan/Luar.
+- Setiap penempatan memiliki satu tempat KP, satu Pembimbing Dalam/Dosen, dan satu Preseptor.
 - Koordinator KP menentukan Pembimbing Dalam.
-- Admin dan Koordinator KP dapat menentukan Pembimbing Lapangan.
+- Admin dan Koordinator KP dapat menentukan Preseptor.
 - Pembimbing Dalam harus memiliki role `pembimbing_dalam`.
-- Pembimbing Lapangan harus memiliki role `pembimbing_lapangan`.
+- Preseptor harus memiliki role `pembimbing_lapangan`.
 - Mahasiswa dapat melihat penempatan miliknya sendiri.
 - Pembimbing Dalam hanya melihat mahasiswa bimbingannya.
-- Pembimbing Lapangan hanya melihat mahasiswa KP yang ditugaskan kepadanya.
+- Preseptor hanya melihat mahasiswa KP yang ditugaskan kepadanya.
 - Assignment menjadi dasar Tahap 7 Logbook KP.
 
 ## Fondasi Logbook KP
 - Mahasiswa dapat mengisi logbook kegiatan setelah memiliki assignment/penempatan KP berstatus aktif atau berjalan.
-- Logbook terhubung langsung ke `kp_assignments` sehingga akses mahasiswa, pembimbing dalam, dan pembimbing lapangan dapat dibatasi berdasarkan penempatan.
+- Logbook terhubung langsung ke `kp_assignments` sehingga akses mahasiswa, pembimbing dalam, dan preseptor dapat dibatasi berdasarkan penempatan.
 - Mahasiswa dapat menyimpan logbook sebagai draft, mengedit status draft/revisi, submit untuk validasi, serta upload bukti kegiatan opsional.
 - Bukti kegiatan disimpan di storage Laravel non-public dan hanya diunduh melalui route yang dilindungi autentikasi dan role.
-- Pembimbing Lapangan memvalidasi logbook mahasiswa yang ditugaskan kepadanya dengan status disetujui, revisi, atau ditolak.
+- Preseptor memvalidasi logbook mahasiswa yang ditugaskan kepadanya dengan status disetujui, revisi, atau ditolak.
 - Pembimbing Dalam memantau logbook mahasiswa bimbingan dan dapat memberi komentar/catatan pemantauan.
 - Admin dan Koordinator KP dapat memonitor seluruh logbook dan memberi komentar monitoring.
 - Semua perubahan status, upload/ganti bukti, submit, validasi, penolakan, revisi, dan komentar penting dicatat pada `kp_logbook_logs`.
@@ -136,14 +136,14 @@ Sistem mendukung multi-role sehingga satu user dapat memiliki lebih dari satu pe
 - Penguji harus berasal dari lecturer yang user-nya memiliki role `penguji`.
 - Penguji tidak boleh sama dengan Pembimbing Dalam.
 - Mahasiswa, Pembimbing Dalam, dan Penguji dapat melihat jadwal sidang sesuai hak akses masing-masing.
-- Pembimbing Lapangan belum memiliki akses modul sidang pada tahap ini.
+- Preseptor belum memiliki akses modul sidang pada tahap ini.
 - Semua aktivitas pengajuan, review, penjadwalan, cancel, dan complete dicatat pada `kp_exam_logs`.
 - Bugfix UI Tahap 9 memperbaiki active state sidebar mahasiswa dan halaman login agar lebih fit di viewport desktop/laptop.
 
 ## Fondasi Penilaian KP dan Nilai Akhir
 - Mahasiswa memiliki halaman khusus Berkas KP di `/mahasiswa/berkas-kp` untuk melihat, upload, re-upload, dan download dokumen persyaratan KP.
 - Komponen penilaian fleksibel disimpan per periode pada `kp_assessment_components`.
-- Penilaian dilakukan oleh Pembimbing Dalam, Pembimbing Lapangan, dan Penguji sesuai assignment/sidang yang ditugaskan.
+- Penilaian dilakukan oleh Pembimbing Dalam, Preseptor, dan Penguji sesuai assignment/sidang yang ditugaskan.
 - Nilai komponen divalidasi pada rentang 0-100 dan menghasilkan weighted score berdasarkan bobot.
 - Nilai akhir dihitung dari total weighted score pada komponen aktif yang sudah submitted/locked.
 - Admin dan Koordinator KP dapat finalisasi, publish, dan unlock nilai akhir.
@@ -154,13 +154,13 @@ Sistem mendukung multi-role sehingga satu user dapat memiliki lebih dari satu pe
 - Admin dan Koordinator KP memiliki pusat Rekap KP untuk mahasiswa, penempatan, logbook, sidang, dan nilai.
 - Data rekap penting dapat diexport ke Excel melalui route protected.
 - Dashboard final per role menampilkan ringkasan operasional sesuai hak akses.
-- Panduan penggunaan dibuat untuk Admin/Koordinator, Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, dan Penguji.
+- Panduan penggunaan dibuat untuk Admin/Koordinator, Mahasiswa, Pembimbing Dalam, Preseptor, dan Penguji.
 - Panduan deployment lokal/hosting tersedia sebagai dasar instalasi production.
 - Dengan modul Tahap 1-11, aplikasi dinyatakan siap demo sebagai MVP internal jika data demo dan UAT sudah disiapkan.
 
 ## Fondasi Stabilization, Seed Demo, dan UAT
 - Aplikasi memiliki seed demo end-to-end melalui `DemoEndToEndSeeder` untuk data dari pendaftaran KP sampai nilai akhir published.
-- Akun demo development tersedia untuk Admin, Koordinator KP, Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, dan Penguji dengan password development yang tidak boleh digunakan untuk production.
+- Akun demo development tersedia untuk Admin, Koordinator KP, Mahasiswa, Pembimbing Dalam, Preseptor, dan Penguji dengan password development yang tidak boleh digunakan untuk production.
 - UAT checklist tersedia per role sebagai panduan validasi demo internal.
 - Error handling dibuat user-friendly untuk 403, 404, 419, dan 500.
 - Alur login diperkuat untuk mengurangi risiko token stale/419 pada demo lokal, termasuk header no-cache pada halaman login dan contoh konfigurasi session lokal di `.env.example`.
@@ -183,3 +183,4 @@ Sistem mendukung multi-role sehingga satu user dapat memiliki lebih dari satu pe
 - Avatar/inisial tampil pada topbar, halaman Profil Saya, Edit Profil, dashboard, dan halaman Pilih Role.
 - Halaman Pilih Role dibuat lebih modern dengan header identitas user, alert informasi multi-role, card role berisi label pendek, deskripsi, icon, badge akses, dan CTA masuk.
 - Topbar menjaga nama user dan role aktif panjang dengan truncate agar tidak overlap dengan tombol logout.
+

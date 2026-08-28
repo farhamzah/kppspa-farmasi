@@ -85,7 +85,7 @@ Hasil audit:
 - route `/management/*` dilindungi `auth`, `active`, `role.selected`, dan `role:admin,koordinator_kp`,
 - route `/mahasiswa/*` dilindungi role mahasiswa,
 - route `/pembimbing-dalam/*` dilindungi role pembimbing dalam,
-- route `/pembimbing-lapangan/*` dilindungi role pembimbing lapangan,
+- route `/pembimbing-lapangan/*` dilindungi role preseptor,
 - route `/penguji/*` dilindungi role penguji,
 - route download file berada dalam group auth/role dan controller protected,
 - tidak ditemukan route debug/test custom yang terbuka.
@@ -152,3 +152,4 @@ Syarat sebelum production live:
 - Perbaikan hasil UAT berdasarkan `UAT_ISSUES_TEMPLATE.md`.
 - Production deployment ke server demo/hosting.
 - Fitur tambahan setelah MVP stabil: export PDF resmi, berita acara, sertifikat, tanda tangan digital, dan notifikasi email/WhatsApp.
+

@@ -28,9 +28,10 @@ Coverage:
 | Koordinator multi-role selector and management routes | Pass |
 | Mahasiswa dashboard, rotation, academic, grade, final result, document | Pass |
 | Pembimbing Dalam monitoring, academic, assessment | Pass |
-| Pembimbing Lapangan operational, academic, assessment | Pass |
+| Preseptor operational, academic, assessment | Pass |
 | Authorization negative checks | Pass |
 | Export/download access control smoke | Pass |
 | Horizontal overflow guard | Pass |
 | Console error guard | Pass |
 | Failed request guard | Pass |
+

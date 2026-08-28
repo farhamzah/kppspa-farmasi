@@ -16,7 +16,7 @@ Portal published schedule memakai snapshot resmi dari publication current.
 - Menu: `Jadwal PKPA`
 - Filter akses: supervisor snapshot bertipe `internal` dan `core_user_id` sama dengan user login.
 
-## Pembimbing Lapangan
+## Preseptor
 
 - Route: `field-supervisor.pkpa-schedule.*`
 - Menu: `Jadwal PKPA`
@@ -25,3 +25,4 @@ Portal published schedule memakai snapshot resmi dari publication current.
 ## Acknowledgement
 
 Record `pkpa_schedule_acknowledgements` menyimpan tipe audience, tipe event `viewed` atau `acknowledged`, waktu, hash IP, dan ringkasan user-agent. Duplicate acknowledgement dicegah oleh unique key.
+

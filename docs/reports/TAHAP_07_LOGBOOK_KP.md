@@ -1,13 +1,13 @@
 # TAHAP 07 - Logbook KP
 
 ## 1. Ringkasan Pengerjaan
-Tahap 7 menambahkan modul Logbook KP untuk mahasiswa yang sudah memiliki penempatan aktif/berjalan. Modul ini mencakup draft, submit, upload bukti opsional, validasi Pembimbing Lapangan, komentar Pembimbing Dalam/Admin/Koordinator, monitoring, dan audit log aktivitas.
+Tahap 7 menambahkan modul Logbook KP untuk mahasiswa yang sudah memiliki penempatan aktif/berjalan. Modul ini mencakup draft, submit, upload bukti opsional, validasi Preseptor, komentar Pembimbing Dalam/Admin/Koordinator, monitoring, dan audit log aktivitas.
 
 ## 2. Fitur yang Dibuat
 - Logbook mahasiswa berdasarkan assignment aktif.
 - Simpan draft, edit draft/revisi, submit validasi.
 - Upload dan download bukti kegiatan opsional.
-- Validasi logbook oleh Pembimbing Lapangan: setujui, revisi, tolak.
+- Validasi logbook oleh Preseptor: setujui, revisi, tolak.
 - Pemantauan dan komentar oleh Pembimbing Dalam.
 - Monitoring logbook dan log aktivitas oleh Admin/Koordinator.
 - Dashboard dan sidebar diperbarui untuk menu logbook.
@@ -29,8 +29,8 @@ Tahap 7 menambahkan modul Logbook KP untuk mahasiswa yang sudah memiliki penempa
 ## 5. Alur Logbook Mahasiswa
 Mahasiswa membuka menu Logbook KP. Jika belum memiliki penempatan aktif, sistem menampilkan empty state. Jika penempatan aktif tersedia, mahasiswa dapat membuat logbook, menyimpan draft, mengedit draft/revisi, dan submit untuk validasi.
 
-## 6. Alur Validasi Pembimbing Lapangan
-Pembimbing Lapangan hanya melihat logbook mahasiswa yang ditugaskan kepadanya. Logbook berstatus `menunggu_validasi` dapat disetujui, diminta revisi dengan catatan, atau ditolak dengan catatan.
+## 6. Alur Validasi Preseptor
+Preseptor hanya melihat logbook mahasiswa yang ditugaskan kepadanya. Logbook berstatus `menunggu_validasi` dapat disetujui, diminta revisi dengan catatan, atau ditolak dengan catatan.
 
 ## 7. Alur Pemantauan Pembimbing Dalam
 Pembimbing Dalam hanya melihat logbook mahasiswa bimbingannya. Pada Tahap 7 pembimbing dalam belum menjadi validator utama, tetapi dapat memberi komentar/catatan pemantauan.
@@ -50,7 +50,7 @@ Bukti kegiatan bersifat opsional dengan format PDF/JPG/JPEG/PNG maksimal 5MB. Fi
 
 ## 11. Role dan Hak Akses
 - Mahasiswa: mengelola logbook miliknya sendiri.
-- Pembimbing Lapangan: validasi logbook mahasiswa tugasnya.
+- Preseptor: validasi logbook mahasiswa tugasnya.
 - Pembimbing Dalam: memantau dan memberi komentar pada logbook mahasiswa bimbingannya.
 - Admin/Koordinator KP: monitoring seluruh logbook dan log aktivitas.
 - Penguji: belum memiliki akses logbook pada tahap ini.
@@ -91,3 +91,4 @@ Tidak ada kendala dependency. Satu file UI dari tahap sebelumnya sudah berubah s
 
 ## 17. Rekomendasi Tahap Berikutnya
 Tahap 8 - Laporan Akhir KP.
+

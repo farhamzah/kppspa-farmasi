@@ -29,7 +29,7 @@ Menentukan informasi KP yang boleh ditampilkan di SAFA sebagai portal publik/pen
 | logbook dan bukti kegiatan | data proses dan file private |
 | status pendaftaran individual | data personal mahasiswa |
 | assignment mahasiswa/pembimbing personal | data operasional internal |
-| data pembimbing lapangan sensitif | kontak/relasi eksternal perlu dibatasi |
+| data preseptor sensitif | kontak/relasi eksternal perlu dibatasi |
 | file internal, berita acara internal, catatan verifikasi | dokumen administrasi private |
 | token, signed URL, password, credential | secret/auth data |
 
@@ -57,4 +57,5 @@ Menentukan informasi KP yang boleh ditampilkan di SAFA sebagai portal publik/pen
 - Link SAFA menuju KP memakai URL normal tanpa credential.
 - SAFA card KP tidak memberi hak akses otomatis.
 - Tidak ada data individual mahasiswa di SAFA.
+
 

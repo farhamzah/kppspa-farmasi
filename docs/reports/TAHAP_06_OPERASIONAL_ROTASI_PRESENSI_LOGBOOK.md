@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Tahap ini menambahkan runtime operasional PKPA dari publikasi resmi, aturan operasional per wahana, presensi, koreksi presensi, logbook, lampiran privat, review Pembimbing Lapangan, monitoring Pembimbing Dalam, snapshot progress, sinkronisasi publikasi, route, menu, dan UI per role.
+Tahap ini menambahkan runtime operasional PKPA dari publikasi resmi, aturan operasional per wahana, presensi, koreksi presensi, logbook, lampiran privat, review Preseptor, monitoring Pembimbing Dalam, snapshot progress, sinkronisasi publikasi, route, menu, dan UI per role.
 
 ## File Penting
 
@@ -19,3 +19,4 @@ Tahap ini menambahkan runtime operasional PKPA dari publikasi resmi, aturan oper
 ## Batasan
 
 Belum mencakup nilai, rubrik, sertifikat, GPS/QR/biometrik, WhatsApp, pembayaran, war, atau migrasi legacy `kp_*`.
+

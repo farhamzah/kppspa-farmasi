@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Tahap 03 menambahkan fondasi sebelum penyusunan penempatan: tempat tersedia per program, availability period, kapasitas, Pembimbing Lapangan dari Core, Pembimbing Dalam dari Core, unavailability pembimbing, sync log, dashboard, dan checklist readiness.
+Tahap 03 menambahkan fondasi sebelum penyusunan penempatan: tempat tersedia per program, availability period, kapasitas, Preseptor dari Core, Pembimbing Dalam dari Core, unavailability pembimbing, sync log, dashboard, dan checklist readiness.
 
 ## File Penting
 
@@ -35,3 +35,4 @@ Tahap 03 menambahkan fondasi sebelum penyusunan penempatan: tempat tersedia per 
 ## Catatan QA
 
 `php artisan migrate:fresh --seed --force` tidak dijalankan karena `.env` lokal mengarah ke database SQLite `docs/manuals/manual.sqlite`, bukan database disposable/testing yang dikonfirmasi aman untuk wipe. Sebagai gantinya dijalankan `php artisan migrate --seed --force` agar tabel Tahap 03 masuk tanpa menghapus data.
+

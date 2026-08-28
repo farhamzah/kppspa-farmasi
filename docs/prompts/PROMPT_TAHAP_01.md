@@ -7,7 +7,7 @@ Target utama:
 - Mengatur `APP_NAME` menjadi `SI-KP Farmasi UBP`.
 - Menggunakan database default `sikp_farmasi_ubp`.
 - Membuat autentikasi login.
-- Membuat multi-role user dengan role mahasiswa, admin, koordinator KP, pembimbing dalam, pembimbing lapangan, dan penguji.
+- Membuat multi-role user dengan role mahasiswa, admin, koordinator KP, pembimbing dalam, preseptor, dan penguji.
 - Membuat alur login single-role langsung ke dashboard dan multi-role ke halaman pilih akses.
 - Menyimpan role aktif pada session `active_role`.
 - Membuat middleware status user, pemilihan role, dan pengecekan role.
@@ -23,3 +23,4 @@ Batasan tahap ini:
 - Belum membuat upload berkas.
 - Belum membuat pemilihan tempat KP, kuota, daftar tunggu, logbook, laporan akhir, sidang, dan penilaian.
 - Modul tersebut hanya ditampilkan sebagai card placeholder "Segera tersedia".
+

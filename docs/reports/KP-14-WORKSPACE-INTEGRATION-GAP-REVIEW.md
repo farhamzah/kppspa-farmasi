@@ -20,10 +20,10 @@ KP sudah punya fondasi integrasi Core yang cukup matang:
 - model Core read-only;
 - HTTP client Core default-off;
 - preflight, health check, smoke test, auth bridge check, mapping sync lokal, dan display adapter check;
-- mapping lokal `core_user_id`, `core_student_id`, `core_lecturer_id`, dan `core_user_id` untuk pembimbing lapangan.
+- mapping lokal `core_user_id`, `core_student_id`, `core_lecturer_id`, dan `core_user_id` untuk preseptor.
 
 Gap utama Core:
-- KP masih menyimpan profil lokal lengkap untuk user, mahasiswa, dosen, dan pembimbing lapangan.
+- KP masih menyimpan profil lokal lengkap untuk user, mahasiswa, dosen, dan preseptor.
 - Belum ada role translation contract formal antara role Core kebab-case dan role KP snake_case.
 - Belum ada policy final field mana yang authoritative dari Core dan mana snapshot transaksi KP.
 - Pembimbing lapangan masih berada di boundary khusus karena Core belum terlihat memiliki model external supervisor khusus.
@@ -123,3 +123,4 @@ Validasi akhir:
 - `php artisan test`: berhasil, 130 passed, 618 assertions.
 - `npm run build`: berhasil.
 - `git status --short`: ada file KP-14 baru/diubah dan `docs/reports/HANDOFF_REPORT_2026_06_01.md` masih untracked dari pekerjaan handoff sebelumnya; tidak ada file sensitif.
+

@@ -17,11 +17,11 @@ Kolom:
 - Industri
 - Pemerintahan
 
-Setiap sel menampilkan tempat, tanggal, pembimbing dalam, pembimbing lapangan, status, dan konflik.
+Setiap sel menampilkan tempat, tanggal, pembimbing dalam, preseptor, status, dan konflik.
 
 ## Drawer Cepat
 
-Klik sel membuka drawer berisi mahasiswa, wahana, subjenis Pemerintahan, tempat, tanggal mulai, tanggal selesai, durasi, pembimbing dalam dari Core, pembimbing lapangan dari Core, kelompok, dan catatan.
+Klik sel membuka drawer berisi mahasiswa, wahana, subjenis Pemerintahan, tempat, tanggal mulai, tanggal selesai, durasi, pembimbing dalam dari Core, preseptor dari Core, kelompok, dan catatan.
 
 ## Penempatan Massal
 
@@ -41,3 +41,4 @@ Alur: pilih mahasiswa, pilih wahana, pilih tempat, pilih tanggal, pilih pembimbi
 - Riwayat
 
 Dropdown pembimbing wajib memakai data Core dan tidak membuat akun baru.
+

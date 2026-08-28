@@ -24,10 +24,11 @@ Section awal:
 - Refleksi Mingguan
 - Studi Kasus
 - Penilaian Diri
-- Penilaian Pembimbing Lapangan
+- Penilaian Preseptor
 - Penilaian Pembimbing Dalam
 - Rubrik
 - Dokumentasi Kegiatan
 - Lampiran
 
-Koreksi label diterapkan: template Rumah Sakit tidak memakai label Apotek yang salah, memakai istilah `Logbook`, `Penilaian Diri`, `Preseptor`, `Pembimbing Dalam`, dan `Pembimbing Lapangan` secara seragam pada area alur kerja.
+Koreksi label diterapkan: template Rumah Sakit tidak memakai label Apotek yang salah, memakai istilah `Logbook`, `Penilaian Diri`, `Preseptor`, `Pembimbing Dalam`, dan `Preseptor` secara seragam pada area alur kerja.
+

@@ -9,7 +9,7 @@ Operasional rotasi PKPA dimulai setelah jadwal resmi dipublikasikan. Modul ini m
 - `pkpa_rotation_operation_rules`: aturan per program-wahana.
 - `pkpa_rotation_runs`: runtime operasional per requirement published.
 - `pkpa_rotation_status_histories`: histori perubahan status.
-- `pkpa_rotation_supervisor_histories`: histori Pembimbing Lapangan/Dalam aktif.
+- `pkpa_rotation_supervisor_histories`: histori Preseptor/Dalam aktif.
 - `pkpa_rotation_publication_sync_logs`: jejak sinkronisasi perubahan publikasi.
 
 ## Aturan
@@ -20,3 +20,4 @@ Operasional rotasi PKPA dimulai setelah jadwal resmi dipublikasikan. Modul ini m
 - Perubahan publikasi pada rotasi berjalan yang mengubah tempat/tanggal ditandai `review_required`.
 - Tabel legacy `kp_*` tidak ditulis.
 - Tahap akademik berikutnya memakai `pkpa_rotation_runs` sebagai parent untuk kompetensi, tugas khusus, laporan rotasi, bimbingan, dan readiness. Operational complete tetap hanya status operasional, bukan penilaian.
+

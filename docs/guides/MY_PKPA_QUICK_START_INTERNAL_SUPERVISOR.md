@@ -23,7 +23,7 @@ Masuk memakai akun Core Farmasi, lalu pilih role Pembimbing Dalam. Role dan akse
 ## Batasan Akses
 
 - Pembimbing Dalam hanya melihat mahasiswa yang terkait assignment atau eligibility.
-- Pembimbing Dalam tidak menggantikan validasi presensi Pembimbing Lapangan kecuali workflow resmi berubah.
+- Pembimbing Dalam tidak menggantikan validasi presensi Preseptor kecuali workflow resmi berubah.
 - Data nilai dan kelulusan mengikuti release akademik.
 
 ## Error Umum
@@ -31,3 +31,4 @@ Masuk memakai akun Core Farmasi, lalu pilih role Pembimbing Dalam. Role dan akse
 - Mahasiswa tidak muncul: assignment pembimbing belum dipublikasikan atau eligibility belum sinkron.
 - File tidak bisa dibuka: akses tidak terkait atau file belum tersedia.
 - Menu tidak lengkap: role Core belum sesuai.
+

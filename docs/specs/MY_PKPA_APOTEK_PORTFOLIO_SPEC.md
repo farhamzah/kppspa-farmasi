@@ -23,10 +23,11 @@ Section awal:
 - Studi Kasus
 - Refleksi Mingguan
 - Penilaian Diri
-- Penilaian Pembimbing Lapangan
+- Penilaian Preseptor
 - Penilaian Pembimbing Dalam
 - Rubrik
 - Dokumentasi Kegiatan
 - Lampiran
 
 Bagian otomatis mereferensikan modul yang sudah ada. Bagian manual terstruktur berada pada studi kasus, refleksi, Penilaian Diri, dokumentasi, dan pakta integritas.
+

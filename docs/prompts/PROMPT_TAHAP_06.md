@@ -4,10 +4,10 @@ Tahap 6 membangun modul Penempatan KP resmi dan penentuan pembimbing pada aplika
 
 Tujuan utama:
 - Membuat assignment/penempatan KP dari pilihan tempat aktif.
-- Menentukan satu Pembimbing Dalam/Dosen dan satu Pembimbing Lapangan/Luar.
+- Menentukan satu Pembimbing Dalam/Dosen dan satu Preseptor.
 - Mahasiswa melihat detail penempatannya sendiri.
 - Pembimbing Dalam melihat mahasiswa bimbingannya.
-- Pembimbing Lapangan melihat mahasiswa KP yang ditugaskan.
+- Preseptor melihat mahasiswa KP yang ditugaskan.
 - Admin/Koordinator memonitor penempatan dan log perubahan.
 
 Batasan:
@@ -23,4 +23,5 @@ Role akses:
 - Mahasiswa: lihat penempatan sendiri.
 - Admin/Koordinator KP: kelola assignment, pembimbing, cancel, log.
 - Pembimbing Dalam: lihat mahasiswa bimbingannya.
-- Pembimbing Lapangan: lihat mahasiswa KP yang ditugaskan.
+- Preseptor: lihat mahasiswa KP yang ditugaskan.
+

@@ -2,7 +2,7 @@
 
 ## Instruksi Utama
 
-Bangun fondasi sebelum placement untuk Program PKPA: program sites, availability period dan kapasitas, validasi kerja sama, hari operasional, Pembimbing Lapangan dari Core, eligibility Pembimbing Dalam dari Core per program/wahana, batas beban, unavailability, sync log, readiness checklist, dashboard, UI, audit, test, dan dokumentasi.
+Bangun fondasi sebelum placement untuk Program PKPA: program sites, availability period dan kapasitas, validasi kerja sama, hari operasional, Preseptor dari Core, eligibility Pembimbing Dalam dari Core per program/wahana, batas beban, unavailability, sync log, readiness checklist, dashboard, UI, audit, test, dan dokumentasi.
 
 ## Larangan
 
@@ -20,3 +20,4 @@ Gunakan `core_user_id`. Jangan membuat local account/password/role. Test wajib f
 - `npm run build`
 - `php artisan route:list --path=management/pkpa`
 - Browser QA desktop, tablet, mobile
+

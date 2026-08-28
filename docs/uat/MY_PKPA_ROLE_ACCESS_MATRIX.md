@@ -14,7 +14,7 @@
 Semua download file akademik dan dokumen wajib melalui route authorized.
 # Catatan AI-Assisted Pre-UAT
 
-Role access lintas Admin PKPA, Koordinator, Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, dan Penguji telah tercakup regression test. Pada human UAT, matrix ini tetap harus dikonfirmasi terhadap keputusan fakultas dan assignment role dari Core Farmasi.
+Role access lintas Admin PKPA, Koordinator, Mahasiswa, Pembimbing Dalam, Preseptor, dan Penguji telah tercakup regression test. Pada human UAT, matrix ini tetap harus dikonfirmasi terhadap keputusan fakultas dan assignment role dari Core Farmasi.
 
 ## Browser E2E Tahap 11B
 
@@ -24,5 +24,6 @@ Playwright menutup smoke utama:
 - Koordinator multi-role: role selector dan route koordinator.
 - Mahasiswa: dashboard, jadwal/rotasi, akademik, nilai, hasil akhir, dokumen.
 - Pembimbing Dalam: monitoring, akademik, penilaian; tidak dapat memakai route PL.
-- Pembimbing Lapangan: operasional, akademik, penilaian.
+- Preseptor: operasional, akademik, penilaian.
 - Authorization: mahasiswa tidak dapat mengakses dokumen management/export.
+

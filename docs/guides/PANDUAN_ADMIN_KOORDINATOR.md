@@ -1,33 +1,33 @@
-# Panduan Admin dan Koordinator KP
+# Panduan Admin dan Koordinator PKPA
 
 ## Login
-Masuk melalui `/login`, pilih role Admin atau Koordinator KP jika akun memiliki lebih dari satu akses.
+Masuk melalui `/login`, pilih role Admin atau Koordinator PKPA jika akun memiliki lebih dari satu akses.
 
-## Manajemen User dan Import
-- Admin membuka menu Manajemen User untuk membuat, mengedit, reset password, dan mengatur status user.
-- Admin membuka Import User untuk upload template Excel mahasiswa, dosen, pembimbing lapangan, atau mixed.
+## Sinkronisasi Identitas dan Kepesertaan
+- Admin membuka menu Manajemen User untuk memantau projection user dari Core Farmasi dan status akses aplikasi.
+- Admin atau Koordinator PKPA membuka impor/sinkronisasi peserta untuk menarik mahasiswa, dosen, dan preseptor dari Core sesuai kebutuhan program.
 - Riwayat import menampilkan batch import dan error per baris.
 
-## Periode, Tempat, dan Kuota
-- Atur Periode KP sebelum membuka pendaftaran.
-- Kelola Tempat KP dan status aktif/nonaktif.
-- Buat kuota tempat per periode, buka/tutup kuota, dan pantau log kuota.
+## Program, Wahana, Tempat, dan Kapasitas
+- Atur Program PKPA sebelum menyusun penempatan.
+- Kelola Wahana PKPA, sub wahana Pemerintahan, Tempat Praktik, dan status aktif/nonaktif.
+- Atur kapasitas tempat dan availability per periode rotasi, lalu pantau log kapasitas bila fitur itu dipakai.
 
 ## Persyaratan dan Verifikasi
-- Buat persyaratan dokumen per periode pada menu Persyaratan Dokumen.
-- Verifikasi Pendaftaran digunakan untuk approve/revisi/tolak dokumen dan finalisasi pendaftaran.
+- Buat persyaratan dokumen pada menu Persyaratan Dokumen.
+- Verifikasi Pendaftaran digunakan untuk approve, revisi, atau tolak dokumen dan finalisasi kesiapan peserta.
 
-## Pemilihan, Penempatan, dan Pembimbing
-- Monitoring Pemilihan menampilkan mahasiswa yang sudah memilih tempat.
-- Daftar Tunggu menampilkan mahasiswa yang belum mendapat tempat.
-- Penempatan KP digunakan untuk membuat assignment dan menentukan pembimbing dalam/lapangan.
+## Penempatan dan Pembimbing
+- Penyusunan Penempatan digunakan untuk membuat assignment rotasi bertahap per wahana.
+- Publikasi Penempatan digunakan untuk mengunci dan menampilkan assignment yang sudah valid ke portal role terkait.
+- Pembimbing Dalam dan Preseptor ditentukan dari data Core, lalu dilekatkan ke assignment mahasiswa.
 
-## Logbook, Laporan, Sidang, dan Nilai
-- Monitoring Logbook menampilkan status kegiatan mahasiswa.
-- Monitoring Laporan menampilkan laporan akhir dan status review.
-- Pengajuan/Jadwal Sidang digunakan untuk memonitor dan menjadwalkan sidang.
-- Komponen Penilaian mengatur bobot nilai.
-- Monitoring Nilai digunakan untuk hitung, finalisasi, publish, atau unlock nilai.
+## Logbook, Portofolio, Akademik, dan Nilai
+- Monitoring Logbook menampilkan status kegiatan mahasiswa per rotasi.
+- Menu akademik dan portofolio dipakai untuk memantau kelengkapan tiap wahana.
+- Penilaian dipakai untuk finalisasi nilai per wahana dan hasil akhir sesuai tahap yang aktif.
+- Monitoring Nilai digunakan untuk hitung, finalisasi, publish, atau unlock nilai sesuai workflow program.
 
 ## Rekap dan Export
-Menu Rekap KP menyediakan rekap mahasiswa, penempatan, logbook, sidang, dan nilai. Gunakan tombol Export untuk mengunduh Excel.
+Menu rekap menyediakan ringkasan mahasiswa, penempatan, logbook, akademik, dan nilai. Gunakan tombol Export untuk mengunduh Excel.
+

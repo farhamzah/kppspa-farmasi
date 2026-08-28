@@ -13,7 +13,7 @@ Beberapa tabel, terutama halaman `/pembimbing-dalam/mahasiswa-bimbingan`, terasa
 
 ## 3. Perbaikan Halaman Mahasiswa Bimbingan
 - Tabel diubah menggunakan `si-table-wrap` dan `si-data-table`.
-- Ditambahkan `colgroup` agar kolom Mahasiswa, Periode, Tempat, Pembimbing Lapangan, Status, dan Aksi lebih proporsional.
+- Ditambahkan `colgroup` agar kolom Mahasiswa, Periode, Tempat, Preseptor, Status, dan Aksi lebih proporsional.
 - Row dibuat lebih compact, nama mahasiswa dan NIM disusun rapi.
 - Badge status dibuat compact.
 - Tombol `Detail` memakai class `si-table-action` agar tidak terasa terlalu kecil atau terlalu jauh secara visual.
@@ -53,3 +53,4 @@ Prioritas perubahan diberikan pada global CSS dan halaman contoh yang bermasalah
 
 ## 7. Catatan
 Tidak ada perubahan business logic, route, middleware, migration, atau service. Perubahan hanya pada style tabel, table card, density, dan readability.
+

@@ -2,7 +2,7 @@
 
 ## Ringkasan
 
-Tahap 07 menambahkan modul akademik rotasi di atas runtime PKPA: master kompetensi, checklist snapshot, evidence, review Pembimbing Lapangan, monitoring Pembimbing Dalam, template tugas khusus, submission berversi, laporan rotasi berversi, bimbingan, readiness akademik, record notifikasi akademik, export, route, menu, UI, dan test.
+Tahap 07 menambahkan modul akademik rotasi di atas runtime PKPA: master kompetensi, checklist snapshot, evidence, review Preseptor, monitoring Pembimbing Dalam, template tugas khusus, submission berversi, laporan rotasi berversi, bimbingan, readiness akademik, record notifikasi akademik, export, route, menu, UI, dan test.
 
 ## Database Baru
 
@@ -24,3 +24,4 @@ Event akademik utama seperti submit kompetensi, review kompetensi, penugasan, su
 ## Batasan
 
 Belum ada skor numerik, rubrik, bobot, nilai akhir, huruf mutu, sertifikat, tanda tangan digital, plagiarism checker, WhatsApp, pembayaran, war, atau migrasi legacy `kp_*`.
+

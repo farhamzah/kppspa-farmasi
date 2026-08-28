@@ -53,7 +53,7 @@ File laporan menerima PDF, DOC, dan DOCX maksimal 10MB. File disimpan pada disk 
 - Mahasiswa: mengelola dan download laporan miliknya.
 - Pembimbing Dalam: review dan download laporan mahasiswa bimbingannya.
 - Admin/Koordinator: monitoring dan download semua laporan.
-- Pembimbing Lapangan/Penguji: belum memiliki akses pada Tahap 8.
+- Preseptor/Penguji: belum memiliki akses pada Tahap 8.
 
 ## 12. UI/UX yang Diterapkan
 UI menggunakan bahasa Indonesia, card status, badge, tabel responsive, filter/search, empty state, form upload jelas, riwayat versi, dan alert approval/revisi.
@@ -94,3 +94,4 @@ Tidak ada kendala dependency. Catatan utama adalah worktree awal perlu dibersihk
 
 ## 18. Rekomendasi Tahap Berikutnya
 Tahap 9 - Pengajuan dan Penjadwalan Sidang KP.
+

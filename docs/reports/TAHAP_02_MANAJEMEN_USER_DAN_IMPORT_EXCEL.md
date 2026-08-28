@@ -42,14 +42,14 @@ Tabel `students` menyimpan profil mahasiswa: `user_id`, `nim`, program studi, se
 
 Tabel `lecturers` menyimpan profil dosen: `user_id`, `nidn_nip`, `employee_number`, program studi, departemen, bidang keahlian, kontak, alamat, status, dan waktu profil lengkap.
 
-Tabel `field_supervisors` menyimpan profil pembimbing lapangan: `user_id`, nama institusi, jabatan, kontak, alamat, status, dan waktu profil lengkap.
+Tabel `field_supervisors` menyimpan profil preseptor: `user_id`, nama institusi, jabatan, kontak, alamat, status, dan waktu profil lengkap.
 
 Tabel `user_import_batches` menyimpan riwayat import: pengimpor, tipe import, nama file, jumlah baris, sukses, gagal, status, dan catatan.
 
 Tabel `user_import_errors` menyimpan error per baris: batch import, nomor baris, identifier, pesan error, dan data baris dalam JSON.
 
 ## 5. Alur Manajemen User
-Admin membuka `/admin/users`, mencari dan memfilter user, lalu dapat membuat user baru melalui form. Form mendukung nama, email, password awal, status, role multi-select, dan tipe profil. Setelah user dibuat, sistem membuat record profil sesuai tipe: mahasiswa, dosen, pembimbing lapangan, atau tanpa profil khusus.
+Admin membuka `/admin/users`, mencari dan memfilter user, lalu dapat membuat user baru melalui form. Form mendukung nama, email, password awal, status, role multi-select, dan tipe profil. Setelah user dibuat, sistem membuat record profil sesuai tipe: mahasiswa, dosen, preseptor, atau tanpa profil khusus.
 
 Admin juga dapat melihat detail user, mengedit data, reset password ke password development, mengaktifkan/nonaktifkan user lain, dan menghapus user. Admin tidak boleh menonaktifkan atau menghapus dirinya sendiri.
 
@@ -102,7 +102,7 @@ Mixed:
 - `expertise`
 
 ## 8. Validasi Import
-Validasi import mencakup email wajib, format email, email unik di database dan file, nama wajib, role valid, NIM unik untuk mahasiswa, NIDN/NIP unik untuk dosen jika diisi, role dosen hanya `koordinator_kp`, `pembimbing_dalam`, dan `penguji`, serta pembimbing lapangan wajib memiliki `institution_name`.
+Validasi import mencakup email wajib, format email, email unik di database dan file, nama wajib, role valid, NIM unik untuk mahasiswa, NIDN/NIP unik untuk dosen jika diisi, role dosen hanya `koordinator_kp`, `pembimbing_dalam`, dan `penguji`, serta preseptor wajib memiliki `institution_name`.
 
 Baris kosong diabaikan. Error ditampilkan per baris pada preview dan disimpan ke `user_import_errors` saat proses import.
 
@@ -162,3 +162,4 @@ Fitur `must_change_password` saat ini masih berupa flag dan alert. Alur ubah pas
 
 ## 15. Rekomendasi Tahap Berikutnya
 Tahap 3 - Periode KP, Tempat KP, dan Kuota.
+

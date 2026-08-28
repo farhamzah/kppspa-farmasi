@@ -20,7 +20,7 @@ Pada halaman dengan tabel cukup lebar, terutama `/pembimbing-dalam/mahasiswa-bim
 - Nama user dan role aktif memakai `truncate` satu baris.
 - Label role panjang dipendekkan di topbar:
   - `pembimbing_dalam` menjadi `Pembimbing Dalam`
-  - `pembimbing_lapangan` menjadi `Pembimbing Lapangan`
+  - `pembimbing_lapangan` menjadi `Preseptor`
   - `koordinator_kp` menjadi `Koordinator KP`
 - Tombol ganti peran dan logout dibuat `flex-none` agar tidak tertimpa nama/role.
 - Topbar kanan memakai `min-w-0`, `flex-wrap` di layar kecil, dan `flex-nowrap` di desktop.
@@ -36,3 +36,4 @@ Pada halaman dengan tabel cukup lebar, terutama `/pembimbing-dalam/mahasiswa-bim
 
 ## 7. Catatan
 Perbaikan hanya menyentuh layout global, overflow table, dan tampilan topbar. Tidak ada perubahan logic bisnis, route, middleware, migration, atau service.
+

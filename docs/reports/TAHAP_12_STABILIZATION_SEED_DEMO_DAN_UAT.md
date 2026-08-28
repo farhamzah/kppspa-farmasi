@@ -51,14 +51,14 @@ Catatan: password ini hanya untuk development/demo, bukan production.
 | Mahasiswa berjalan | `mahasiswa2@sikp.test` |
 | Pembimbing Dalam 1 | `dosen@sikp.test` |
 | Pembimbing Dalam 2 | `dosen2@sikp.test` |
-| Pembimbing Lapangan | `lapangan@sikp.test` |
+| Preseptor | `lapangan@sikp.test` |
 | Penguji | `penguji@sikp.test` |
 
 ## 6. UAT Checklist
 Checklist UAT dibuat di:
 - `docs/uat/UAT_CHECKLIST.md`
 
-Checklist mencakup role Admin, Koordinator KP, Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, dan Penguji dengan kolom ID UAT, role, skenario, langkah, hasil yang diharapkan, status, dan catatan.
+Checklist mencakup role Admin, Koordinator KP, Mahasiswa, Pembimbing Dalam, Preseptor, dan Penguji dengan kolom ID UAT, role, skenario, langkah, hasil yang diharapkan, status, dan catatan.
 
 ## 7. Route Permission Audit
 Audit route dibuat di:
@@ -125,3 +125,4 @@ Tahap 13 - Production Readiness atau Fitur Tambahan:
 - Backup/restore database.
 - Hardening storage dan web server production.
 - UAT bersama stakeholder dan perbaikan minor berbasis feedback.
+

@@ -16,7 +16,7 @@ Studi kasus menolak identitas langsung pasien:
 
 Validasi berada pada `PkpaPortfolioBuilderService::patientPrivacyWarnings()`. Mahasiswa wajib mencentang konfirmasi anonimisasi. PL dapat meminta revisi jika masih ada temuan privasi.
 
-Validasi ini adalah penjaga awal berbasis pola teks, bukan deteksi sempurna. Pemeriksaan manual oleh Pembimbing Lapangan dan Pembimbing Dalam tetap wajib sebelum disetujui/diterbitkan.
+Validasi ini adalah penjaga awal berbasis pola teks, bukan deteksi sempurna. Pemeriksaan manual oleh Preseptor dan Pembimbing Dalam tetap wajib sebelum disetujui/diterbitkan.
 
 ## Dokumentasi
 
@@ -30,3 +30,4 @@ File foto/PDF disimpan di disk `local` pada path `pkpa-portfolios/{portfolio}/do
 ## Pakta Integritas
 
 Pakta integritas menyimpan teks berversi, waktu persetujuan, Core user ID penyetuju, dan versi template/publication. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.
+

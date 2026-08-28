@@ -57,7 +57,7 @@ Policy penting:
 | expertise | Core jika tersedia, KP fallback | optional display | bukan blocker KP |
 | role pembimbing/penguji | Core app access + KP role lokal | authorization | role translator canonical |
 
-## Pembimbing Lapangan
+## Preseptor
 | Field | Authority | KP sementara | Catatan |
 |---|---|---|---|
 | user identity | Core user/app access bila tersedia | mapping `field_supervisors.core_user_id` | Core belum terlihat punya external supervisor profile khusus |
@@ -94,3 +94,4 @@ Snapshot harus diberi konteks waktu dan tidak menjadi master identity baru.
 - Link profile portal Core boleh ditampilkan sebagai browser link biasa tanpa token.
 - Field operasional KP tetap dapat diedit sesuai role dan workflow.
 - Import user KP harus dibatasi untuk fallback/mapping exception, bukan master import utama.
+

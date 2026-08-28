@@ -124,7 +124,7 @@ Tidak boleh publik:
 - logbook;
 - status individual mahasiswa;
 - assignment personal;
-- data pembimbing lapangan sensitif;
+- data preseptor sensitif;
 - file internal;
 - token/secret.
 
@@ -170,3 +170,4 @@ Validasi akhir:
 - `php artisan route:list`: berhasil, 205 routes.
 - `php artisan test`: berhasil, 134 passed, 639 assertions.
 - `npm run build`: berhasil.
+

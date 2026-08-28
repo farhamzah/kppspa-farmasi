@@ -73,7 +73,7 @@ Tabel yang aktif pada tahap ini:
 
 - `pkpa_program_sites`: tempat praktik yang tersedia pada program tertentu.
 - `pkpa_site_availability_periods`: periode ketersediaan tempat, kapasitas, reserved slot, hari operasional, dan jam praktik.
-- `pkpa_site_field_supervisors`: Pembimbing Lapangan dari Core Farmasi yang terhubung ke tempat praktik.
+- `pkpa_site_field_supervisors`: Preseptor dari Core Farmasi yang terhubung ke tempat praktik.
 - `pkpa_internal_supervisor_eligibilities`: eligibility Pembimbing Dalam dari Core Farmasi per program-wahana.
 - `pkpa_supervisor_unavailability_periods`: periode pembimbing tidak tersedia.
 - `pkpa_supervisor_sync_logs`: log sinkronisasi snapshot pembimbing dari Core.
@@ -114,3 +114,4 @@ Master kompetensi, tugas khusus, dan template laporan rotasi dibuat per program-
 ## Tahap 10 - Dokumen dan Readiness
 
 Master PKPA kini menjadi sumber snapshot untuk Dokumen Internal MY PKPA. Perubahan master setelah dokumen published tidak boleh mengubah file lama. Jenis dokumen sistem disiapkan oleh `PkpaMasterSeeder`, sementara isi template, aturan nomor, dan penandatangan wajib dikonfigurasi sebelum digunakan dalam proses resmi internal.
+

@@ -68,9 +68,10 @@ Keduanya dilindungi middleware `auth`, `active`, `role.selected`, dan `role:admi
 - logbook;
 - laporan akhir;
 - status individual mahasiswa;
-- kontak privat pembimbing lapangan;
+- kontak privat preseptor;
 - path file internal;
 - token, signed URL, password, atau secret.
 
 ## Read-only Guarantee
 Command hanya membaca `kp_periods` dan `kp_document_requirements` untuk output public-safe. Tidak ada request HTTP ke SAFA dan tidak ada insert/update/delete. Count sebelum dan sesudah ditampilkan dalam `read_only_counts`.
+

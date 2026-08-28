@@ -69,7 +69,7 @@ Status sidang: `dijadwalkan`, `selesai`, `dibatalkan`, `ditunda`.
 - Admin/Koordinator KP: monitoring, review pengajuan, jadwal, cancel, complete, log.
 - Pembimbing Dalam: melihat jadwal mahasiswa bimbingannya.
 - Penguji: melihat jadwal yang ditugaskan.
-- Pembimbing Lapangan: tidak memiliki akses modul sidang.
+- Preseptor: tidak memiliki akses modul sidang.
 
 ## 14. UI/UX yang Diterapkan
 UI menggunakan card status, badge, table responsive, filter, empty state, progress step mahasiswa, form jadwal yang jelas, dan pesan validasi berbahasa Indonesia.
@@ -107,3 +107,4 @@ Tidak ada kendala blocker. Pengajuan ulang setelah request ditolak/dibatalkan be
 
 ## 19. Rekomendasi Tahap Berikutnya
 Tahap 10 - Penilaian KP dan Nilai Akhir.
+

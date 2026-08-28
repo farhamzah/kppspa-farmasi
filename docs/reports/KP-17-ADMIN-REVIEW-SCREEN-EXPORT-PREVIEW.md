@@ -64,7 +64,7 @@ Halaman SAFA menampilkan:
 - kontak/admin umum placeholder;
 - status umum pendaftaran dan pemilihan tempat.
 
-Halaman tidak menampilkan nilai mahasiswa, dokumen mahasiswa, logbook, laporan akhir, status individual mahasiswa, kontak privat pembimbing lapangan, path internal, token, signed URL, password, atau secret.
+Halaman tidak menampilkan nilai mahasiswa, dokumen mahasiswa, logbook, laporan akhir, status individual mahasiswa, kontak privat preseptor, path internal, token, signed URL, password, atau secret.
 
 ## Endpoint JSON
 Endpoint JSON mengembalikan response langsung dari service preview dengan sanitasi tambahan pada key sensitif. Endpoint ini tidak membuat file export permanen dan tidak melakukan request keluar.
@@ -110,3 +110,4 @@ Validasi akhir 2026-06-01:
 2. Tambahkan mode compare untuk melihat perubahan payload antar periode atau assignment.
 3. Siapkan external reference table lokal KP untuk menyimpan reference ID TU/SAFA bila bridge runtime disetujui.
 4. Pertahankan JSON preview sebagai kontrak regression test sebelum membuat write bridge terbatas.
+

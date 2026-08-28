@@ -4,7 +4,7 @@ Peserta:
 - Koordinator Program Studi
 - Admin PKPA
 - Dosen Pembimbing Dalam
-- Pembimbing Lapangan
+- Preseptor
 - Mahasiswa
 - Pengelola IT
 - Pimpinan/viewer bila diperlukan
@@ -35,3 +35,4 @@ Sign-off:
 
 Catatan:
 - Dokumen ini template. Sign-off belum diberikan sampai pengguna mengisi dan menyetujui hasil UAT.
+

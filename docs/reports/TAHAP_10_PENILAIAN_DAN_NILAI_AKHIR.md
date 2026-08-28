@@ -14,7 +14,7 @@ Tahap 10 menambahkan halaman Berkas KP mahasiswa, modul komponen penilaian fleks
 ## 3. Fitur Penilaian yang Dibuat
 - CRUD komponen penilaian per periode.
 - Input nilai Pembimbing Dalam.
-- Input nilai Pembimbing Lapangan.
+- Input nilai Preseptor.
 - Input nilai Penguji.
 - Submit nilai per role penilai.
 - Hitung nilai akhir dari weighted score.
@@ -50,8 +50,8 @@ Admin/Koordinator membuat komponen nilai per periode dan assessor type. UI menam
 ## 7. Alur Input Nilai Pembimbing Dalam
 Pembimbing Dalam membuka menu Penilaian Pembimbing, memilih mahasiswa bimbingan, mengisi komponen `pembimbing_dalam`, menyimpan draft, lalu submit.
 
-## 8. Alur Input Nilai Pembimbing Lapangan
-Pembimbing Lapangan membuka menu Penilaian Lapangan, mengisi nilai mahasiswa yang ditugaskan, menyimpan draft, lalu submit.
+## 8. Alur Input Nilai Preseptor
+Preseptor membuka menu Penilaian Lapangan, mengisi nilai mahasiswa yang ditugaskan, menyimpan draft, lalu submit.
 
 ## 9. Alur Input Nilai Penguji
 Penguji membuka menu Penilaian Sidang, memilih sidang yang ditugaskan, mengisi komponen `penguji`, menyimpan draft, lalu submit.
@@ -68,7 +68,7 @@ Mahasiswa melihat empty state jika nilai belum tersedia, pesan proses jika belum
 ## 13. Role dan Hak Akses
 - Mahasiswa hanya melihat nilainya sendiri.
 - Pembimbing Dalam hanya menilai mahasiswa bimbingannya.
-- Pembimbing Lapangan hanya menilai mahasiswa tugasnya.
+- Preseptor hanya menilai mahasiswa tugasnya.
 - Penguji hanya menilai sidang yang ditugaskan.
 - Admin/Koordinator melakukan monitoring, finalisasi, publish, dan unlock.
 
@@ -108,3 +108,4 @@ Tidak ada kendala blocker. Grade masih aturan sementara: A >= 85, B >= 75, C >= 
 
 ## 19. Rekomendasi Tahap Berikutnya
 Tahap 11 - Rekap, Export, dan Polishing Akhir.
+

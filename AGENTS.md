@@ -108,8 +108,8 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 ## 14c. Aturan Kapasitas, Pembimbing, dan Readiness PKPA
 - Program-site PKPA memakai `pkpa_program_sites` sebagai penghubung program, tempat praktik, wahana, dan option tempat.
 - Availability tempat memakai `pkpa_site_availability_periods` dengan rentang tanggal, kapasitas minimal/maksimal, reserved slot, hari operasional, jam praktik, dan status.
-- Pembimbing Lapangan dan Pembimbing Dalam wajib divalidasi dari Core Farmasi memakai `core_user_id`; sistem hanya menyimpan snapshot nama/email/status/role, bukan akun/password/role lokal.
-- Pembimbing Lapangan terikat ke `pkpa_practice_sites`; Pembimbing Dalam memiliki eligibility per program dan wahana.
+- Preseptor dan Pembimbing Dalam wajib divalidasi dari Core Farmasi memakai `core_user_id`; sistem hanya menyimpan snapshot nama/email/status/role, bukan akun/password/role lokal.
+- Preseptor terikat ke `pkpa_practice_sites`; Pembimbing Dalam memiliki eligibility per program dan wahana.
 - Ketidaktersediaan pembimbing dicatat di `pkpa_supervisor_unavailability_periods` dan tidak boleh menghapus histori pembimbing.
 - Sinkronisasi pembimbing dicatat di `pkpa_supervisor_sync_logs`; Core unavailable tidak boleh mengosongkan snapshot lama.
 - Readiness penempatan hanya berupa checklist fondasi: program-site aktif, availability, kapasitas, pembimbing, pilihan Pemerintahan, dan status peserta/kelompok.
@@ -130,10 +130,10 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Operasional rotasi hanya boleh dibentuk dari `pkpa_published_assignments` pada publikasi resmi current, bukan dari draft planner.
 - Runtime rotasi memakai `pkpa_rotation_runs`; operational complete tidak boleh otomatis mengubah requirement akademik menjadi completed atau membuat nilai.
 - Aturan operasional per program-wahana disimpan di `pkpa_rotation_operation_rules` dan wajib aktif sebelum rotasi diaktifkan.
-- Presensi PKPA memakai `pkpa_attendance_records`; mahasiswa hanya mengisi miliknya sendiri, Pembimbing Lapangan aktif yang memvalidasi, dan Pembimbing Dalam tidak boleh approve presensi.
+- Presensi PKPA memakai `pkpa_attendance_records`; mahasiswa hanya mengisi miliknya sendiri, Preseptor aktif yang memvalidasi, dan Pembimbing Dalam tidak boleh approve presensi.
 - Koreksi presensi wajib melalui `pkpa_attendance_correction_requests`, tidak melalui edit bebas setelah approved/rejected.
 - Logbook rotasi memakai `pkpa_logbook_entries`, lampiran privat di `pkpa_logbook_attachments`, dan review di `pkpa_logbook_reviews`.
-- Lampiran logbook wajib disimpan non-public dan hanya diunduh melalui route protected oleh mahasiswa terkait, Pembimbing Lapangan/Dalam aktif, Admin, atau Koordinator.
+- Lampiran logbook wajib disimpan non-public dan hanya diunduh melalui route protected oleh mahasiswa terkait, Preseptor/Dalam aktif, Admin, atau Koordinator.
 - Progress operasional memakai snapshot `pkpa_rotation_progress_snapshots`; perhitungan ini untuk monitoring, bukan nilai akhir.
 - Sinkronisasi perubahan publikasi ke runtime memakai `pkpa_rotation_publication_sync_logs`; perubahan pada rotasi aktif yang berdampak tempat/tanggal wajib masuk status perlu review.
 - Tahap operasional tidak membuat rubrik penilaian, nilai akhir, sertifikat, QR/GPS/biometrik, WhatsApp, pembayaran, war, atau migrasi tabel legacy `kp_*`.
@@ -142,7 +142,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Akademik rotasi berjalan di atas `pkpa_rotation_runs` dan tidak boleh membaca draft planner sebagai sumber utama.
 - Master kompetensi per program-wahana memakai `pkpa_competency_sets`, kategori, dan item; production seeder tidak boleh membuat daftar kompetensi palsu.
 - Checklist kompetensi runtime menyimpan snapshot item agar perubahan master tidak mengubah rotasi berjalan.
-- Pembimbing Lapangan memverifikasi capaian kompetensi; Pembimbing Dalam hanya monitoring/komentar kecuali workflow lain di tahap berikutnya.
+- Preseptor memverifikasi capaian kompetensi; Pembimbing Dalam hanya monitoring/komentar kecuali workflow lain di tahap berikutnya.
 - Tugas khusus memakai template per program-wahana dan submission berversi; versi lama tidak boleh ditimpa.
 - Laporan rotasi memakai template, report utama per runtime, dan versioning file private.
 - Approval laporan dan readiness akademik berarti siap dinilai, bukan nilai, bukan lulus, dan tidak menyelesaikan requirement.
@@ -173,8 +173,8 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Satu mahasiswa hanya boleh memiliki satu assignment non-batal per periode.
 - Penentuan dan perubahan pembimbing wajib melalui `KpAssignmentService`.
 - Pembimbing Dalam harus berasal dari `lecturers` yang user-nya memiliki role `pembimbing_dalam`.
-- Pembimbing Lapangan harus berasal dari `field_supervisors` yang user-nya memiliki role `pembimbing_lapangan`.
-- Jika pembimbing lapangan dipilih, mapping tempat-pembimbing di `kp_place_field_supervisors` harus dijaga.
+- Preseptor harus berasal dari `field_supervisors` yang user-nya memiliki role `pembimbing_lapangan`.
+- Jika preseptor dipilih, mapping tempat-pembimbing di `kp_place_field_supervisors` harus dijaga.
 - Mahasiswa hanya melihat penempatannya sendiri; pembimbing hanya melihat assignment yang ditugaskan kepadanya.
 - Semua perubahan assignment wajib dicatat di `kp_assignment_logs`.
 
@@ -183,7 +183,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Mahasiswa hanya boleh mengakses dan mengubah logbook miliknya sendiri.
 - Logbook status `disetujui` tidak boleh diedit oleh mahasiswa.
 - Validasi logbook wajib melalui `KpLogbookService`.
-- Pembimbing Lapangan hanya boleh validasi logbook assignment yang ditugaskan kepadanya.
+- Preseptor hanya boleh validasi logbook assignment yang ditugaskan kepadanya.
 - Pembimbing Dalam hanya boleh memantau dan memberi komentar pada logbook mahasiswa bimbingannya.
 - Admin dan Koordinator KP boleh memonitor semua logbook.
 - Bukti kegiatan wajib divalidasi server-side, disimpan di storage non-public, dan diunduh lewat route protected.
@@ -214,7 +214,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Komponen penilaian dikelola per periode oleh Admin/Koordinator.
 - Input nilai wajib melalui `KpAssessmentService`.
 - Pembimbing Dalam hanya boleh menilai assignment dengan `internal_supervisor_id` miliknya.
-- Pembimbing Lapangan hanya boleh menilai assignment dengan `field_supervisor_id` miliknya.
+- Preseptor hanya boleh menilai assignment dengan `field_supervisor_id` miliknya.
 - Penguji hanya boleh menilai exam dengan `examiner_id` miliknya.
 - Nilai harus divalidasi 0-100 dan weighted score dihitung dari bobot komponen.
 - Nilai final/published tidak boleh diubah penilai; unlock hanya Admin/Koordinator.
@@ -257,7 +257,7 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Mahasiswa tidak boleh melihat rancangan draft dan tidak boleh membuat assignment.
 - Assignment harus dibuat per requirement mahasiswa; bulk/group action tetap menghasilkan assignment individual.
 - Pemerintahan tetap satu requirement `choose_one`; pilihan Loka POM/Dinas Kesehatan berasal dari tempat yang dipilih.
-- Simpan assignment wajib memvalidasi program, requirement, tempat, availability, tanggal, kapasitas, konflik jadwal mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, masa efektif, beban, dan unavailability.
+- Simpan assignment wajib memvalidasi program, requirement, tempat, availability, tanggal, kapasitas, konflik jadwal mahasiswa, Pembimbing Dalam, Preseptor, masa efektif, beban, dan unavailability.
 - Plan `locked` atau `archived` tidak boleh diedit; buat versi baru untuk revisi.
 - Bulk action wajib melalui preview, batch item, validasi baris, dan undo aman berbasis snapshot/row version.
 - Export rancangan wajib diberi label "Rancangan Internal - Belum Dipublikasikan".
@@ -299,3 +299,4 @@ Setiap fitur harus dibuat modular dan mudah dikembangkan. Pisahkan tanggung jawa
 - Jangan commit, push, tag, merge, release, deploy, atau mengubah `apps/core-farmasi` tanpa instruksi eksplisit Project Manager.
 - `pkpa:hypercare-status --json` harus read-only, cepat, aman, tidak membocorkan secret, dan exit code mengikuti status health.
 - Clean installation hanya boleh memakai SQLite temporary; jangan menjalankan `migrate:fresh` pada MySQL development atau target.
+

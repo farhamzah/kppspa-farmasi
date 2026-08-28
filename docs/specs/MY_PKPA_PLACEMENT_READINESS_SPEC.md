@@ -13,7 +13,7 @@ Readiness penempatan memastikan fondasi sebelum Koordinator PKPA menyusun penemp
 - Availability period aktif (`available` atau `full`).
 - Kapasitas terencana.
 - Pembimbing Dalam eligible per program-wahana.
-- Pembimbing Lapangan aktif pada tempat praktik.
+- Preseptor aktif pada tempat praktik.
 - Option Pemerintahan bila wahana Pemerintahan dipakai.
 - Status sinkronisasi pembimbing dari Core.
 
@@ -32,7 +32,7 @@ Contoh isu kritis:
 - kapasitas terencana nol;
 - kapasitas kurang dari jumlah peserta;
 - belum ada Pembimbing Dalam eligible;
-- tempat belum memiliki Pembimbing Lapangan aktif;
+- tempat belum memiliki Preseptor aktif;
 - Pemerintahan tidak memiliki option Loka POM atau Dinas Kesehatan.
 
 ## Warning
@@ -53,8 +53,9 @@ Readiness menjadi prasyarat operasional sebelum Koordinator memakai Penyusunan P
 - tempat program aktif;
 - availability dan kapasitas;
 - Pembimbing Dalam eligible;
-- Pembimbing Lapangan aktif;
+- Preseptor aktif;
 - option Pemerintahan;
 - peserta dan kelompok.
 
 Jika readiness belum siap, planner tetap tidak mengubah data secara otomatis. Validasi assignment dan validasi seluruh rancangan mengulang pemeriksaan backend agar kapasitas/pembimbing tidak hanya bergantung pada checklist.
+

@@ -83,7 +83,7 @@ Preview SAFA tidak memuat:
 - logbook;
 - laporan akhir;
 - status individual mahasiswa;
-- kontak privat pembimbing lapangan;
+- kontak privat preseptor;
 - path file internal;
 - token, signed URL, password, atau secret.
 
@@ -136,3 +136,4 @@ Validasi akhir 2026-06-01:
 - `git status --short`: working tree berisi perubahan/untracked KP-14, KP-15, dan KP-16; tidak ada `.env`, `vendor`, `node_modules`, atau upload storage yang ikut masuk.
 
 Catatan: perubahan KP-14 dan KP-15 yang belum commit tetap dipertahankan dan tidak direvert.
+

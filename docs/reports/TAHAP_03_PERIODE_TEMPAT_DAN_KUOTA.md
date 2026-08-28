@@ -54,7 +54,7 @@ Admin atau Koordinator KP memilih periode dan tempat aktif, mengisi kuota, statu
 Log dibuat saat kuota dibuat, diperbarui, dibuka, ditutup, atau dihapus. Log mencatat user, periode, tempat, kuota lama, kuota baru, status lama, status baru, action, catatan, dan waktu.
 
 ## 9. Role dan Hak Akses
-Admin dan Koordinator KP dapat mengelola periode, tempat, kuota, dan melihat log. Mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, dan Penguji tidak dapat mengakses route modul Tahap 3.
+Admin dan Koordinator KP dapat mengelola periode, tempat, kuota, dan melihat log. Mahasiswa, Pembimbing Dalam, Preseptor, dan Penguji tidak dapat mengakses route modul Tahap 3.
 
 ## 10. UI/UX yang Diterapkan
 UI menggunakan bahasa Indonesia, card, badge status, table responsive, filter, search, pagination, empty state, alert sukses/error, form berlabel jelas, helper text, dan konfirmasi sebelum aksi penting.
@@ -101,3 +101,4 @@ View dashboard sudah pernah dipoles setelah Tahap 2, sehingga penambahan ringkas
 
 ## 15. Rekomendasi Tahap Berikutnya
 Tahap 4 - Pendaftaran KP dan Verifikasi Berkas.
+

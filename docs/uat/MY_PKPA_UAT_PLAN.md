@@ -5,7 +5,7 @@ Role:
 - Koordinator PKPA
 - Mahasiswa
 - Pembimbing Dalam
-- Pembimbing Lapangan
+- Preseptor
 - Penguji bila digunakan
 - Viewer/Auditor bila tersedia
 
@@ -34,3 +34,4 @@ Human UAT tetap harus memvalidasi istilah akademik, SOP role, tampilan mobile/ta
 ## Baseline Tahap 11B
 
 Browser E2E Playwright lulus 16/16 pada empat viewport. Human UAT dapat dimulai untuk alur inti dengan kondisi staging yang tercatat di `MY_PKPA_STAGING_UAT_CHECKLIST.md`.
+

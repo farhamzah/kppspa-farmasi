@@ -59,7 +59,7 @@ Cancel selection wajib menyertakan alasan. Selection lama berubah menjadi `dibat
 Log mencatat selection success, gagal karena belum terverifikasi, jadwal tertutup/belum buka, sudah memilih, kuota penuh, kuota ditutup, daftar tunggu, cancel, dan move.
 
 ## 12. Role dan Hak Akses
-Mahasiswa hanya dapat memilih untuk pendaftaran miliknya sendiri. Admin dan Koordinator KP dapat monitoring, cancel, move, daftar tunggu, dan log. Pembimbing Dalam, Pembimbing Lapangan, dan Penguji tidak diberi akses modul ini.
+Mahasiswa hanya dapat memilih untuk pendaftaran miliknya sendiri. Admin dan Koordinator KP dapat monitoring, cancel, move, daftar tunggu, dan log. Pembimbing Dalam, Preseptor, dan Penguji tidak diberi akses modul ini.
 
 ## 13. UI/UX yang Diterapkan
 UI memakai bahasa Indonesia, card, badge status, table responsive, filter, empty state, alert sukses/error, waktu server, status jadwal, ringkasan kuota, dan konfirmasi sebelum memilih/cancel/move.
@@ -105,3 +105,4 @@ Daftar tunggu untuk kuota penuh sempat dibuat di dalam transaction yang rollback
 
 ## 18. Rekomendasi Tahap Berikutnya
 Tahap 6 - Penentuan Pembimbing dan Penempatan KP.
+

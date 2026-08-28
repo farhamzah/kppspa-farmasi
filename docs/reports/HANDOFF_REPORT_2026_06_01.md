@@ -43,7 +43,7 @@ Akun demo end-to-end:
 - `mahasiswa2@sikp.test` sebagai Mahasiswa berjalan
 - `dosen@sikp.test` sebagai Pembimbing Dalam
 - `dosen2@sikp.test` sebagai Pembimbing Dalam
-- `lapangan@sikp.test` sebagai Pembimbing Lapangan
+- `lapangan@sikp.test` sebagai Preseptor
 - `penguji@sikp.test` sebagai Penguji
 
 Akun demo hanya untuk development/UAT, tidak boleh dipakai production.
@@ -80,12 +80,12 @@ Akun demo hanya untuk development/UAT, tidak boleh dipakai production.
 7. Penempatan dan pembimbing
    - Assignment dibuat dari selection aktif.
    - Pembimbing Dalam wajib role `pembimbing_dalam`.
-   - Pembimbing Lapangan wajib role `pembimbing_lapangan`.
+   - Preseptor wajib role `pembimbing_lapangan`.
    - Perubahan dicatat ke log assignment.
 
 8. Logbook KP
    - Mahasiswa membuat draft, edit, submit, upload bukti.
-   - Pembimbing Lapangan approve/revisi/tolak logbook.
+   - Preseptor approve/revisi/tolak logbook.
    - Pembimbing Dalam monitor dan memberi komentar.
    - Admin/Koordinator monitor semua logbook.
 
@@ -101,7 +101,7 @@ Akun demo hanya untuk development/UAT, tidak boleh dipakai production.
 
 11. Penilaian dan nilai akhir
     - Komponen penilaian per periode.
-    - Pembimbing Dalam, Pembimbing Lapangan, dan Penguji memberi nilai sesuai assignment/exam masing-masing.
+    - Pembimbing Dalam, Preseptor, dan Penguji memberi nilai sesuai assignment/exam masing-masing.
     - Admin/Koordinator calculate, finalize, publish, dan unlock nilai.
     - Mahasiswa melihat nilai setelah publish.
 
@@ -190,3 +190,4 @@ Tugas lanjutan saya: [ISI TUGAS SPESIFIK DI SINI].
 
 Sebelum mengubah kode, baca file terkait dan ikuti modul existing. Setelah selesai, jalankan test/build yang relevan dan laporkan file yang diubah, hasil verifikasi, serta catatan risiko.
 ```
+

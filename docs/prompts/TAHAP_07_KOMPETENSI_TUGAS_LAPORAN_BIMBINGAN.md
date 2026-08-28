@@ -1,3 +1,4 @@
 # Prompt Tahap 07 - Kompetensi, Tugas, Laporan, Bimbingan
 
-Bangun modul akademik per rotasi PKPA di atas `pkpa_rotation_runs`: master kompetensi berversi per program-wahana, checklist snapshot, evidence private, verifikasi Pembimbing Lapangan, monitoring Pembimbing Dalam, template dan submission tugas khusus berversi, template dan laporan rotasi berversi, bimbingan, academic readiness, dashboard per role, export, audit, file security, test, dan dokumentasi. Jangan membuat skor, rubrik nilai, nilai akhir, sertifikat, tanda tangan digital, plagiarism checker, WhatsApp, pembayaran, war, atau migrasi legacy `kp_*`.
+Bangun modul akademik per rotasi PKPA di atas `pkpa_rotation_runs`: master kompetensi berversi per program-wahana, checklist snapshot, evidence private, verifikasi Preseptor, monitoring Pembimbing Dalam, template dan submission tugas khusus berversi, template dan laporan rotasi berversi, bimbingan, academic readiness, dashboard per role, export, audit, file security, test, dan dokumentasi. Jangan membuat skor, rubrik nilai, nilai akhir, sertifikat, tanda tangan digital, plagiarism checker, WhatsApp, pembayaran, war, atau migrasi legacy `kp_*`.
+

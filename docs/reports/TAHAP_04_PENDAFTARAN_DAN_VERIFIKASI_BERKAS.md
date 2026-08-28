@@ -58,7 +58,7 @@ Status dokumen: `belum_upload`, `menunggu`, `disetujui`, `revisi`, `ditolak`.
 Pendaftaran dianggap eligible untuk Tahap 5 jika statusnya `terverifikasi` dan semua dokumen wajib berstatus `disetujui`.
 
 ## 9. Role dan Hak Akses
-Mahasiswa hanya dapat melihat, mengelola, upload, dan download dokumen pendaftaran miliknya sendiri. Admin dan Koordinator KP dapat mengelola persyaratan dokumen dan memverifikasi semua pendaftaran. Pembimbing Dalam, Pembimbing Lapangan, dan Penguji tidak diberi akses ke modul Tahap 4.
+Mahasiswa hanya dapat melihat, mengelola, upload, dan download dokumen pendaftaran miliknya sendiri. Admin dan Koordinator KP dapat mengelola persyaratan dokumen dan memverifikasi semua pendaftaran. Pembimbing Dalam, Preseptor, dan Penguji tidak diberi akses ke modul Tahap 4.
 
 ## 10. UI/UX yang Diterapkan
 UI menggunakan bahasa Indonesia, card, badge status, table responsive, search/filter, pagination, empty state, alert sukses/error, progress step mahasiswa, progress bar dokumen, helper text upload, dan konfirmasi sebelum aksi penting.
@@ -106,3 +106,4 @@ Tidak ada fallback upload khusus yang digunakan. File dokumen KP disimpan di sto
 
 ## 15. Rekomendasi Tahap Berikutnya
 Tahap 5 - Pemilihan Tempat KP / War Ticket.
+

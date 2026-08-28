@@ -19,7 +19,7 @@ Tahap ini belum membuat input nilai sidang, perhitungan nilai akhir, berita acar
 - Admin/Koordinator KP: monitoring, review pengajuan, jadwal, cancel, complete.
 - Pembimbing Dalam: melihat jadwal mahasiswa bimbingannya.
 - Penguji: melihat jadwal sidang yang ditugaskan.
-- Pembimbing Lapangan: belum punya akses sidang.
+- Preseptor: belum punya akses sidang.
 
 ## Acceptance Utama
 - Pengajuan hanya bisa dilakukan jika laporan akhir sudah disetujui.
@@ -27,3 +27,4 @@ Tahap ini belum membuat input nilai sidang, perhitungan nilai akhir, berita acar
 - Penguji wajib role `penguji` dan tidak boleh sama dengan Pembimbing Dalam.
 - Validasi jadwal dilakukan server-side.
 - Test dan build tetap berjalan.
+

@@ -1,7 +1,7 @@
 # Panduan Pembimbing Dalam
 
 ## Login
-Login dan pilih role Pembimbing Dalam / Dosen.
+Login dan pilih role Pembimbing Dalam.
 
 ## Mahasiswa Bimbingan
 Menu Mahasiswa Bimbingan menampilkan mahasiswa yang ditugaskan kepada dosen tersebut.

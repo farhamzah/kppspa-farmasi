@@ -75,7 +75,7 @@ Core login nyata target belum diuji pada Tahap 12A karena tidak ada URL/credenti
 - Koordinator PKPA
 - Mahasiswa
 - Pembimbing Dalam
-- Pembimbing Lapangan
+- Preseptor
 - User multi-role bila ada
 
 ## Smoke Test
@@ -177,3 +177,4 @@ Clean installation menggunakan SQLite temporary `C:\tmp\my_pkpa_tahap12a_clean.s
 ## Rekomendasi
 
 Lanjutkan deployment hanya setelah Project Manager memberi izin eksplisit, target server/credential tersedia, backup target valid, HTTPS aktif, Core login nyata lulus, dan smoke test target siap dijalankan. Jika setelah go-live muncul P0/P1, perpanjang hypercare atau rollback sesuai dampak.
+

@@ -45,10 +45,11 @@ Gunakan checklist ini untuk UAT internal setelah menjalankan `php artisan db:see
 | PBD-04 | Pembimbing Dalam | Review laporan | Buka Review Laporan | Laporan mahasiswa bimbingan tampil | Belum diuji |  |
 | PBD-05 | Pembimbing Dalam | Lihat jadwal sidang | Buka Jadwal Sidang | Jadwal sidang mahasiswa bimbingan tampil | Belum diuji |  |
 | PBD-06 | Pembimbing Dalam | Input nilai pembimbing | Buka Penilaian Pembimbing | Komponen pembimbing dalam tampil | Belum diuji |  |
-| PBL-01 | Pembimbing Lapangan | Login lapangan | Login `lapangan@sikp.test` / `password` | Masuk Dashboard Pembimbing Lapangan | Belum diuji |  |
-| PBL-02 | Pembimbing Lapangan | Lihat mahasiswa KP | Buka Mahasiswa KP | Mahasiswa tugas lapangan tampil | Belum diuji |  |
-| PBL-03 | Pembimbing Lapangan | Validasi logbook | Buka Validasi Logbook | Logbook tugas lapangan tampil | Belum diuji |  |
-| PBL-04 | Pembimbing Lapangan | Input nilai lapangan | Buka Penilaian Lapangan | Komponen lapangan tampil | Belum diuji |  |
+| PBL-01 | Preseptor | Login preseptor | Login `lapangan@sikp.test` / `password` | Masuk Dashboard Preseptor | Belum diuji |  |
+| PBL-02 | Preseptor | Lihat mahasiswa PKPA | Buka Mahasiswa PKPA | Mahasiswa bimbingan preseptor tampil | Belum diuji |  |
+| PBL-03 | Preseptor | Validasi logbook | Buka Validasi Logbook | Logbook mahasiswa bimbingan preseptor tampil | Belum diuji |  |
+| PBL-04 | Preseptor | Input nilai preseptor | Buka Penilaian Preseptor | Komponen penilaian preseptor tampil | Belum diuji |  |
 | PGJ-01 | Penguji | Login penguji | Login `penguji@sikp.test` / `password` | Masuk Dashboard Penguji | Belum diuji |  |
 | PGJ-02 | Penguji | Lihat jadwal sidang | Buka Jadwal Sidang | Sidang yang ditugaskan tampil | Belum diuji |  |
 | PGJ-03 | Penguji | Input nilai sidang | Buka Penilaian Sidang | Komponen penguji tampil | Belum diuji |  |
+

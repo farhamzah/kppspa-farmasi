@@ -1,13 +1,14 @@
-# Panduan Pembimbing Lapangan
+# Panduan Preseptor
 
 ## Login
-Login dan pilih role Pembimbing Luar / Lapangan.
+Login dan pilih role Preseptor.
 
-## Mahasiswa KP
-Menu Mahasiswa KP menampilkan mahasiswa yang ditugaskan kepada pembimbing lapangan.
+## Mahasiswa PKPA
+Menu Mahasiswa PKPA menampilkan mahasiswa yang ditugaskan kepada preseptor.
 
 ## Validasi Logbook
 Buka Validasi Logbook untuk melihat kegiatan mahasiswa, lalu setujui, minta revisi, atau tolak dengan catatan.
 
-## Penilaian Lapangan
-Buka Penilaian Lapangan, isi nilai komponen lapangan, simpan draft, lalu submit nilai.
+## Penilaian Preseptor
+Buka Penilaian Preseptor, isi nilai komponen preseptor, simpan draft, lalu submit nilai.
+

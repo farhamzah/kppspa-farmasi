@@ -129,7 +129,7 @@ Tahap 03 menambahkan readiness sebelum penyusunan penempatan:
 
 - Tempat tersedia per program (`pkpa_program_sites`).
 - Availability period, kapasitas, reserved slot, hari operasional, dan jam praktik (`pkpa_site_availability_periods`).
-- Pembimbing Lapangan dari Core per tempat praktik (`pkpa_site_field_supervisors`).
+- Preseptor dari Core per tempat praktik (`pkpa_site_field_supervisors`).
 - Eligibility Pembimbing Dalam dari Core per program-wahana (`pkpa_internal_supervisor_eligibilities`).
 - Periode tidak tersedia pembimbing dan log sinkronisasi Core.
 - Checklist readiness penempatan untuk admin/koordinator.
@@ -143,7 +143,7 @@ Tahap 04 menambahkan rancangan penempatan draft/tervalidasi untuk Koordinator PK
 - Versi rancangan (`pkpa_placement_plans`) dengan satu current plan per program.
 - Assignment rotasi per requirement (`pkpa_rotation_assignments`) dan pembimbing per assignment.
 - Matriks mahasiswa x enam wahana, tampilan kartu mobile, timeline rotasi, issue list, bulk preview/apply/undo, dan export internal `.xlsx`.
-- Validasi backend untuk tempat, availability, tanggal, durasi, kapasitas, bentrok jadwal mahasiswa, Pembimbing Dalam, Pembimbing Lapangan, beban, unavailability, serta pilihan Pemerintahan.
+- Validasi backend untuk tempat, availability, tanggal, durasi, kapasitas, bentrok jadwal mahasiswa, Pembimbing Dalam, Preseptor, beban, unavailability, serta pilihan Pemerintahan.
 
 Tahap ini hanya menyusun rancangan internal. Jadwal belum dipublikasikan ke mahasiswa/pembimbing, notifikasi belum dikirim, dan tabel legacy `kp_*` tidak dimigrasikan.
 
@@ -153,7 +153,7 @@ Tahap 05 menambahkan jadwal resmi berbasis snapshot:
 
 - Publication resmi (`pkpa_placement_publications`) dari plan yang tervalidasi dan terkunci.
 - Snapshot assignment dan pembimbing (`pkpa_published_assignments`, `pkpa_published_assignment_supervisors`).
-- Portal `PKPA Saya` untuk mahasiswa dan `Jadwal PKPA` untuk Pembimbing Dalam/Lapangan.
+- Portal `PKPA Saya` untuk mahasiswa dan `Jadwal PKPA` untuk Pembimbing Dalam/Preseptor.
 - Acknowledgement sebagai tanda membaca, bukan approval.
 - Notification delivery database/email berbasis feature flag.
 - Withdrawal, change request, publication revision, dan export Excel resmi.
@@ -166,10 +166,10 @@ Tahap 06 menambahkan operasional rotasi setelah jadwal resmi dipublikasikan:
 
 - Runtime rotasi dari publikasi current (`pkpa_rotation_runs`) beserta histori status dan pembimbing.
 - Aturan operasional per wahana (`pkpa_rotation_operation_rules`).
-- Presensi, validasi Pembimbing Lapangan, dan koreksi presensi.
-- Logbook rotasi, lampiran privat non-public, review Pembimbing Lapangan, dan monitoring Pembimbing Dalam.
+- Presensi, validasi Preseptor, dan koreksi presensi.
+- Logbook rotasi, lampiran privat non-public, review Preseptor, dan monitoring Pembimbing Dalam.
 - Snapshot progress dan sinkronisasi perubahan publikasi ke runtime.
-- Menu baru: `Operasional Rotasi` untuk Admin/Koordinator, `Rotasi PKPA` untuk Mahasiswa, `Operasional PKPA` untuk Pembimbing Lapangan, dan `Monitoring PKPA` untuk Pembimbing Dalam.
+- Menu baru: `Operasional Rotasi` untuk Admin/Koordinator, `Rotasi PKPA` untuk Mahasiswa, `Operasional PKPA` untuk Preseptor, dan `Monitoring PKPA` untuk Pembimbing Dalam.
 
 Tahap ini tidak menghitung nilai, tidak mengubah requirement menjadi completed secara otomatis, dan tidak memigrasikan tabel legacy `kp_*`.
 
@@ -186,9 +186,9 @@ PKPA_LOGBOOK_ATTACHMENT_MAX_KB=5120
 Tahap 07 menambahkan kelengkapan akademik per runtime rotasi:
 
 - Master set kompetensi, kategori, dan item per program-wahana.
-- Checklist kompetensi runtime berbasis snapshot, evidence private, verifikasi Pembimbing Lapangan, dan monitoring Pembimbing Dalam.
+- Checklist kompetensi runtime berbasis snapshot, evidence private, verifikasi Preseptor, dan monitoring Pembimbing Dalam.
 - Template tugas khusus, assignment tugas ke runtime, submission berversi, dan review.
-- Template laporan rotasi, laporan utama per runtime, versioning file, konfirmasi Pembimbing Lapangan, dan approval Pembimbing Dalam.
+- Template laporan rotasi, laporan utama per runtime, versioning file, konfirmasi Preseptor, dan approval Pembimbing Dalam.
 - Bimbingan rotasi dan acknowledgement mahasiswa.
 - Academic readiness untuk status `ready_for_assessment` tanpa nilai dan tanpa menyelesaikan requirement.
 - Menu baru `Akademik Rotasi` dan `Akademik PKPA` untuk role terkait.
@@ -240,3 +240,4 @@ Seeder ini idempotent dan membuat contoh alur belajar dari program PKPA, peserta
 ## Dokumen, Analytics, Hardening, dan UAT Tahap 10
 
 MY PKPA kini memiliki fondasi Dokumen Internal PKPA, template berversi, penomoran configurable, generation DOCX/PDF/XLSX/CSV pada private storage, portal dokumen mahasiswa, Pelaporan dan Analytics, health check, security headers, rate limit download/export, queue health, orphan file audit dry-run, serta dokumen operasi dan UAT. Status production tetap `Ready with condition` sampai UAT real, queue/mail production, backup restore, dan browser matrix selesai.
+

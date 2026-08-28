@@ -1,8 +1,8 @@
-# Quick Start Pembimbing Lapangan MY PKPA
+# Quick Start Preseptor MY PKPA
 
 ## Login dan Role
 
-Masuk memakai akun Core Farmasi, lalu pilih role Pembimbing Lapangan. Jika role tidak tersedia, hubungi Koordinator PKPA atau tim pengelola Core.
+Masuk memakai akun Core Farmasi, lalu pilih role Preseptor. Jika role tidak tersedia, hubungi Koordinator PKPA atau tim pengelola Core.
 
 ## Menu Utama
 
@@ -30,3 +30,4 @@ Masuk memakai akun Core Farmasi, lalu pilih role Pembimbing Lapangan. Jika role 
 - Mahasiswa tidak tampil: publikasi jadwal belum current atau mapping tempat-pembimbing belum lengkap.
 - Presensi tidak bisa divalidasi: status rotasi belum aktif atau periode tidak sesuai.
 - File gagal dibuka: file belum tersedia atau akses tidak terkait.
+

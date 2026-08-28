@@ -6,7 +6,7 @@ Tujuan utama:
 - Mahasiswa dengan penempatan KP aktif/berjalan dapat membuat logbook kegiatan.
 - Logbook dapat disimpan sebagai draft, diperbarui, dan disubmit untuk validasi.
 - Mahasiswa dapat upload bukti kegiatan opsional melalui storage non-public.
-- Pembimbing Lapangan memvalidasi logbook mahasiswa yang ditugaskan kepadanya.
+- Preseptor memvalidasi logbook mahasiswa yang ditugaskan kepadanya.
 - Pembimbing Dalam memantau logbook mahasiswa bimbingan dan memberi komentar.
 - Admin/Koordinator memonitor seluruh logbook dan log aktivitas.
 - Semua perubahan status dan komentar penting dicatat pada log aktivitas.
@@ -19,3 +19,4 @@ Output wajib:
 - Migration, model, relasi, service, controller, form request, route, view, test.
 - Report `docs/reports/TAHAP_07_LOGBOOK_KP.md`.
 - Update spesifikasi awal dan AGENTS.md.
+

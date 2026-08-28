@@ -52,7 +52,7 @@ Catatan:
 - Upload dan verifikasi berkas KP.
 - Pemilihan tempat KP dan daftar tunggu.
 - Penempatan KP dan assignment pembimbing.
-- Logbook mahasiswa dan validasi pembimbing lapangan.
+- Logbook mahasiswa dan validasi preseptor.
 - Laporan akhir dan review pembimbing dalam.
 - Pengajuan sidang, jadwal sidang, berita acara, penilaian.
 - Rekap dan export management.
@@ -89,3 +89,4 @@ docs/integration/KP-PRODUCTION-DEPLOYMENT-RUNBOOK.md
 ```
 
 Gunakan `.env.production.example` sebagai template aman. Jangan commit `.env`, `.env.production`, password database, token, atau secret server.
+

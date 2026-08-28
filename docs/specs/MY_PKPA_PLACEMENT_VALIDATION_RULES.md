@@ -24,7 +24,7 @@ Assignment `cancelled` dan `superseded` tidak dihitung.
 
 ## Pembimbing
 
-Pembimbing Dalam harus eligible untuk program-wahana. Pembimbing Lapangan harus milik tempat. Status, masa efektif, unavailability, dan batas beban divalidasi backend.
+Pembimbing Dalam harus eligible untuk program-wahana. Preseptor harus milik tempat. Status, masa efektif, unavailability, dan batas beban divalidasi backend.
 
 ## Jadwal Mahasiswa
 
@@ -39,4 +39,5 @@ Sistem memberi issue dan saran, tidak memindahkan jadwal otomatis.
 
 ## Final Review Publication
 
-Sebelum publish, final review memastikan plan tervalidasi, terkunci, tidak memiliki error aktif, seluruh requirement peserta aktif terisi, pilihan Pemerintahan lengkap, dan setiap assignment memiliki Pembimbing Dalam serta Pembimbing Lapangan. Warning boleh tercatat, tetapi error aktif memblokir publication.
+Sebelum publish, final review memastikan plan tervalidasi, terkunci, tidak memiliki error aktif, seluruh requirement peserta aktif terisi, pilihan Pemerintahan lengkap, dan setiap assignment memiliki Pembimbing Dalam serta Preseptor. Warning boleh tercatat, tetapi error aktif memblokir publication.
+

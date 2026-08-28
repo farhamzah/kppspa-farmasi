@@ -16,9 +16,10 @@ Template hasil target:
 | Koordinator | Readiness and placement | Not tested | | |
 | Mahasiswa | Dashboard, jadwal, dokumen | Not tested | | |
 | Pembimbing Dalam | Monitoring queue | Not tested | | |
-| Pembimbing Lapangan | Review queue | Not tested | | |
+| Preseptor | Review queue | Not tested | | |
 | Queue | worker and failed jobs | Not tested | | |
 | Audit | integrity and orphan | Not tested | | |
 
 Local smoke baseline:
 - Playwright 16 passed pada Tahap 11B/12A gate.
+
