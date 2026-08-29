@@ -105,11 +105,39 @@ class CoreHttpUserProjectionService
     {
         return [
             'core_user_id' => (int) ($user['id'] ?? $user['user_id'] ?? $user['core_user_id'] ?? 0),
-            'name' => (string) ($user['name'] ?? $user['full_name'] ?? $user['email'] ?? 'Core User'),
+            'name' => (string) (
+                $user['display_name_with_title']
+                ?? $user['formal_name']
+                ?? $this->composeTitledName($user['front_title'] ?? null, $user['name'] ?? $user['full_name'] ?? null, $user['back_title'] ?? null)
+                ?? $user['name']
+                ?? $user['full_name']
+                ?? $user['email']
+                ?? 'Core User'
+            ),
             'email' => strtolower(trim((string) ($user['email'] ?? ''))),
             'active' => ($user['active'] ?? true) === true,
             'profile_photo_url' => $user['profile_photo_url'] ?? $user['avatar_url'] ?? null,
         ];
+    }
+
+    private function composeTitledName(mixed $frontTitle, mixed $name, mixed $backTitle): ?string
+    {
+        $name = filled($name) ? trim((string) $name) : null;
+
+        if (! $name) {
+            return null;
+        }
+
+        $front = filled($frontTitle) ? trim((string) $frontTitle) : null;
+        $back = filled($backTitle) ? trim((string) $backTitle) : null;
+
+        $display = trim(collect([$front, $name])->filter(fn ($value) => filled($value))->implode(' '));
+
+        if (filled($back)) {
+            $display .= ', '.$back;
+        }
+
+        return $display !== '' ? $display : $name;
     }
 
     /**

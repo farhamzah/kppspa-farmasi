@@ -4,6 +4,7 @@ use App\Models\Lecturer;
 use App\Models\FieldSupervisor;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\CoreProfileReadService;
 use App\Services\KpMasterDataReadService;
 
 if (! function_exists('student_display_name')) {
@@ -72,14 +73,21 @@ if (! function_exists('user_display_name')) {
             return field_supervisor_display_name($user->fieldSupervisor);
         }
 
-        if (! $user->lecturer) {
-            return $user->name;
-        }
-
         $lecturerBackedRoles = ['admin', 'koordinator_kp', 'pembimbing_dalam', 'pembimbing_lapangan', 'penguji'];
 
-        return in_array($role, $lecturerBackedRoles, true) || $user->profileTypeForRole($role) === 'dosen'
-            ? lecturer_display_name($user->lecturer)
-            : $user->name;
+        if ($user->lecturer && (in_array($role, $lecturerBackedRoles, true) || $user->profileTypeForRole($role) === 'dosen')) {
+            return lecturer_display_name($user->lecturer);
+        }
+
+        if (in_array($role, $lecturerBackedRoles, true) || $user->profileTypeForRole($role) === 'dosen') {
+            $official = app(CoreProfileReadService::class)->officialProfileFor($user, 'dosen');
+            $officialName = data_get($official, 'user.name');
+
+            if (filled($officialName)) {
+                return (string) $officialName;
+            }
+        }
+
+        return $user->name;
     }
 }

@@ -239,6 +239,40 @@ class CoreProfileReadOnlyDisplayTest extends TestCase
             ->assertSee('Selamat datang, apt. Tuti Rohayati');
     }
 
+    public function test_internal_supervisor_without_local_lecturer_profile_still_uses_core_titled_name(): void
+    {
+        DB::connection('core')->table('users')->insert([
+            'id' => 50,
+            'name' => 'Engkun Qurotulaeni',
+            'email' => 'engkun@ptk.ubpkarawang.ac.id',
+            'username' => 'engkun',
+            'identity_type' => 'employee',
+            'identity_number' => '3275010101010050',
+            'profile_photo_path' => null,
+            'display_name_with_title' => 'apt. Engkun Qurotulaeni, M.Farm.',
+            'formal_name' => 'apt. Engkun Qurotulaeni, M.Farm.',
+            'active' => true,
+        ]);
+
+        $user = User::create([
+            'name' => 'Engkun Qurotulaeni',
+            'email' => 'engkun@ptk.ubpkarawang.ac.id',
+            'password' => Hash::make('password'),
+            'status' => 'active',
+            'profile_completed' => true,
+            'core_user_id' => 50,
+        ]);
+        $user->roles()->sync(Role::whereIn('name', ['pembimbing_dalam'])->pluck('id'));
+
+        $this->assertSame('apt. Engkun Qurotulaeni, M.Farm.', user_display_name($user->fresh(), 'pembimbing_dalam'));
+
+        $this->actingAs($user)
+            ->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/profil-saya')
+            ->assertOk()
+            ->assertSee('apt. Engkun Qurotulaeni, M.Farm.');
+    }
+
     private function createCoreSchema(): void
     {
         Schema::connection('core')->create('users', function ($table): void {
