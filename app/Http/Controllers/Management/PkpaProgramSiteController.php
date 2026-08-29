@@ -11,8 +11,8 @@ use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
-use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\PkpaSiteFieldSupervisor;
+use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\PkpaSupervisorUnavailabilityPeriod;
 use App\Services\PkpaFieldSupervisorService;
 use App\Services\PkpaProgramSiteService;
@@ -41,7 +41,42 @@ class PkpaProgramSiteController extends Controller
 
     public function preceptorsIndex(Request $request): View
     {
-        return $this->renderIndex($request, 'preceptors');
+        $supervisors = PkpaSiteFieldSupervisor::query()
+            ->with([
+                'practiceSite.programSites.program',
+                'practiceSite.programSites.practiceDomain',
+                'practiceSite.programSites.practiceDomainOption',
+                'user.lecturer',
+            ])
+            ->whereHas('practiceSite.programSites')
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $search = trim((string) $request->input('q'));
+
+                $query->where(function ($sub) use ($search) {
+                    $sub
+                        ->where('name_snapshot', 'like', '%'.$search.'%')
+                        ->orWhere('email_snapshot', 'like', '%'.$search.'%')
+                        ->orWhere('core_user_id', 'like', '%'.$search.'%')
+                        ->orWhere('position_title', 'like', '%'.$search.'%')
+                        ->orWhereHas('practiceSite', fn ($site) => $site
+                            ->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('code', 'like', '%'.$search.'%')
+                            ->orWhere('city', 'like', '%'.$search.'%'));
+                });
+            })
+            ->when($request->filled('program_id'), fn ($query) => $query->whereHas('practiceSite.programSites', fn ($sites) => $sites->where('pkpa_program_id', $request->integer('program_id'))))
+            ->when($request->filled('practice_domain_id'), fn ($query) => $query->whereHas('practiceSite.programSites', fn ($sites) => $sites->where('practice_domain_id', $request->integer('practice_domain_id'))))
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('management.pkpa-preceptors.index', [
+            'supervisors' => $supervisors,
+            'programs' => PkpaProgram::orderByDesc('id')->get(),
+            'domains' => PkpaPracticeDomain::orderBy('sort_order')->get(),
+            'filters' => $request->only(['q', 'program_id', 'practice_domain_id', 'status']),
+        ]);
     }
 
     public function show(PkpaProgramSite $pkpaProgramSite): View
@@ -70,10 +105,7 @@ class PkpaProgramSiteController extends Controller
             'domains' => PkpaPracticeDomain::orderBy('sort_order')->get(),
             'filters' => $request->only(['q', 'program_id', 'practice_domain_id', 'status']),
             'pageMode' => $mode,
-            'pageTitle' => $mode === 'preceptors' ? 'Preseptor' : 'Tempat Tersedia',
-            'pageDescription' => $mode === 'preceptors'
-                ? 'Pilih tempat PKPA untuk menambah, sinkronkan, dan memeriksa Preseptor dari Core.'
-                : null,
+            'pageTitle' => 'Tempat Tersedia',
         ]);
     }
 

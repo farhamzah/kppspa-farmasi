@@ -223,6 +223,28 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::where('status', 'inactive')->count());
     }
 
+    public function test_preceptor_index_shows_global_preceptor_list(): void
+    {
+        $programSite = $this->createProgramSite('PKPA-03-F', 'APT-03-F');
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-program-sites/{$programSite->id}/field-supervisors", [
+                'core_user_id' => 'CORE-FIELD-1',
+                'position_title' => 'Apoteker Pendamping',
+                'maximum_active_students' => 8,
+                'status' => 'active',
+            ])->assertRedirect();
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-preceptors')
+            ->assertOk()
+            ->assertSee('Preseptor Satu')
+            ->assertSee('Tempat APT-03-F')
+            ->assertSee('PKPA-03-F')
+            ->assertSee('Apotek')
+            ->assertSee('Apoteker Pendamping');
+    }
+
     public function test_readiness_dashboard_requires_capacity_and_supervisors_without_creating_placement(): void
     {
         $program = $this->createProgram('PKPA-03-E');
