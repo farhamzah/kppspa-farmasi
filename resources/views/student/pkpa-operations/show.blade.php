@@ -28,6 +28,9 @@
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $run->practiceDomain?->name }}</p>
         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $run->practiceSite?->name }}</h2>
         <p class="mt-2 text-sm text-slate-500">{{ $run->scheduled_start_date?->format('d M Y') }} - {{ $run->scheduled_end_date?->format('d M Y') }} / status {{ str($run->status)->replace('_', ' ')->headline() }}</p>
+        <div class="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+            Halaman ini adalah pusat aktivitas rotasi Anda. Gunakan bagian kiri untuk presensi harian dan bagian kanan untuk logbook kegiatan pada rotasi yang sama.
+        </div>
         <div class="mt-4 grid gap-3 md:grid-cols-3">
             <div class="rounded-xl bg-slate-50 px-4 py-3">
                 <p class="text-xs font-black uppercase tracking-widest text-slate-500">Kemajuan</p>
@@ -46,7 +49,7 @@
     <div class="grid gap-5 xl:grid-cols-2">
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100">
             <h3 class="text-lg font-black text-slate-950">Presensi</h3>
-            <p class="mt-1 text-sm text-slate-500">Simpan dulu sebagai draf, lalu kirim saat data jam masuk, jam pulang, dan catatan sudah lengkap.</p>
+            <p class="mt-1 text-sm text-slate-500">Isi presensi untuk tanggal praktik yang dipilih. Simpan dulu sebagai draf, lalu kirim saat data jam masuk, jam pulang, dan catatan sudah lengkap.</p>
             <form method="POST" action="{{ route('student.pkpa-operations.attendance.store', $run) }}" class="mt-4 grid gap-3 sm:grid-cols-2">
                 @csrf
                 <input name="attendance_date" type="date" class="rounded-xl border-slate-200 text-sm" required>
@@ -72,7 +75,7 @@
         </section>
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100">
             <h3 class="text-lg font-black text-slate-950">Logbook</h3>
-            <p class="mt-1 text-sm text-slate-500">Isi ringkasan kegiatan, pembelajaran, dan refleksi. Tambahkan lampiran bila perlu sebelum dikirim.</p>
+            <p class="mt-1 text-sm text-slate-500">Isi logbook untuk kegiatan pada rotasi ini. Tulis ringkasan kegiatan, capaian pembelajaran, dan refleksi. Tambahkan lampiran bila perlu sebelum dikirim.</p>
             <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" class="mt-4 grid gap-3">
                 @csrf
                 <input name="entry_date" type="date" class="rounded-xl border-slate-200 text-sm" required>

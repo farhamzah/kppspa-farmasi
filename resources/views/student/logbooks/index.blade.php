@@ -7,8 +7,8 @@
 <div class="space-y-5">
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Logbook PKPA</p>
-        <h2 class="mt-1 text-2xl font-black text-slate-950">Logbook per Rotasi</h2>
-        <p class="mt-2 text-sm text-slate-500">Pilih rotasi yang ingin Anda isi. Entri logbook dibuat dari halaman detail rotasi agar langsung terkait dengan wahana, tempat, dan periode yang benar.</p>
+        <h2 class="mt-1 text-2xl font-black text-slate-950">Pilih Rotasi untuk Mengisi Logbook</h2>
+        <p class="mt-2 text-sm text-slate-500">Menu ini menampilkan daftar rotasi dan ringkasan entri logbook Anda. Untuk mengisi atau mengirim logbook, buka halaman detail rotasi yang juga dipakai untuk presensi.</p>
     </section>
 
     @if($runs->isEmpty())
@@ -56,7 +56,7 @@
                             <p class="mt-1 font-black text-slate-950">{{ $run->draft_logbook_entries_count }}</p>
                         </div>
                     </div>
-                    <a href="{{ route('student.pkpa-operations.show', $run) }}" class="mt-4 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Buka Detail Rotasi</a>
+                    <a href="{{ route('student.pkpa-operations.show', $run) }}" class="mt-4 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Buka Presensi dan Logbook</a>
                 </article>
             @endforeach
         </section>

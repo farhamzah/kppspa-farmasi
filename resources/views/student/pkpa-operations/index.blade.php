@@ -8,6 +8,12 @@
     $totalLogbooks = $runs->sum('logbook_entries_count');
 @endphp
 <div class="space-y-5">
+    <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+        <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Rotasi PKPA</p>
+        <h2 class="mt-1 text-2xl font-black text-slate-950">Kelola Presensi dan Logbook per Rotasi</h2>
+        <p class="mt-2 text-sm text-slate-500">Buka salah satu rotasi untuk mengisi presensi harian dan logbook kegiatan. Halaman detail rotasi adalah halaman kerja utama selama periode PKPA berjalan.</p>
+    </section>
+
     <section class="grid gap-4 md:grid-cols-3">
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Rotasi Aktif</p>
@@ -44,6 +50,7 @@
             </div>
             <div class="mt-4 h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-cyan-600" style="width: {{ optional($run->progressSnapshots->first())->progress_percentage ?? 0 }}%"></div></div>
             <p class="mt-2 text-xs font-bold text-slate-500">Kemajuan {{ optional($run->progressSnapshots->first())->progress_percentage ?? 0 }}%</p>
+            <span class="mt-4 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Buka Presensi dan Logbook</span>
         </a>
     @empty
         <div class="rounded-2xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-sky-100">Belum ada rotasi operasional aktif dari publikasi resmi.</div>
