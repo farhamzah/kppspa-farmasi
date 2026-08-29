@@ -59,9 +59,21 @@ class PkpaPlacementPlannerController extends Controller
             'progress' => $plan ? $this->planService->progress($plan->loadMissing('program')) : null,
             'domains' => $program?->domains()->with('practiceDomain')->where('is_active', true)->orderBy('sort_order')->get() ?? collect(),
             'enrollments' => $program ? $this->enrollments($request, $program, $plan) : collect(),
-            'programSites' => $program?->programSites()->with(['practiceSite.fieldSupervisors', 'availabilityPeriods', 'practiceDomain', 'practiceDomainOption'])->where('is_active', true)->whereIn('status', ['ready', 'active'])->get() ?? collect(),
+            'programSites' => $program?->programSites()->with(['practiceSite.fieldSupervisors.user.fieldSupervisor', 'availabilityPeriods', 'practiceDomain', 'practiceDomainOption'])->where('is_active', true)->whereIn('status', ['ready', 'active'])->get() ?? collect(),
             'internalSupervisors' => $program?->internalSupervisorEligibilities()->where('status', 'active')->get() ?? collect(),
-            'fieldSupervisors' => PkpaSiteFieldSupervisor::query()->where('status', 'active')->get(),
+            'fieldSupervisors' => $program
+                ? $program->programSites()
+                    ->with(['practiceSite.fieldSupervisors.user.fieldSupervisor'])
+                    ->where('is_active', true)
+                    ->whereIn('status', ['ready', 'active'])
+                    ->get()
+                    ->flatMap(fn (PkpaProgramSite $site) => $site->practiceSite?->fieldSupervisors
+                        ?->filter(fn (PkpaSiteFieldSupervisor $supervisor) => $supervisor->status === 'active')
+                        ?->values()
+                        ?? collect())
+                    ->unique('id')
+                    ->values()
+                : collect(),
             'latestRun' => $plan?->validationRuns()->with('issues.assignment.enrollment', 'issues.assignment.practiceDomain')->latest()->first(),
             'latestBatch' => $plan?->actionBatches()->with('items')->latest()->first(),
             'filters' => $request->only(['program_id', 'plan_id', 'q', 'group_id', 'domain_id', 'status', 'empty']),

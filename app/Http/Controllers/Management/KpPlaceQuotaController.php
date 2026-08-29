@@ -8,14 +8,22 @@ use App\Http\Requests\Management\UpdateKpPlaceQuotaRequest;
 use App\Models\KpPeriod;
 use App\Models\KpPlace;
 use App\Models\KpPlaceQuota;
+use App\Services\LegacyKpCatalogSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class KpPlaceQuotaController extends Controller
 {
+    public function __construct(
+        private readonly LegacyKpCatalogSyncService $catalogSync,
+    ) {
+    }
+
     public function index(Request $request): View
     {
+        $this->catalogSync->sync($request->user());
+
         $quotas = KpPlaceQuota::query()
             ->with(['period', 'place'])
             ->when($request->filled('period'), fn ($query) => $query->where('kp_period_id', $request->period))
@@ -35,6 +43,8 @@ class KpPlaceQuotaController extends Controller
 
     public function create(): View
     {
+        $this->catalogSync->sync(request()->user());
+
         return view('management.quotas.create', [
             'quota' => new KpPlaceQuota(['is_open' => true]),
             'periods' => KpPeriod::latest()->get(),
@@ -64,6 +74,8 @@ class KpPlaceQuotaController extends Controller
 
     public function edit(KpPlaceQuota $kpPlaceQuota): View
     {
+        $this->catalogSync->sync(request()->user());
+
         return view('management.quotas.edit', [
             'quota' => $kpPlaceQuota,
             'periods' => KpPeriod::latest()->get(),

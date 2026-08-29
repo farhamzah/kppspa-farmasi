@@ -206,6 +206,12 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
         $response->assertJsonMissing(['id' => $otherField->id]);
         $response->assertJsonPath('internal_supervisors.0.id', $internal->id);
         $response->assertJsonMissing(['id' => $otherInternal->id]);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-placement-planner?program_id='.$program->id.'&plan_id='.$plan->id)
+            ->assertOk()
+            ->assertSee($field->name_snapshot);
     }
 
     private function makeUser(string $email, array $roles, string $coreUserId): User

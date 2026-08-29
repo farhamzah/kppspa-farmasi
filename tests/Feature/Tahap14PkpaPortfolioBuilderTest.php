@@ -151,6 +151,14 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         Storage::disk('local')->assertExists($docx->path);
         Storage::disk('local')->assertExists($pdf->path);
         $this->assertDocx(Storage::disk('local')->path($docx->path));
+        $docxText = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
+        $this->assertStringContainsString('Portofolio PKPA Apotek', $docxText);
+        $this->assertStringContainsString('Profil Tempat PKPA', $docxText);
+        $this->assertStringContainsString('Laporan Kegiatan: Pelayanan Resep', $docxText);
+        $this->assertStringContainsString('Self Assessment', $docxText);
+        $this->assertStringContainsString('Pihak Yang Mengetahui', $docxText);
+        $this->assertStringContainsString('Entri 1', $docxText);
+        $this->assertStringContainsString('Aspek 1 - Etika', $docxText);
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($pdf->path));
         $this->assertSame($docx->id, $service->export($portfolio->fresh(), 'docx', $this->koordinator)->id);
         $this->assertSame($publication->id, PkpaPortfolioExportVersion::find($docx->id)->pkpa_portfolio_publication_id);

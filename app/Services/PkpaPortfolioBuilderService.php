@@ -574,7 +574,7 @@ class PkpaPortfolioBuilderService
         $zip->open($tmp, ZipArchive::OVERWRITE);
         $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
         $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-        $body = collect($this->exportLines($portfolio))->map(fn ($line) => '<w:p><w:r><w:t xml:space="preserve">'.htmlspecialchars($line, ENT_XML1, 'UTF-8').'</w:t></w:r></w:p>')->implode('');
+        $body = $this->docxBody($portfolio);
         $zip->addFromString('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'.$body.'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:body></w:document>');
         $zip->close();
         $bytes = file_get_contents($tmp);
@@ -585,52 +585,502 @@ class PkpaPortfolioBuilderService
 
     private function pdf(PkpaRotationPortfolio $portfolio): string
     {
-        return SimplePdfReport::table('Portofolio Digital PKPA', [
+        return SimplePdfReport::table($this->documentTitle($portfolio), [
             'Mahasiswa' => data_get($portfolio->identity_snapshot, 'student_name'),
             'NIM' => data_get($portfolio->identity_snapshot, 'student_number'),
             'Wahana' => data_get($portfolio->placement_snapshot, 'practice_domain'),
             'Status' => $portfolio->statusLabel(),
-        ], ['Bagian', 'Ringkasan'], collect($this->exportLines($portfolio))->map(fn ($line, $i) => [$i + 1, $line])->all());
+        ], ['Bagian', 'Ringkasan'], $this->exportRows($portfolio));
     }
 
     private function exportLines(PkpaRotationPortfolio $portfolio): array
     {
-        $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems']);
-        $lines = [
-            'PORTOFOLIO DIGITAL PKPA',
-            'Label: Dokumen internal MY PKPA'.($portfolio->status === 'published' ? ' - Diterbitkan' : ' - Draf internal'),
-            'Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name').' ('.data_get($portfolio->identity_snapshot, 'student_number').')',
-            'Program: '.data_get($portfolio->identity_snapshot, 'program').' / '.data_get($portfolio->identity_snapshot, 'academic_year'),
-            'Wahana: '.data_get($portfolio->placement_snapshot, 'practice_domain'),
-            'Tempat: '.data_get($portfolio->placement_snapshot, 'practice_site'),
-            'Preseptor: '.data_get($portfolio->placement_snapshot, 'field_supervisor'),
-            'Pembimbing Dalam: '.data_get($portfolio->placement_snapshot, 'internal_supervisor'),
-            'Daftar Isi',
-        ];
-
-        $sectionTitles = PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)
-            ? collect(PkpaApotekPortfolio::templateSections())->map(fn ($section) => $section[1])->all()
-            : $portfolio->template->sections->pluck('title')->all();
-        $lines = array_merge($lines, $sectionTitles);
-
-        foreach ($portfolio->sectionRecords as $record) {
-            if (blank($record->manual_payload)) {
-                continue;
-            }
-            $lines[] = $record->templateSection?->title ?? str($record->section_code)->headline()->toString();
-            foreach (PkpaApotekPortfolio::summaryLines($record->section_code, $record->manual_payload ?? []) as $line) {
+        $lines = [$this->documentTitle($portfolio)];
+        foreach ($this->exportSections($portfolio) as $section) {
+            $lines[] = $section['title'];
+            foreach ($section['lines'] as $line) {
                 $lines[] = $line;
             }
         }
 
-        return array_merge($lines, [
-            'Studi kasus: '.$portfolio->caseReports->count(),
-            'Refleksi mingguan: '.$portfolio->weeklyReflections->count(),
-            'Penilaian Diri: '.$portfolio->selfAssessments->count(),
-            'Dokumentasi kegiatan: '.$portfolio->documentationItems->count(),
-            'Pakta integritas: '.($portfolio->integrity_acknowledged_at ? 'Disetujui elektronik' : 'Belum disetujui'),
-            'Catatan: persetujuan elektronik bukan tanda tangan digital tersertifikasi.',
+        return $lines;
+    }
+
+    private function exportRows(PkpaRotationPortfolio $portfolio): array
+    {
+        $rows = [];
+
+        foreach ($this->exportSections($portfolio) as $section) {
+            if ($section['lines'] === []) {
+                $rows[] = [$section['title'], '-'];
+                continue;
+            }
+
+            foreach ($section['lines'] as $index => $line) {
+                $rows[] = [$index === 0 ? $section['title'] : '', trim($line) !== '' ? $line : ' '];
+            }
+        }
+
+        return $rows;
+    }
+
+    private function exportSections(PkpaRotationPortfolio $portfolio): array
+    {
+        $portfolio->loadMissing([
+            'template.sections',
+            'sectionRecords.templateSection',
+            'caseReports',
+            'weeklyReflections',
+            'selfAssessments',
+            'documentationItems',
+            'rotationRun.logbookEntries',
+            'reviews',
         ]);
+
+        $sections = [
+            [
+                'title' => 'Ringkasan Dokumen',
+                'lines' => [
+                    'Label: Dokumen internal MY PKPA'.($portfolio->status === 'published' ? ' - Diterbitkan' : ' - Draf internal'),
+                    'Program: '.data_get($portfolio->identity_snapshot, 'program').' / '.data_get($portfolio->identity_snapshot, 'academic_year'),
+                    'Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name'),
+                    'NIM: '.data_get($portfolio->identity_snapshot, 'student_number'),
+                    'Wahana: '.data_get($portfolio->placement_snapshot, 'practice_domain'),
+                    'Tempat PKPA: '.data_get($portfolio->placement_snapshot, 'practice_site'),
+                    'Preseptor: '.data_get($portfolio->placement_snapshot, 'field_supervisor'),
+                    'Pembimbing Dalam: '.data_get($portfolio->placement_snapshot, 'internal_supervisor'),
+                ],
+            ],
+            [
+                'title' => 'Identitas Mahasiswa',
+                'lines' => [
+                    'Nama: '.data_get($portfolio->identity_snapshot, 'student_name'),
+                    'NIM: '.data_get($portfolio->identity_snapshot, 'student_number'),
+                    'Email: '.data_get($portfolio->identity_snapshot, 'student_email'),
+                    'Kelompok: '.(data_get($portfolio->identity_snapshot, 'group') ?: '-'),
+                ],
+            ],
+            [
+                'title' => 'Pakta Integritas',
+                'lines' => [
+                    $portfolio->integrity_pact_text,
+                    'Status persetujuan: '.($portfolio->integrity_acknowledged_at ? 'Disetujui elektronik' : 'Belum disetujui'),
+                ],
+            ],
+        ];
+
+        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+            $sections[] = [
+                'title' => 'Lembar Pengesahan',
+                'lines' => $this->approvalLines($portfolio),
+            ];
+            $sections[] = [
+                'title' => 'Visi, Misi, Tujuan, dan Sasaran',
+                'lines' => $this->staticSectionLines($portfolio, 'vision_mission'),
+            ];
+            $sections[] = [
+                'title' => 'Tata Tertib PKPA',
+                'lines' => $this->staticSectionLines($portfolio, 'rules'),
+            ];
+        }
+
+        $sections[] = [
+            'title' => 'Daftar Isi',
+            'lines' => $this->exportTableOfContents($portfolio),
+        ];
+
+        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+            $sections[] = [
+                'title' => 'Profil Tempat PKPA',
+                'lines' => $this->sectionPayloadLines($portfolio, 'site_profile'),
+            ];
+            $sections[] = [
+                'title' => 'Logbook Harian',
+                'lines' => $this->logbookLines($portfolio),
+            ];
+            foreach (PkpaApotekPortfolio::reportSectionCodes() as $code) {
+                $sections[] = [
+                    'title' => $portfolio->sectionRecords->firstWhere('section_code', $code)?->templateSection?->title
+                        ?? (PkpaApotekPortfolio::sectionDefinition($code)['title'] ?? str($code)->headline()->toString()),
+                    'lines' => $this->sectionPayloadLines($portfolio, $code),
+                ];
+            }
+        }
+
+        $sections[] = [
+            'title' => 'Studi Kasus',
+            'lines' => $this->caseReportLines($portfolio),
+        ];
+        $sections[] = [
+            'title' => 'Refleksi Mingguan',
+            'lines' => $this->reflectionLines($portfolio),
+        ];
+        $sections[] = [
+            'title' => 'Self Assessment',
+            'lines' => $this->selfAssessmentLines($portfolio),
+        ];
+        $sections[] = [
+            'title' => 'Dokumentasi Kegiatan',
+            'lines' => $this->documentationLines($portfolio),
+        ];
+
+        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+            $sections[] = [
+                'title' => 'Daftar Pustaka',
+                'lines' => $this->sectionPayloadLines($portfolio, 'bibliography'),
+            ];
+            $sections[] = [
+                'title' => 'Lampiran',
+                'lines' => $this->sectionPayloadLines($portfolio, 'attachments'),
+            ];
+        }
+
+        $sections[] = [
+            'title' => 'Status Pemeriksaan',
+            'lines' => $this->reviewLines($portfolio),
+        ];
+
+        return $sections;
+    }
+
+    private function documentTitle(PkpaRotationPortfolio $portfolio): string
+    {
+        $domain = data_get($portfolio->placement_snapshot, 'practice_domain') ?: 'PKPA';
+
+        return 'Portofolio PKPA '.$domain;
+    }
+
+    private function exportTableOfContents(PkpaRotationPortfolio $portfolio): array
+    {
+        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+            return [
+                '1. Ringkasan Dokumen',
+                '2. Identitas Mahasiswa',
+                '3. Pakta Integritas',
+                '4. Lembar Pengesahan',
+                '5. Visi, Misi, Tujuan, dan Sasaran',
+                '6. Tata Tertib PKPA',
+                '7. Daftar Isi',
+                '8. Profil Tempat PKPA',
+                '9. Logbook Harian',
+                '10. Laporan Kegiatan PKPA Apotek',
+                '11. Studi Kasus',
+                '12. Refleksi Mingguan',
+                '13. Self Assessment',
+                '14. Dokumentasi Kegiatan',
+                '15. Daftar Pustaka',
+                '16. Lampiran',
+                '17. Status Pemeriksaan',
+            ];
+        }
+
+        return [
+            '1. Ringkasan Dokumen',
+            '2. Daftar Isi',
+            '3. Identitas Mahasiswa',
+            '4. Pakta Integritas',
+            '5. Studi Kasus',
+            '6. Refleksi Mingguan',
+            '7. Self Assessment',
+            '8. Dokumentasi Kegiatan',
+            '9. Status Pemeriksaan',
+        ];
+    }
+
+    private function sectionPayloadLines(PkpaRotationPortfolio $portfolio, string $sectionCode): array
+    {
+        $record = $portfolio->sectionRecords->firstWhere('section_code', $sectionCode);
+        if (! $record || blank($record->manual_payload)) {
+            return ['Belum ada isi untuk bagian ini.'];
+        }
+
+        return PkpaApotekPortfolio::summaryLines($sectionCode, $record->manual_payload ?? []);
+    }
+
+    private function logbookLines(PkpaRotationPortfolio $portfolio): array
+    {
+        if ($portfolio->rotationRun->logbookEntries->isEmpty()) {
+            return ['Logbook rotasi belum tersedia.'];
+        }
+
+        $lines = [
+            'Ringkasan Logbook PKPA',
+            'Nama Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name'),
+            'NIM: '.data_get($portfolio->identity_snapshot, 'student_number'),
+            'Universitas: Universitas Buana Perjuangan Karawang',
+            'Wahana PKPA: '.data_get($portfolio->placement_snapshot, 'practice_domain'),
+            'Periode PKPA: '.trim(implode(' - ', array_filter([
+                $portfolio->rotationRun->scheduled_start_date?->format('d M Y'),
+                $portfolio->rotationRun->scheduled_end_date?->format('d M Y'),
+            ]))),
+            'Preseptor: '.(data_get($portfolio->placement_snapshot, 'field_supervisor') ?: '-'),
+            'Dosen Pembimbing: '.(data_get($portfolio->placement_snapshot, 'internal_supervisor') ?: '-'),
+            'Petunjuk: Logbook diisi setiap hari selama pelaksanaan PKPA dan divalidasi oleh Preseptor serta Pembimbing Dalam.',
+            '',
+        ];
+
+        foreach ($portfolio->rotationRun->logbookEntries->take(10)->values() as $index => $entry) {
+            $lines[] = 'Entri '.($index + 1);
+            foreach (array_filter([
+                'Tanggal: '.(optional($entry->entry_date)->format('d M Y') ?: '-'),
+                'Topik/Kegiatan: '.($entry->title ?: '-'),
+                'Uraian Aktivitas: '.($entry->activity_summary ?: '-'),
+                'Kompetensi/Output Belajar: '.($entry->learning_outcomes ?: '-'),
+                'Refleksi Harian: '.($entry->reflection ?: '-'),
+            ]) as $line) {
+                $lines[] = $line;
+            }
+            $lines[] = '';
+        }
+
+        return $this->trimTrailingBlankLines($lines);
+    }
+
+    private function caseReportLines(PkpaRotationPortfolio $portfolio): array
+    {
+        if ($portfolio->caseReports->isEmpty()) {
+            return ['Belum ada studi kasus.'];
+        }
+
+        $lines = [];
+        foreach ($portfolio->caseReports as $case) {
+            $lines[] = 'Kasus '.$case->case_code.' - '.($case->case_date?->format('d M Y') ?: 'Tanggal belum diisi');
+            foreach (array_filter([
+                'Inisial pasien: '.($case->patient_initials ?: '-'),
+                'Jenis kelamin: '.($case->gender ?: '-'),
+                'Umur: '.($case->age ?: '-'),
+                'Keluhan utama: '.($case->complaint ?: '-'),
+                'Diagnosis: '.($case->diagnosis ?: '-'),
+                'Riwayat pasien: '.($case->history ?: '-'),
+                'Alergi: '.($case->allergy ?: '-'),
+                'Penggunaan obat: '.($case->medication_use ?: '-'),
+                'DRP: '.($case->drp ?: '-'),
+                'Intervensi: '.($case->intervention ?: '-'),
+                'Monitoring: '.($case->monitoring ?: '-'),
+                'Edukasi: '.($case->education ?: '-'),
+                'Kesimpulan: '.($case->conclusion ?: '-'),
+                'Referensi: '.($case->references ?: '-'),
+            ]) as $line) {
+                $lines[] = $line;
+            }
+        }
+
+        return $lines;
+    }
+
+    private function reflectionLines(PkpaRotationPortfolio $portfolio): array
+    {
+        if ($portfolio->weeklyReflections->isEmpty()) {
+            return ['Belum ada refleksi mingguan.'];
+        }
+
+        $lines = [];
+        foreach ($portfolio->weeklyReflections->sortBy('week_number') as $reflection) {
+            $lines[] = 'Minggu '.$reflection->week_number;
+            foreach (array_filter([
+                'Periode: '.trim(implode(' - ', array_filter([
+                    optional($reflection->period_start_date)->format('d M Y'),
+                    optional($reflection->period_end_date)->format('d M Y'),
+                ]))) ?: 'Periode belum diisi',
+                'Unit/Kegiatan: '.($reflection->unit ?: '-'),
+                'Target: '.($reflection->target ?: '-'),
+                'Pencapaian: '.($reflection->achievement ?: '-'),
+                'Hambatan: '.($reflection->obstacle ?: '-'),
+                'Solusi: '.($reflection->solution ?: '-'),
+                'Rencana Minggu Berikutnya: '.($reflection->next_plan ?: '-'),
+            ]) as $line) {
+                $lines[] = $line;
+            }
+        }
+
+        return $lines;
+    }
+
+    private function selfAssessmentLines(PkpaRotationPortfolio $portfolio): array
+    {
+        $lines = [
+            'Panduan Penilaian Diri',
+            'Skala penilaian: 5 = Sangat Baik, 4 = Baik, 3 = Cukup, 2 = Kurang, 1 = Sangat Kurang.',
+            '',
+        ];
+
+        if ($portfolio->selfAssessments->isEmpty()) {
+            $lines[] = 'Belum ada self assessment.';
+
+            return $lines;
+        }
+
+        foreach ($portfolio->selfAssessments->values() as $index => $assessment) {
+            $lines[] = 'Aspek '.($index + 1).' - '.($assessment->aspect ?: 'Belum diisi');
+            $lines[] = 'Skor: '.($assessment->score ? $assessment->score.'/5' : '-');
+            foreach (array_filter([
+                'Bukti/Pengalaman: '.($assessment->evidence_experience ?: '-'),
+                'Kelebihan: '.($assessment->strength ?: '-'),
+                'Kekurangan: '.($assessment->weakness ?: '-'),
+                'Upaya Perbaikan: '.($assessment->improvement_plan ?: '-'),
+                'Refleksi Akhir: '.($assessment->final_reflection ?: '-'),
+            ]) as $line) {
+                $lines[] = $line;
+            }
+            $lines[] = '';
+        }
+
+        return $this->trimTrailingBlankLines($lines);
+    }
+
+    private function documentationLines(PkpaRotationPortfolio $portfolio): array
+    {
+        if ($portfolio->documentationItems->isEmpty()) {
+            return ['Belum ada dokumentasi kegiatan.'];
+        }
+
+        return $portfolio->documentationItems->map(function ($item) {
+            return trim(implode(' | ', array_filter([
+                $item->category ?: 'Dokumentasi',
+                $item->activity,
+                optional($item->activity_date)->format('d M Y'),
+                $item->description,
+            ])));
+        })->values()->all();
+    }
+
+    private function reviewLines(PkpaRotationPortfolio $portfolio): array
+    {
+        $lines = ['Status portofolio: '.$portfolio->statusLabel()];
+
+        foreach ($portfolio->reviews->sortBy('created_at') as $review) {
+            $lines[] = trim(implode(' | ', array_filter([
+                strtoupper($review->reviewer_type),
+                strtoupper($review->action),
+                $review->comments,
+                optional($review->reviewed_at)->format('d M Y H:i'),
+            ])));
+        }
+
+        if (count($lines) === 1) {
+            $lines[] = 'Belum ada catatan pemeriksaan.';
+        }
+
+        return $lines;
+    }
+
+    private function docxBody(PkpaRotationPortfolio $portfolio): string
+    {
+        $paragraphs = [];
+        $paragraphs[] = $this->docxParagraph($this->documentTitle($portfolio), 'title');
+        $paragraphs[] = $this->docxParagraph($this->documentSubtitle($portfolio), 'subtitle');
+        $paragraphs[] = $this->docxParagraph('Program: '.(data_get($portfolio->identity_snapshot, 'program') ?: '-'), 'cover-meta');
+        $paragraphs[] = $this->docxParagraph('Mahasiswa: '.(data_get($portfolio->identity_snapshot, 'student_name') ?: '-'), 'cover-meta');
+        $paragraphs[] = $this->docxParagraph('Tempat PKPA: '.(data_get($portfolio->placement_snapshot, 'practice_site') ?: '-'), 'cover-meta');
+        $paragraphs[] = $this->docxParagraph('', 'pagebreak');
+
+        foreach ($this->exportSections($portfolio) as $section) {
+            $paragraphs[] = $this->docxParagraph($section['title'], 'heading');
+            foreach ($section['lines'] as $line) {
+                $paragraphs[] = $this->docxParagraph($line, $this->detectDocxLineStyle($line));
+            }
+            $paragraphs[] = $this->docxParagraph('', $this->shouldPageBreakAfterSection($section['title']) ? 'pagebreak' : 'spacer');
+        }
+
+        return implode('', $paragraphs);
+    }
+
+    private function approvalLines(PkpaRotationPortfolio $portfolio): array
+    {
+        return [
+            'Portofolio PKPA ini disiapkan untuk proses pengesahan akademik.',
+            'Program: '.data_get($portfolio->identity_snapshot, 'program'),
+            'Wahana: '.(data_get($portfolio->placement_snapshot, 'practice_domain') ?: '-'),
+            'Tempat PKPA: '.(data_get($portfolio->placement_snapshot, 'practice_site') ?: '-'),
+            '',
+            'Disusun di Karawang, '.now()->translatedFormat('d F Y'),
+            '',
+            'Pihak Yang Mengetahui',
+            'Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name'),
+            'Paraf Mahasiswa: ____________________',
+            'Preseptor: '.(data_get($portfolio->placement_snapshot, 'field_supervisor') ?: '-'),
+            'Paraf Preseptor: ____________________',
+            'Status Preseptor: '.($portfolio->field_verified_at ? 'Terverifikasi pada '.$portfolio->field_verified_at->format('d M Y H:i') : 'Belum verifikasi'),
+            'Pembimbing Dalam: '.(data_get($portfolio->placement_snapshot, 'internal_supervisor') ?: '-'),
+            'Paraf Pembimbing Dalam: ____________________',
+            'Status Pembimbing Dalam: '.($portfolio->internal_approved_at ? 'Disetujui pada '.$portfolio->internal_approved_at->format('d M Y H:i') : 'Belum menyetujui'),
+            '',
+            'Catatan: pada portal lokal ini pengesahan masih berbentuk persetujuan elektronik internal.',
+        ];
+    }
+
+    private function staticSectionLines(PkpaRotationPortfolio $portfolio, string $sectionCode): array
+    {
+        $section = $portfolio->template->sections->firstWhere('code', $sectionCode);
+        $content = trim((string) $section?->static_content);
+
+        return $content !== '' ? [$content] : ['Konten bagian ini mengikuti panduan resmi PKPA 2026.'];
+    }
+
+    private function docxParagraph(string $text, string $style = 'body'): string
+    {
+        $escaped = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+
+        return match ($style) {
+            'title' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="220"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'subtitle' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="180"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'cover-meta' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="70"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'heading' => '<w:p><w:pPr><w:spacing w:before="220" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="26"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'subheading' => '<w:p><w:pPr><w:spacing w:before="120" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'meta' => '<w:p><w:pPr><w:spacing w:after="50"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'toc' => '<w:p><w:pPr><w:ind w:left="280"/><w:spacing w:after="40"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'spacer' => '<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>',
+            'pagebreak' => '<w:p><w:r><w:br w:type="page"/></w:r></w:p>',
+            default => '<w:p><w:pPr><w:spacing w:after="70"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+        };
+    }
+
+    private function documentSubtitle(PkpaRotationPortfolio $portfolio): string
+    {
+        return 'Dokumen internal MY PKPA. Struktur isi mengikuti template portofolio PKPA aktif dan panduan program 2026 untuk '
+            .(data_get($portfolio->placement_snapshot, 'practice_domain') ?: 'wahana PKPA').'.';
+    }
+
+    private function detectDocxLineStyle(string $line): string
+    {
+        $trimmed = trim($line);
+
+        if ($trimmed === '') {
+            return 'spacer';
+        }
+
+        if (preg_match('/^\d+\.\s/', $trimmed) === 1) {
+            return 'toc';
+        }
+
+        if (preg_match('/^(Entri \d+|Aspek \d+ -|Ringkasan Logbook PKPA|Panduan Penilaian Diri|Pihak Yang Mengetahui)$/', $trimmed) === 1) {
+            return 'subheading';
+        }
+
+        if (str_contains($trimmed, ':')) {
+            return 'meta';
+        }
+
+        return 'body';
+    }
+
+    private function shouldPageBreakAfterSection(string $title): bool
+    {
+        return in_array($title, [
+            'Lembar Pengesahan',
+            'Daftar Isi',
+            'Logbook Harian',
+            'Self Assessment',
+        ], true);
+    }
+
+    private function trimTrailingBlankLines(array $lines): array
+    {
+        while ($lines !== [] && trim((string) end($lines)) === '') {
+            array_pop($lines);
+        }
+
+        return array_values($lines);
     }
 
     private function pendingManualSections(PkpaRotationPortfolio $portfolio): array

@@ -53,7 +53,7 @@
                 <select name="site_field_supervisor_id" class="w-full rounded-lg border border-slate-300 px-2 py-2 text-xs" data-field-supervisor-select required>
                     <option value="">Preseptor</option>
                     @foreach(($siteOptions[$requirement->practice_domain_id] ?? collect()) as $site)
-                        @foreach(($fieldOptions[$site->practice_site_id] ?? collect()) as $supervisor)
+                        @foreach(($site->practiceSite?->fieldSupervisors?->where('status', 'active')->values() ?? collect()) as $supervisor)
                             <option value="{{ $supervisor->id }}" data-practice-site-id="{{ $site->practice_site_id }}" @selected($assignment?->supervisors->firstWhere('supervisor_type', 'field')?->site_field_supervisor_id === $supervisor->id)>{{ $site->practiceSite?->name }} - {{ $supervisor->display_name }} / max {{ $supervisor->maximum_active_students ?? '?' }}</option>
                         @endforeach
                     @endforeach
