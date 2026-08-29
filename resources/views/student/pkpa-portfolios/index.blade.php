@@ -9,6 +9,12 @@
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Portofolio PKPA</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">Portofolio Digital Rotasi</h1>
         <p class="mt-2 max-w-3xl text-sm text-slate-600">Setiap rotasi memiliki portofolio digital yang menggabungkan data penempatan, presensi, logbook, kompetensi, tugas, laporan, nilai, dan isian refleksi mahasiswa.</p>
+        <div class="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+            Saat ini pengisian portofolio mahasiswa difokuskan ke wahana Apotek lebih dulu. Wahana lain disiapkan bertahap agar formatnya mengikuti panduan resmi PKPA 2026.
+            @if(($hidden_runs ?? 0) > 0)
+                <span class="mt-1 block font-semibold">{{ $hidden_runs }} rotasi lain sementara belum ditampilkan di menu ini.</span>
+            @endif
+        </div>
     </section>
     <div class="grid gap-4">
         @forelse($portfolios as $portfolio)

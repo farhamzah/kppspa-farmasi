@@ -15,6 +15,7 @@ use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
+use App\Models\PkpaRotationRun;
 use App\Models\PkpaRotationAssignment;
 use App\Models\PkpaScheduleAcknowledgement;
 use App\Models\PkpaSiteAvailabilityPeriod;
@@ -25,6 +26,7 @@ use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPlacementNotificationService;
 use App\Services\PkpaProgramService;
 use Database\Seeders\PkpaMasterSeeder;
+use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -50,7 +52,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         config()->set('my_pkpa.student_place_selection_enabled', false);
         config()->set('my_pkpa.database_notifications_enabled', true);
         config()->set('my_pkpa.email_notifications_enabled', false);
-        $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
+        $this->seed([RoleSeeder::class, PkpaMasterSeeder::class, PkpaPortfolioTemplateSeeder::class]);
 
         $this->admin = $this->makeUser('admin05@test.local', ['admin'], 'CORE-ADMIN-05');
         $this->koordinator = $this->makeUser('koor05@test.local', ['koordinator_kp'], 'CORE-KOOR-05');
@@ -199,6 +201,58 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->where('core_user_id', '373')
             ->where('acknowledgement_type', 'acknowledged')
             ->count());
+    }
+
+    public function test_student_portal_pages_use_pkpa_publication_and_rotation_data(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-STUDENT-PAGES');
+        $assignment = $publication->assignments()->where('practice_domain_name_snapshot', 'Apotek')->firstOrFail();
+        $run = PkpaRotationRun::create([
+            'pkpa_program_id' => $assignment->publication->pkpa_program_id,
+            'pkpa_enrollment_id' => $assignment->pkpa_enrollment_id,
+            'pkpa_enrollment_requirement_id' => $assignment->pkpa_enrollment_requirement_id,
+            'current_placement_publication_id' => $assignment->pkpa_placement_publication_id,
+            'origin_published_assignment_id' => $assignment->id,
+            'current_published_assignment_id' => $assignment->id,
+            'practice_domain_id' => $assignment->practice_domain_id,
+            'practice_site_id' => $assignment->practice_site_id,
+            'student_core_user_id' => $assignment->student_core_user_id,
+            'scheduled_start_date' => $assignment->start_date,
+            'scheduled_end_date' => $assignment->end_date,
+            'actual_start_date' => $assignment->start_date,
+            'actual_end_date' => $assignment->end_date,
+            'status' => 'operational_active',
+            'operational_status' => 'active',
+            'publication_sync_status' => 'synced',
+            'current_key' => 'TEST-RUN-'.$assignment->id,
+            'created_by_core_user_id' => $this->koordinator->core_user_id,
+            'updated_by_core_user_id' => $this->koordinator->core_user_id,
+        ]);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/penempatan-pkpa')
+            ->assertOk()
+            ->assertSee('Penempatan aktif / terdekat')
+            ->assertSee($assignment->practice_site_name_snapshot);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get("/mahasiswa/rotasi-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee($assignment->practice_site_name_snapshot)
+            ->assertSee('Detail Rotasi PKPA');
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/jurnal-pkpa')
+            ->assertOk()
+            ->assertSee('Logbook per Rotasi')
+            ->assertSee($assignment->practice_site_name_snapshot);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa')
+            ->assertOk()
+            ->assertSee('Portofolio Digital Rotasi')
+            ->assertSee('difokuskan ke wahana Apotek lebih dulu')
+            ->assertSee($assignment->practice_site_name_snapshot);
     }
 
     public function test_locking_plan_immediately_exposes_valid_assignments_to_portals(): void

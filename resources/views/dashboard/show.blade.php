@@ -62,7 +62,7 @@
         'Wahana PKPA' => 'Kelola lima wahana utama dan sub wahana pemerintahan.',
         'Tempat Praktik' => 'Master mitra, lokasi, dan identitas tempat praktik.',
         'Peserta PKPA' => 'Kepesertaan mahasiswa dari Core Farmasi.',
-        'Kelompok PKPA' => 'Kelompok mahasiswa untuk persiapan penempatan.',
+        'Kelompok PKPA' => 'Kelompok administratif opsional untuk koordinasi pembekalan atau kebutuhan internal.',
         'Tempat Tersedia' => 'Ketersediaan tempat, kapasitas, dan preseptor per program.',
         'Kapasitas Tempat' => 'Kuota operasional per tempat dan per periode rotasi.',
         'Log Kapasitas' => 'Riwayat perubahan kapasitas tempat praktik.',
@@ -105,7 +105,7 @@
         ],
         'koordinator_kp' => [
             ['01', 'Persiapan', 'Program tahunan, wahana, tempat, dan pembimbing ditetapkan'],
-            ['02', 'Administrasi', 'Peserta, kelompok, berkas, dan pembekalan dipantau'],
+            ['02', 'Administrasi', 'Peserta, berkas, pembekalan, dan kelompok opsional dipantau'],
             ['03', 'Rotasi', 'Penempatan disusun dan dipublikasikan per periode wahana'],
             ['04', 'Evaluasi', 'Portofolio, nilai, ujian, dan penyelesaian akhir dikawal'],
         ],
@@ -207,7 +207,7 @@
 
     $summarySections = collect([
         ['title' => 'Ringkasan Master PKPA', 'description' => 'Program, wahana, dan tempat praktik berdasarkan data aktual.', 'stats' => $pkpaMasterStats ?? null, 'tone' => 'cyan'],
-        ['title' => 'Ringkasan Peserta PKPA', 'description' => 'Peserta, kelompok, sinkronisasi Core, dan kelengkapan persyaratan.', 'stats' => $pkpaEnrollmentStats ?? null, 'tone' => 'teal'],
+        ['title' => 'Ringkasan Peserta PKPA', 'description' => 'Peserta, sinkronisasi Core, kelengkapan persyaratan, dan kelompok opsional.', 'stats' => $pkpaEnrollmentStats ?? null, 'tone' => 'teal'],
         ['title' => 'Ringkasan Kesiapan PKPA', 'description' => 'Kapasitas tempat, ketersediaan, dan pembimbing dari Core.', 'stats' => $pkpaPlacementReadinessStats ?? null, 'tone' => 'emerald'],
         ['title' => 'Ringkasan Penyusunan Penempatan', 'description' => 'Rencana aktif, draf penempatan, validasi, dan masalah aktif.', 'stats' => $pkpaPlacementPlannerStats ?? null, 'tone' => 'amber'],
         ['title' => 'Ringkasan Publikasi PKPA', 'description' => 'Publikasi aktif, snapshot resmi, konfirmasi baca, dan pengiriman notifikasi.', 'stats' => $pkpaPublicationStats ?? null, 'tone' => 'emerald'],
@@ -242,10 +242,10 @@
                 'tone' => $studentPkpaEnrollment ? 'emerald' : 'amber',
             ],
             [
-                'label' => 'Kelompok',
-                'value' => $studentPkpaEnrollment?->activeGroupMembership?->group?->code ?? 'Belum',
-                'section' => 'Kelompok PKPA',
-                'tone' => $studentPkpaEnrollment?->activeGroupMembership ? 'cyan' : 'amber',
+                'label' => 'Kelompok Opsional',
+                'value' => $studentPkpaEnrollment?->activeGroupMembership?->group?->code ?? 'Tidak dipakai',
+                'section' => 'Administrasi',
+                'tone' => $studentPkpaEnrollment?->activeGroupMembership ? 'cyan' : 'slate',
             ],
             [
                 'label' => 'Kewajiban Wahana',
@@ -290,10 +290,10 @@
             'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
         ],
         [
-            'label' => 'Peserta belum berkelompok',
+            'label' => 'Peserta tanpa kelompok opsional',
             'value' => (int) ($pkpaEnrollmentStats['peserta_belum_berkelompok'] ?? 0),
             'route' => 'management.pkpa-enrollments.index',
-            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+            'visible' => false,
         ],
         [
             'label' => 'Sinkronisasi Core peserta bermasalah',

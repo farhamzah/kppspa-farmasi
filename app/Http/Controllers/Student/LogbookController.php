@@ -8,6 +8,7 @@ use App\Http\Requests\Student\SubmitKpLogbookRequest;
 use App\Http\Requests\Student\UpdateKpLogbookRequest;
 use App\Models\KpAssignment;
 use App\Models\KpLogbook;
+use App\Models\PkpaRotationRun;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,17 +19,29 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LogbookController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $assignment = $this->activeAssignment();
-        $logbooks = $assignment
-            ? $assignment->logbooks()->latest('activity_date')->paginate(10)
-            : null;
+        $runs = PkpaRotationRun::query()
+            ->forStudent($request->user()->core_user_id)
+            ->with(['practiceDomain', 'practiceSite'])
+            ->withCount([
+                'logbookEntries',
+                'logbookEntries as draft_logbook_entries_count' => fn ($query) => $query->whereIn('status', ['draft', 'revision_requested']),
+                'logbookEntries as submitted_logbook_entries_count' => fn ($query) => $query->where('status', 'submitted'),
+                'logbookEntries as approved_logbook_entries_count' => fn ($query) => $query->whereIn('status', ['approved', 'reviewed_by_internal']),
+            ])
+            ->orderBy('scheduled_start_date')
+            ->get();
 
         return view('student.logbooks.index', [
-            'assignment' => $assignment?->load(['place', 'internalSupervisor.user', 'fieldSupervisor.user']),
-            'logbooks' => $logbooks,
-            'stats' => $assignment ? $this->stats($assignment) : null,
+            'runs' => $runs,
+            'summary' => [
+                'rotations' => $runs->count(),
+                'total' => (int) $runs->sum('logbook_entries_count'),
+                'draft' => (int) $runs->sum('draft_logbook_entries_count'),
+                'submitted' => (int) $runs->sum('submitted_logbook_entries_count'),
+                'approved' => (int) $runs->sum('approved_logbook_entries_count'),
+            ],
         ]);
     }
 

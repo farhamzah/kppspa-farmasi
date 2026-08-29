@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaPortfolioExportVersion;
 use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
@@ -23,9 +24,24 @@ class PkpaPortfolioController extends Controller
             ->forStudent($request->user()->core_user_id)
             ->latest()
             ->get();
-        $items = $runs->map(fn ($run) => $this->portfolios->ensureForRun($run, $request->user()));
+        $supportedRuns = $runs->filter(function (PkpaRotationRun $run) {
+            return PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code)
+                && PkpaPortfolioTemplate::query()
+                    ->where('practice_domain_id', $run->practice_domain_id)
+                    ->where('is_current', true)
+                    ->where('status', 'active')
+                    ->where(function ($query) use ($run) {
+                        $query->whereNull('pkpa_program_id')->orWhere('pkpa_program_id', $run->pkpa_program_id);
+                    })
+                    ->exists();
+        });
+        $items = $supportedRuns->map(fn ($run) => $this->portfolios->ensureForRun($run, $request->user()));
 
-        return view('student.pkpa-portfolios.index', ['portfolios' => $items]);
+        return view('student.pkpa-portfolios.index', [
+            'portfolios' => $items,
+            'supported_runs' => $supportedRuns->count(),
+            'hidden_runs' => max(0, $runs->count() - $supportedRuns->count()),
+        ]);
     }
 
     public function show(Request $request, PkpaRotationPortfolio $portfolio)

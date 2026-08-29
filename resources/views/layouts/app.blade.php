@@ -117,6 +117,9 @@
                     'Pelaporan Analitik' => 'Pelaporan & Akhir',
                     'Pemeriksaan Integrasi' => 'Pelaporan & Akhir',
                 ];
+                $menuLabels = [
+                    'Kelompok PKPA' => 'Kelompok Opsional',
+                ];
                 $currentMenuGroup = null;
             @endphp
             @foreach(($roleData['menu'] ?? ['Dashboard', 'Profil Saya']) as $item)
@@ -311,7 +314,7 @@
                 <a href="{{ $href }}" class="group flex min-w-max items-center justify-between rounded-2xl px-3 py-3 text-sm font-bold transition-all {{ $isActive ? 'bg-cyan-700 text-white shadow-lg shadow-cyan-700/20 ring-1 ring-cyan-600' : 'text-slate-600 hover:bg-sky-50 hover:text-cyan-800' }}">
                     <span class="flex min-w-0 items-center gap-3">
                         <span class="h-2 w-2 rounded-full {{ $isActive ? 'bg-cyan-100' : 'bg-sky-300 group-hover:bg-cyan-500' }}"></span>
-                        <span class="truncate">{{ $item }}</span>
+                        <span class="truncate">{{ $menuLabels[$item] ?? $item }}</span>
                     </span>
                     @unless($isDashboard || $isProfile || $mappedRoute)
                         <span class="ml-3 rounded-md {{ $isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500' }} px-2 py-0.5 text-[10px] font-black uppercase tracking-widest">Segera</span>

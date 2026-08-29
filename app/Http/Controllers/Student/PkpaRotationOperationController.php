@@ -32,7 +32,7 @@ class PkpaRotationOperationController extends Controller
 
     public function show(Request $request, PkpaRotationRun $run): View
     {
-        abort_unless($run->student_core_user_id === $request->user()->core_user_id, 403);
+        abort_unless((string) $run->student_core_user_id === (string) $request->user()->core_user_id, 403);
 
         return view('student.pkpa-operations.show', [
             'run' => $run->load([

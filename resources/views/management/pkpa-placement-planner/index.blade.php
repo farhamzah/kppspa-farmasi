@@ -140,7 +140,7 @@
                                                 <span>
                                                     <span class="block font-black text-slate-950">{{ $enrollment->student_number ?: '-' }}</span>
                                                     <span class="block text-sm font-bold text-slate-700">{{ $enrollment->student_name_snapshot }}</span>
-                                                    <span class="block text-xs text-slate-500">{{ $enrollment->activeGroupMembership?->group?->name ?: 'Tanpa kelompok' }} / {{ $enrollment->statusLabel() }}</span>
+                                                    <span class="block text-xs text-slate-500">{{ $enrollment->activeGroupMembership?->group?->name ?: 'Tanpa kelompok opsional' }} / {{ $enrollment->statusLabel() }}</span>
                                                 </span>
                                             </label>
                                         </th>
@@ -168,7 +168,7 @@
                                     <input type="checkbox" form="bulk-form" name="enrollment_ids[]" value="{{ $enrollment->id }}" class="mt-1 rounded border-slate-300">
                                     <span>
                                         <span class="block font-black text-slate-950">{{ $enrollment->student_name_snapshot }}</span>
-                                        <span class="block text-xs text-slate-500">{{ $enrollment->student_number }} / {{ $enrollment->activeGroupMembership?->group?->name ?: 'Tanpa kelompok' }}</span>
+                                        <span class="block text-xs text-slate-500">{{ $enrollment->student_number }} / {{ $enrollment->activeGroupMembership?->group?->name ?: 'Tanpa kelompok opsional' }}</span>
                                     </span>
                                 </label>
                                 <div class="mt-3 grid gap-3">
