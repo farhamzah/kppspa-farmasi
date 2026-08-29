@@ -30,7 +30,7 @@ class PkpaPortfolioReviewController extends Controller
     {
         abort_unless($this->portfolios->canAccess($portfolio, $request->user()), 403);
 
-        return view('field-supervisor.pkpa-portfolios.show', ['portfolio' => $portfolio->load(['caseReports', 'documentationItems', 'reviews'])]);
+        return view('field-supervisor.pkpa-portfolios.show', ['portfolio' => $portfolio->load(['sectionRecords.templateSection', 'caseReports', 'documentationItems', 'reviews'])]);
     }
 
     public function verify(Request $request, PkpaRotationPortfolio $portfolio)

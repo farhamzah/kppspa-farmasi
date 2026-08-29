@@ -11,6 +11,7 @@ use App\Models\PkpaPortfolioSelfAssessment;
 use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
+use App\Support\PkpaApotekPortfolio;
 use App\Models\User;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
@@ -50,6 +51,7 @@ class PkpaPortfolioBuilderService
             })
             ->orderByRaw('pkpa_program_id is null')
             ->firstOrFail();
+        $template = $this->syncApotekTemplateSections($template, $run);
 
         return DB::transaction(function () use ($run, $template, $actor) {
             $portfolio = PkpaRotationPortfolio::firstOrCreate([
@@ -106,6 +108,46 @@ class PkpaPortfolioBuilderService
         ]);
 
         return $this->syncProgress($portfolio->fresh());
+    }
+
+    public function saveSectionRecord(PkpaRotationPortfolio $portfolio, string $sectionCode, array $payload, User $actor)
+    {
+        $this->ensureStudentOwns($portfolio, $actor);
+
+        $record = $portfolio->sectionRecords()
+            ->where('section_code', $sectionCode)
+            ->firstOrFail();
+
+        if (! in_array($record->source_type, ['structured_form', 'attachment_list'], true)) {
+            throw ValidationException::withMessages(['section' => 'Bagian portofolio ini tidak dapat diisi manual dari portal mahasiswa.']);
+        }
+
+        $cleanPayload = collect($payload)
+            ->map(function ($value) {
+                if (is_string($value)) {
+                    return trim($value);
+                }
+
+                return $value;
+            })
+            ->filter(fn ($value) => ! ($value === null || $value === ''))
+            ->all();
+
+        $completed = PkpaApotekPortfolio::completed($cleanPayload, $sectionCode);
+
+        $record->update([
+            'manual_payload' => $cleanPayload,
+            'status' => $completed ? 'completed' : 'pending',
+            'completion_snapshot' => array_merge($record->completion_snapshot ?? [], [
+                'updated_by' => $actor->core_user_id,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+            'completed_at' => $completed ? now() : null,
+        ]);
+
+        $this->syncProgress($portfolio->fresh());
+
+        return $record->fresh();
     }
 
     public function saveCase(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioCaseReport
@@ -359,7 +401,7 @@ class PkpaPortfolioBuilderService
 
     public function completeness(PkpaRotationPortfolio $portfolio): array
     {
-        $portfolio->loadMissing(['template.sections', 'sectionRecords', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems', 'rotationRun.logbookEntries', 'rotationRun.attendanceRecords', 'rotationRun.competencyRecords', 'rotationRun.specialTasks', 'rotationRun.rotationReport', 'rotationRun.gradeResults', 'reviews']);
+        $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems', 'rotationRun.logbookEntries', 'rotationRun.attendanceRecords', 'rotationRun.competencyRecords', 'rotationRun.specialTasks', 'rotationRun.rotationReport', 'rotationRun.gradeResults', 'reviews']);
         $blocking = [];
         if (! $portfolio->integrity_acknowledged_at) {
             $blocking[] = 'Pakta integritas belum disetujui.';
@@ -389,11 +431,20 @@ class PkpaPortfolioBuilderService
             $blocking[] = 'Masih ada revisi terbuka.';
         }
 
+        $pendingSections = $this->pendingManualSections($portfolio);
+        if ($pendingSections !== []) {
+            $blocking[] = 'Bagian portofolio yang belum lengkap: '.implode(', ', $pendingSections).'.';
+        }
+
+        $completedManualSections = $portfolio->sectionRecords
+            ->filter(fn ($record) => in_array($record->source_type, ['structured_form', 'attachment_list'], true) && $record->status === 'completed')
+            ->count();
+
         return [
             'ready_to_submit' => $blocking === [],
             'blocking' => $blocking,
             'counts' => [
-                'sections' => $portfolio->sectionRecords->count(),
+                'sections' => $completedManualSections,
                 'cases' => $portfolio->caseReports->where('status', 'completed')->count(),
                 'reflections' => $portfolio->weeklyReflections->where('status', 'completed')->count(),
                 'documentation' => $portfolio->documentationItems->whereIn('status', ['submitted', 'verified'])->count(),
@@ -507,6 +558,11 @@ class PkpaPortfolioBuilderService
             'placement' => $portfolio->placement_snapshot,
             'progress' => $portfolio->progress_snapshot,
             'template' => $portfolio->template?->only(['code', 'name', 'version_number']),
+            'sections' => $portfolio->sectionRecords()
+                ->whereNotNull('manual_payload')
+                ->get()
+                ->mapWithKeys(fn ($record) => [$record->section_code => $record->manual_payload])
+                ->all(),
             'published_at' => now()->toIso8601String(),
         ];
     }
@@ -539,8 +595,8 @@ class PkpaPortfolioBuilderService
 
     private function exportLines(PkpaRotationPortfolio $portfolio): array
     {
-        $portfolio->loadMissing(['template.sections', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems']);
-        return array_merge([
+        $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems']);
+        $lines = [
             'PORTOFOLIO DIGITAL PKPA',
             'Label: Dokumen internal MY PKPA'.($portfolio->status === 'published' ? ' - Diterbitkan' : ' - Draf internal'),
             'Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name').' ('.data_get($portfolio->identity_snapshot, 'student_number').')',
@@ -550,7 +606,24 @@ class PkpaPortfolioBuilderService
             'Preseptor: '.data_get($portfolio->placement_snapshot, 'field_supervisor'),
             'Pembimbing Dalam: '.data_get($portfolio->placement_snapshot, 'internal_supervisor'),
             'Daftar Isi',
-        ], $portfolio->template->sections->pluck('title')->all(), [
+        ];
+
+        $sectionTitles = PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)
+            ? collect(PkpaApotekPortfolio::templateSections())->map(fn ($section) => $section[1])->all()
+            : $portfolio->template->sections->pluck('title')->all();
+        $lines = array_merge($lines, $sectionTitles);
+
+        foreach ($portfolio->sectionRecords as $record) {
+            if (blank($record->manual_payload)) {
+                continue;
+            }
+            $lines[] = $record->templateSection?->title ?? str($record->section_code)->headline()->toString();
+            foreach (PkpaApotekPortfolio::summaryLines($record->section_code, $record->manual_payload ?? []) as $line) {
+                $lines[] = $line;
+            }
+        }
+
+        return array_merge($lines, [
             'Studi kasus: '.$portfolio->caseReports->count(),
             'Refleksi mingguan: '.$portfolio->weeklyReflections->count(),
             'Penilaian Diri: '.$portfolio->selfAssessments->count(),
@@ -558,6 +631,23 @@ class PkpaPortfolioBuilderService
             'Pakta integritas: '.($portfolio->integrity_acknowledged_at ? 'Disetujui elektronik' : 'Belum disetujui'),
             'Catatan: persetujuan elektronik bukan tanda tangan digital tersertifikasi.',
         ]);
+    }
+
+    private function pendingManualSections(PkpaRotationPortfolio $portfolio): array
+    {
+        if (! PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+            return [];
+        }
+
+        return $portfolio->sectionRecords
+            ->filter(function ($record) {
+                return in_array($record->source_type, ['structured_form'], true)
+                    && (bool) optional($record->templateSection)->is_required
+                    && $record->status !== 'completed';
+            })
+            ->map(fn ($record) => $record->templateSection?->title ?? $record->section_code)
+            ->values()
+            ->all();
     }
 
     private function ensureStudentOwns(PkpaRotationPortfolio $portfolio, User $actor): void
@@ -597,5 +687,39 @@ class PkpaPortfolioBuilderService
     private function defaultIntegrityText(): string
     {
         return 'Saya menyatakan seluruh isi portofolio PKPA ini benar, tidak memuat identitas langsung pasien, dan disusun untuk keperluan akademik internal MY PKPA. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.';
+    }
+
+    private function syncApotekTemplateSections(PkpaPortfolioTemplate $template, PkpaRotationRun $run): PkpaPortfolioTemplate
+    {
+        if (! PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code) || $template->code !== 'PORT-APT-v1') {
+            return $template;
+        }
+
+        foreach (PkpaApotekPortfolio::templateSections() as $index => $sectionConfig) {
+            [$sectionCode, $title, $sourceType, $reviewerType] = array_slice($sectionConfig, 0, 4);
+            $isRequired = $sectionConfig[4] ?? false;
+            $staticContent = $sectionConfig[5] ?? null;
+            $definition = PkpaApotekPortfolio::sectionDefinition($sectionCode);
+
+            $template->sections()->updateOrCreate(['code' => $sectionCode], [
+                'title' => $title,
+                'source_type' => $sourceType,
+                'reviewer_type' => $reviewerType,
+                'is_required' => $isRequired,
+                'minimum_items' => in_array($sourceType, ['repeatable_case', 'weekly_reflection', 'self_assessment', 'evidence_gallery'], true) ? 1 : 0,
+                'sort_order' => ($index + 1) * 10,
+                'requirement_rules' => [
+                    'no_duplicate_existing_data' => str_starts_with($sourceType, 'auto_'),
+                    'private_files' => in_array($sourceType, ['evidence_gallery', 'attachment_list'], true),
+                ],
+                'content_schema' => array_filter([
+                    'fields' => $definition['fields'] ?? null,
+                    'activity_hint' => $definition['activity_hint'] ?? null,
+                ]),
+                'static_content' => $sourceType === 'static_content' ? $staticContent : null,
+            ]);
+        }
+
+        return $template->fresh('sections');
     }
 }

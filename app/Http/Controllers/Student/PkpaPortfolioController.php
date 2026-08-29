@@ -7,6 +7,7 @@ use App\Models\PkpaPortfolioExportVersion;
 use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
 use App\Services\PkpaPortfolioBuilderService;
+use App\Support\PkpaApotekPortfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,6 +43,22 @@ class PkpaPortfolioController extends Controller
         return back()->with('status', 'Pakta integritas disetujui.');
     }
 
+    public function storeSection(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode)
+    {
+        $definition = PkpaApotekPortfolio::sectionDefinition($sectionCode);
+        abort_unless($definition, 404);
+
+        $rules = [];
+        foreach ($definition['fields'] ?? [] as $field) {
+            $rules[$field['name']] = ['nullable', 'string'];
+        }
+
+        $data = $request->validate($rules);
+        $this->portfolios->saveSectionRecord($portfolio, $sectionCode, $data, $request->user());
+
+        return back()->with('status', ($definition['title'] ?? 'Bagian portofolio').' tersimpan.');
+    }
+
     public function storeCase(Request $request, PkpaRotationPortfolio $portfolio)
     {
         $data = $request->validate([
@@ -50,6 +67,8 @@ class PkpaPortfolioController extends Controller
             'patient_initials' => ['nullable', 'string', 'max:16'],
             'gender' => ['nullable', 'string', 'max:32'],
             'age' => ['nullable', 'integer', 'min:0', 'max:130'],
+            'weight_kg' => ['nullable', 'numeric', 'min:0', 'max:999.99'],
+            'height_cm' => ['nullable', 'numeric', 'min:0', 'max:999.99'],
             'complaint' => ['nullable', 'string'],
             'diagnosis' => ['nullable', 'string'],
             'history' => ['nullable', 'string'],

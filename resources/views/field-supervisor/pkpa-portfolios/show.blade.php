@@ -4,6 +4,11 @@
 @section('page_title', 'Pemeriksaan Portofolio')
 
 @section('content')
+@php
+    $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
+    $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
+    $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
+@endphp
 <div class="space-y-6">
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Pemeriksaan Portofolio</p>
@@ -33,5 +38,37 @@
             </form>
         </div>
     </section>
+
+    @if($isApotek)
+        <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-black text-slate-950">Bagian Portofolio Apotek</h2>
+            <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                @foreach($editableSections as $code => $definition)
+                    @php
+                        $record = $sectionRecords->get($code);
+                        $lines = \App\Support\PkpaApotekPortfolio::summaryLines($code, $record?->manual_payload ?? []);
+                    @endphp
+                    <article class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-black text-slate-950">{{ $definition['title'] }}</h3>
+                                <p class="mt-1 text-xs text-slate-500">{{ $definition['description'] }}</p>
+                            </div>
+                            <span class="rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
+                                {{ $record?->status === 'completed' ? 'Lengkap' : 'Belum lengkap' }}
+                            </span>
+                        </div>
+                        <div class="mt-3 space-y-2 text-sm text-slate-700">
+                            @forelse($lines as $line)
+                                <p>{{ \Illuminate\Support\Str::limit($line, 220) }}</p>
+                            @empty
+                                <p class="text-slate-500">Belum ada isi yang disimpan di bagian ini.</p>
+                            @endforelse
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
 </div>
 @endsection

@@ -414,6 +414,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('portfolio-export-versions/{version}/download', [StudentPkpaPortfolioController::class, 'download'])->middleware('throttle:pkpa-downloads')->name('pkpa-portfolios.exports.download');
             Route::get('portofolio-pkpa/{portfolio}', [StudentPkpaPortfolioController::class, 'show'])->name('pkpa-portfolios.show');
             Route::post('portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'acknowledge'])->name('pkpa-portfolios.integrity.acknowledge');
+            Route::post('portofolio-pkpa/{portfolio}/bagian/{sectionCode}', [StudentPkpaPortfolioController::class, 'storeSection'])->name('pkpa-portfolios.sections.store');
             Route::post('portofolio-pkpa/{portfolio}/studi-kasus', [StudentPkpaPortfolioController::class, 'storeCase'])->name('pkpa-portfolios.cases.store');
             Route::post('portofolio-pkpa/{portfolio}/refleksi', [StudentPkpaPortfolioController::class, 'storeReflection'])->name('pkpa-portfolios.reflections.store');
             Route::post('portofolio-pkpa/{portfolio}/penilaian-diri', [StudentPkpaPortfolioController::class, 'storeSelfAssessment'])->name('pkpa-portfolios.self-assessments.store');

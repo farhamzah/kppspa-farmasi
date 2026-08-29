@@ -30,7 +30,7 @@ class PkpaPortfolioReviewController extends Controller
     {
         abort_unless($this->portfolios->canAccess($portfolio, $request->user()), 403);
 
-        return view('internal-supervisor.pkpa-portfolios.show', ['portfolio' => $portfolio->load(['weeklyReflections', 'selfAssessments', 'reviews'])]);
+        return view('internal-supervisor.pkpa-portfolios.show', ['portfolio' => $portfolio->load(['sectionRecords.templateSection', 'weeklyReflections', 'selfAssessments', 'reviews'])]);
     }
 
     public function approve(Request $request, PkpaRotationPortfolio $portfolio)

@@ -16,10 +16,12 @@ use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaRotationAssessment;
 use App\Models\PkpaRotationCompetencyRecord;
 use App\Models\PkpaRotationGradeResult;
+use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
 use App\Models\PkpaRotationSupervisorHistory;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\PkpaApotekPortfolio;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
 use App\Services\PkpaProgramService;
@@ -63,7 +65,10 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
     {
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-APT-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-RS-v1', 'status' => 'active']);
+        $apotek = PkpaPortfolioTemplate::where('code', 'PORT-APT-v1')->with('sections')->firstOrFail();
         $hospital = PkpaPortfolioTemplate::where('code', 'PORT-RS-v1')->with('sections')->firstOrFail();
+        $this->assertStringContainsString('Profil Tempat PKPA', $apotek->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Daftar Pustaka', $apotek->sections->pluck('title')->implode(' '));
         $this->assertStringNotContainsString('Apotek', $hospital->name.' '.$hospital->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Logbook', $hospital->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Penilaian Diri', $hospital->sections->pluck('title')->implode(' '));
@@ -78,8 +83,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertSame('Mahasiswa Tahap 14', data_get($portfolio->identity_snapshot, 'student_name'));
         $logbookRecord = $portfolio->sectionRecords()->where('source_type', 'auto_logbook')->firstOrFail();
         $this->assertNotEmpty(data_get($logbookRecord->auto_source_refs, 'logbook_entry_ids'));
-        $competencyRecord = $portfolio->sectionRecords()->where('source_type', 'auto_competency')->firstOrFail();
-        $this->assertNotEmpty(data_get($competencyRecord->auto_source_refs, 'competency_record_ids'));
+        $siteProfileRecord = $portfolio->sectionRecords()->where('section_code', 'site_profile')->firstOrFail();
+        $this->assertSame('structured_form', $siteProfileRecord->source_type);
         $this->expectException(ValidationException::class);
         $service->submit($portfolio->fresh(), $this->student);
     }
@@ -95,6 +100,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         } catch (ValidationException $exception) {
             $this->assertStringContainsString('identitas', strtolower($exception->getMessage()));
         }
+        $this->fillApotekSections($service, $portfolio);
         $service->saveCase($portfolio->fresh(), ['case_code' => 'CASE-1', 'case_date' => '2026-07-02', 'patient_initials' => 'TN', 'gender' => 'L', 'age' => 40, 'complaint' => 'Batuk', 'diagnosis' => 'ISPA ringan', 'drp' => 'Tidak ada', 'intervention' => 'Edukasi penggunaan obat', 'anonymization_confirmed' => true], $this->student);
         $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'unit' => 'Pelayanan', 'target' => 'Memahami alur', 'achievement' => 'Tercapai'], $this->student);
         $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Komunikasi', 'score' => 4, 'evidence_experience' => 'Konseling pasien anonim'], $this->student);
@@ -130,6 +136,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $service = app(PkpaPortfolioBuilderService::class);
         $portfolio = $service->ensureForRun($this->run, $this->admin);
         $service->acknowledgeIntegrity($portfolio, $this->student);
+        $this->fillApotekSections($service, $portfolio);
         $service->saveCase($portfolio->fresh(), ['case_code' => 'CASE-1', 'complaint' => 'Batuk', 'anonymization_confirmed' => true], $this->student);
         $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'achievement' => 'Tercapai'], $this->student);
         $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Etika', 'score' => 5], $this->student);
@@ -163,6 +170,51 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringContainsString('Rumah Sakit', $docxText);
         $this->assertStringNotContainsString('Apotek', $docxText);
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($pdf->path));
+    }
+
+    public function test_student_can_store_apotek_section_record_from_portal(): void
+    {
+        $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/site_profile', [
+                'overview' => 'Apotek melayani resep dan swamedikasi.',
+                'operational_hours' => '08.00 - 21.00',
+                'pharmacy_services' => 'Pelayanan resep, PIO, konseling.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('pkpa_portfolio_section_records', [
+            'pkpa_rotation_portfolio_id' => $portfolio->id,
+            'section_code' => 'site_profile',
+            'status' => 'completed',
+        ]);
+    }
+
+    public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->run, $this->admin);
+        $this->fillApotekSections($service, $portfolio);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Struktur Portofolio Apotek')
+            ->assertSee('Profil Tempat PKPA')
+            ->assertSee('Laporan Kegiatan PKPA Apotek');
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Bagian Portofolio Apotek')
+            ->assertSee('Laporan Kegiatan: Pelayanan Resep');
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/review-portofolio/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Ringkasan Portofolio Apotek')
+            ->assertSee('Daftar Pustaka');
     }
 
     private function fixtureRun(string $domainCode = 'APT', string $suffix = '14'): PkpaRotationRun
@@ -218,5 +270,21 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertIsString($contents);
 
         return html_entity_decode(strip_tags($contents));
+    }
+
+    private function fillApotekSections(PkpaPortfolioBuilderService $service, PkpaRotationPortfolio $portfolio): void
+    {
+        foreach (PkpaApotekPortfolio::editableSections() as $code => $definition) {
+            if (! ($definition['is_required'] ?? false)) {
+                continue;
+            }
+
+            $payload = [];
+            foreach ($definition['fields'] ?? [] as $field) {
+                $payload[$field['name']] = $field['label'].' demo';
+            }
+
+            $service->saveSectionRecord($portfolio->fresh(), $code, $payload, $this->student);
+        }
     }
 }

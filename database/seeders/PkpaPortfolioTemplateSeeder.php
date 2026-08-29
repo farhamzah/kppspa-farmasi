@@ -4,38 +4,14 @@ namespace Database\Seeders;
 
 use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaPracticeDomain;
+use App\Support\PkpaApotekPortfolio;
 use Illuminate\Database\Seeder;
 
 class PkpaPortfolioTemplateSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->seedTemplate('APT', 'PORT-APT-v1', 'Template Portofolio PKPA Apotek', [
-            ['cover', 'Sampul', 'static_content', 'all'],
-            ['approval', 'Lembar Pengesahan', 'approval', 'field_internal'],
-            ['vision_mission', 'Visi dan Misi', 'static_content', 'all'],
-            ['rules', 'Tata Tertib', 'static_content', 'all'],
-            ['identity', 'Identitas Mahasiswa', 'auto_identity', 'all'],
-            ['integrity_pact', 'Pakta Integritas', 'approval', 'student'],
-            ['objectives', 'Tujuan PKPA Apotek', 'static_content', 'all'],
-            ['competency', 'Kompetensi', 'auto_competency', 'field_internal'],
-            ['daily_logbook', 'Logbook Harian', 'auto_logbook', 'field'],
-            ['supply_management', 'Pengelolaan Sediaan Farmasi', 'structured_form', 'field'],
-            ['prescription_services', 'Pelayanan Resep', 'structured_form', 'field'],
-            ['self_medication', 'Swamedikasi', 'structured_form', 'field'],
-            ['counselling', 'Konseling', 'structured_form', 'field'],
-            ['pio', 'Pelayanan Informasi Obat', 'structured_form', 'field'],
-            ['narcotics_psychotropics', 'Narkotika dan Psikotropika', 'structured_form', 'field'],
-            ['administration', 'Administrasi Apotek', 'structured_form', 'field'],
-            ['case_report', 'Studi Kasus', 'repeatable_case', 'field'],
-            ['weekly_reflection', 'Refleksi Mingguan', 'weekly_reflection', 'internal'],
-            ['self_assessment', 'Penilaian Diri', 'self_assessment', 'internal'],
-            ['field_assessment', 'Penilaian Pembimbing Lapangan', 'auto_assessment', 'field'],
-            ['internal_assessment', 'Penilaian Pembimbing Dalam', 'auto_assessment', 'internal'],
-            ['rubric', 'Rubrik', 'static_content', 'all'],
-            ['documentation', 'Bukti Kegiatan', 'evidence_gallery', 'field'],
-            ['attachments', 'Lampiran', 'attachment_list', 'all'],
-        ]);
+        $this->seedTemplate('APT', 'PORT-APT-v1', 'Template Portofolio PKPA Apotek', PkpaApotekPortfolio::templateSections());
 
         $this->seedTemplate('RS', 'PORT-RS-v1', 'Template Portofolio PKPA Rumah Sakit', [
             ['cover', 'Sampul', 'static_content', 'all'],
@@ -91,12 +67,17 @@ class PkpaPortfolioTemplateSeeder extends Seeder
             ],
         ]);
 
-        foreach ($sections as $index => [$sectionCode, $title, $sourceType, $reviewer]) {
+        $codes = [];
+        foreach ($sections as $index => $sectionConfig) {
+            [$sectionCode, $title, $sourceType, $reviewer] = array_slice($sectionConfig, 0, 4);
+            $isRequired = $sectionConfig[4] ?? ! in_array($sourceType, ['attachment_list'], true);
+            $staticContent = $sectionConfig[5] ?? null;
+            $codes[] = $sectionCode;
             $template->sections()->updateOrCreate(['code' => $sectionCode], [
                 'title' => $title,
                 'source_type' => $sourceType,
                 'reviewer_type' => $reviewer,
-                'is_required' => ! in_array($sourceType, ['attachment_list'], true),
+                'is_required' => $isRequired,
                 'minimum_items' => match ($sourceType) {
                     'repeatable_case', 'weekly_reflection', 'self_assessment', 'evidence_gallery' => 1,
                     default => 0,
@@ -106,14 +87,26 @@ class PkpaPortfolioTemplateSeeder extends Seeder
                     'no_duplicate_existing_data' => str_starts_with($sourceType, 'auto_'),
                     'private_files' => in_array($sourceType, ['evidence_gallery', 'attachment_list'], true),
                 ],
-                'content_schema' => $this->schemaFor($sourceType),
-                'static_content' => $sourceType === 'static_content' ? 'Konten pola '.$title.' dikelola oleh Pembuat Portofolio MY PKPA.' : null,
+                'content_schema' => $this->schemaFor($sourceType, $sectionCode, $domainCode),
+                'static_content' => $sourceType === 'static_content'
+                    ? ($staticContent ?? 'Konten pola '.$title.' dikelola oleh Pembuat Portofolio MY PKPA.')
+                    : null,
             ]);
         }
     }
 
-    private function schemaFor(string $sourceType): array
+    private function schemaFor(string $sourceType, ?string $sectionCode = null, ?string $domainCode = null): array
     {
+        if ($domainCode === 'APT' && $sectionCode) {
+            $apotekSection = PkpaApotekPortfolio::sectionDefinition($sectionCode);
+            if ($apotekSection) {
+                return array_filter([
+                    'fields' => $apotekSection['fields'] ?? [],
+                    'activity_hint' => $apotekSection['activity_hint'] ?? null,
+                ]);
+            }
+        }
+
         return match ($sourceType) {
             'repeatable_case' => ['fields' => ['case_code', 'case_date', 'patient_initials', 'gender', 'age', 'complaint', 'diagnosis', 'soap', 'drp', 'intervention', 'monitoring', 'education', 'references']],
             'weekly_reflection' => ['fields' => ['week_number', 'period_start_date', 'period_end_date', 'unit', 'target', 'achievement', 'obstacle', 'solution', 'reflection', 'next_plan']],
