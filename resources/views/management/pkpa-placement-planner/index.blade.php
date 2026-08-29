@@ -16,7 +16,7 @@
     @endif
 
     <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-        <form method="GET" class="grid gap-3 lg:grid-cols-[1.4fr_1.1fr_1fr_auto] lg:items-end">
+        <form method="GET" class="grid gap-3 lg:grid-cols-[1.2fr_1fr_1fr_220px_auto] lg:items-end">
             <div>
                 <label class="text-xs font-black uppercase tracking-widest text-slate-500">Program</label>
                 <select name="program_id" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
@@ -38,6 +38,15 @@
             <div>
                 <label class="text-xs font-black uppercase tracking-widest text-slate-500">Cari NPM/Nama</label>
                 <input name="q" value="{{ $filters['q'] ?? '' }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Ketik nama atau NPM">
+            </div>
+            <div>
+                <label class="text-xs font-black uppercase tracking-widest text-slate-500">Urutkan</label>
+                <select name="sort" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                    <option value="name_asc" @selected(($filters['sort'] ?? 'name_asc') === 'name_asc')>Nama A-Z</option>
+                    <option value="name_desc" @selected(($filters['sort'] ?? 'name_asc') === 'name_desc')>Nama Z-A</option>
+                    <option value="npm_asc" @selected(($filters['sort'] ?? 'name_asc') === 'npm_asc')>NPM kecil-besar</option>
+                    <option value="npm_desc" @selected(($filters['sort'] ?? 'name_asc') === 'npm_desc')>NPM besar-kecil</option>
+                </select>
             </div>
             <button class="rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">Terapkan</button>
         </form>

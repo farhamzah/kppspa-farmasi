@@ -76,7 +76,7 @@ class PkpaPlacementPlannerController extends Controller
                 : collect(),
             'latestRun' => $plan?->validationRuns()->with('issues.assignment.enrollment', 'issues.assignment.practiceDomain')->latest()->first(),
             'latestBatch' => $plan?->actionBatches()->with('items')->latest()->first(),
-            'filters' => $request->only(['program_id', 'plan_id', 'q', 'group_id', 'domain_id', 'status', 'empty']),
+            'filters' => $request->only(['program_id', 'plan_id', 'q', 'group_id', 'domain_id', 'status', 'empty', 'sort']),
         ]);
     }
 
@@ -254,12 +254,17 @@ class PkpaPlacementPlannerController extends Controller
 
     private function enrollments(Request $request, PkpaProgram $program, ?PkpaPlacementPlan $plan)
     {
+        $sort = $request->input('sort', 'name_asc');
+
         return $program->enrollments()
             ->with(['requirements.practiceDomain', 'requirements.selectedOption', 'activeGroupMembership.group', 'rotationAssignments' => fn ($query) => $query->where('pkpa_placement_plan_id', $plan?->id ?? 0)->with(['practiceSite', 'selectedOption', 'supervisors'])])
             ->whereIn('status', ['active', 'on_hold', 'cancelled'])
             ->search($request->input('q'))
             ->when($request->filled('group_id'), fn ($query) => $query->whereHas('activeGroupMembership', fn ($group) => $group->where('pkpa_student_group_id', $request->group_id)))
-            ->orderBy('student_number')
+            ->when($sort === 'npm_asc', fn ($query) => $query->orderBy('student_number')->orderBy('student_name_snapshot'))
+            ->when($sort === 'npm_desc', fn ($query) => $query->orderByDesc('student_number')->orderBy('student_name_snapshot'))
+            ->when($sort === 'name_desc', fn ($query) => $query->orderByDesc('student_name_snapshot')->orderBy('student_number'))
+            ->when(! in_array($sort, ['npm_asc', 'npm_desc', 'name_desc'], true), fn ($query) => $query->orderBy('student_name_snapshot')->orderBy('student_number'))
             ->paginate((int) $request->input('per_page', 25))
             ->withQueryString();
     }

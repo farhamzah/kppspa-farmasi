@@ -214,6 +214,34 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
             ->assertSee($field->name_snapshot);
     }
 
+    public function test_planner_defaults_to_name_sort_and_supports_search_and_custom_sort(): void
+    {
+        [$program, $plan] = $this->basicPlan('PKPA-04-F');
+        $zahra = $this->enroll($program, 'CORE-STUDENT-04-6', '240010');
+        $alya = $this->enroll($program, 'CORE-STUDENT-04-7', '240002');
+        $zahra->update(['student_name_snapshot' => 'Zahra Nabila']);
+        $alya->update(['student_name_snapshot' => 'Alya Putri']);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-placement-planner?program_id='.$program->id.'&plan_id='.$plan->id)
+            ->assertOk()
+            ->assertSeeInOrder(['Alya Putri', 'Zahra Nabila']);
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-placement-planner?program_id='.$program->id.'&plan_id='.$plan->id.'&q=Alya')
+            ->assertOk()
+            ->assertSee('Alya Putri')
+            ->assertDontSee('Zahra Nabila');
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-placement-planner?program_id='.$program->id.'&plan_id='.$plan->id.'&sort=npm_desc')
+            ->assertOk()
+            ->assertSeeInOrder(['240010', '240002']);
+    }
+
     private function makeUser(string $email, array $roles, string $coreUserId): User
     {
         $user = User::factory()->create([
