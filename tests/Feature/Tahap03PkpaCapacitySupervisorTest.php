@@ -236,7 +236,7 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
             ->assertSee('Belum siap')
             ->assertSee('Belum ada availability period')
             ->assertSee('Belum ada Pembimbing Dalam eligible')
-            ->assertSee('belum memiliki Pembimbing Lapangan aktif');
+            ->assertSee('belum memiliki Preseptor aktif');
 
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-program-sites/{$programSite->id}/availability", [

@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Kelola Tempat Tersedia - '.config('app.name'))
-@section('page_title', 'Kelola Tempat Tersedia')
+@section('title', ($pageTitle ?? 'Kelola Tempat Tersedia').' - '.config('app.name'))
+@section('page_title', $pageTitle ?? 'Kelola Tempat Tersedia')
 @section('content')
 @php
     $dayLabels = ['monday' => 'Senin', 'tuesday' => 'Selasa', 'wednesday' => 'Rabu', 'thursday' => 'Kamis', 'friday' => 'Jumat', 'saturday' => 'Sabtu', 'sunday' => 'Minggu'];

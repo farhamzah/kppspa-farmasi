@@ -36,6 +36,26 @@ class PkpaProgramSiteController extends Controller
 
     public function index(Request $request): View
     {
+        return $this->renderIndex($request);
+    }
+
+    public function preceptorsIndex(Request $request): View
+    {
+        return $this->renderIndex($request, 'preceptors');
+    }
+
+    public function show(PkpaProgramSite $pkpaProgramSite): View
+    {
+        return $this->renderShow($pkpaProgramSite);
+    }
+
+    public function showPreceptors(PkpaProgramSite $pkpaProgramSite): View
+    {
+        return $this->renderShow($pkpaProgramSite, 'preceptors');
+    }
+
+    private function renderIndex(Request $request, string $mode = 'sites'): View
+    {
         $query = PkpaProgramSite::query()
             ->with(['program', 'practiceSite', 'practiceDomain', 'practiceDomainOption'])
             ->withCount(['availabilityPeriods'])
@@ -49,6 +69,11 @@ class PkpaProgramSiteController extends Controller
             'programs' => PkpaProgram::orderByDesc('id')->get(),
             'domains' => PkpaPracticeDomain::orderBy('sort_order')->get(),
             'filters' => $request->only(['q', 'program_id', 'practice_domain_id', 'status']),
+            'pageMode' => $mode,
+            'pageTitle' => $mode === 'preceptors' ? 'Preseptor' : 'Tempat Tersedia',
+            'pageDescription' => $mode === 'preceptors'
+                ? 'Pilih tempat PKPA untuk menambah, sinkronkan, dan memeriksa Preseptor dari Core.'
+                : null,
         ]);
     }
 
@@ -70,11 +95,15 @@ class PkpaProgramSiteController extends Controller
         return redirect()->route('management.pkpa-program-sites.show', $programSite)->with('status', 'Tempat berhasil ditambahkan ke Program PKPA.');
     }
 
-    public function show(PkpaProgramSite $pkpaProgramSite): View
+    private function renderShow(PkpaProgramSite $pkpaProgramSite, string $mode = 'sites'): View
     {
         $pkpaProgramSite->load(['program', 'practiceSite.fieldSupervisors.unavailabilityPeriods', 'practiceDomain', 'practiceDomainOption', 'availabilityPeriods']);
 
-        return view('management.pkpa-program-sites.show', ['programSite' => $pkpaProgramSite]);
+        return view('management.pkpa-program-sites.show', [
+            'programSite' => $pkpaProgramSite,
+            'pageMode' => $mode,
+            'pageTitle' => $mode === 'preceptors' ? 'Kelola Preseptor' : 'Kelola Tempat Tersedia',
+        ]);
     }
 
     public function deactivate(PkpaProgramSite $pkpaProgramSite, Request $request): RedirectResponse

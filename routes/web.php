@@ -265,6 +265,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('pkpa-program-sites/{pkpa_program_site}/field-supervisors/{supervisor}/sync', [PkpaProgramSiteController::class, 'syncFieldSupervisor'])->name('pkpa-program-sites.field-supervisors.sync');
             Route::post('pkpa-program-sites/{pkpa_program_site}/field-supervisors/{supervisor}/unavailability', [PkpaProgramSiteController::class, 'storeFieldUnavailability'])->name('pkpa-program-sites.field-supervisors.unavailability.store');
             Route::post('pkpa-supervisor-unavailability/{period}/cancel', [PkpaProgramSiteController::class, 'cancelUnavailability'])->name('pkpa-supervisor-unavailability.cancel');
+            Route::get('pkpa-preceptors', [PkpaProgramSiteController::class, 'preceptorsIndex'])->name('pkpa-preceptors.index');
+            Route::get('pkpa-preceptors/{pkpaProgramSite}', [PkpaProgramSiteController::class, 'showPreceptors'])->name('pkpa-preceptors.show');
             Route::resource('pkpa-program-sites', PkpaProgramSiteController::class)->only(['index', 'create', 'store', 'show']);
             Route::post('pkpa-internal-supervisors/{eligibility}/sync', [PkpaInternalSupervisorController::class, 'sync'])->name('pkpa-internal-supervisors.sync');
             Route::post('pkpa-internal-supervisors/{eligibility}/deactivate', [PkpaInternalSupervisorController::class, 'deactivate'])->name('pkpa-internal-supervisors.deactivate');
