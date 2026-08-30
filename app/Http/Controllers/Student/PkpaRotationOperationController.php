@@ -32,12 +32,18 @@ class PkpaRotationOperationController extends Controller
 
     public function show(Request $request, PkpaRotationRun $run): View
     {
-        abort_unless((string) $run->student_core_user_id === (string) $request->user()->core_user_id, 403);
+        abort_unless(
+            $run->loadMissing('enrollment', 'currentAssignment')->belongsToStudentCoreUser($request->user()->core_user_id),
+            403
+        );
 
         return view('student.pkpa-operations.show', [
             'run' => $run->load([
+                'enrollment',
+                'currentAssignment.supervisors',
                 'practiceDomain',
                 'practiceSite',
+                'supervisorHistories',
                 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1),
                 'attendanceRecords.correctionRequests',
                 'logbookEntries.attachments',
@@ -49,6 +55,7 @@ class PkpaRotationOperationController extends Controller
     public function saveAttendance(Request $request, PkpaRotationRun $run): RedirectResponse
     {
         $record = $this->attendance->save($run, $request->validate([
+            'id' => ['nullable', 'integer'],
             'attendance_date' => ['required', 'date'],
             'attendance_type' => ['required', 'in:present,sick,permit,institution_closed'],
             'check_in_time' => ['nullable', 'date_format:H:i'],
@@ -64,6 +71,13 @@ class PkpaRotationOperationController extends Controller
         $this->attendance->submit($record, $request->user());
 
         return back()->with('status', 'Presensi dikirim ke preseptor.');
+    }
+
+    public function deleteAttendance(Request $request, PkpaAttendanceRecord $record): RedirectResponse
+    {
+        $this->attendance->deleteDraft($record, $request->user());
+
+        return back()->with('status', 'Presensi draft berhasil dihapus.');
     }
 
     public function requestCorrection(Request $request, PkpaAttendanceRecord $record): RedirectResponse
@@ -105,12 +119,31 @@ class PkpaRotationOperationController extends Controller
         return back()->with('status', 'Logbook dikirim ke preseptor.');
     }
 
+    public function deleteLogbook(Request $request, PkpaLogbookEntry $entry): RedirectResponse
+    {
+        $this->logbooks->deleteDraft($entry->load('attachments'), $request->user());
+
+        return back()->with('status', 'Logbook draft berhasil dihapus.');
+    }
+
     public function uploadAttachment(Request $request, PkpaLogbookEntry $entry): RedirectResponse
     {
         $request->validate(['attachment' => ['required', 'file', 'max:'.config('my_pkpa.logbook_attachment_max_kb', 5120)]]);
         $this->logbooks->storeAttachment($entry, $request->file('attachment'), $request->user());
 
         return back()->with('status', 'Lampiran logbook tersimpan.');
+    }
+
+    public function uploadAttachmentLink(Request $request, PkpaLogbookEntry $entry): RedirectResponse
+    {
+        $data = $request->validate([
+            'external_url' => ['required', 'string', 'max:4096'],
+            'link_label' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->logbooks->storeExternalLink($entry, $data, $request->user());
+
+        return back()->with('status', 'Tautan bukti logbook tersimpan.');
     }
 
     public function downloadAttachment(Request $request, PkpaLogbookAttachment $attachment)

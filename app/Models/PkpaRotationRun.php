@@ -171,7 +171,11 @@ class PkpaRotationRun extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('student_core_user_id', $coreUserId);
+        return $query->where(function (Builder $builder) use ($coreUserId) {
+            $builder->where('student_core_user_id', $coreUserId)
+                ->orWhereHas('enrollment', fn (Builder $enrollment) => $enrollment->where('core_user_id', $coreUserId))
+                ->orWhereHas('currentAssignment', fn (Builder $assignment) => $assignment->where('student_core_user_id', $coreUserId));
+        });
     }
 
     public function scopeForSupervisor(Builder $query, string $type, ?string $coreUserId): Builder
@@ -204,5 +208,26 @@ class PkpaRotationRun extends Model
         ], fn ($value) => filled($value)));
 
         return $parts !== [] ? implode(' / ', $parts) : '-';
+    }
+
+    public function belongsToStudentCoreUser(?string $coreUserId): bool
+    {
+        if (blank($coreUserId)) {
+            return false;
+        }
+
+        $candidates = [
+            $this->student_core_user_id,
+            $this->enrollment?->core_user_id,
+            $this->currentAssignment?->student_core_user_id,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (filled($candidate) && (string) $candidate === (string) $coreUserId) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -39,6 +39,7 @@ class PkpaRotationRunService
                 if ($assignment->student_core_user_id === '' || $assignment->enrollment?->status === 'cancelled') {
                     continue;
                 }
+                $this->ensurePublishedAssignmentHasRequiredSupervisors($assignment);
                 $run = PkpaRotationRun::where('origin_published_assignment_id', $assignment->id)->lockForUpdate()->first();
                 if ($run) {
                     $existing++;
@@ -192,6 +193,17 @@ class PkpaRotationRunService
                 'change_reason' => $reason,
                 'created_by_core_user_id' => $actor?->core_user_id,
                 'updated_by_core_user_id' => $actor?->core_user_id,
+            ]);
+        }
+    }
+
+    private function ensurePublishedAssignmentHasRequiredSupervisors(PkpaPublishedAssignment $assignment): void
+    {
+        $types = $assignment->supervisors->pluck('supervisor_type')->filter()->unique()->values();
+
+        if (! $types->contains('internal') || ! $types->contains('field')) {
+            throw ValidationException::withMessages([
+                'publication' => 'Publikasi tidak valid: setiap assignment harus memiliki Pembimbing Dalam dan Preseptor sebelum runtime rotasi dibentuk.',
             ]);
         }
     }

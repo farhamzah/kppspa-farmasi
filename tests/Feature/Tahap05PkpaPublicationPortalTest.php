@@ -244,7 +244,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/jurnal-pkpa')
             ->assertOk()
-            ->assertSee('Logbook per Rotasi')
+            ->assertSee('Pilih Rotasi untuk Mengisi Logbook')
             ->assertSee($assignment->practice_site_name_snapshot);
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])

@@ -25,17 +25,41 @@ class PkpaAttendanceService
         $this->validateAttendance($run, $data);
 
         return DB::transaction(function () use ($run, $data, $actor) {
-            $record = PkpaAttendanceRecord::where('pkpa_rotation_run_id', $run->id)
-                ->whereDate('attendance_date', $data['attendance_date'])
-                ->where('active_key', 'RUN:'.$run->id.':'.$data['attendance_date'])
-                ->lockForUpdate()
-                ->first();
+            $record = isset($data['id'])
+                ? PkpaAttendanceRecord::whereKey($data['id'])->lockForUpdate()->first()
+                : null;
+
+            if ($record && (int) $record->pkpa_rotation_run_id !== (int) $run->id) {
+                throw ValidationException::withMessages(['authorization' => 'Presensi tidak sesuai dengan rotasi yang sedang dibuka.']);
+            }
+
+            $dateKey = 'RUN:'.$run->id.':'.$data['attendance_date'];
+
+            if (! $record) {
+                $record = PkpaAttendanceRecord::where('pkpa_rotation_run_id', $run->id)
+                    ->whereDate('attendance_date', $data['attendance_date'])
+                    ->where('active_key', $dateKey)
+                    ->lockForUpdate()
+                    ->first();
+            }
 
             if ($record && ! in_array($record->submission_status, ['draft', 'revision_requested'], true)) {
                 throw ValidationException::withMessages(['attendance' => 'Presensi yang sudah dikirim tidak dapat diubah langsung. Ajukan koreksi.']);
             }
 
+            $existingForDate = PkpaAttendanceRecord::where('pkpa_rotation_run_id', $run->id)
+                ->whereDate('attendance_date', $data['attendance_date'])
+                ->where('active_key', $dateKey)
+                ->when($record, fn ($query) => $query->whereKeyNot($record->id))
+                ->lockForUpdate()
+                ->first();
+
+            if ($existingForDate) {
+                throw ValidationException::withMessages(['attendance_date' => 'Presensi untuk tanggal ini sudah ada. Silakan edit entri yang sudah tersimpan.']);
+            }
+
             $payload = [
+                'attendance_date' => $data['attendance_date'],
                 'attendance_type' => $data['attendance_type'] ?? 'present',
                 'check_in_time' => $data['check_in_time'] ?? null,
                 'check_out_time' => $data['check_out_time'] ?? null,
@@ -44,16 +68,15 @@ class PkpaAttendanceService
                 'source' => 'student_manual',
                 'updated_by_core_user_id' => $actor?->core_user_id,
                 'row_version' => ($record?->row_version ?? 0) + 1,
+                'active_key' => $dateKey,
             ];
 
             $record = $record
                 ? tap($record)->update($payload)
                 : PkpaAttendanceRecord::create(array_merge($payload, [
                     'pkpa_rotation_run_id' => $run->id,
-                    'attendance_date' => $data['attendance_date'],
                     'submission_status' => 'draft',
                     'created_by_core_user_id' => $actor?->core_user_id,
-                    'active_key' => 'RUN:'.$run->id.':'.$data['attendance_date'],
                 ]));
 
             $this->audit->record($actor, 'pkpa_attendance_saved', $record, null, $record->only(['attendance_date', 'submission_status']));
@@ -130,6 +153,19 @@ class PkpaAttendanceService
             'requested_by_core_user_id' => $actor?->core_user_id,
             'requested_at' => now(),
         ]);
+    }
+
+    public function deleteDraft(PkpaAttendanceRecord $record, ?User $actor): void
+    {
+        $run = $record->rotationRun()->firstOrFail();
+        $this->ensureStudentOwnsRun($run, $actor);
+
+        if (! in_array($record->submission_status, ['draft', 'revision_requested'], true)) {
+            throw ValidationException::withMessages(['attendance' => 'Presensi yang sudah dikirim tidak dapat dihapus langsung.']);
+        }
+
+        $record->delete();
+        $this->audit->record($actor, 'pkpa_attendance_deleted', $record, null, ['attendance_date' => $record->attendance_date?->toDateString()]);
     }
 
     public function reviewCorrection(PkpaAttendanceCorrectionRequest $request, string $action, ?string $notes, ?User $actor): PkpaAttendanceCorrectionRequest

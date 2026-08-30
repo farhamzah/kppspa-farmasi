@@ -204,10 +204,17 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $service = app(PkpaPortfolioBuilderService::class);
         $portfolio = $service->ensureForRun($this->run, $this->admin);
         $this->fillApotekSections($service, $portfolio);
+        $service->saveCase($portfolio->fresh(), ['case_code' => 'CASE-PREVIEW', 'complaint' => 'Batuk ringan', 'intervention' => 'Edukasi penggunaan obat', 'anonymization_confirmed' => true], $this->student);
+        $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'achievement' => 'Target mingguan tercapai', 'next_plan' => 'Memperdalam konseling pasien'], $this->student);
+        $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Komunikasi', 'score' => 4, 'evidence_experience' => 'Mendampingi konseling pasien'], $this->student);
+        $service->saveDocumentation($portfolio->fresh(), ['activity' => 'Dokumentasi pelayanan resep', 'category' => 'Pelayanan Resep', 'description' => 'Bukti kegiatan layanan harian', 'anonymization_confirmed' => true, 'consent_confirmed' => true], null, $this->student);
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
             ->assertOk()
+            ->assertSee('Preview Hasil Isian')
+            ->assertSee('CASE-PREVIEW')
+            ->assertSee('Dokumentasi pelayanan resep')
             ->assertSee('Struktur Portofolio Apotek')
             ->assertSee('Profil Tempat PKPA')
             ->assertSee('Laporan Kegiatan PKPA Apotek');

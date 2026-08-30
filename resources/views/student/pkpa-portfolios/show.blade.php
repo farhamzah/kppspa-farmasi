@@ -12,6 +12,32 @@
         ->keys()
         ->filter(fn ($code) => ($sectionRecords->get($code)?->status === 'completed'))
         ->count();
+    $previewSections = collect(['site_profile', 'bibliography', 'attachments'])
+        ->map(function ($code) use ($editableSections, $sectionRecords) {
+            $definition = $editableSections[$code] ?? null;
+            $record = $sectionRecords->get($code);
+
+            if (! $definition || ! $record) {
+                return null;
+            }
+
+            $payload = collect($record->manual_payload ?? [])
+                ->filter(fn ($value) => filled($value))
+                ->mapWithKeys(fn ($value, $key) => [
+                    collect($definition['fields'] ?? [])->firstWhere('name', $key)['label'] ?? $key => $value,
+                ]);
+
+            return [
+                'title' => $definition['title'],
+                'status' => $record->status,
+                'payload' => $payload,
+            ];
+        })
+        ->filter();
+    $latestCase = $portfolio->caseReports->sortByDesc('case_date')->first();
+    $latestReflection = $portfolio->weeklyReflections->sortByDesc('week_number')->first();
+    $latestAssessment = $portfolio->selfAssessments->sortByDesc('id')->first();
+    $latestDocumentation = $portfolio->documentationItems->sortByDesc('activity_date')->first();
     $documentationCategories = [
         'Orientasi PKPA',
         'Pelayanan Resep',
@@ -91,6 +117,92 @@
                 <li class="rounded-2xl bg-emerald-50 px-4 py-3 font-semibold text-emerald-800">Siap dikirim.</li>
             @endforelse
         </ul>
+    </section>
+
+    <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+                <h2 class="text-lg font-black text-slate-950">Preview Hasil Isian</h2>
+                <p class="mt-1 text-sm text-slate-600">Ringkasan isi yang sudah tersimpan, agar Anda bisa cek cepat sebelum melanjutkan atau mengirim portofolio.</p>
+            </div>
+            <span class="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Preview kerja</span>
+        </div>
+        <div class="mt-4 grid gap-4 xl:grid-cols-2">
+            @forelse($previewSections as $section)
+                <section class="rounded-2xl bg-slate-50 p-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-base font-black text-slate-950">{{ $section['title'] }}</h3>
+                        <span class="rounded-full px-3 py-1 text-xs font-bold {{ $section['status'] === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
+                            {{ $section['status'] === 'completed' ? 'Tersimpan' : 'Draft' }}
+                        </span>
+                    </div>
+                    <dl class="mt-3 space-y-3">
+                        @forelse($section['payload'] as $label => $value)
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $label }}</dt>
+                                <dd class="mt-1 text-sm leading-6 text-slate-800">{{ $value }}</dd>
+                            </div>
+                        @empty
+                            <p class="text-sm text-slate-500">Belum ada isian tersimpan.</p>
+                        @endforelse
+                    </dl>
+                </section>
+            @empty
+                <div class="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500 xl:col-span-2">Belum ada bagian portofolio manual yang bisa dipreview.</div>
+            @endforelse
+
+            <section class="rounded-2xl bg-slate-50 p-4">
+                <h3 class="text-base font-black text-slate-950">Preview Studi Kasus</h3>
+                @if($latestCase)
+                    <dl class="mt-3 space-y-3 text-sm">
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Nomor Kasus</dt><dd class="mt-1 text-slate-800">{{ $latestCase->case_code }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Keluhan / Diagnosis</dt><dd class="mt-1 text-slate-800">{{ $latestCase->complaint ?: '-' }}{{ $latestCase->diagnosis ? ' / '.$latestCase->diagnosis : '' }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Intervensi</dt><dd class="mt-1 text-slate-800">{{ $latestCase->intervention ?: '-' }}</dd></div>
+                    </dl>
+                @else
+                    <p class="mt-3 text-sm text-slate-500">Belum ada studi kasus tersimpan.</p>
+                @endif
+            </section>
+
+            <section class="rounded-2xl bg-slate-50 p-4">
+                <h3 class="text-base font-black text-slate-950">Preview Refleksi Mingguan</h3>
+                @if($latestReflection)
+                    <dl class="mt-3 space-y-3 text-sm">
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Minggu</dt><dd class="mt-1 text-slate-800">Minggu ke-{{ $latestReflection->week_number }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Pencapaian</dt><dd class="mt-1 text-slate-800">{{ $latestReflection->achievement ?: '-' }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Rencana Berikutnya</dt><dd class="mt-1 text-slate-800">{{ $latestReflection->next_plan ?: '-' }}</dd></div>
+                    </dl>
+                @else
+                    <p class="mt-3 text-sm text-slate-500">Belum ada refleksi mingguan tersimpan.</p>
+                @endif
+            </section>
+
+            <section class="rounded-2xl bg-slate-50 p-4">
+                <h3 class="text-base font-black text-slate-950">Preview Self Assessment</h3>
+                @if($latestAssessment)
+                    <dl class="mt-3 space-y-3 text-sm">
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Aspek</dt><dd class="mt-1 text-slate-800">{{ $latestAssessment->aspect }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Skor</dt><dd class="mt-1 text-slate-800">{{ $latestAssessment->score }}/5</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Refleksi Akhir</dt><dd class="mt-1 text-slate-800">{{ $latestAssessment->final_reflection ?: ($latestAssessment->evidence_experience ?: '-') }}</dd></div>
+                    </dl>
+                @else
+                    <p class="mt-3 text-sm text-slate-500">Belum ada self assessment tersimpan.</p>
+                @endif
+            </section>
+
+            <section class="rounded-2xl bg-slate-50 p-4">
+                <h3 class="text-base font-black text-slate-950">Preview Dokumentasi</h3>
+                @if($latestDocumentation)
+                    <dl class="mt-3 space-y-3 text-sm">
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Kegiatan</dt><dd class="mt-1 text-slate-800">{{ $latestDocumentation->activity }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Kategori</dt><dd class="mt-1 text-slate-800">{{ $latestDocumentation->category ?: '-' }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Keterangan</dt><dd class="mt-1 text-slate-800">{{ $latestDocumentation->description ?: '-' }}</dd></div>
+                    </dl>
+                @else
+                    <p class="mt-3 text-sm text-slate-500">Belum ada dokumentasi tersimpan.</p>
+                @endif
+            </section>
+        </div>
     </section>
 
     <div class="grid gap-6 xl:grid-cols-2">

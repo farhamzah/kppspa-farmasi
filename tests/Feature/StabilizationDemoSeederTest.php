@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\KpFinalScore;
 use App\Models\KpPeriod;
+use App\Models\PkpaPlacementPublication;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\CoreProfileReadService;
@@ -83,7 +84,7 @@ class StabilizationDemoSeederTest extends TestCase
         $this->actingAs($admin)->withSession(['active_role' => 'admin'])
             ->get('/management/recaps')
             ->assertOk()
-            ->assertSee('Rekap, Pemantauan, dan Ekspor KP');
+            ->assertSee('Rekap, Pemantauan, dan Ekspor PKPA');
 
         $this->actingAs($studentA)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/dashboard')
@@ -93,13 +94,30 @@ class StabilizationDemoSeederTest extends TestCase
         $this->actingAs($studentA)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/nilai')
             ->assertOk()
-            ->assertSee('Nilai Akhir KP')
+            ->assertSee('Nilai Akhir PKPA')
             ->assertSee('A');
 
         $this->actingAs($studentB)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/nilai')
             ->assertOk()
             ->assertSee('Nilai sedang diproses');
+    }
+
+    public function test_pkpa_demo_publication_assignments_include_internal_and_field_supervisors(): void
+    {
+        $this->seed(\Database\Seeders\PkpaDemoEndToEndSeeder::class);
+
+        $publication = PkpaPlacementPublication::with('assignments.supervisors')
+            ->where('code', 'PUB-DEMO-2026')
+            ->firstOrFail();
+
+        $this->assertGreaterThanOrEqual(2, $publication->assignments->count());
+
+        foreach ($publication->assignments as $assignment) {
+            $types = $assignment->supervisors->pluck('supervisor_type')->all();
+            $this->assertContains('internal', $types);
+            $this->assertContains('field', $types);
+        }
     }
 
     public function test_legacy_demo_mode_does_not_require_core_profile_connection(): void

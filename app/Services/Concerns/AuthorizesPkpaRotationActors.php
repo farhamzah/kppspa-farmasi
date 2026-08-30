@@ -17,7 +17,7 @@ trait AuthorizesPkpaRotationActors
 
     private function ensureStudentOwnsRun(PkpaRotationRun $run, ?User $actor): void
     {
-        if (! $actor || $run->student_core_user_id !== $actor->core_user_id) {
+        if (! $actor || ! $run->loadMissing('enrollment', 'currentAssignment')->belongsToStudentCoreUser($actor->core_user_id)) {
             throw ValidationException::withMessages(['authorization' => 'Akses rotasi mahasiswa tidak valid.']);
         }
     }
@@ -55,7 +55,7 @@ trait AuthorizesPkpaRotationActors
     private function ensureCanAccessLogbook(PkpaLogbookEntry $entry, ?User $actor): void
     {
         $run = $entry->rotationRun()->with('supervisorHistories')->firstOrFail();
-        if ($this->isCoordinator($actor) || ($actor && $run->student_core_user_id === $actor->core_user_id)) {
+        if ($this->isCoordinator($actor) || ($actor && $run->loadMissing('enrollment', 'currentAssignment')->belongsToStudentCoreUser($actor->core_user_id))) {
             return;
         }
 

@@ -133,6 +133,7 @@ class PkpaLogbookService
 
         return PkpaLogbookAttachment::create([
             'pkpa_logbook_entry_id' => $entry->id,
+            'attachment_type' => 'file',
             'original_filename' => $file->getClientOriginalName(),
             'stored_filename' => $storedName,
             'disk' => $disk,
@@ -144,11 +145,70 @@ class PkpaLogbookService
         ]);
     }
 
+    public function storeExternalLink(PkpaLogbookEntry $entry, array $data, ?User $actor): PkpaLogbookAttachment
+    {
+        $run = $entry->rotationRun()->firstOrFail();
+        $this->ensureStudentOwnsRun($run, $actor);
+        if (! in_array($entry->status, ['draft', 'revision_requested'], true)) {
+            throw ValidationException::withMessages(['external_url' => 'Tautan bukti hanya dapat ditambahkan sebelum logbook dikirim.']);
+        }
+
+        $url = $this->normalizeExternalUrl($data['external_url'] ?? null);
+        $label = trim((string) ($data['link_label'] ?? ''));
+
+        if ($url === null) {
+            throw ValidationException::withMessages(['external_url' => 'Tautan bukti wajib diisi.']);
+        }
+
+        if (! filter_var($url, FILTER_VALIDATE_URL) || ! preg_match('~^https?://~i', $url)) {
+            throw ValidationException::withMessages(['external_url' => 'Tautan bukti harus berupa URL http:// atau https:// yang valid.']);
+        }
+
+        return PkpaLogbookAttachment::create([
+            'pkpa_logbook_entry_id' => $entry->id,
+            'attachment_type' => 'external_link',
+            'original_filename' => $label !== '' ? $label : 'Tautan bukti Google Drive',
+            'stored_filename' => 'external-link',
+            'disk' => 'external',
+            'path' => $url,
+            'mime_type' => 'text/uri-list',
+            'file_size' => 0,
+            'checksum' => null,
+            'external_url' => $url,
+            'link_label' => $label !== '' ? $label : 'Tautan bukti Google Drive',
+            'uploaded_by_core_user_id' => $actor?->core_user_id,
+        ]);
+    }
+
     public function downloadResponse(PkpaLogbookAttachment $attachment, ?User $actor)
     {
         $this->ensureCanAccessAttachment($attachment, $actor);
 
+        if ($attachment->isExternalLink()) {
+            return redirect()->away($attachment->externalDownloadUrl() ?? $attachment->previewUrl() ?? '/');
+        }
+
         return Storage::disk($attachment->disk)->download($attachment->path, $attachment->original_filename);
+    }
+
+    public function deleteDraft(PkpaLogbookEntry $entry, ?User $actor): void
+    {
+        $run = $entry->rotationRun()->with('supervisorHistories')->firstOrFail();
+        $this->ensureStudentOwnsRun($run, $actor);
+
+        if (! in_array($entry->status, ['draft', 'revision_requested'], true)) {
+            throw ValidationException::withMessages(['logbook' => 'Logbook yang sudah dikirim tidak dapat dihapus langsung.']);
+        }
+
+        foreach ($entry->attachments as $attachment) {
+            if ($attachment->isFileUpload() && $attachment->disk !== 'external' && $attachment->path) {
+                Storage::disk($attachment->disk)->delete($attachment->path);
+            }
+            $attachment->delete();
+        }
+
+        $entry->delete();
+        $this->audit->record($actor, 'pkpa_logbook_deleted', $entry);
     }
 
     private function review(PkpaLogbookEntry $entry, string $type, string $action, ?string $comments, ?User $actor): void
@@ -162,6 +222,27 @@ class PkpaLogbookService
             'reviewed_at' => now(),
         ]);
         $this->audit->record($actor, 'pkpa_logbook_reviewed', $entry, null, ['type' => $type, 'action' => $action]);
+    }
+
+    private function normalizeExternalUrl(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $url = trim($value);
+        $url = trim($url, "\"'<>");
+        $url = preg_replace('/\s+/', '', $url) ?? $url;
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (! preg_match('~^[a-z][a-z0-9+.-]*://~i', $url) && preg_match('~^(www\.|drive\.google\.com/|docs\.google\.com/|photos\.app\.goo\.gl/|forms\.gle/)~i', $url)) {
+            $url = 'https://'.$url;
+        }
+
+        return $url;
     }
 
     private function validateEntry(PkpaRotationRun $run, array $data): void

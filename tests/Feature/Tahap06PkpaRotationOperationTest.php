@@ -6,6 +6,7 @@ use App\Models\KpAssignment;
 use App\Models\PkpaEnrollment;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
+use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
@@ -187,6 +188,159 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $stats = app(PkpaRotationPublicationSyncService::class)->sync($newPublication, $this->koordinator);
         $this->assertSame(1, $stats['review_required']);
         $this->assertSame('review_required', $run->fresh()->publication_sync_status);
+    }
+
+    public function test_runtime_creation_rejects_published_assignment_without_complete_supervisors(): void
+    {
+        $fixture = $this->publishedFixture();
+        $fixture['assignment']->supervisors()->where('supervisor_type', 'field')->delete();
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('setiap assignment harus memiliki Pembimbing Dalam dan Preseptor');
+
+        app(PkpaRotationRunService::class)->createFromPublication($fixture['publication']->fresh(), $this->admin);
+    }
+
+    public function test_student_can_access_and_save_when_runtime_student_snapshot_is_stale_but_enrollment_matches(): void
+    {
+        $run = $this->activatedRun();
+        $run->update(['student_core_user_id' => 'STALE-STUDENT-ID']);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get("/mahasiswa/rotasi-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee('Detail Rotasi PKPA');
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/rotasi-pkpa/{$run->id}/logbook", [
+                'entry_date' => '2026-07-17',
+                'title' => 'Pelayanan resep',
+                'activity_summary' => 'Mempelajari alur skrining resep dan pelayanan obat.',
+                'learning_outcomes' => 'Memahami validasi resep dan komunikasi pasien.',
+                'reflection' => 'Perlu lebih teliti saat membaca aturan pakai.',
+                'practice_minutes' => 480,
+            ])
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void
+    {
+        $run = $this->activatedRun();
+        $run->supervisorHistories()->delete();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get("/mahasiswa/rotasi-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee('Preseptor')
+            ->assertSee($this->fieldSupervisor->name)
+            ->assertSee($this->internalSupervisor->name);
+    }
+
+    public function test_student_can_save_google_drive_evidence_link_and_supervisors_can_review_it(): void
+    {
+        $run = $this->activatedRun();
+        $entry = app(PkpaLogbookService::class)->save($run, [
+            'entry_date' => '2026-07-17',
+            'title' => 'Pelayanan resep',
+            'activity_summary' => 'Melayani resep dan edukasi pasien.',
+            'learning_outcomes' => 'Memahami alur pelayanan resep.',
+            'reflection' => 'Perlu meningkatkan komunikasi saat penyerahan obat.',
+            'practice_minutes' => 420,
+        ], $this->student);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/logbook-pkpa/{$entry->id}/attachment-links", [
+                'link_label' => 'Foto kegiatan Drive',
+                'external_url' => 'drive.google.com/file/d/abc123/view?usp=sharing',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('pkpa_logbook_attachments', [
+            'pkpa_logbook_entry_id' => $entry->id,
+            'attachment_type' => 'external_link',
+            'external_url' => 'https://drive.google.com/file/d/abc123/view?usp=sharing',
+            'link_label' => 'Foto kegiatan Drive',
+        ]);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/logbook-pkpa/{$entry->id}/submit")
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get("/pembimbing-lapangan/operasional-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee('Foto kegiatan Drive')
+            ->assertSee('Preview Link');
+
+        app(PkpaLogbookService::class)->fieldReview($entry->fresh(), 'approved', 'Baik.', $this->fieldSupervisor);
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get("/pembimbing-dalam/monitoring-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee('Foto kegiatan Drive')
+            ->assertSee('Preview Link');
+    }
+
+    public function test_student_can_update_and_delete_draft_records_before_review(): void
+    {
+        $run = $this->activatedRun();
+
+        $attendance = app(PkpaAttendanceService::class)->save($run, [
+            'attendance_date' => '2026-07-16',
+            'attendance_type' => 'present',
+            'check_in_time' => '08:00',
+            'check_out_time' => '15:00',
+            'student_notes' => 'Draft awal.',
+        ], $this->student);
+
+        app(PkpaAttendanceService::class)->save($run, [
+            'id' => $attendance->id,
+            'attendance_date' => '2026-07-17',
+            'attendance_type' => 'permit',
+            'student_notes' => 'Draft diperbarui.',
+        ], $this->student);
+
+        $this->assertDatabaseHas('pkpa_attendance_records', [
+            'id' => $attendance->id,
+            'attendance_date' => '2026-07-17 00:00:00',
+            'attendance_type' => 'permit',
+        ]);
+
+        $entry = app(PkpaLogbookService::class)->save($run, [
+            'entry_date' => '2026-07-17',
+            'title' => 'Draft logbook',
+            'activity_summary' => 'Isi awal',
+            'learning_outcomes' => 'Awal',
+            'reflection' => 'Awal',
+            'practice_minutes' => 300,
+        ], $this->student);
+
+        app(PkpaLogbookService::class)->save($run, [
+            'id' => $entry->id,
+            'entry_date' => '2026-07-17',
+            'title' => 'Draft logbook revisi',
+            'activity_summary' => 'Isi revisi',
+            'learning_outcomes' => 'Revisi',
+            'reflection' => 'Refleksi revisi',
+            'practice_minutes' => 360,
+        ], $this->student);
+
+        $this->assertDatabaseHas('pkpa_logbook_entries', [
+            'id' => $entry->id,
+            'title' => 'Draft logbook revisi',
+            'practice_minutes' => 360,
+        ]);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->delete("/mahasiswa/presensi-pkpa/{$attendance->id}")
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->delete("/mahasiswa/logbook-pkpa/{$entry->id}")
+            ->assertSessionHasNoErrors();
+
+        $this->assertSoftDeleted('pkpa_attendance_records', ['id' => $attendance->id]);
+        $this->assertSoftDeleted('pkpa_logbook_entries', ['id' => $entry->id]);
     }
 
     private function activatedRun(): PkpaRotationRun

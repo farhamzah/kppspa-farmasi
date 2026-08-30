@@ -436,10 +436,13 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('bimbingan-rotasi/{session}/acknowledge', [StudentPkpaAcademicRotationController::class, 'acknowledgeGuidance'])->name('pkpa-guidance.acknowledge');
             Route::post('rotasi-pkpa/{run}/presensi', [StudentPkpaRotationOperationController::class, 'saveAttendance'])->name('pkpa-operations.attendance.store');
             Route::post('presensi-pkpa/{record}/submit', [StudentPkpaRotationOperationController::class, 'submitAttendance'])->name('pkpa-attendance.submit');
+            Route::delete('presensi-pkpa/{record}', [StudentPkpaRotationOperationController::class, 'deleteAttendance'])->name('pkpa-attendance.destroy');
             Route::post('presensi-pkpa/{record}/corrections', [StudentPkpaRotationOperationController::class, 'requestCorrection'])->name('pkpa-attendance.corrections.store');
             Route::post('rotasi-pkpa/{run}/logbooks', [StudentPkpaRotationOperationController::class, 'saveLogbook'])->name('pkpa-logbooks.store');
             Route::post('logbook-pkpa/{entry}/submit', [StudentPkpaRotationOperationController::class, 'submitLogbook'])->name('pkpa-logbooks.submit');
+            Route::delete('logbook-pkpa/{entry}', [StudentPkpaRotationOperationController::class, 'deleteLogbook'])->name('pkpa-logbooks.destroy');
             Route::post('logbook-pkpa/{entry}/attachments', [StudentPkpaRotationOperationController::class, 'uploadAttachment'])->name('pkpa-logbooks.attachments.store');
+            Route::post('logbook-pkpa/{entry}/attachment-links', [StudentPkpaRotationOperationController::class, 'uploadAttachmentLink'])->name('pkpa-logbooks.attachment-links.store');
             Route::get('logbook-pkpa/attachments/{attachment}/download', [StudentPkpaRotationOperationController::class, 'downloadAttachment'])->name('pkpa-logbooks.attachments.download');
             Route::get('pendaftaran-pkpa', [KpRegistrationController::class, 'index'])->name('pkpa-registrations.index');
             Route::get('berkas-pkpa-administrasi', [KpDocumentController::class, 'index'])->name('pkpa-registration-documents.index');
