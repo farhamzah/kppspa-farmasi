@@ -97,6 +97,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('landing');
 Route::get('/health', [HealthController::class, 'public'])->middleware('throttle:pkpa-health')->name('health.public');
+Route::get('/verifikasi/portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'verifyIntegrity'])
+    ->middleware('signed')
+    ->name('student.pkpa-portfolios.integrity.verify');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -415,7 +418,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('portofolio-pkpa', [StudentPkpaPortfolioController::class, 'index'])->name('pkpa-portfolios.index');
             Route::get('portfolio-export-versions/{version}/download', [StudentPkpaPortfolioController::class, 'download'])->middleware('throttle:pkpa-downloads')->name('pkpa-portfolios.exports.download');
             Route::get('portofolio-pkpa/{portfolio}', [StudentPkpaPortfolioController::class, 'show'])->name('pkpa-portfolios.show');
+            Route::get('portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'showIntegrity'])->name('pkpa-portfolios.integrity.show');
             Route::post('portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'acknowledge'])->name('pkpa-portfolios.integrity.acknowledge');
+            Route::post('portofolio-pkpa/{portfolio}/pakta-integritas/tidak-setuju', [StudentPkpaPortfolioController::class, 'declineIntegrity'])->name('pkpa-portfolios.integrity.decline');
             Route::post('portofolio-pkpa/{portfolio}/bagian/{sectionCode}', [StudentPkpaPortfolioController::class, 'storeSection'])->name('pkpa-portfolios.sections.store');
             Route::post('portofolio-pkpa/{portfolio}/studi-kasus', [StudentPkpaPortfolioController::class, 'storeCase'])->name('pkpa-portfolios.cases.store');
             Route::post('portofolio-pkpa/{portfolio}/refleksi', [StudentPkpaPortfolioController::class, 'storeReflection'])->name('pkpa-portfolios.reflections.store');

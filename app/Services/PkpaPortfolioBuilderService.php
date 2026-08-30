@@ -17,6 +17,7 @@ use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use ZipArchive;
 
@@ -108,6 +109,68 @@ class PkpaPortfolioBuilderService
         ]);
 
         return $this->syncProgress($portfolio->fresh());
+    }
+
+    public function integritySheetData(PkpaRotationPortfolio $portfolio): array
+    {
+        $portfolio->loadMissing(['rotationRun.practiceSite', 'rotationRun.enrollment']);
+
+        $studentPhone = User::query()
+            ->with('student')
+            ->where('core_user_id', data_get($portfolio->identity_snapshot, 'core_user_id'))
+            ->first()?->student?->phone;
+        $verificationUrl = $this->integrityVerificationUrl($portfolio);
+        $signedAt = $portfolio->integrity_acknowledged_at;
+        $city = $portfolio->rotationRun?->practiceSite?->city ?: 'Karawang';
+
+        return [
+            'title' => 'Pakta Integritas Mahasiswa PKPA',
+            'student_name' => data_get($portfolio->identity_snapshot, 'student_name') ?: '-',
+            'student_number' => data_get($portfolio->identity_snapshot, 'student_number') ?: '-',
+            'student_email' => data_get($portfolio->identity_snapshot, 'student_email') ?: '-',
+            'student_phone' => $studentPhone ?: '-',
+            'practice_site' => data_get($portfolio->placement_snapshot, 'practice_site') ?: '-',
+            'practice_domain' => data_get($portfolio->placement_snapshot, 'practice_domain') ?: '-',
+            'practice_period' => trim(implode(' - ', array_filter([
+                optional($portfolio->rotationRun?->scheduled_start_date)->format('d M Y'),
+                optional($portfolio->rotationRun?->scheduled_end_date)->format('d M Y'),
+            ]))) ?: '-',
+            'statement_items' => $this->integrityStatementItems(),
+            'city' => $city,
+            'signed_date_label' => $signedAt ? $signedAt->translatedFormat('d F Y') : now()->translatedFormat('d F Y'),
+            'signed_at_label' => $signedAt ? $signedAt->translatedFormat('d F Y H:i') : null,
+            'acknowledged' => filled($signedAt),
+            'status_label' => $signedAt ? 'Sudah disetujui secara elektronik' : 'Belum disetujui',
+            'validation_code' => $this->integrityVerificationToken($portfolio),
+            'verification_url' => $verificationUrl,
+            'qr_markup' => $this->integrityQrMarkup($verificationUrl),
+        ];
+    }
+
+    public function integrityVerificationUrl(PkpaRotationPortfolio $portfolio): string
+    {
+        return URL::signedRoute('student.pkpa-portfolios.integrity.verify', [
+            'portfolio' => $portfolio,
+            'token' => $this->integrityVerificationToken($portfolio),
+        ]);
+    }
+
+    public function integrityVerificationToken(PkpaRotationPortfolio $portfolio): string
+    {
+        $seed = implode('|', [
+            'pkpa-integrity',
+            $portfolio->getKey(),
+            data_get($portfolio->identity_snapshot, 'core_user_id'),
+            data_get($portfolio->identity_snapshot, 'student_number'),
+            optional($portfolio->integrity_acknowledged_at)->toIso8601String() ?: 'pending',
+        ]);
+
+        return 'INT-'.strtoupper(substr(hash('sha256', $seed), 0, 12));
+    }
+
+    public function matchesIntegrityToken(PkpaRotationPortfolio $portfolio, ?string $token): bool
+    {
+        return filled($token) && hash_equals($this->integrityVerificationToken($portfolio), (string) $token);
     }
 
     public function saveSectionRecord(PkpaRotationPortfolio $portfolio, string $sectionCode, array $payload, User $actor)
@@ -662,10 +725,7 @@ class PkpaPortfolioBuilderService
             ],
             [
                 'title' => 'Pakta Integritas',
-                'lines' => [
-                    $portfolio->integrity_pact_text,
-                    'Status persetujuan: '.($portfolio->integrity_acknowledged_at ? 'Disetujui elektronik' : 'Belum disetujui'),
-                ],
+                'lines' => $this->integrityDocumentLines($portfolio),
             ],
         ];
 
@@ -1137,6 +1197,58 @@ class PkpaPortfolioBuilderService
     private function defaultIntegrityText(): string
     {
         return 'Saya menyatakan seluruh isi portofolio PKPA ini benar, tidak memuat identitas langsung pasien, dan disusun untuk keperluan akademik internal MY PKPA. Persetujuan elektronik ini bukan tanda tangan digital tersertifikasi.';
+    }
+
+    private function integrityStatementItems(): array
+    {
+        return [
+            'Merahasiakan segala sesuatu yang saya ketahui sehubungan dengan tugas di tempat PKPA yang dipercayakan kepada saya kecuali untuk kepentingan akademik.',
+            'Menjalankan tugas PKPA di tempat PKPA dengan sebaik-baiknya dan berikhtiar dengan sungguh-sungguh agar tidak terpengaruh dengan pertimbangan keagamaan, kebangsaan, kesukuan, politik kepartaian, atau kedudukan sosial.',
+            'Memelihara hubungan baik dan menghormati pembimbing saya, rekan sesama mahasiswa, apoteker, dan tenaga kesehatan lainnya.',
+            'Apabila saya melanggar hal-hal yang telah saya nyatakan dalam pakta integritas ini, saya bersedia dikenakan sanksi moral, sanksi administratif, dan tuntutan hukum sesuai dengan ketentuan perundang-undangan yang berlaku.',
+        ];
+    }
+
+    private function integrityDocumentLines(PkpaRotationPortfolio $portfolio): array
+    {
+        $sheet = $this->integritySheetData($portfolio);
+        $lines = [
+            'Yang bertanda tangan di bawah ini:',
+            'Nama: '.$sheet['student_name'],
+            'NIM: '.$sheet['student_number'],
+            'No. HP: '.$sheet['student_phone'],
+            'Email: '.$sheet['student_email'],
+            'Tempat PKPA: '.$sheet['practice_site'],
+            'Wahana PKPA: '.$sheet['practice_domain'],
+            'Periode PKPA: '.$sheet['practice_period'],
+            '',
+            'Dengan ini menyatakan bahwa:',
+        ];
+
+        foreach ($sheet['statement_items'] as $index => $item) {
+            $lines[] = ($index + 1).'. '.$item;
+        }
+
+        return array_merge($lines, [
+            '',
+            'Status persetujuan: '.$sheet['status_label'],
+            'Tanggal persetujuan: '.($sheet['signed_at_label'] ?: 'Belum disetujui'),
+            'Kode validasi: '.$sheet['validation_code'],
+            'Tautan validasi: '.$sheet['verification_url'],
+            '',
+            $sheet['city'].', '.$sheet['signed_date_label'],
+            'Yang Membuat Pernyataan',
+            '',
+            'Ruang tanda tangan basah: _________________________________',
+            'Nama mahasiswa: '.$sheet['student_name'],
+        ]);
+    }
+
+    private function integrityQrMarkup(string $payload): string
+    {
+        $src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='.rawurlencode($payload);
+
+        return '<img src="'.$src.'" alt="QR validasi pakta integritas" class="h-full w-full object-contain" loading="eager">';
     }
 
     private function syncApotekTemplateSections(PkpaPortfolioTemplate $template, PkpaRotationRun $run): PkpaPortfolioTemplate

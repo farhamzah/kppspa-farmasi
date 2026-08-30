@@ -31,6 +31,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 use ZipArchive;
@@ -156,7 +157,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringContainsString('Profil Tempat PKPA', $docxText);
         $this->assertStringContainsString('Laporan Kegiatan: Pelayanan Resep', $docxText);
         $this->assertStringContainsString('Self Assessment', $docxText);
-        $this->assertStringContainsString('Pihak Yang Mengetahui', $docxText);
+        $this->assertStringContainsString('Kode validasi:', $docxText);
         $this->assertStringContainsString('Entri 1', $docxText);
         $this->assertStringContainsString('Aspek 1 - Etika', $docxText);
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($pdf->path));
@@ -217,7 +218,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Dokumentasi pelayanan resep')
             ->assertSee('Struktur Portofolio Apotek')
             ->assertSee('Profil Tempat PKPA')
-            ->assertSee('Laporan Kegiatan PKPA Apotek');
+            ->assertSee('Laporan Kegiatan PKPA Apotek')
+            ->assertSee('Buka Pakta Integritas');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
@@ -230,6 +232,31 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertOk()
             ->assertSee('Ringkasan Portofolio Apotek')
             ->assertSee('Daftar Pustaka');
+    }
+
+    public function test_student_can_open_integrity_sheet_and_public_verification_page(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->run, $this->admin);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/pakta-integritas')
+            ->assertOk()
+            ->assertSee('Pakta Integritas Mahasiswa PKPA')
+            ->assertSee('Setuju Pakta Integritas')
+            ->assertSee('Tidak Setuju')
+            ->assertSee('QR Validasi');
+
+        $service->acknowledgeIntegrity($portfolio->fresh(), $this->student);
+        $signedUrl = URL::signedRoute('student.pkpa-portfolios.integrity.verify', [
+            'portfolio' => $portfolio->id,
+            'token' => $service->integrityVerificationToken($portfolio->fresh()),
+        ]);
+
+        $this->get($signedUrl)
+            ->assertOk()
+            ->assertSee('Sudah disetujui secara elektronik')
+            ->assertSee('Scan untuk mengecek keaslian lembar persetujuan ini.');
     }
 
     private function fixtureRun(string $domainCode = 'APT', string $suffix = '14'): PkpaRotationRun

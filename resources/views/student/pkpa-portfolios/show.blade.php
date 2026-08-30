@@ -208,11 +208,15 @@
     <div class="grid gap-6 xl:grid-cols-2">
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-black text-slate-950">Pakta Integritas</h2>
-            <p class="mt-2 text-sm text-slate-600">{{ $portfolio->integrity_pact_text }}</p>
-            <form method="POST" action="{{ route('student.pkpa-portfolios.integrity.acknowledge', $portfolio) }}" class="mt-4">
-                @csrf
-                <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Setujui Pakta</button>
-            </form>
+            <p class="mt-2 text-sm text-slate-600">Buka lembar pakta integritas bergaya siap-print, cek QR validasi, lalu pilih setuju atau tidak setuju dari halaman dokumen.</p>
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <a href="{{ route('student.pkpa-portfolios.integrity.show', $portfolio) }}" class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">
+                    {{ $portfolio->integrity_acknowledged_at ? 'Lihat Pakta Integritas' : 'Buka Pakta Integritas' }}
+                </a>
+                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $portfolio->integrity_acknowledged_at ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
+                    {{ $portfolio->integrity_acknowledged_at ? 'Sudah disetujui '.optional($portfolio->integrity_acknowledged_at)->format('d M Y H:i') : 'Belum disetujui' }}
+                </span>
+            </div>
         </section>
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-black text-slate-950">Unduhan</h2>

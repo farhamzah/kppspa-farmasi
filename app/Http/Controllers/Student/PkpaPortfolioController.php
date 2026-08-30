@@ -52,11 +52,45 @@ class PkpaPortfolioController extends Controller
         return view('student.pkpa-portfolios.show', compact('portfolio'));
     }
 
+    public function showIntegrity(Request $request, PkpaRotationPortfolio $portfolio)
+    {
+        abort_unless($this->portfolios->canAccess($portfolio, $request->user()), 403);
+        $portfolio = $this->portfolios->syncProgress($portfolio->fresh(['rotationRun.practiceSite', 'rotationRun.enrollment']));
+        $sheet = $this->portfolios->integritySheetData($portfolio);
+
+        return view('student.pkpa-portfolios.integrity-sheet', [
+            'portfolio' => $portfolio,
+            'sheet' => $sheet,
+            'interactive' => true,
+        ]);
+    }
+
     public function acknowledge(Request $request, PkpaRotationPortfolio $portfolio)
     {
         $this->portfolios->acknowledgeIntegrity($portfolio, $request->user());
 
         return back()->with('status', 'Pakta integritas disetujui.');
+    }
+
+    public function declineIntegrity(Request $request, PkpaRotationPortfolio $portfolio)
+    {
+        abort_unless($this->portfolios->canAccess($portfolio, $request->user()), 403);
+
+        return redirect()
+            ->route('student.pkpa-portfolios.show', $portfolio)
+            ->withErrors(['integrity' => 'Pakta integritas belum disetujui. Silakan baca kembali sebelum melanjutkan pengiriman portofolio.']);
+    }
+
+    public function verifyIntegrity(Request $request, PkpaRotationPortfolio $portfolio)
+    {
+        abort_unless($request->hasValidSignature() && $this->portfolios->matchesIntegrityToken($portfolio, $request->query('token')), 403);
+        $sheet = $this->portfolios->integritySheetData($portfolio);
+
+        return view('student.pkpa-portfolios.integrity-sheet', [
+            'portfolio' => $portfolio,
+            'sheet' => $sheet,
+            'interactive' => false,
+        ]);
     }
 
     public function storeSection(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode)
