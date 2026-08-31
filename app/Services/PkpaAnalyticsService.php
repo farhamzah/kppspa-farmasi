@@ -46,7 +46,7 @@ class PkpaAnalyticsService
                 'runs' => (clone $runs)->count(),
                 'operational_completed' => (clone $runs)->where('operational_status', 'completed')->count(),
                 'attendance_approved' => (clone $runs)->whereHas('attendanceRecords', fn ($query) => $query->where('status', 'approved'))->count(),
-                'logbook_approved' => (clone $runs)->whereHas('logbookEntries', fn ($query) => $query->where('status', 'approved'))->count(),
+                'logbook_approved' => (clone $runs)->whereHas('logbookEntries', fn ($query) => $query->where('status', 'internal_approved'))->count(),
             ],
             'assessment' => [
                 'wahana_grade_finalized' => PkpaRotationGradeResult::query()->when($programId, fn ($query) => $query->whereHas('run', fn ($sub) => $sub->where('pkpa_program_id', $programId)))->whereIn('result_status', ['finalized', 'released'])->count(),

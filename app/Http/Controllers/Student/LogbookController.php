@@ -28,7 +28,7 @@ class LogbookController extends Controller
                 'logbookEntries',
                 'logbookEntries as draft_logbook_entries_count' => fn ($query) => $query->whereIn('status', ['draft', 'revision_requested']),
                 'logbookEntries as submitted_logbook_entries_count' => fn ($query) => $query->where('status', 'submitted'),
-                'logbookEntries as approved_logbook_entries_count' => fn ($query) => $query->whereIn('status', ['approved', 'reviewed_by_internal']),
+                'logbookEntries as approved_logbook_entries_count' => fn ($query) => $query->where('status', 'internal_approved'),
             ])
             ->orderBy('scheduled_start_date')
             ->get();

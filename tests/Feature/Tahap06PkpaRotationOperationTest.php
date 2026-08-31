@@ -156,7 +156,8 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $attachment = $logbookService->storeAttachment($logbook, UploadedFile::fake()->image('bukti.png'), $this->student);
         $logbookService->submit($logbook, $this->student);
         $logbookService->fieldReview($logbook->fresh(), 'approved', 'Baik.', $this->fieldSupervisor);
-        $logbookService->internalReview($logbook->fresh(), 'Monitoring sudah dibaca.', $this->internalSupervisor);
+        $logbookService->internalReview($logbook->fresh(), 'approved', 'Layak sebagai logbook final.', $this->internalSupervisor);
+        $this->assertSame('internal_approved', $logbook->fresh()->status);
 
         $this->expectException(ValidationException::class);
         $logbookService->downloadResponse($attachment, $this->otherSupervisor);

@@ -36,10 +36,13 @@ class PkpaRotationOperationController extends Controller
 
     public function reviewLogbook(Request $request, PkpaLogbookEntry $entry): RedirectResponse
     {
-        $data = $request->validate(['comments' => ['required', 'string', 'max:1500']]);
-        $this->logbooks->internalReview($entry, $data['comments'], $request->user());
+        $data = $request->validate([
+            'action' => ['required', 'in:approved,revision_requested,rejected'],
+            'comments' => ['nullable', 'string', 'max:1500'],
+        ]);
+        $this->logbooks->internalReview($entry, $data['action'], $data['comments'] ?? null, $request->user());
 
-        return back()->with('status', 'Catatan monitoring logbook tersimpan.');
+        return back()->with('status', 'Validasi pembimbing dalam tersimpan.');
     }
 
     public function downloadAttachment(Request $request, PkpaLogbookAttachment $attachment)

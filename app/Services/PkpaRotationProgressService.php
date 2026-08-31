@@ -20,8 +20,8 @@ class PkpaRotationProgressService
         $attendanceApproved = $run->attendanceRecords()->where('submission_status', 'approved')->count();
         $attendanceProblem = $run->attendanceRecords()->whereIn('submission_status', ['revision_requested', 'rejected'])->count();
         $expectedLogbooks = $this->expectedLogbooks($rule, $totalDays);
-        $logbookSubmitted = $run->logbookEntries()->whereIn('status', ['submitted', 'approved', 'revision_requested', 'reviewed_by_internal'])->count();
-        $logbookApproved = $run->logbookEntries()->whereIn('status', ['approved', 'reviewed_by_internal'])->count();
+        $logbookSubmitted = $run->logbookEntries()->whereIn('status', ['submitted', 'field_approved', 'internal_approved', 'revision_requested', 'rejected'])->count();
+        $logbookApproved = $run->logbookEntries()->where('status', 'internal_approved')->count();
         $logbookRevision = $run->logbookEntries()->where('status', 'revision_requested')->count();
 
         $issues = [];

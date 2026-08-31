@@ -12,11 +12,11 @@
     ];
     $logbookStatuses = [
         'draft' => 'Draf',
-        'submitted' => 'Menunggu Validasi',
-        'approved' => 'Disetujui Preseptor',
+        'submitted' => 'Menunggu Validasi Preseptor',
+        'field_approved' => 'Tervalidasi Preseptor',
+        'internal_approved' => 'Tervalidasi Pembimbing Dalam',
         'revision_requested' => 'Perlu Revisi',
         'rejected' => 'Ditolak',
-        'reviewed_by_internal' => 'Sudah Dimonitor Pembimbing Dalam',
     ];
     $attendancePending = $run->attendanceRecords->whereIn('submission_status', ['draft', 'revision_requested'])->count();
     $logbookPending = $run->logbookEntries->whereIn('status', ['draft', 'revision_requested'])->count();

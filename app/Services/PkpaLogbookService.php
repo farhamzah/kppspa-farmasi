@@ -92,22 +92,39 @@ class PkpaLogbookService
             throw ValidationException::withMessages(['logbook' => 'Hanya logbook terkirim yang dapat divalidasi.']);
         }
 
-        $entry->update(['status' => $action, 'field_reviewed_at' => now(), 'locked_at' => $action === 'approved' ? now() : null, 'row_version' => $entry->row_version + 1]);
+        $entry->update([
+            'status' => $action === 'approved' ? 'field_approved' : $action,
+            'field_reviewed_at' => now(),
+            'locked_at' => null,
+            'row_version' => $entry->row_version + 1,
+        ]);
         $this->review($entry, 'field', $action, $comments, $actor);
         $this->progress->snapshot($run, 'logbook_field_review');
 
         return $entry->refresh();
     }
 
-    public function internalReview(PkpaLogbookEntry $entry, string $comments, ?User $actor): PkpaLogbookEntry
+    public function internalReview(PkpaLogbookEntry $entry, string $action, ?string $comments, ?User $actor): PkpaLogbookEntry
     {
         $run = $entry->rotationRun()->with('supervisorHistories')->firstOrFail();
         $this->ensureInternalSupervisor($run, $actor);
-        if (! in_array($entry->status, ['approved', 'reviewed_by_internal'], true)) {
-            throw ValidationException::withMessages(['logbook' => 'Pembimbing dalam hanya memantau logbook yang sudah tervalidasi lapangan.']);
+        if (! in_array($action, ['approved', 'revision_requested', 'rejected'], true)) {
+            throw ValidationException::withMessages(['action' => 'Aksi validasi pembimbing dalam tidak valid.']);
         }
-        $entry->update(['status' => 'reviewed_by_internal', 'internal_reviewed_at' => now(), 'row_version' => $entry->row_version + 1]);
-        $this->review($entry, 'internal', 'reviewed', $comments, $actor);
+        if (in_array($action, ['revision_requested', 'rejected'], true) && blank($comments)) {
+            throw ValidationException::withMessages(['comments' => 'Catatan wajib diisi untuk revisi atau penolakan.']);
+        }
+        if (! in_array($entry->status, ['field_approved', 'approved'], true)) {
+            throw ValidationException::withMessages(['logbook' => 'Pembimbing dalam hanya dapat memvalidasi logbook yang sudah disetujui preseptor.']);
+        }
+
+        $entry->update([
+            'status' => $action === 'approved' ? 'internal_approved' : $action,
+            'internal_reviewed_at' => now(),
+            'locked_at' => $action === 'approved' ? now() : null,
+            'row_version' => $entry->row_version + 1,
+        ]);
+        $this->review($entry, 'internal', $action, $comments, $actor);
         $this->progress->snapshot($run, 'logbook_internal_review');
 
         return $entry->refresh();

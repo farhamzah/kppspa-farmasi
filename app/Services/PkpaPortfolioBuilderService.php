@@ -469,7 +469,7 @@ class PkpaPortfolioBuilderService
         if (! $portfolio->integrity_acknowledged_at) {
             $blocking[] = 'Pakta integritas belum disetujui.';
         }
-        if ($portfolio->rotationRun->logbookEntries->whereIn('status', ['submitted', 'field_approved', 'internal_reviewed', 'approved'])->isEmpty()) {
+        if ($portfolio->rotationRun->logbookEntries->where('status', 'internal_approved')->isEmpty()) {
             $blocking[] = 'Logbook rotasi belum tersedia.';
         }
         if ($portfolio->rotationRun->attendanceRecords->isEmpty()) {
