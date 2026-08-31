@@ -165,6 +165,12 @@ class PkpaRotationRun extends Model
         return $this->hasMany(PkpaRotationGradeResult::class, 'pkpa_rotation_run_id');
     }
 
+    public function currentPortfolio()
+    {
+        return $this->hasOne(PkpaRotationPortfolio::class, 'pkpa_rotation_run_id')
+            ->where('is_current', true);
+    }
+
     public function scopeForStudent(Builder $query, ?string $coreUserId): Builder
     {
         if (blank($coreUserId)) {
@@ -184,10 +190,16 @@ class PkpaRotationRun extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas('supervisorHistories', fn ($supervisor) => $supervisor
-            ->where('supervisor_type', $type)
-            ->where('core_user_id', $coreUserId)
-            ->where('status', 'active'));
+        return $query->where(function (Builder $builder) use ($type, $coreUserId) {
+            $builder->whereHas('supervisorHistories', fn ($supervisor) => $supervisor
+                ->where('supervisor_type', $type)
+                ->where('core_user_id', $coreUserId)
+                ->where('status', 'active'))
+                ->orWhereHas('currentAssignment.supervisors', fn ($supervisor) => $supervisor
+                    ->where('supervisor_type', $type)
+                    ->where('core_user_id', $coreUserId)
+                    ->where('status', 'assigned'));
+        });
     }
 
     public function activeSupervisor(string $type): ?PkpaRotationSupervisorHistory

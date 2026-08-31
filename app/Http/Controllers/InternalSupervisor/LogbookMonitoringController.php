@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Management\StoreKpLogbookCommentRequest;
 use App\Models\KpAssignment;
 use App\Models\KpLogbook;
+use App\Models\PkpaPublishedAssignment;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,26 @@ class LogbookMonitoringController extends Controller
 {
     public function index(Request $request): View
     {
+        $coreUserId = $request->user()->core_user_id;
+        $pkpaAssignments = PkpaPublishedAssignment::query()
+            ->with([
+                'rotationRuns' => fn ($query) => $query
+                    ->with(['logbookEntries'])
+                    ->whereNull('cancelled_at')
+                    ->latest(),
+            ])
+            ->forSupervisor('internal', $coreUserId)
+            ->whereHas('publication', fn ($query) => $query
+                ->where('status', 'published')
+                ->where('is_current', true))
+            ->orderBy('start_date')
+            ->get();
+
+        if ($pkpaAssignments->isNotEmpty()) {
+            return view('internal-supervisor.pkpa-logbook-validation.index', ['assignments' => $pkpaAssignments]);
+        }
+
+        /* Legacy KP monitoring retained below for legacy route actions. */
         $lecturerId = $request->user()->lecturer?->id ?: 0;
         $assignmentsQuery = KpAssignment::query()
             ->with(['student.user', 'period', 'place', 'fieldSupervisor.user'])

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\InternalSupervisor;
 
 use App\Http\Controllers\Controller;
+use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaRotationPortfolio;
 use App\Services\PkpaPortfolioBuilderService;
 use Illuminate\Http\Request;
@@ -15,15 +16,21 @@ class PkpaPortfolioReviewController extends Controller
 
     public function index(Request $request)
     {
-        $items = PkpaRotationPortfolio::with(['rotationRun.practiceSite', 'enrollment', 'practiceDomain'])
-            ->whereHas('rotationRun.supervisorHistories', fn ($query) => $query
-                ->where('supervisor_type', 'internal')
-                ->where('core_user_id', $request->user()->core_user_id)
-                ->where('status', 'active'))
-            ->latest()
-            ->paginate(20);
+        $assignments = PkpaPublishedAssignment::query()
+            ->with([
+                'rotationRuns' => fn ($query) => $query
+                    ->with(['currentPortfolio.practiceDomain'])
+                    ->whereNull('cancelled_at')
+                    ->latest(),
+            ])
+            ->forSupervisor('internal', $request->user()->core_user_id)
+            ->whereHas('publication', fn ($query) => $query
+                ->where('status', 'published')
+                ->where('is_current', true))
+            ->orderBy('start_date')
+            ->get();
 
-        return view('internal-supervisor.pkpa-portfolios.index', ['portfolios' => $items]);
+        return view('internal-supervisor.pkpa-portfolios.index', compact('assignments'));
     }
 
     public function show(Request $request, PkpaRotationPortfolio $portfolio)

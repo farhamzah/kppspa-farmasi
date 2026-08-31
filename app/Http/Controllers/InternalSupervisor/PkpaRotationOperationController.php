@@ -29,7 +29,10 @@ class PkpaRotationOperationController extends Controller
 
     public function show(Request $request, PkpaRotationRun $run): View
     {
-        abort_unless($run->supervisorHistories()->where('supervisor_type', 'internal')->where('core_user_id', $request->user()->core_user_id)->where('status', 'active')->exists(), 403);
+        abort_unless(PkpaRotationRun::query()
+            ->whereKey($run->id)
+            ->forSupervisor('internal', $request->user()->core_user_id)
+            ->exists(), 403);
 
         return view('internal-supervisor.pkpa-operations.show', ['run' => $run->load(['practiceDomain', 'practiceSite', 'enrollment', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1), 'attendanceRecords', 'logbookEntries.attachments', 'logbookEntries.reviews'])]);
     }

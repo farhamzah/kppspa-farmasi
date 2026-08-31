@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Management\ReviewKpLogbookRequest;
 use App\Models\KpAssignment;
 use App\Models\KpLogbook;
+use App\Models\PkpaPublishedAssignment;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,27 @@ class LogbookValidationController extends Controller
 {
     public function index(Request $request): View
     {
+        $coreUserId = $request->user()->core_user_id;
+        $pkpaAssignments = PkpaPublishedAssignment::query()
+            ->with([
+                'publication.program',
+                'rotationRuns' => fn ($query) => $query
+                    ->with(['practiceDomain', 'practiceSite', 'enrollment', 'logbookEntries'])
+                    ->whereNull('cancelled_at')
+                    ->latest(),
+            ])
+            ->forSupervisor('field', $coreUserId)
+            ->whereHas('publication', fn ($query) => $query
+                ->where('status', 'published')
+                ->where('is_current', true))
+            ->orderBy('start_date')
+            ->get();
+
+        if ($pkpaAssignments->isNotEmpty()) {
+            return view('field-supervisor.pkpa-logbook-validation.index', ['assignments' => $pkpaAssignments]);
+        }
+
+        /* Legacy KP logbook queue retained below for legacy route actions. */
         $fieldSupervisorId = $request->user()->fieldSupervisor?->id ?: 0;
         $assignmentsQuery = KpAssignment::query()
             ->with(['student.user', 'period', 'place'])
