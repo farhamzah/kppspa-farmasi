@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Terjadi Kesalahan' }} - SI-KP Farmasi UBP</title>
+    <title>{{ $title ?? 'Terjadi Kesalahan' }} - MY PKPA</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
@@ -12,7 +12,7 @@
             <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl font-bold text-emerald-700">
                 {{ $code ?? '!' }}
             </div>
-            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">SI-KP Farmasi UBP</p>
+            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">MY PKPA</p>
             <h1 class="mt-2 text-2xl font-bold text-slate-950">{{ $title ?? 'Terjadi Kesalahan' }}</h1>
             <p class="mt-3 text-sm leading-6 text-slate-600">{{ $message ?? 'Permintaan belum dapat diproses. Silakan coba kembali.' }}</p>
             <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
