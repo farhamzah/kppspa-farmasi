@@ -289,7 +289,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
-            ->get("/pembimbing-lapangan/operasional-pkpa/{$run->id}")
+            ->get("/pembimbing-lapangan/operasional-pkpa/{$run->id}?logbook={$entry->id}")
             ->assertOk()
             ->assertSee('Foto kegiatan Drive')
             ->assertSee('Preview Link');
@@ -297,10 +297,10 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         app(PkpaLogbookService::class)->fieldReview($entry->fresh(), 'approved', 'Baik.', $this->fieldSupervisor);
 
         $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
-            ->get("/pembimbing-dalam/monitoring-pkpa/{$run->id}")
+            ->get("/pembimbing-dalam/monitoring-pkpa/{$run->id}?logbook={$entry->id}")
             ->assertOk()
             ->assertSee('Foto kegiatan Drive')
-            ->assertSee('Preview Link');
+            ->assertSee('Preview Bukti');
     }
 
     public function test_student_can_update_and_delete_draft_records_before_review(): void

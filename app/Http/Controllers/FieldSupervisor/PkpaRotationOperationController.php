@@ -37,7 +37,23 @@ class PkpaRotationOperationController extends Controller
             ->forSupervisor('field', $request->user()->core_user_id)
             ->exists(), 403);
 
-        return view('field-supervisor.pkpa-operations.show', ['run' => $run->load(['practiceDomain', 'practiceSite', 'enrollment', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1), 'attendanceRecords.correctionRequests', 'logbookEntries.attachments', 'logbookEntries.reviews'])]);
+        $run->load(['practiceDomain', 'practiceSite', 'enrollment', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)]);
+        $selectedLogbook = $request->integer('logbook')
+            ? $run->logbookEntries()->with(['attachments', 'reviews'])->whereKey($request->integer('logbook'))->where('status', '!=', 'draft')->firstOrFail()
+            : null;
+        $selectedAttendance = $request->integer('attendance')
+            ? $run->attendanceRecords()->with('correctionRequests')->whereKey($request->integer('attendance'))->where('submission_status', '!=', 'draft')->firstOrFail()
+            : null;
+
+        return view('field-supervisor.pkpa-operations.show', [
+            'run' => $run,
+            'selectedLogbook' => $selectedLogbook,
+            'selectedAttendance' => $selectedAttendance,
+            'attendances' => $run->attendanceRecords()->where('submission_status', '!=', 'draft')->latest('attendance_date')->paginate(15, ['*'], 'attendance_page')->withQueryString(),
+            'logbooks' => $run->logbookEntries()->where('status', '!=', 'draft')->latest('entry_date')->paginate(15, ['*'], 'logbook_page')->withQueryString(),
+            'pendingAttendanceCount' => $run->attendanceRecords()->where('submission_status', 'submitted')->count(),
+            'pendingLogbookCount' => $run->logbookEntries()->where('status', 'submitted')->count(),
+        ]);
     }
 
     public function reviewAttendance(Request $request, PkpaAttendanceRecord $record): RedirectResponse
