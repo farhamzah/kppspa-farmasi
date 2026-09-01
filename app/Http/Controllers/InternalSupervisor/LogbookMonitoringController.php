@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Management\StoreKpLogbookCommentRequest;
 use App\Models\KpAssignment;
 use App\Models\KpLogbook;
+use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPublishedAssignment;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +35,20 @@ class LogbookMonitoringController extends Controller
             ->get();
 
         if ($pkpaAssignments->isNotEmpty()) {
-            return view('internal-supervisor.pkpa-logbook-validation.index', ['assignments' => $pkpaAssignments]);
+            $readyLogbooks = PkpaLogbookEntry::query()
+                ->whereIn('status', ['field_approved', 'approved'])
+                ->whereHas('rotationRun', fn ($query) => $query
+                    ->forSupervisor('internal', $coreUserId)
+                    ->whereNull('cancelled_at'))
+                ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
+                ->latest('entry_date')
+                ->paginate(15)
+                ->withQueryString();
+
+            return view('internal-supervisor.pkpa-logbook-validation.index', [
+                'assignments' => $pkpaAssignments,
+                'readyLogbooks' => $readyLogbooks,
+            ]);
         }
 
         /* Legacy KP monitoring retained below for legacy route actions. */

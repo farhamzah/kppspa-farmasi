@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Management\ReviewKpLogbookRequest;
 use App\Models\KpAssignment;
 use App\Models\KpLogbook;
+use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPublishedAssignment;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +37,20 @@ class LogbookValidationController extends Controller
             ->get();
 
         if ($pkpaAssignments->isNotEmpty()) {
-            return view('field-supervisor.pkpa-logbook-validation.index', ['assignments' => $pkpaAssignments]);
+            $readyLogbooks = PkpaLogbookEntry::query()
+                ->where('status', 'submitted')
+                ->whereHas('rotationRun', fn ($query) => $query
+                    ->forSupervisor('field', $coreUserId)
+                    ->whereNull('cancelled_at'))
+                ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
+                ->latest('entry_date')
+                ->paginate(15)
+                ->withQueryString();
+
+            return view('field-supervisor.pkpa-logbook-validation.index', [
+                'assignments' => $pkpaAssignments,
+                'readyLogbooks' => $readyLogbooks,
+            ]);
         }
 
         /* Legacy KP logbook queue retained below for legacy route actions. */

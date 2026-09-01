@@ -27,13 +27,14 @@
 </section>
 <div class="grid gap-4 lg:grid-cols-2">
 @forelse($runs as $run)
-    <a href="{{ route('field-supervisor.pkpa-operations.show', $run) }}" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100">
+    <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $run->practiceDomain?->name }}</p>
         <h2 class="mt-1 text-xl font-black text-slate-950">{{ $run->studentDisplayName() }}</h2>
         <p class="mt-1 text-sm text-slate-500">{{ $run->studentDisplaySecondary() }}</p>
         <p class="mt-3 text-sm font-semibold text-slate-700">{{ $run->practiceSite?->name }}</p>
         <p class="mt-2 text-sm text-slate-500">{{ $run->attendanceRecords->where('submission_status', 'submitted')->count() }} presensi menunggu / {{ $run->logbookEntries->where('status', 'submitted')->count() }} logbook menunggu</p>
-    </a>
+        <a href="{{ route('field-supervisor.pkpa-operations.show', $run) }}" class="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Buka Operasional</a>
+    </article>
 @empty
     <div class="rounded-2xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-sky-100">Belum ada rotasi operasional untuk divalidasi.</div>
 @endforelse
