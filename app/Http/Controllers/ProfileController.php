@@ -284,7 +284,7 @@ class ProfileController extends Controller
             $user->avatar_original_filename,
             [
                 'Content-Type' => $user->avatar_mime ?: 'image/jpeg',
-                'Cache-Control' => 'private, max-age=300',
+                'Cache-Control' => 'private, no-store, max-age=0',
             ]
         );
     }

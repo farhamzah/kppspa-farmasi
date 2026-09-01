@@ -13,6 +13,13 @@
     $class = $sizes[$size] ?? $sizes['md'];
     $coreAvatarUrl = $user ? app(\App\Services\CoreProfileReadService::class)->profilePhotoUrlFor($user) : null;
     $avatarUrl = $coreAvatarUrl ?: ($user->hasAvatar() ? $user->avatarUrl() : null);
+    $sessionAvatarUrls = [route('profile.avatar.show'), route('profile.core-avatar.show')];
+
+    // Avatar endpoints read the active session, so their URL must not be reused for another user in the same browser.
+    if ($avatarUrl && $user && collect($sessionAvatarUrls)->contains(fn ($url) => str_starts_with($avatarUrl, $url))) {
+        $separator = str_contains($avatarUrl, '?') ? '&' : '?';
+        $avatarUrl .= $separator.'viewer='.$user->getKey();
+    }
 @endphp
 
 <span {{ $attributes->merge(['class' => 'inline-flex '.$class.' flex-none items-center justify-center overflow-hidden bg-cyan-50 font-black text-cyan-700 ring-1 ring-cyan-100']) }}>

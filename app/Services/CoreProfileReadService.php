@@ -103,7 +103,7 @@ class CoreProfileReadService
             }
 
             return response()->file($file, [
-                'Cache-Control' => 'private, max-age=300',
+                'Cache-Control' => 'private, no-store, max-age=0',
             ]);
         } catch (Throwable) {
             return null;
