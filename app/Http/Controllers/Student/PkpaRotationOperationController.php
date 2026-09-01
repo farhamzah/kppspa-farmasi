@@ -54,6 +54,10 @@ class PkpaRotationOperationController extends Controller
 
     public function saveAttendance(Request $request, PkpaRotationRun $run): RedirectResponse
     {
+        $submissionAction = $request->validate([
+            'submission_action' => ['nullable', 'in:draft,submit'],
+        ])['submission_action'] ?? 'draft';
+
         $record = $this->attendance->save($run, $request->validate([
             'id' => ['nullable', 'integer'],
             'attendance_date' => ['required', 'date'],
@@ -62,6 +66,12 @@ class PkpaRotationOperationController extends Controller
             'check_out_time' => ['nullable', 'date_format:H:i'],
             'student_notes' => ['nullable', 'string', 'max:1000'],
         ]), $request->user());
+
+        if ($submissionAction === 'submit') {
+            $this->attendance->submit($record, $request->user());
+
+            return back()->with('status', 'Presensi berhasil dikirim ke preseptor.');
+        }
 
         return back()->with('status', 'Presensi disimpan sebagai draft.')->with('attendance_id', $record->id);
     }
@@ -97,6 +107,10 @@ class PkpaRotationOperationController extends Controller
 
     public function saveLogbook(Request $request, PkpaRotationRun $run): RedirectResponse
     {
+        $submissionAction = $request->validate([
+            'submission_action' => ['nullable', 'in:draft,submit'],
+        ])['submission_action'] ?? 'draft';
+
         $entry = $this->logbooks->save($run, $request->validate([
             'id' => ['nullable', 'integer'],
             'entry_date' => ['required', 'date'],
@@ -108,6 +122,12 @@ class PkpaRotationOperationController extends Controller
             'follow_up_plan' => ['nullable', 'string'],
             'practice_minutes' => ['nullable', 'integer', 'min:0'],
         ]), $request->user());
+
+        if ($submissionAction === 'submit') {
+            $this->logbooks->submit($entry, $request->user());
+
+            return back()->with('status', 'Logbook berhasil dikirim ke preseptor.');
+        }
 
         return back()->with('status', 'Logbook disimpan sebagai draft.')->with('logbook_id', $entry->id);
     }

@@ -101,7 +101,7 @@
 
     <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-100">
         <h3 class="text-2xl font-black text-slate-950">Presensi Harian</h3>
-        <p class="mt-2 max-w-3xl text-sm text-slate-500">Isi presensi, simpan sebagai draf bila belum selesai, kemudian tekan <span class="font-bold text-slate-700">Kirim ke Preseptor</span> dari daftar di bawah saat data sudah lengkap.</p>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">Jika data sudah lengkap, langsung tekan <span class="font-bold text-cyan-700">Kirim ke Preseptor</span>. Pilih simpan draf hanya bila Anda memang ingin melanjutkan pengisian nanti.</p>
         <form method="POST" action="{{ route('student.pkpa-operations.attendance.store', $run) }}" class="mt-6 grid gap-5 lg:grid-cols-2" id="attendance-form">
             @csrf
             <input type="hidden" name="attendance_record_id" id="attendance_record_id">
@@ -131,7 +131,8 @@
                 <textarea name="student_notes" id="student_notes" rows="4" class="rounded-2xl border-slate-200 px-4 py-3 text-base" placeholder="Tuliskan keterangan singkat bila diperlukan, misalnya kegiatan utama hari ini atau alasan jika jam tidak lengkap."></textarea>
             </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
-                <button id="attendance-submit-button" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Simpan sebagai Draf</button>
+                <button id="attendance-submit-button" name="submission_action" value="submit" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Kirim ke Preseptor</button>
+                <button id="attendance-draft-button" name="submission_action" value="draft" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700">Simpan sebagai Draf</button>
                 <button type="button" id="attendance-reset-button" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-base font-black text-slate-700">Form Baru</button>
             </div>
         </form>
@@ -275,7 +276,8 @@
             </div>
 
             <div class="flex flex-wrap gap-3">
-                <button id="logbook-submit-button" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Simpan sebagai Draf</button>
+                <button id="logbook-submit-button" name="submission_action" value="submit" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Kirim ke Preseptor</button>
+                <button id="logbook-draft-button" name="submission_action" value="draft" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700">Simpan sebagai Draf</button>
                 <button type="button" id="logbook-reset-button" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-base font-black text-slate-700">Form Baru</button>
             </div>
         </form>
@@ -421,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attendanceCheckOut = document.getElementById('check_out_time');
     const attendanceNotes = document.getElementById('student_notes');
     const attendanceSubmitButton = document.getElementById('attendance-submit-button');
+    const attendanceDraftButton = document.getElementById('attendance-draft-button');
     const attendanceResetButton = document.getElementById('attendance-reset-button');
 
     document.querySelectorAll('.attendance-edit-button').forEach((button) => {
@@ -431,7 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
             attendanceCheckIn.value = button.dataset.checkIn || '';
             attendanceCheckOut.value = button.dataset.checkOut || '';
             attendanceNotes.value = button.dataset.notes || '';
-            attendanceSubmitButton.textContent = 'Perbarui Presensi Draft';
+            attendanceSubmitButton.textContent = 'Perbarui dan Kirim ke Preseptor';
+            attendanceDraftButton.textContent = 'Simpan Perubahan Draf';
             attendanceForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
@@ -439,7 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
     attendanceResetButton?.addEventListener('click', () => {
         attendanceForm.reset();
         attendanceRecordId.value = '';
-        attendanceSubmitButton.textContent = 'Simpan Presensi Draft';
+        attendanceSubmitButton.textContent = 'Kirim ke Preseptor';
+        attendanceDraftButton.textContent = 'Simpan sebagai Draf';
     });
 
     const logbookForm = document.getElementById('logbook-form');
@@ -451,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logbookReflection = document.getElementById('logbook_reflection');
     const logbookPracticeMinutes = document.getElementById('logbook_practice_minutes');
     const logbookSubmitButton = document.getElementById('logbook-submit-button');
+    const logbookDraftButton = document.getElementById('logbook-draft-button');
     const logbookResetButton = document.getElementById('logbook-reset-button');
 
     document.querySelectorAll('.logbook-edit-button').forEach((button) => {
@@ -462,7 +468,8 @@ document.addEventListener('DOMContentLoaded', () => {
             logbookLearningOutcomes.value = button.dataset.learningOutcomes || '';
             logbookReflection.value = button.dataset.reflection || '';
             logbookPracticeMinutes.value = button.dataset.practiceMinutes || '';
-            logbookSubmitButton.textContent = 'Perbarui Logbook Draft';
+            logbookSubmitButton.textContent = 'Perbarui dan Kirim ke Preseptor';
+            logbookDraftButton.textContent = 'Simpan Perubahan Draf';
             logbookForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     });
@@ -470,7 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
     logbookResetButton?.addEventListener('click', () => {
         logbookForm.reset();
         logbookId.value = '';
-        logbookSubmitButton.textContent = 'Simpan Logbook Draft';
+        logbookSubmitButton.textContent = 'Kirim ke Preseptor';
+        logbookDraftButton.textContent = 'Simpan sebagai Draf';
     });
 });
 </script>

@@ -224,6 +224,27 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSessionHasNoErrors();
     }
 
+    public function test_student_can_save_and_send_attendance_in_one_request(): void
+    {
+        $run = $this->activatedRun();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/rotasi-pkpa/{$run->id}/presensi", [
+                'attendance_date' => '2026-07-17',
+                'attendance_type' => 'present',
+                'check_in_time' => '08:00',
+                'check_out_time' => '16:00',
+                'student_notes' => 'Presensi langsung dikirim.',
+                'submission_action' => 'submit',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('pkpa_attendance_records', [
+            'pkpa_rotation_run_id' => $run->id,
+            'submission_status' => 'submitted',
+        ]);
+    }
+
     public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void
     {
         $run = $this->activatedRun();
