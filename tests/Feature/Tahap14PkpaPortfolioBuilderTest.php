@@ -234,6 +234,27 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Daftar Pustaka');
     }
 
+    public function test_supervisor_portfolio_queues_are_grouped_by_practice_domain(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $service->ensureForRun($this->run, $this->admin);
+        $service->ensureForRun($this->fixtureRun('RS', '14RS'), $this->admin);
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/review-portofolio')
+            ->assertOk()
+            ->assertSee('Wahana PKPA')
+            ->assertSee('Apotek')
+            ->assertSee('Rumah Sakit');
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/review-portofolio')
+            ->assertOk()
+            ->assertSee('Wahana PKPA')
+            ->assertSee('Apotek')
+            ->assertSee('Rumah Sakit');
+    }
+
     public function test_student_can_open_integrity_sheet_and_public_verification_page(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
@@ -277,7 +298,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         foreach ([['field', $this->fieldSupervisor], ['internal', $this->internalSupervisor]] as [$type, $user]) {
             PkpaRotationSupervisorHistory::create(['pkpa_rotation_run_id' => $run->id, 'supervisor_type' => $type, 'core_user_id' => $user->core_user_id, 'name_snapshot' => $user->name, 'role_snapshot' => $type, 'effective_start_date' => '2026-07-01', 'status' => 'active', 'active_key' => $run->id.':'.$type]);
         }
-        $run->logbookEntries()->create(['entry_date' => '2026-07-01', 'title' => 'Orientasi '.$siteName, 'activity_summary' => 'Mempelajari alur pelayanan', 'learning_outcomes' => 'Memahami pelayanan kefarmasian', 'reflection' => 'Perlu memperkuat komunikasi pasien', 'status' => 'submitted', 'entry_key' => $run->id.':2026-07-01']);
+        $run->logbookEntries()->create(['entry_date' => '2026-07-01', 'title' => 'Orientasi '.$siteName, 'activity_summary' => 'Mempelajari alur pelayanan', 'learning_outcomes' => 'Memahami pelayanan kefarmasian', 'reflection' => 'Perlu memperkuat komunikasi pasien', 'status' => 'internal_approved', 'entry_key' => $run->id.':2026-07-01']);
         PkpaAttendanceRecord::create(['pkpa_rotation_run_id' => $run->id, 'attendance_date' => '2026-07-01', 'attendance_type' => 'present', 'status' => 'approved', 'submission_status' => 'approved', 'source' => 'manual', 'active_key' => $run->id.':2026-07-01']);
         PkpaRotationCompetencyRecord::create(['pkpa_rotation_run_id' => $run->id, 'competency_code_snapshot' => 'K14', 'competency_title_snapshot' => 'Pelayanan kefarmasian', 'is_required_snapshot' => true, 'evidence_required_snapshot' => false, 'minimum_evidence_count_snapshot' => 0, 'status' => 'verified']);
         $scheme = PkpaAssessmentScheme::create(['pkpa_program_domain_id' => $programDomain->id, 'code' => 'SC-14', 'name' => 'Skema 14', 'version_number' => 1, 'maximum_score' => 100, 'rounding_precision' => 2, 'rounding_mode' => 'half_up', 'status' => 'active', 'is_current' => true]);
