@@ -374,7 +374,9 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
 
             $payload = [];
             foreach ($definition['fields'] ?? [] as $field) {
-                $payload[$field['name']] = $field['label'].' demo';
+                $payload[$field['name']] = ($field['type'] ?? null) === 'multiselect'
+                    ? [($field['options'] ?? [])[0] ?? 'Kegiatan demo']
+                    : $field['label'].' demo';
             }
 
             $service->saveSectionRecord($portfolio->fresh(), $code, $payload, $this->student);

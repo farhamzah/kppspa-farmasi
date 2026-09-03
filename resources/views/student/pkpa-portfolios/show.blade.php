@@ -344,7 +344,18 @@
                                 @foreach($definition['fields'] as $field)
                                     <label class="grid gap-2">
                                         <span class="text-sm font-bold text-slate-700">{{ $field['label'] }}</span>
-                                        <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 3 }}" class="rounded-2xl border-slate-200 text-sm">{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
+                                        @if(($field['type'] ?? null) === 'multiselect')
+                                            @php
+                                                $selectedActivities = old($field['name'], $payload[$field['name']] ?? []);
+                                            @endphp
+                                            <select name="{{ $field['name'] }}[]" multiple size="{{ min(7, count($field['options'] ?? [])) }}" class="min-h-36 rounded-2xl border-slate-200 text-sm">
+                                                @foreach($field['options'] ?? [] as $option)
+                                                    <option value="{{ $option }}" @selected(in_array($option, $selectedActivities, true))>{{ $option }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 3 }}" class="rounded-2xl border-slate-200 text-sm">{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
+                                        @endif
                                     </label>
                                 @endforeach
                                 <button class="rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-900 ring-1 ring-inset ring-slate-200">Simpan Topik</button>

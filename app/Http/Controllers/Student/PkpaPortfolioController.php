@@ -11,6 +11,7 @@ use App\Services\PkpaPortfolioBuilderService;
 use App\Support\PkpaApotekPortfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PkpaPortfolioController extends Controller
 {
@@ -100,6 +101,12 @@ class PkpaPortfolioController extends Controller
 
         $rules = [];
         foreach ($definition['fields'] ?? [] as $field) {
+            if (($field['type'] ?? null) === 'multiselect') {
+                $rules[$field['name']] = ['nullable', 'array'];
+                $rules[$field['name'].'.*'] = ['string', Rule::in($field['options'] ?? [])];
+                continue;
+            }
+
             $rules[$field['name']] = ['nullable', 'string'];
         }
 
