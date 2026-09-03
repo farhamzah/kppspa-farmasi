@@ -318,85 +318,94 @@
                 @endforeach
             </div>
 
-            <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h2 class="text-lg font-black text-slate-950">Laporan Kegiatan PKPA Apotek</h2>
-                <p class="mt-2 text-sm text-slate-600">Setiap topik kegiatan mengikuti format tujuan, kegiatan, dan hasil sesuai portofolio PKPA Apotek.</p>
-                <div class="mt-4 grid gap-5 xl:grid-cols-2">
-                    @foreach($reportCodes as $sectionCode)
-                        @php
-                            $definition = $editableSections[$sectionCode];
-                            $record = $sectionRecords->get($sectionCode);
-                            $payload = $record?->manual_payload ?? [];
-                        @endphp
-                        <section id="laporan-{{ $sectionCode }}" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                <div>
-                                    <h3 class="text-base font-black text-slate-950">{{ $definition['title'] }}</h3>
-                                    <p class="mt-1 text-sm text-slate-600">{{ $definition['description'] }}</p>
-                                    <p class="mt-2 text-xs font-semibold uppercase tracking-wide text-cyan-700">{{ $definition['activity_hint'] }}</p>
-                                </div>
-                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
-                                    {{ $record?->status === 'completed' ? 'Lengkap' : 'Perlu diisi' }}
-                                </span>
-                            </div>
-                            @php
-                                $activityEntries = collect($payload['activity_entries'] ?? []);
-                                $editingEntry = $activityEntries->firstWhere('id', request()->query('edit_activity'));
-                                $activityOptions = collect($definition['fields'])->firstWhere('name', 'selected_activities')['options'] ?? [];
-                            @endphp
+            @php
+                $selectedReportCode = request()->string('report')->toString();
+                $selectedReportCode = in_array($selectedReportCode, $reportCodes, true) ? $selectedReportCode : $reportCodes[0];
+                $activeDefinition = $editableSections[$selectedReportCode];
+                $activeRecord = $sectionRecords->get($selectedReportCode);
+                $activePayload = $activeRecord?->manual_payload ?? [];
+                $activityEntries = collect($activePayload['activity_entries'] ?? []);
+                $editingEntry = $activityEntries->firstWhere('id', request()->query('edit_activity'));
+                $activityOptions = collect($activeDefinition['fields'])->firstWhere('name', 'selected_activities')['options'] ?? [];
+                $totalReportActivities = collect($reportCodes)->sum(fn ($code) => count($sectionRecords->get($code)?->manual_payload['activity_entries'] ?? []));
+            @endphp
+            <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+                <header class="border-b border-slate-100 px-5 py-5 sm:px-6">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Portofolio Apotek</p>
+                            <h2 class="mt-1 text-xl font-black text-slate-950">Laporan Kegiatan PKPA</h2>
+                            <p class="mt-1 text-sm text-slate-600">Kelola satu kegiatan dalam satu waktu, lalu pantau hasilnya pada daftar tersimpan.</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm">
+                            <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $totalReportActivities }}</p><p class="text-xs text-slate-500">kegiatan tersimpan</p></div>
+                            <div class="border-l-2 border-emerald-500 pl-3"><p class="font-black text-slate-950">{{ $completedSections }}</p><p class="text-xs text-slate-500">bagian lengkap</p></div>
+                        </div>
+                    </div>
+                </header>
 
-                            <div class="mt-4 space-y-2">
-                                <h4 class="text-sm font-black text-slate-950">Kegiatan Tersimpan</h4>
+                <div class="grid xl:grid-cols-[18rem_minmax(0,1fr)]">
+                    <nav class="border-b border-slate-100 bg-slate-50/70 p-3 xl:border-b-0 xl:border-r" aria-label="Topik laporan kegiatan">
+                        <p class="px-2 pb-2 text-xs font-black uppercase tracking-wide text-slate-500">Topik Laporan</p>
+                        <div class="flex gap-2 overflow-x-auto xl:block xl:space-y-1">
+                            @foreach($reportCodes as $sectionCode)
+                                @php
+                                    $definition = $editableSections[$sectionCode];
+                                    $record = $sectionRecords->get($sectionCode);
+                                    $entryCount = count($record?->manual_payload['activity_entries'] ?? []);
+                                @endphp
+                                <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $sectionCode]) }}#laporan-{{ $sectionCode }}" @class([
+                                    'flex min-w-60 items-center justify-between gap-3 rounded-xl px-3 py-3 text-left transition xl:min-w-0',
+                                    'bg-cyan-700 text-white shadow-sm' => $sectionCode === $selectedReportCode,
+                                    'text-slate-700 hover:bg-white hover:shadow-sm' => $sectionCode !== $selectedReportCode,
+                                ])>
+                                    <span class="min-w-0"><span class="block truncate text-sm font-bold">{{ str($definition['title'])->after(': ') }}</span><span class="mt-1 block text-xs {{ $sectionCode === $selectedReportCode ? 'text-cyan-100' : 'text-slate-500' }}">{{ $entryCount }} kegiatan</span></span>
+                                    <span @class(['shrink-0 rounded-full px-2 py-1 text-xs font-black', 'bg-white/20 text-white' => $sectionCode === $selectedReportCode, 'bg-emerald-50 text-emerald-700' => $sectionCode !== $selectedReportCode && $record?->status === 'completed', 'bg-amber-50 text-amber-700' => $sectionCode !== $selectedReportCode && $record?->status !== 'completed'])>{{ $record?->status === 'completed' ? 'Lengkap' : 'Draf' }}</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </nav>
+
+                    <div id="laporan-{{ $selectedReportCode }}" class="min-w-0 p-5 sm:p-6">
+                        <div class="flex flex-col gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-start md:justify-between">
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-wide text-cyan-700">{{ $activeDefinition['title'] }}</p>
+                                <h3 class="mt-1 text-xl font-black text-slate-950">{{ str($activeDefinition['title'])->after(': ') }}</h3>
+                                <p class="mt-2 max-w-2xl text-sm text-slate-600">{{ $activeDefinition['description'] }}</p>
+                            </div>
+                            <span class="w-fit rounded-full px-3 py-1 text-xs font-bold {{ $activeRecord?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $activeRecord?->status === 'completed' ? 'Lengkap' : 'Belum lengkap' }}</span>
+                        </div>
+
+                        <div class="mt-5">
+                            <div class="flex items-center justify-between gap-3"><h4 class="text-base font-black text-slate-950">Kegiatan Tersimpan</h4><span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ $activityEntries->count() }} entri</span></div>
+                            <div class="mt-3 divide-y divide-slate-100 border-y border-slate-100">
                                 @forelse($activityEntries as $entry)
-                                    <details id="kegiatan-{{ $entry['id'] }}" class="rounded-xl border border-slate-200 bg-white p-3">
-                                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-slate-900">
-                                            <span>{{ $entry['activity'] }}</span>
-                                            <span class="text-xs font-semibold text-cyan-700">Lihat Detail</span>
+                                    <details id="kegiatan-{{ $entry['id'] }}" class="group py-3">
+                                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3">
+                                            <div class="min-w-0"><p class="truncate text-sm font-black text-slate-950">{{ $entry['activity'] }}</p><p class="mt-1 truncate text-sm text-slate-500">{{ $entry['result'] }}</p></div>
+                                            <span class="shrink-0 text-xs font-bold text-cyan-700 group-open:hidden">Lihat Detail</span><span class="hidden shrink-0 text-xs font-bold text-slate-500 group-open:inline">Tutup Detail</span>
                                         </summary>
-                                        <dl class="mt-3 grid gap-3 border-t border-slate-100 pt-3 text-sm text-slate-700">
-                                            <div><dt class="font-bold text-slate-900">Tujuan</dt><dd class="mt-1 whitespace-pre-line">{{ $entry['purpose'] }}</dd></div>
-                                            <div><dt class="font-bold text-slate-900">Uraian Kegiatan</dt><dd class="mt-1 whitespace-pre-line">{{ $entry['description'] }}</dd></div>
-                                            <div><dt class="font-bold text-slate-900">Hasil</dt><dd class="mt-1 whitespace-pre-line">{{ $entry['result'] }}</dd></div>
-                                        </dl>
-                                        <div class="mt-3 flex flex-wrap gap-2">
-                                            <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'edit_activity' => $entry['id']]).'#laporan-'.$sectionCode }}" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Edit</a>
-                                            <form method="POST" action="{{ route('student.pkpa-portfolios.report-activities.destroy', [$portfolio, $sectionCode, $entry['id']]) }}" onsubmit="return confirm('Hapus kegiatan ini?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">Hapus</button>
-                                            </form>
-                                        </div>
+                                        <dl class="mt-4 grid gap-4 border-t border-slate-100 pt-4 text-sm md:grid-cols-3"><div><dt class="text-xs font-black uppercase tracking-wide text-slate-500">Tujuan</dt><dd class="mt-2 whitespace-pre-line text-slate-700">{{ $entry['purpose'] }}</dd></div><div><dt class="text-xs font-black uppercase tracking-wide text-slate-500">Uraian</dt><dd class="mt-2 whitespace-pre-line text-slate-700">{{ $entry['description'] }}</dd></div><div><dt class="text-xs font-black uppercase tracking-wide text-slate-500">Hasil</dt><dd class="mt-2 whitespace-pre-line text-slate-700">{{ $entry['result'] }}</dd></div></dl>
+                                        <div class="mt-4 flex gap-2"><a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode, 'edit_activity' => $entry['id']]).'#laporan-'.$selectedReportCode }}" class="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">Edit</a><form method="POST" action="{{ route('student.pkpa-portfolios.report-activities.destroy', [$portfolio, $selectedReportCode, $entry['id']]) }}" onsubmit="return confirm('Hapus kegiatan ini?')">@csrf @method('DELETE')<button class="rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">Hapus</button></form></div>
                                     </details>
                                 @empty
-                                    <p class="rounded-xl border border-dashed border-slate-200 bg-white px-3 py-4 text-sm text-slate-500">Belum ada kegiatan tersimpan.</p>
+                                    <div class="py-10 text-center"><p class="text-sm font-bold text-slate-700">Belum ada kegiatan pada topik ini.</p><p class="mt-1 text-sm text-slate-500">Tambahkan kegiatan pertama untuk mulai membangun laporan.</p></div>
                                 @endforelse
                             </div>
+                        </div>
 
-                            <form method="POST" action="{{ $editingEntry ? route('student.pkpa-portfolios.report-activities.update', [$portfolio, $sectionCode, $editingEntry['id']]) : route('student.pkpa-portfolios.report-activities.store', [$portfolio, $sectionCode]) }}" class="mt-4 grid gap-3 border-t border-slate-200 pt-4">
-                                @csrf
-                                @if($editingEntry) @method('PATCH') @endif
-                                <h4 class="text-sm font-black text-slate-950">{{ $editingEntry ? 'Edit Kegiatan' : 'Tambah Kegiatan' }}</h4>
-                                <label class="grid gap-2">
-                                    <span class="text-sm font-bold text-slate-700">Kegiatan yang Dilaksanakan</span>
-                                    <select name="activity" class="rounded-2xl border-slate-200 text-sm" required>
-                                        <option value="">Pilih kegiatan</option>
-                                        @foreach($activityOptions as $option)
-                                            <option value="{{ $option }}" @selected(old('activity', $editingEntry['activity'] ?? '') === $option)>{{ $option }}</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tujuan</span><textarea name="purpose" rows="2" class="rounded-2xl border-slate-200 text-sm" required>{{ old('purpose', $editingEntry['purpose'] ?? '') }}</textarea></label>
-                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Uraian Kegiatan</span><textarea name="description" rows="4" class="rounded-2xl border-slate-200 text-sm" required>{{ old('description', $editingEntry['description'] ?? '') }}</textarea></label>
-                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hasil</span><textarea name="result" rows="3" class="rounded-2xl border-slate-200 text-sm" required>{{ old('result', $editingEntry['result'] ?? '') }}</textarea></label>
-                                <div class="flex flex-wrap gap-2">
-                                    <button class="rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">{{ $editingEntry ? 'Simpan Perubahan' : 'Simpan Kegiatan' }}</button>
-                                    @if($editingEntry)
-                                        <a href="{{ route('student.pkpa-portfolios.show', $portfolio).'#laporan-'.$sectionCode }}" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700">Batal</a>
-                                    @endif
-                                </div>
+                        <details class="mt-6 border-t border-slate-100 pt-5" @if($editingEntry || $activityEntries->isEmpty()) open @endif>
+                            <summary class="flex cursor-pointer list-none items-center justify-between gap-4"><div><p class="text-base font-black text-slate-950">{{ $editingEntry ? 'Edit Kegiatan' : 'Tambah Kegiatan' }}</p><p class="mt-1 text-sm text-slate-500">Pilih satu kegiatan dan lengkapi hasil pelaksanaannya.</p></div><span class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">{{ $editingEntry ? 'Sedang Diedit' : 'Tambah' }}</span></summary>
+                            <form method="POST" action="{{ $editingEntry ? route('student.pkpa-portfolios.report-activities.update', [$portfolio, $selectedReportCode, $editingEntry['id']]) : route('student.pkpa-portfolios.report-activities.store', [$portfolio, $selectedReportCode]) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+                                @csrf @if($editingEntry) @method('PATCH') @endif
+                                <label class="grid gap-2 md:col-span-2"><span class="text-sm font-bold text-slate-700">Kegiatan yang Dilaksanakan</span><select name="activity" class="rounded-xl border-slate-200 text-sm" required><option value="">Pilih kegiatan</option>@foreach($activityOptions as $option)<option value="{{ $option }}" @selected(old('activity', $editingEntry['activity'] ?? '') === $option)>{{ $option }}</option>@endforeach</select></label>
+                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tujuan</span><textarea name="purpose" rows="4" class="min-h-36 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('purpose', $editingEntry['purpose'] ?? '') }}</textarea></label>
+                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hasil</span><textarea name="result" rows="4" class="min-h-36 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('result', $editingEntry['result'] ?? '') }}</textarea></label>
+                                <label class="grid gap-2 md:col-span-2"><span class="text-sm font-bold text-slate-700">Uraian Kegiatan</span><textarea name="description" rows="6" class="min-h-52 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('description', $editingEntry['description'] ?? '') }}</textarea></label>
+                                <div class="flex flex-wrap gap-2 md:col-span-2"><button class="rounded-xl bg-cyan-700 px-5 py-3 text-sm font-bold text-white">{{ $editingEntry ? 'Simpan Perubahan' : 'Simpan Kegiatan' }}</button>@if($editingEntry)<a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode]).'#laporan-'.$selectedReportCode }}" class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700">Batal</a>@endif</div>
                             </form>
-                        </section>
-                    @endforeach
+                        </details>
+                    </div>
                 </div>
             </section>
         </section>

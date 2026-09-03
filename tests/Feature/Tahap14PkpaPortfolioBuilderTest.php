@@ -276,7 +276,9 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Dokumentasi pelayanan resep')
             ->assertSee('Struktur Portofolio Apotek')
             ->assertSee('Profil Tempat PKPA')
-            ->assertSee('Laporan Kegiatan PKPA Apotek')
+            ->assertSee('Laporan Kegiatan PKPA')
+            ->assertSee('Topik Laporan')
+            ->assertSee('Kegiatan Tersimpan')
             ->assertSee('Buka Pakta Integritas');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
