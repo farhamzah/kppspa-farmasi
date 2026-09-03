@@ -138,7 +138,23 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $portfolio = $service->ensureForRun($this->run, $this->admin);
         $service->acknowledgeIntegrity($portfolio, $this->student);
         $this->fillApotekSections($service, $portfolio);
-        $service->saveCase($portfolio->fresh(), ['case_code' => 'CASE-1', 'complaint' => 'Batuk', 'anonymization_confirmed' => true], $this->student);
+        $service->saveCase($portfolio->fresh(), [
+            'case_code' => 'CASE-1',
+            'complaint' => 'Batuk',
+            'history' => 'Batuk sejak tiga hari.',
+            'past_medical_history' => 'Tidak ada riwayat penyakit dahulu.',
+            'family_history' => 'Tidak ada riwayat penyakit keluarga.',
+            'drug_data' => [['name' => 'Paracetamol', 'dose' => '500 mg', 'frequency' => '3 kali sehari', 'route' => 'Oral', 'indication' => 'Demam']],
+            'soap' => ['subjective' => 'Batuk dan demam.', 'objective' => 'Suhu 37,8 C.', 'assessment' => 'ISPA ringan.', 'plan' => 'Terapi simptomatik dan edukasi.'],
+            'drp_items' => [['type' => 'Interaksi obat', 'status' => 'tidak', 'note' => 'Tidak ditemukan.']],
+            'intervention' => 'Edukasi penggunaan obat.',
+            'monitoring' => 'Pantau suhu dan perbaikan gejala.',
+            'evaluation' => 'Evaluasi setelah tiga hari.',
+            'education' => 'Minum obat sesuai aturan pakai.',
+            'conclusion' => 'Pasien dapat melanjutkan terapi simptomatik.',
+            'references' => 'Pedoman pelayanan kefarmasian.',
+            'anonymization_confirmed' => true,
+        ], $this->student);
         $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'achievement' => 'Tercapai'], $this->student);
         $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Etika', 'score' => 5], $this->student);
         $service->saveDocumentation($portfolio->fresh(), ['activity' => 'PIO', 'anonymization_confirmed' => true, 'consent_confirmed' => true], null, $this->student);
@@ -160,6 +176,10 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringContainsString('Kode validasi:', $docxText);
         $this->assertStringContainsString('Entri 1', $docxText);
         $this->assertStringContainsString('Aspek 1 - Etika', $docxText);
+        $this->assertStringContainsString('C. Data Obat', $docxText);
+        $this->assertStringContainsString('Paracetamol | 500 mg', $docxText);
+        $this->assertStringContainsString('D. Analisis SOAP', $docxText);
+        $this->assertStringContainsString('Interaksi obat | tidak | Tidak ditemukan.', $docxText);
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($pdf->path));
         $this->assertSame($docx->id, $service->export($portfolio->fresh(), 'docx', $this->koordinator)->id);
         $this->assertSame($publication->id, PkpaPortfolioExportVersion::find($docx->id)->pkpa_portfolio_publication_id);

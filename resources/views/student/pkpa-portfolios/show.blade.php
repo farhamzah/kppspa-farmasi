@@ -358,29 +358,96 @@
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-black text-slate-950">Studi Kasus</h2>
-        <p class="mt-2 text-sm text-slate-600">Format studi kasus mengikuti case report PKPA Apotek: identitas singkat pasien anonim, riwayat, DRP, intervensi, monitoring, edukasi, dan referensi.</p>
-        <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-4 grid gap-3 md:grid-cols-2">
+        <p class="mt-2 text-sm text-slate-600">Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.</p>
+        @php
+            $drugRows = range(0, 2);
+            $drpTypes = [
+                'Indikasi tanpa obat', 'Obat tanpa indikasi', 'Dosis terlalu rendah', 'Dosis terlalu tinggi',
+                'Interaksi obat', 'Efek samping obat', 'Ketidakpatuhan pasien', 'Duplikasi terapi', 'Lainnya',
+            ];
+        @endphp
+        <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 space-y-7">
             @csrf
-            <input name="case_code" placeholder="Nomor kasus" class="rounded-2xl border-slate-200 text-sm" required>
-            <input type="date" name="case_date" class="rounded-2xl border-slate-200 text-sm">
-            <input name="patient_initials" placeholder="Inisial pasien" class="rounded-2xl border-slate-200 text-sm">
-            <input name="gender" placeholder="Jenis kelamin" class="rounded-2xl border-slate-200 text-sm">
-            <input name="age" type="number" placeholder="Umur" class="rounded-2xl border-slate-200 text-sm">
-            <input name="weight_kg" type="number" step="0.01" placeholder="Berat badan (kg)" class="rounded-2xl border-slate-200 text-sm">
-            <input name="height_cm" type="number" step="0.01" placeholder="Tinggi badan (cm)" class="rounded-2xl border-slate-200 text-sm">
-            <input name="diagnosis" placeholder="Diagnosis (bila diketahui)" class="rounded-2xl border-slate-200 text-sm">
-            <textarea name="complaint" placeholder="Keluhan utama" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="history" placeholder="Riwayat pasien" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="allergy" placeholder="Riwayat alergi" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="medication_use" placeholder="Riwayat penggunaan obat" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="drp" placeholder="Drug Related Problems (DRP)" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="intervention" placeholder="Intervensi apoteker" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="monitoring" placeholder="Monitoring dan evaluasi" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="education" placeholder="Edukasi pasien" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="conclusion" placeholder="Kesimpulan kasus" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <textarea name="references" placeholder="Referensi" class="rounded-2xl border-slate-200 text-sm md:col-span-2"></textarea>
-            <label class="flex items-center gap-2 text-sm font-semibold md:col-span-2"><input type="checkbox" name="anonymization_confirmed" value="1" required> Saya memastikan tidak ada nama, nomor rekam medis, alamat, atau kontak pasien.</label>
-            <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus</button>
+            <fieldset class="grid gap-4 border-t border-slate-200 pt-5 md:grid-cols-2">
+                <legend class="pr-3 text-base font-black text-slate-950">A. Identitas Pasien</legend>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Nomor Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Inisial Pasien</span><input name="patient_initials" value="{{ old('patient_initials') }}" maxlength="16" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Jenis Kelamin</span><input name="gender" value="{{ old('gender') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Umur</span><input name="age" type="number" min="0" max="130" value="{{ old('age') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Berat Badan (kg)</span><input name="weight_kg" type="number" step="0.01" min="0" value="{{ old('weight_kg') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tinggi Badan (cm)</span><input name="height_cm" type="number" step="0.01" min="0" value="{{ old('height_cm') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Diagnosis (bila diketahui)</span><input name="diagnosis" value="{{ old('diagnosis') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                <label class="grid gap-2 md:col-span-2"><span class="text-sm font-bold text-slate-700">Keluhan Utama</span><textarea name="complaint" rows="3" class="min-h-28 resize-y rounded-2xl border-slate-200 text-sm">{{ old('complaint') }}</textarea></label>
+            </fieldset>
+
+            <fieldset class="grid gap-4 border-t border-slate-200 pt-5 md:grid-cols-2">
+                <legend class="pr-3 text-base font-black text-slate-950">B. Riwayat Pasien</legend>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Riwayat Penyakit Sekarang</span><textarea name="history" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('history') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Riwayat Penyakit Dahulu</span><textarea name="past_medical_history" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('past_medical_history') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Riwayat Penyakit Keluarga</span><textarea name="family_history" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('family_history') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Riwayat Alergi</span><textarea name="allergy" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('allergy') }}</textarea></label>
+                <label class="grid gap-2 md:col-span-2"><span class="text-sm font-bold text-slate-700">Riwayat Penggunaan Obat</span><textarea name="medication_use" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('medication_use') }}</textarea></label>
+            </fieldset>
+
+            <fieldset class="border-t border-slate-200 pt-5">
+                <legend class="pr-3 text-base font-black text-slate-950">C. Data Obat</legend>
+                <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-[760px] w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-xs font-black uppercase text-slate-600"><tr><th class="p-3">Nama Obat</th><th class="p-3">Dosis</th><th class="p-3">Frekuensi</th><th class="p-3">Rute</th><th class="p-3">Indikasi</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($drugRows as $row)
+                                <tr>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][name]" value="{{ old("drug_data.$row.name") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][dose]" value="{{ old("drug_data.$row.dose") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][frequency]" value="{{ old("drug_data.$row.frequency") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][route]" value="{{ old("drug_data.$row.route") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][indication]" value="{{ old("drug_data.$row.indication") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </fieldset>
+
+            <fieldset class="grid gap-4 border-t border-slate-200 pt-5 md:grid-cols-2">
+                <legend class="pr-3 text-base font-black text-slate-950">D. Analisis SOAP</legend>
+                @foreach(['subjective' => 'S (Subjective)', 'objective' => 'O (Objective)', 'assessment' => 'A (Assessment)', 'plan' => 'P (Plan)'] as $key => $label)
+                    <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">{{ $label }}</span><textarea name="soap[{{ $key }}]" rows="5" class="min-h-44 resize-y rounded-2xl border-slate-200 text-sm">{{ old("soap.$key") }}</textarea></label>
+                @endforeach
+            </fieldset>
+
+            <fieldset class="border-t border-slate-200 pt-5">
+                <legend class="pr-3 text-base font-black text-slate-950">E. Drug Related Problems (DRP)</legend>
+                <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="min-w-[720px] w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-xs font-black uppercase text-slate-600"><tr><th class="p-3">Jenis DRP</th><th class="p-3">Ada/Tidak</th><th class="p-3">Keterangan</th></tr></thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($drpTypes as $index => $type)
+                                <tr>
+                                    <td class="p-2"><input name="drp_items[{{ $index }}][type]" value="{{ $type }}" readonly class="w-full border-0 bg-transparent p-1 text-sm font-semibold text-slate-700"></td>
+                                    <td class="p-2"><select name="drp_items[{{ $index }}][status]" class="w-full rounded-xl border-slate-200 text-sm"><option value="">Pilih</option><option value="ada" @selected(old("drp_items.$index.status") === 'ada')>Ada</option><option value="tidak" @selected(old("drp_items.$index.status") === 'tidak')>Tidak</option></select></td>
+                                    <td class="p-2"><input name="drp_items[{{ $index }}][note]" value="{{ old("drp_items.$index.note") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <label class="mt-4 grid gap-2"><span class="text-sm font-bold text-slate-700">Ringkasan DRP</span><textarea name="drp" rows="3" class="min-h-28 resize-y rounded-2xl border-slate-200 text-sm">{{ old('drp') }}</textarea></label>
+            </fieldset>
+
+            <fieldset class="grid gap-4 border-t border-slate-200 pt-5 md:grid-cols-2">
+                <legend class="pr-3 text-base font-black text-slate-950">F-J. Tindak Lanjut Kasus</legend>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Intervensi Apoteker</span><textarea name="intervention" rows="5" class="min-h-44 resize-y rounded-2xl border-slate-200 text-sm">{{ old('intervention') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Parameter Klinis dan Follow-up</span><textarea name="monitoring" rows="5" class="min-h-44 resize-y rounded-2xl border-slate-200 text-sm">{{ old('monitoring') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Evaluasi</span><textarea name="evaluation" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('evaluation') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Edukasi Pasien</span><textarea name="education" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('education') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Kesimpulan Kasus</span><textarea name="conclusion" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('conclusion') }}</textarea></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Referensi</span><textarea name="references" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old('references') }}</textarea></label>
+            </fieldset>
+
+            <label class="flex items-start gap-2 text-sm font-semibold text-slate-700"><input type="checkbox" name="anonymization_confirmed" value="1" class="mt-1" required> Saya memastikan tidak ada nama, nomor rekam medis, alamat, atau kontak pasien.</label>
+            <button class="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Simpan Studi Kasus</button>
         </form>
     </section>
 

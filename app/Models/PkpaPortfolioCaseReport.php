@@ -13,8 +13,9 @@ class PkpaPortfolioCaseReport extends Model
     protected $fillable = [
         'pkpa_rotation_portfolio_id', 'case_code', 'case_date', 'patient_initials',
         'gender', 'age', 'weight_kg', 'height_cm', 'complaint', 'diagnosis', 'history',
-        'allergy', 'medication_use', 'drug_data', 'soap', 'drp', 'intervention',
-        'monitoring', 'education', 'conclusion', 'references', 'anonymization_confirmed',
+        'past_medical_history', 'family_history', 'allergy', 'medication_use', 'drug_data',
+        'soap', 'drp', 'drp_items', 'intervention', 'monitoring', 'evaluation', 'education',
+        'conclusion', 'references', 'anonymization_confirmed',
         'privacy_warnings', 'status', 'created_by_core_user_id', 'reviewed_by_core_user_id',
         'reviewed_at',
     ];
@@ -28,6 +29,7 @@ class PkpaPortfolioCaseReport extends Model
             'height_cm' => 'decimal:2',
             'drug_data' => 'array',
             'soap' => 'array',
+            'drp_items' => 'array',
             'anonymization_confirmed' => 'boolean',
             'privacy_warnings' => 'array',
             'reviewed_at' => 'datetime',

@@ -904,28 +904,69 @@ class PkpaPortfolioBuilderService
 
         $lines = [];
         foreach ($portfolio->caseReports as $case) {
-            $lines[] = 'Kasus '.$case->case_code.' - '.($case->case_date?->format('d M Y') ?: 'Tanggal belum diisi');
-            foreach (array_filter([
-                'Inisial pasien: '.($case->patient_initials ?: '-'),
-                'Jenis kelamin: '.($case->gender ?: '-'),
-                'Umur: '.($case->age ?: '-'),
-                'Keluhan utama: '.($case->complaint ?: '-'),
-                'Diagnosis: '.($case->diagnosis ?: '-'),
-                'Riwayat pasien: '.($case->history ?: '-'),
-                'Alergi: '.($case->allergy ?: '-'),
-                'Penggunaan obat: '.($case->medication_use ?: '-'),
-                'DRP: '.($case->drp ?: '-'),
-                'Intervensi: '.($case->intervention ?: '-'),
-                'Monitoring: '.($case->monitoring ?: '-'),
-                'Edukasi: '.($case->education ?: '-'),
-                'Kesimpulan: '.($case->conclusion ?: '-'),
-                'Referensi: '.($case->references ?: '-'),
-            ]) as $line) {
-                $lines[] = $line;
-            }
+            $lines = array_merge($lines, $this->caseReportDetailLines($case), ['']);
         }
 
-        return $lines;
+        return $this->trimTrailingBlankLines($lines);
+    }
+
+    private function caseReportDetailLines(PkpaPortfolioCaseReport $case): array
+    {
+        $lines = [
+            'FORMAT STUDI KASUS',
+            'Kasus Nomor: '.$case->case_code,
+            'A. Identitas Pasien',
+            'Tanggal: '.($case->case_date?->format('d M Y') ?: '-'),
+            'Inisial Pasien: '.($case->patient_initials ?: '-'),
+            'Jenis Kelamin: '.($case->gender ?: '-'),
+            'Umur: '.($case->age ?? '-'),
+            'Berat Badan: '.($case->weight_kg ?? '-').' kg',
+            'Tinggi Badan: '.($case->height_cm ?? '-').' cm',
+            'Keluhan Utama: '.($case->complaint ?: '-'),
+            'Diagnosis: '.($case->diagnosis ?: '-'),
+            'B. Riwayat Pasien',
+            'Riwayat Penyakit Sekarang: '.($case->history ?: '-'),
+            'Riwayat Penyakit Dahulu: '.($case->past_medical_history ?: '-'),
+            'Riwayat Penyakit Keluarga: '.($case->family_history ?: '-'),
+            'Riwayat Alergi: '.($case->allergy ?: '-'),
+            'Riwayat Penggunaan Obat: '.($case->medication_use ?: '-'),
+            'C. Data Obat',
+        ];
+
+        $drugRows = collect($case->drug_data ?? [])->filter(fn ($drug) => filled(implode('', $drug ?? [])));
+        $lines[] = $drugRows->isEmpty() ? 'Belum ada data obat.' : 'Nama Obat | Dosis | Frekuensi | Rute | Indikasi';
+        foreach ($drugRows as $drug) {
+            $lines[] = implode(' | ', [
+                $drug['name'] ?? '-', $drug['dose'] ?? '-', $drug['frequency'] ?? '-', $drug['route'] ?? '-', $drug['indication'] ?? '-',
+            ]);
+        }
+
+        $soap = $case->soap ?? [];
+        $lines = array_merge($lines, [
+            'D. Analisis SOAP',
+            'S (Subjective): '.($soap['subjective'] ?? '-'),
+            'O (Objective): '.($soap['objective'] ?? '-'),
+            'A (Assessment): '.($soap['assessment'] ?? '-'),
+            'P (Plan): '.($soap['plan'] ?? '-'),
+            'E. Drug Related Problems (DRP)',
+        ]);
+
+        $drpRows = collect($case->drp_items ?? [])->filter(fn ($item) => filled($item['status'] ?? null) || filled($item['note'] ?? null));
+        $lines[] = $drpRows->isEmpty() ? 'Ringkasan DRP: '.($case->drp ?: '-') : 'Jenis DRP | Ada/Tidak | Keterangan';
+        foreach ($drpRows as $item) {
+            $lines[] = implode(' | ', [$item['type'] ?? '-', $item['status'] ?? '-', $item['note'] ?? '-']);
+        }
+
+        return array_merge($lines, [
+            'Ringkasan DRP: '.($case->drp ?: '-'),
+            'F. Intervensi Apoteker: '.($case->intervention ?: '-'),
+            'G. Monitoring dan Evaluasi',
+            'Parameter Klinis dan Follow-up: '.($case->monitoring ?: '-'),
+            'Evaluasi: '.($case->evaluation ?: '-'),
+            'H. Edukasi Pasien: '.($case->education ?: '-'),
+            'I. Kesimpulan Kasus: '.($case->conclusion ?: '-'),
+            'J. Referensi: '.($case->references ?: '-'),
+        ]);
     }
 
     private function reflectionLines(PkpaRotationPortfolio $portfolio): array
