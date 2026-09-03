@@ -188,8 +188,18 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
             ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/site_profile', [
                 'overview' => 'Apotek melayani resep dan swamedikasi.',
+                'history' => 'Apotek berdiri untuk menyediakan layanan kefarmasian bagi masyarakat.',
+                'vision' => 'Menjadi apotek yang aman, bermutu, dan berorientasi pada pasien.',
+                'mission' => 'Memberikan pelayanan kefarmasian yang profesional dan bertanggung jawab.',
+                'facilities' => 'Area pelayanan, ruang penyimpanan, dan perangkat pendukung operasional.',
+                'human_resources' => 'Apoteker penanggung jawab, tenaga teknis kefarmasian, dan kasir.',
                 'operational_hours' => '08.00 - 21.00',
                 'pharmacy_services' => 'Pelayanan resep, PIO, konseling.',
+                'supply_management' => 'Perencanaan, pengadaan, penerimaan, penyimpanan, dan pengendalian persediaan.',
+                'information_system' => 'Sistem komputerisasi untuk resep, stok, dan pelaporan operasional.',
+                'prescription_service_types' => 'Resep umum, resep BPJS, resep racikan, dan resep nonracikan.',
+                'available_medicines' => 'Obat bebas, obat bebas terbatas, obat keras, vitamin, dan alat kesehatan.',
+                'site_analysis' => 'Tempat PKPA menyediakan pembelajaran alur pelayanan dan pengelolaan apotek yang lengkap.',
             ])
             ->assertRedirect();
 

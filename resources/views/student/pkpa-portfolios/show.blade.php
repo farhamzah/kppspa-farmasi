@@ -277,7 +277,10 @@
                         $record = $sectionRecords->get($sectionCode);
                         $payload = $record?->manual_payload ?? [];
                     @endphp
-                    <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <section @class([
+                        'rounded-3xl border border-slate-100 bg-white p-5 shadow-sm',
+                        'xl:col-span-2' => $sectionCode === 'site_profile',
+                    ])>
                         <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div>
                                 <h2 class="text-lg font-black text-slate-950">{{ $definition['title'] }}</h2>
@@ -293,9 +296,19 @@
                                 <label class="grid gap-2">
                                     <span class="text-sm font-bold text-slate-700">{{ $field['label'] }}</span>
                                     @if($field['type'] === 'textarea')
-                                        <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 3 }}" class="rounded-2xl border-slate-200 text-sm">{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
+                                        @php
+                                            $rows = $field['rows'] ?? 3;
+                                            $minimumHeight = match (true) {
+                                                $rows >= 6 => 'min-h-52',
+                                                $rows >= 5 => 'min-h-44',
+                                                $rows >= 4 => 'min-h-36',
+                                                $rows >= 3 => 'min-h-28',
+                                                default => 'min-h-20',
+                                            };
+                                        @endphp
+                                        <textarea name="{{ $field['name'] }}" rows="{{ $rows }}" @class(['resize-y rounded-2xl border-slate-200 text-sm', $minimumHeight])>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
                                     @else
-                                        <input name="{{ $field['name'] }}" value="{{ old($field['name'], $payload[$field['name']] ?? '') }}" class="rounded-2xl border-slate-200 text-sm">
+                                        <input name="{{ $field['name'] }}" value="{{ old($field['name'], $payload[$field['name']] ?? '') }}" class="max-w-xl rounded-2xl border-slate-200 text-sm">
                                     @endif
                                 </label>
                             @endforeach
