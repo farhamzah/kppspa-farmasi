@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Concerns\AuthorizesPkpaRotationActors;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,41 +28,62 @@ class PkpaLogbookService
         $this->ensureStudentOwnsRun($run, $actor);
         $this->validateEntry($run, $data);
         $keyDate = $data['entry_date'] ?? $data['period_start_date'];
-        $entry = isset($data['id']) ? PkpaLogbookEntry::whereKey($data['id'])->first() : null;
-        if ($entry && (int) $entry->pkpa_rotation_run_id !== (int) $run->id) {
-            throw ValidationException::withMessages(['authorization' => 'Logbook tidak sesuai dengan rotasi yang sedang dibuka.']);
-        }
-        if ($entry && ! in_array($entry->status, ['draft', 'revision_requested'], true)) {
-            throw ValidationException::withMessages(['logbook' => 'Logbook yang sudah dikirim tidak dapat diubah langsung.']);
-        }
+        $entryKey = 'RUN:'.$run->id.':'.$keyDate;
 
-        $payload = [
-            'entry_date' => $data['entry_date'] ?? null,
-            'period_start_date' => $data['period_start_date'] ?? ($data['entry_date'] ?? null),
-            'period_end_date' => $data['period_end_date'] ?? ($data['entry_date'] ?? null),
-            'title' => trim($data['title']),
-            'activity_summary' => trim($data['activity_summary']),
-            'learning_outcomes' => trim($data['learning_outcomes']),
-            'reflection' => trim($data['reflection']),
-            'problems_encountered' => $data['problems_encountered'] ?? null,
-            'follow_up_plan' => $data['follow_up_plan'] ?? null,
-            'practice_minutes' => $data['practice_minutes'] ?? null,
-            'updated_by_core_user_id' => $actor?->core_user_id,
-            'row_version' => ($entry?->row_version ?? 0) + 1,
-        ];
+        return DB::transaction(function () use ($run, $data, $actor, $entryKey) {
+            $entry = isset($data['id'])
+                ? PkpaLogbookEntry::withTrashed()->whereKey($data['id'])->lockForUpdate()->first()
+                : null;
 
-        $entry = $entry
-            ? tap($entry)->update($payload)
-            : PkpaLogbookEntry::create(array_merge($payload, [
-                'pkpa_rotation_run_id' => $run->id,
-                'status' => 'draft',
-                'created_by_core_user_id' => $actor?->core_user_id,
-                'entry_key' => 'RUN:'.$run->id.':'.$keyDate,
-            ]));
+            if (! $entry) {
+                $entry = PkpaLogbookEntry::withTrashed()
+                    ->where('pkpa_rotation_run_id', $run->id)
+                    ->where('entry_key', $entryKey)
+                    ->lockForUpdate()
+                    ->first();
+            }
 
-        $this->audit->record($actor, 'pkpa_logbook_saved', $entry);
+            if ($entry && (int) $entry->pkpa_rotation_run_id !== (int) $run->id) {
+                throw ValidationException::withMessages(['authorization' => 'Logbook tidak sesuai dengan rotasi yang sedang dibuka.']);
+            }
 
-        return $entry->refresh();
+            if ($entry?->trashed()) {
+                $entry->restore();
+                $entry->refresh();
+            }
+
+            if ($entry && ! in_array($entry->status, ['draft', 'revision_requested'], true)) {
+                throw ValidationException::withMessages(['logbook' => 'Logbook untuk tanggal ini sudah dikirim dan tidak dapat diubah langsung.']);
+            }
+
+            $payload = [
+                'entry_date' => $data['entry_date'] ?? null,
+                'period_start_date' => $data['period_start_date'] ?? ($data['entry_date'] ?? null),
+                'period_end_date' => $data['period_end_date'] ?? ($data['entry_date'] ?? null),
+                'title' => trim($data['title']),
+                'activity_summary' => trim($data['activity_summary']),
+                'learning_outcomes' => trim($data['learning_outcomes']),
+                'reflection' => trim($data['reflection']),
+                'problems_encountered' => $data['problems_encountered'] ?? null,
+                'follow_up_plan' => $data['follow_up_plan'] ?? null,
+                'practice_minutes' => $data['practice_minutes'] ?? null,
+                'updated_by_core_user_id' => $actor?->core_user_id,
+                'row_version' => ($entry?->row_version ?? 0) + 1,
+            ];
+
+            $entry = $entry
+                ? tap($entry)->update($payload)
+                : PkpaLogbookEntry::create(array_merge($payload, [
+                    'pkpa_rotation_run_id' => $run->id,
+                    'status' => 'draft',
+                    'created_by_core_user_id' => $actor?->core_user_id,
+                    'entry_key' => $entryKey,
+                ]));
+
+            $this->audit->record($actor, 'pkpa_logbook_saved', $entry);
+
+            return $entry->refresh();
+        });
     }
 
     public function submit(PkpaLogbookEntry $entry, ?User $actor): PkpaLogbookEntry

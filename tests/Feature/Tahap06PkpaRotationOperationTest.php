@@ -363,6 +363,27 @@ class Tahap06PkpaRotationOperationTest extends TestCase
 
         $this->assertSoftDeleted('pkpa_attendance_records', ['id' => $attendance->id]);
         $this->assertSoftDeleted('pkpa_logbook_entries', ['id' => $entry->id]);
+
+        $restoredAttendance = app(PkpaAttendanceService::class)->save($run, [
+            'attendance_date' => '2026-07-17',
+            'attendance_type' => 'present',
+            'check_in_time' => '08:00',
+            'check_out_time' => '16:00',
+            'student_notes' => 'Draf dibuat ulang setelah dihapus.',
+        ], $this->student);
+        $restoredLogbook = app(PkpaLogbookService::class)->save($run, [
+            'entry_date' => '2026-07-17',
+            'title' => 'Draf logbook dibuat ulang',
+            'activity_summary' => 'Isi setelah draf sebelumnya dihapus.',
+            'learning_outcomes' => 'Memastikan entri dapat digunakan kembali.',
+            'reflection' => 'Tidak ada duplikasi data.',
+            'practice_minutes' => 420,
+        ], $this->student);
+
+        $this->assertSame($attendance->id, $restoredAttendance->id);
+        $this->assertSame($entry->id, $restoredLogbook->id);
+        $this->assertDatabaseHas('pkpa_attendance_records', ['id' => $attendance->id, 'submission_status' => 'draft', 'deleted_at' => null]);
+        $this->assertDatabaseHas('pkpa_logbook_entries', ['id' => $entry->id, 'status' => 'draft', 'deleted_at' => null]);
     }
 
     private function activatedRun(): PkpaRotationRun

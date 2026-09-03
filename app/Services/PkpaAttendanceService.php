@@ -36,18 +36,25 @@ class PkpaAttendanceService
             $dateKey = 'RUN:'.$run->id.':'.$data['attendance_date'];
 
             if (! $record) {
-                $record = PkpaAttendanceRecord::where('pkpa_rotation_run_id', $run->id)
+                $record = PkpaAttendanceRecord::withTrashed()
+                    ->where('pkpa_rotation_run_id', $run->id)
                     ->whereDate('attendance_date', $data['attendance_date'])
                     ->where('active_key', $dateKey)
                     ->lockForUpdate()
                     ->first();
             }
 
+            if ($record?->trashed()) {
+                $record->restore();
+                $record->refresh();
+            }
+
             if ($record && ! in_array($record->submission_status, ['draft', 'revision_requested'], true)) {
                 throw ValidationException::withMessages(['attendance' => 'Presensi yang sudah dikirim tidak dapat diubah langsung. Ajukan koreksi.']);
             }
 
-            $existingForDate = PkpaAttendanceRecord::where('pkpa_rotation_run_id', $run->id)
+            $existingForDate = PkpaAttendanceRecord::withTrashed()
+                ->where('pkpa_rotation_run_id', $run->id)
                 ->whereDate('attendance_date', $data['attendance_date'])
                 ->where('active_key', $dateKey)
                 ->when($record, fn ($query) => $query->whereKeyNot($record->id))
