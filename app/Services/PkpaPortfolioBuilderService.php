@@ -213,6 +213,79 @@ class PkpaPortfolioBuilderService
         return $record->fresh();
     }
 
+    public function saveReportActivity(PkpaRotationPortfolio $portfolio, string $sectionCode, array $data, User $actor, ?string $entryId = null)
+    {
+        $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
+        if (! in_array($sectionCode, PkpaApotekPortfolio::reportSectionCodes(), true)) {
+            throw ValidationException::withMessages(['section' => 'Bagian ini bukan laporan kegiatan PKPA.']);
+        }
+
+        $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
+        $payload = $record->manual_payload ?? [];
+        $entries = collect($payload['activity_entries'] ?? []);
+
+        if ($entries->isEmpty() && filled($payload['activities'] ?? null)) {
+            $entries = collect($payload['selected_activities'] ?? [$sectionCode])->map(fn ($activity, $index) => [
+                'id' => 'legacy-'.($index + 1),
+                'activity' => $activity,
+                'purpose' => $payload['purpose'] ?? '',
+                'description' => $payload['activities'] ?? '',
+                'result' => $payload['result'] ?? '',
+            ]);
+        }
+
+        $entry = collect($data)->map(fn ($value) => is_string($value) ? trim($value) : $value)->all();
+        if ($entryId) {
+            $index = $entries->search(fn ($item) => ($item['id'] ?? null) === $entryId);
+            if ($index === false) {
+                throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan diperbarui tidak ditemukan.']);
+            }
+            $entry['id'] = $entryId;
+            $entries->put($index, $entry);
+        } else {
+            $entry['id'] = (string) str()->uuid();
+            $entries->push($entry);
+        }
+
+        $this->updateReportActivityRecord($portfolio, $record, $sectionCode, $entries->values()->all(), $actor);
+
+        return $record->fresh();
+    }
+
+    public function deleteReportActivity(PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId, User $actor)
+    {
+        $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
+        if (! in_array($sectionCode, PkpaApotekPortfolio::reportSectionCodes(), true)) {
+            throw ValidationException::withMessages(['section' => 'Bagian ini bukan laporan kegiatan PKPA.']);
+        }
+
+        $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
+        $entries = collect(($record->manual_payload ?? [])['activity_entries'] ?? []);
+        if (! $entries->contains(fn ($item) => ($item['id'] ?? null) === $entryId)) {
+            throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan dihapus tidak ditemukan.']);
+        }
+
+        $this->updateReportActivityRecord($portfolio, $record, $sectionCode, $entries->reject(fn ($item) => ($item['id'] ?? null) === $entryId)->values()->all(), $actor);
+    }
+
+    private function updateReportActivityRecord(PkpaRotationPortfolio $portfolio, $record, string $sectionCode, array $entries, User $actor): void
+    {
+        $completed = PkpaApotekPortfolio::completed(['activity_entries' => $entries], $sectionCode);
+        $record->update([
+            'manual_payload' => ['activity_entries' => $entries],
+            'status' => $completed ? 'completed' : 'pending',
+            'completion_snapshot' => array_merge($record->completion_snapshot ?? [], [
+                'updated_by' => $actor->core_user_id,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+            'completed_at' => $completed ? now() : null,
+        ]);
+
+        $this->syncProgress($portfolio->fresh());
+    }
+
     public function saveCase(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioCaseReport
     {
         $this->ensureStudentOwns($portfolio, $actor);
@@ -1205,6 +1278,13 @@ class PkpaPortfolioBuilderService
     {
         if (! $actor->hasRole('mahasiswa') || (string) $portfolio->rotationRun?->student_core_user_id !== (string) $actor->core_user_id) {
             throw ValidationException::withMessages(['authorization' => 'Portofolio hanya dapat diubah mahasiswa pemilik.']);
+        }
+    }
+
+    private function ensurePortfolioEditable(PkpaRotationPortfolio $portfolio): void
+    {
+        if (! in_array($portfolio->status, ['draft', 'in_progress', 'field_revision_requested', 'internal_revision_requested'], true)) {
+            throw ValidationException::withMessages(['portfolio' => 'Portofolio yang sudah dikirim tidak dapat diubah.']);
         }
     }
 

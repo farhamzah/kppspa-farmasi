@@ -194,6 +194,16 @@ class PkpaApotekPortfolio
     public static function completed(array $payload, string $code): bool
     {
         if (in_array($code, self::reportSectionCodes(), true)) {
+            if (array_key_exists('activity_entries', $payload)) {
+                return collect($payload['activity_entries'])
+                    ->filter(fn ($entry) => is_array($entry))
+                    ->isNotEmpty()
+                    && collect($payload['activity_entries'])->every(fn ($entry) => filled($entry['activity'] ?? null)
+                        && filled($entry['purpose'] ?? null)
+                        && filled($entry['description'] ?? null)
+                        && filled($entry['result'] ?? null));
+            }
+
             return filled($payload['purpose'] ?? null)
                 && filled($payload['selected_activities'] ?? null)
                 && filled($payload['activities'] ?? null)
@@ -210,6 +220,23 @@ class PkpaApotekPortfolio
         $definition = self::sectionDefinition($code);
         if (! $definition) {
             return [];
+        }
+
+        if (in_array($code, self::reportSectionCodes(), true) && is_array($payload['activity_entries'] ?? null)) {
+            return collect($payload['activity_entries'])
+                ->filter(fn ($entry) => is_array($entry))
+                ->flatMap(function (array $entry, int $index) {
+                    $number = $index + 1;
+
+                    return [
+                        'Kegiatan '.$number.': '.($entry['activity'] ?? '-'),
+                        'Tujuan: '.($entry['purpose'] ?? '-'),
+                        'Uraian Kegiatan: '.($entry['description'] ?? '-'),
+                        'Hasil: '.($entry['result'] ?? '-'),
+                    ];
+                })
+                ->values()
+                ->all();
         }
 
         $lines = [];

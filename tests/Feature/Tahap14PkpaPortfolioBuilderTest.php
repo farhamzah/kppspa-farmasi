@@ -230,6 +230,34 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         ]);
     }
 
+    public function test_student_can_manage_individual_apotek_report_activities(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->run, $this->admin);
+        $entry = $service->saveReportActivity($portfolio, 'supply_management', [
+            'activity' => 'Perencanaan',
+            'purpose' => 'Memahami kebutuhan persediaan.',
+            'description' => 'Mempelajari perencanaan kebutuhan obat.',
+            'result' => 'Memahami dasar perencanaan persediaan.',
+        ], $this->student);
+
+        $stored = data_get($entry->manual_payload, 'activity_entries.0');
+        $this->assertSame('Perencanaan', data_get($stored, 'activity'));
+        $this->assertSame('completed', $entry->status);
+        $this->assertContains('Kegiatan 1: Perencanaan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload));
+
+        $updated = $service->saveReportActivity($portfolio->fresh(), 'supply_management', [
+            'activity' => 'Pengadaan',
+            'purpose' => 'Memahami proses pengadaan.',
+            'description' => 'Mempelajari pemesanan obat ke pemasok.',
+            'result' => 'Memahami alur pengadaan obat.',
+        ], $this->student, data_get($stored, 'id'));
+        $this->assertSame('Pengadaan', data_get($updated->manual_payload, 'activity_entries.0.activity'));
+
+        $service->deleteReportActivity($portfolio->fresh(), 'supply_management', data_get($stored, 'id'), $this->student);
+        $this->assertSame([], $portfolio->fresh()->sectionRecords()->where('section_code', 'supply_management')->firstOrFail()->manual_payload['activity_entries']);
+    }
+
     public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);

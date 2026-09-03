@@ -421,6 +421,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'showIntegrity'])->name('pkpa-portfolios.integrity.show');
             Route::post('portofolio-pkpa/{portfolio}/pakta-integritas', [StudentPkpaPortfolioController::class, 'acknowledge'])->name('pkpa-portfolios.integrity.acknowledge');
             Route::post('portofolio-pkpa/{portfolio}/pakta-integritas/tidak-setuju', [StudentPkpaPortfolioController::class, 'declineIntegrity'])->name('pkpa-portfolios.integrity.decline');
+            Route::post('portofolio-pkpa/{portfolio}/bagian/{sectionCode}/kegiatan', [StudentPkpaPortfolioController::class, 'storeReportActivity'])->name('pkpa-portfolios.report-activities.store');
+            Route::patch('portofolio-pkpa/{portfolio}/bagian/{sectionCode}/kegiatan/{entryId}', [StudentPkpaPortfolioController::class, 'updateReportActivity'])->name('pkpa-portfolios.report-activities.update');
+            Route::delete('portofolio-pkpa/{portfolio}/bagian/{sectionCode}/kegiatan/{entryId}', [StudentPkpaPortfolioController::class, 'destroyReportActivity'])->name('pkpa-portfolios.report-activities.destroy');
             Route::post('portofolio-pkpa/{portfolio}/bagian/{sectionCode}', [StudentPkpaPortfolioController::class, 'storeSection'])->name('pkpa-portfolios.sections.store');
             Route::post('portofolio-pkpa/{portfolio}/studi-kasus', [StudentPkpaPortfolioController::class, 'storeCase'])->name('pkpa-portfolios.cases.store');
             Route::post('portofolio-pkpa/{portfolio}/refleksi', [StudentPkpaPortfolioController::class, 'storeReflection'])->name('pkpa-portfolios.reflections.store');
