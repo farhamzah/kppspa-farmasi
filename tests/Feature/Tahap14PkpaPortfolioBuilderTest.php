@@ -281,6 +281,12 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Kegiatan Tersimpan')
             ->assertSee('Buka Pakta Integritas');
 
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'?report=narcotics_psychotropics')
+            ->assertOk()
+            ->assertSee('Pengelolaan Narkotika dan Psikotropika')
+            ->assertSee('Tambah Kegiatan');
+
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
             ->assertOk()
