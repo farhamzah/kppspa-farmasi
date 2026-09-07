@@ -245,6 +245,36 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         ]);
     }
 
+    public function test_field_supervisor_logbook_queue_groups_submitted_entries_by_student_rotation(): void
+    {
+        $run = $this->activatedRun();
+        $logbookService = app(PkpaLogbookService::class);
+
+        foreach ([
+            ['2026-07-16', 'Konseling pasien'],
+            ['2026-07-17', 'Pelayanan resep'],
+        ] as [$entryDate, $title]) {
+            $entry = $logbookService->save($run, [
+                'entry_date' => $entryDate,
+                'title' => $title,
+                'activity_summary' => 'Kegiatan praktik mahasiswa.',
+                'learning_outcomes' => 'Memahami pelayanan kefarmasian.',
+                'reflection' => 'Perlu menjaga ketelitian.',
+                'practice_minutes' => 420,
+            ], $this->student);
+
+            $logbookService->submit($entry, $this->student);
+        }
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/jurnal-pkpa')
+            ->assertOk()
+            ->assertSee('Mahasiswa Tahap 06')
+            ->assertSee('2 menunggu validasi')
+            ->assertSee('Konseling pasien')
+            ->assertSee('Pelayanan resep');
+    }
+
     public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void
     {
         $run = $this->activatedRun();

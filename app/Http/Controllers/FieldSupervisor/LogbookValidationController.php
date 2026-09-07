@@ -8,6 +8,7 @@ use App\Models\KpAssignment;
 use App\Models\KpLogbook;
 use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPublishedAssignment;
+use App\Models\PkpaRotationRun;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,19 +38,37 @@ class LogbookValidationController extends Controller
             ->get();
 
         if ($pkpaAssignments->isNotEmpty()) {
-            $readyLogbooks = PkpaLogbookEntry::query()
+            $readyRuns = PkpaRotationRun::query()
+                ->forSupervisor('field', $coreUserId)
+                ->whereNull('cancelled_at')
+                ->whereHas('logbookEntries', fn ($query) => $query->where('status', 'submitted'))
+                ->with([
+                    'practiceDomain',
+                    'practiceSite',
+                    'enrollment',
+                    'logbookEntries' => fn ($query) => $query
+                        ->where('status', 'submitted')
+                        ->latest('entry_date'),
+                ])
+                ->withCount([
+                    'logbookEntries as pending_logbooks_count' => fn ($query) => $query->where('status', 'submitted'),
+                ])
+                ->orderByDesc('pending_logbooks_count')
+                ->orderByDesc('scheduled_start_date')
+                ->paginate(10)
+                ->withQueryString();
+
+            $pendingLogbookCount = PkpaLogbookEntry::query()
                 ->where('status', 'submitted')
                 ->whereHas('rotationRun', fn ($query) => $query
                     ->forSupervisor('field', $coreUserId)
                     ->whereNull('cancelled_at'))
-                ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
-                ->latest('entry_date')
-                ->paginate(15)
-                ->withQueryString();
+                ->count();
 
             return view('field-supervisor.pkpa-logbook-validation.index', [
                 'assignments' => $pkpaAssignments,
-                'readyLogbooks' => $readyLogbooks,
+                'readyRuns' => $readyRuns,
+                'pendingLogbookCount' => $pendingLogbookCount,
             ]);
         }
 
