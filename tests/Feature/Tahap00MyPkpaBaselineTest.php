@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\RateLimiter;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -310,16 +311,21 @@ class Tahap00MyPkpaBaselineTest extends TestCase
             'password' => 'core-pass',
         ])->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
 
+    public function test_core_outage_is_reported_without_counting_as_a_failed_password_attempt(): void
+    {
         Http::fake([
             'https://core.test/api/v1/auth/login' => Http::response(null, 503),
         ]);
+        config()->set('core_farmasi.fail_silently', false);
 
         $this->post('/login', [
             'email' => 'down@example.test',
             'password' => 'core-pass',
-        ])->assertSessionHasErrors('email');
+        ])->assertSessionHasErrors(['email' => 'Koneksi Core belum tersedia. Silakan coba lagi atau hubungi Admin.']);
         $this->assertGuest();
+        $this->assertSame(0, RateLimiter::attempts('down@example.test|127.0.0.1'));
     }
 
     public function test_core_http_login_exception_returns_safe_error_instead_of_500(): void

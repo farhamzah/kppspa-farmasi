@@ -71,7 +71,7 @@ class CoreFarmasiClient
     public function authenticate(string $email, string $password): ?array
     {
         if (! filled(config('core_farmasi.base_url'))) {
-            return null;
+            return $this->authenticationUnavailable();
         }
 
         try {
@@ -88,13 +88,22 @@ class CoreFarmasiClient
             }
 
             if (! $response->successful()) {
-                return $this->handleFailedResponse($response->status());
+                Log::warning('Core Farmasi authentication endpoint unavailable.', [
+                    'status' => $response->status(),
+                    'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
+                ]);
+
+                return $this->authenticationUnavailable();
             }
 
             $payload = $response->json();
 
             if (! is_array($payload) || blank($payload['token'] ?? null) || ! is_array($payload['user'] ?? null)) {
-                return null;
+                Log::warning('Core Farmasi authentication response is incomplete.', [
+                    'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
+                ]);
+
+                return $this->authenticationUnavailable();
             }
 
             return [
@@ -103,9 +112,9 @@ class CoreFarmasiClient
                 'user' => $this->normalizeUserPayload($payload['user']),
             ];
         } catch (RequestException $exception) {
-            return $this->handleThrowable($exception);
+            return $this->authenticationUnavailable($exception);
         } catch (Throwable $exception) {
-            return $this->handleThrowable($exception);
+            return $this->authenticationUnavailable($exception);
         }
     }
 
@@ -403,5 +412,21 @@ class CoreFarmasiClient
         ]);
 
         return null;
+    }
+
+    /**
+     * Authentication is an interactive user path: a Core outage must never
+     * bubble into a 500 response, regardless of read-only adapter settings.
+     *
+     * @return array{authenticated: false, reason: 'core_unavailable'}
+     */
+    protected function authenticationUnavailable(?Throwable $exception = null): array
+    {
+        Log::warning('Core Farmasi authentication request unavailable.', [
+            'app_code' => config('core_farmasi.app_code', 'kppspa-farmasi'),
+            'error_class' => $exception ? $exception::class : null,
+        ]);
+
+        return ['authenticated' => false, 'reason' => 'core_unavailable'];
     }
 }

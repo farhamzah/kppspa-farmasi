@@ -203,6 +203,20 @@ class CoreFarmasiClientTest extends TestCase
         $this->assertSame('https://core.test/storage/profile-photos/farhamzah.jpg', $result['user']['avatar_url']);
     }
 
+    public function test_authentication_outage_is_safe_even_when_read_only_requests_are_strict(): void
+    {
+        $this->enableClient();
+        config(['core_farmasi.fail_silently' => false]);
+        Http::fake([
+            'https://core.test/api/v1/auth/login' => Http::response(null, 503),
+        ]);
+
+        $this->assertSame([
+            'authenticated' => false,
+            'reason' => 'core_unavailable',
+        ], app(CoreFarmasiClient::class)->authenticate('user@example.test', 'secret'));
+    }
+
     public function test_smoke_command_disabled_mode_does_not_call_http(): void
     {
         config(['core_farmasi.enabled' => false]);

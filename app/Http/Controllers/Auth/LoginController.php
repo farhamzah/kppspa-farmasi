@@ -48,7 +48,9 @@ class LoginController extends Controller
             );
 
             if (! $authResult['ok']) {
-                RateLimiter::hit($key);
+                if (($authResult['reason'] ?? null) === 'invalid_credentials') {
+                    RateLimiter::hit($key);
+                }
 
                 return back()
                     ->withErrors(['email' => $this->loginFailureMessage($authResult['reason'] ?? null)])
@@ -60,7 +62,6 @@ class LoginController extends Controller
 
             return $this->redirectAuthenticatedUser($request);
         } catch (Throwable $exception) {
-            RateLimiter::hit($key);
             Auth::logout();
             $request->session()->forget('active_role');
             $request->session()->regenerateToken();
