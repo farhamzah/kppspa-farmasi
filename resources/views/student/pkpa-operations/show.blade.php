@@ -226,7 +226,7 @@
                 <p class="mt-1">Logbook diisi setiap hari selama pelaksanaan PKPA sebagai bukti kegiatan yang telah dilakukan, diperiksa preseptor, dan dipantau pembimbing dalam.</p>
             </div>
         </div>
-        <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" class="mt-6 grid gap-5" id="logbook-form">
+        <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" enctype="multipart/form-data" class="mt-6 grid gap-5" id="logbook-form">
             @csrf
             <input type="hidden" name="id" id="logbook_id">
             <div class="grid gap-5 lg:grid-cols-2">
@@ -254,6 +254,34 @@
                 <span class="text-sm font-black text-slate-700">Refleksi Mahasiswa</span>
                 <textarea name="reflection" id="logbook_reflection" rows="4" class="rounded-2xl border-slate-200 px-4 py-3 text-base" placeholder="Tuliskan refleksi singkat: hal yang dipahami, kesulitan, dan perbaikan untuk praktik berikutnya." required></textarea>
             </label>
+
+            <div class="border-y border-slate-200 py-5">
+                <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                    <div>
+                        <h4 class="text-base font-black text-slate-900">Bukti Kegiatan</h4>
+                        <p class="mt-1 text-sm text-slate-500">Lampirkan bukti sekarang agar dapat langsung dikirim bersama logbook. Bukti juga dapat ditambahkan lagi selama statusnya masih draf.</p>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500">Opsional</span>
+                </div>
+                <div class="mt-4 grid gap-5 lg:grid-cols-2">
+                    <label class="grid gap-2">
+                        <span class="text-sm font-black text-slate-700">Unggah File Bukti</span>
+                        <input name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="block w-full rounded-2xl border border-slate-200 bg-white text-sm text-slate-600 file:mr-4 file:border-0 file:bg-cyan-50 file:px-4 file:py-3 file:text-sm file:font-black file:text-cyan-800">
+                        <span class="text-xs text-slate-500">PDF, JPG, PNG, atau DOCX. Maksimum {{ number_format(config('my_pkpa.logbook_attachment_max_kb', 5120) / 1024, 0) }} MB.</span>
+                        @error('attachment')
+                            <span class="text-xs font-semibold text-rose-600">{{ $message }}</span>
+                        @enderror
+                    </label>
+                    <label class="grid gap-2">
+                        <span class="text-sm font-black text-slate-700">Tautan Bukti</span>
+                        <input name="external_url" type="url" class="rounded-2xl border-slate-200 px-4 py-3 text-base" placeholder="https://drive.google.com/file/d/.../view">
+                        <span class="text-xs text-slate-500">Tempel tautan Google Drive atau penyimpanan lain yang dapat dibuka oleh reviewer.</span>
+                        @error('external_url')
+                            <span class="text-xs font-semibold text-rose-600">{{ $message }}</span>
+                        @enderror
+                    </label>
+                </div>
+            </div>
 
             <div class="grid gap-5 lg:grid-cols-2">
                 <label class="grid gap-2">
@@ -326,7 +354,7 @@
                         <div class="mt-4 grid gap-4 border-t border-dashed border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                             <div class="rounded-xl {{ $entry->status === 'draft' ? 'bg-amber-50 text-amber-900' : ($entry->status === 'submitted' ? 'bg-cyan-50 text-cyan-900' : ($entry->status === 'field_approved' ? 'bg-sky-50 text-sky-900' : 'bg-emerald-50 text-emerald-900')) }} px-4 py-3 xl:col-span-2">
                                 <p class="font-black">{{ $entry->status === 'draft' ? 'Draf belum dikirim' : ($entry->status === 'submitted' ? 'Sudah terkirim ke Preseptor' : ($entry->status === 'field_approved' ? 'Sudah disetujui Preseptor, menunggu Pembimbing Dalam' : ($entry->status === 'internal_approved' ? 'Tervalidasi final oleh Pembimbing Dalam' : 'Memerlukan tindak lanjut mahasiswa'))) }}</p>
-                                <p class="mt-1 text-sm">{{ $entry->status === 'draft' ? 'Edit, simpan bukti Google Drive, lalu kirim ketika isi sudah lengkap.' : ($entry->submitted_at ? 'Dikirim pada '.$entry->submitted_at->format('d M Y H:i') : 'Status dicatat oleh sistem.') }}</p>
+                                <p class="mt-1 text-sm">{{ $entry->status === 'draft' ? 'Edit atau tambahkan bukti, lalu kirim ketika isi sudah lengkap.' : ($entry->submitted_at ? 'Dikirim pada '.$entry->submitted_at->format('d M Y H:i') : 'Status dicatat oleh sistem.') }}</p>
                             </div>
                             <div class="space-y-4">
                                 <div class="grid gap-3 lg:grid-cols-2">

@@ -11,6 +11,7 @@ use App\Services\PkpaAttendanceService;
 use App\Services\PkpaLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PkpaRotationOperationController extends Controller
@@ -111,7 +112,7 @@ class PkpaRotationOperationController extends Controller
             'submission_action' => ['nullable', 'in:draft,submit'],
         ])['submission_action'] ?? 'draft';
 
-        $entry = $this->logbooks->save($run, $request->validate([
+        $data = $request->validate([
             'id' => ['nullable', 'integer'],
             'entry_date' => ['required', 'date'],
             'title' => ['required', 'string', 'max:255'],
@@ -121,11 +122,29 @@ class PkpaRotationOperationController extends Controller
             'problems_encountered' => ['nullable', 'string'],
             'follow_up_plan' => ['nullable', 'string'],
             'practice_minutes' => ['nullable', 'integer', 'min:0'],
-        ]), $request->user());
+            'attachment' => ['nullable', 'file', 'max:'.config('my_pkpa.logbook_attachment_max_kb', 5120)],
+            'external_url' => ['nullable', 'string', 'max:4096'],
+        ]);
+
+        $entry = DB::transaction(function () use ($run, $data, $request, $submissionAction) {
+            $entry = $this->logbooks->save($run, $data, $request->user());
+
+            if ($request->hasFile('attachment')) {
+                $this->logbooks->storeAttachment($entry, $request->file('attachment'), $request->user());
+            }
+
+            if (filled($data['external_url'] ?? null)) {
+                $this->logbooks->storeExternalLink($entry, ['external_url' => $data['external_url']], $request->user());
+            }
+
+            if ($submissionAction === 'submit') {
+                return $this->logbooks->submit($entry, $request->user());
+            }
+
+            return $entry;
+        });
 
         if ($submissionAction === 'submit') {
-            $this->logbooks->submit($entry, $request->user());
-
             return back()->with('status', 'Logbook berhasil dikirim ke preseptor.');
         }
 

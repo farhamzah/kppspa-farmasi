@@ -333,6 +333,40 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee('Preview Bukti');
     }
 
+    public function test_student_can_attach_evidence_when_saving_and_sending_a_new_logbook(): void
+    {
+        Storage::fake('local');
+        $run = $this->activatedRun();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post(route('student.pkpa-logbooks.store', $run), [
+                'entry_date' => '2026-07-17',
+                'title' => 'Pelayanan resep',
+                'activity_summary' => 'Melakukan skrining resep dan menyerahkan obat.',
+                'learning_outcomes' => 'Memahami pemeriksaan kelengkapan resep.',
+                'reflection' => 'Perlu meningkatkan ketelitian saat skrining.',
+                'practice_minutes' => 420,
+                'attachment' => UploadedFile::fake()->create('bukti-kegiatan.pdf', 100, 'application/pdf'),
+                'external_url' => 'drive.google.com/file/d/bukti123/view?usp=sharing',
+                'submission_action' => 'submit',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $entry = PkpaLogbookEntry::query()->where('pkpa_rotation_run_id', $run->id)->firstOrFail();
+
+        $this->assertSame('submitted', $entry->status);
+        $this->assertDatabaseHas('pkpa_logbook_attachments', [
+            'pkpa_logbook_entry_id' => $entry->id,
+            'attachment_type' => 'file',
+            'original_filename' => 'bukti-kegiatan.pdf',
+        ]);
+        $this->assertDatabaseHas('pkpa_logbook_attachments', [
+            'pkpa_logbook_entry_id' => $entry->id,
+            'attachment_type' => 'external_link',
+            'external_url' => 'https://drive.google.com/file/d/bukti123/view?usp=sharing',
+        ]);
+    }
+
     public function test_student_can_update_and_delete_draft_records_before_review(): void
     {
         $run = $this->activatedRun();
