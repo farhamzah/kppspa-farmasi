@@ -122,19 +122,18 @@ class PkpaRotationOperationController extends Controller
             'problems_encountered' => ['nullable', 'string'],
             'follow_up_plan' => ['nullable', 'string'],
             'practice_minutes' => ['nullable', 'integer', 'min:0'],
-            'attachment' => ['nullable', 'file', 'max:'.config('my_pkpa.logbook_attachment_max_kb', 5120)],
-            'external_url' => ['nullable', 'string', 'max:4096'],
+            'evidence_links' => ['nullable', 'array', 'max:10'],
+            'evidence_links.*.external_url' => ['nullable', 'string', 'max:4096'],
+            'evidence_links.*.link_label' => ['nullable', 'string', 'max:255'],
         ]);
 
         $entry = DB::transaction(function () use ($run, $data, $request, $submissionAction) {
             $entry = $this->logbooks->save($run, $data, $request->user());
 
-            if ($request->hasFile('attachment')) {
-                $this->logbooks->storeAttachment($entry, $request->file('attachment'), $request->user());
-            }
-
-            if (filled($data['external_url'] ?? null)) {
-                $this->logbooks->storeExternalLink($entry, ['external_url' => $data['external_url']], $request->user());
+            foreach ($data['evidence_links'] ?? [] as $link) {
+                if (filled($link['external_url'] ?? null)) {
+                    $this->logbooks->storeExternalLink($entry, $link, $request->user());
+                }
             }
 
             if ($submissionAction === 'submit') {
@@ -163,14 +162,6 @@ class PkpaRotationOperationController extends Controller
         $this->logbooks->deleteDraft($entry->load('attachments'), $request->user());
 
         return back()->with('status', 'Logbook draft berhasil dihapus.');
-    }
-
-    public function uploadAttachment(Request $request, PkpaLogbookEntry $entry): RedirectResponse
-    {
-        $request->validate(['attachment' => ['required', 'file', 'max:'.config('my_pkpa.logbook_attachment_max_kb', 5120)]]);
-        $this->logbooks->storeAttachment($entry, $request->file('attachment'), $request->user());
-
-        return back()->with('status', 'Lampiran logbook tersimpan.');
     }
 
     public function uploadAttachmentLink(Request $request, PkpaLogbookEntry $entry): RedirectResponse

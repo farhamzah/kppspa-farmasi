@@ -226,7 +226,7 @@
                 <p class="mt-1">Logbook diisi setiap hari selama pelaksanaan PKPA sebagai bukti kegiatan yang telah dilakukan, diperiksa preseptor, dan dipantau pembimbing dalam.</p>
             </div>
         </div>
-        <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" enctype="multipart/form-data" class="mt-6 grid gap-5" id="logbook-form">
+        <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" class="mt-6 grid gap-5" id="logbook-form">
             @csrf
             <input type="hidden" name="id" id="logbook_id">
             <div class="grid gap-5 lg:grid-cols-2">
@@ -259,28 +259,30 @@
                 <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                     <div>
                         <h4 class="text-base font-black text-slate-900">Bukti Kegiatan</h4>
-                        <p class="mt-1 text-sm text-slate-500">Lampirkan bukti sekarang agar dapat langsung dikirim bersama logbook. Bukti juga dapat ditambahkan lagi selama statusnya masih draf.</p>
+                        <p class="mt-1 text-sm text-slate-500">Simpan tautan bukti di Google Drive agar dapat langsung dikirim bersama logbook tanpa membebani penyimpanan sistem.</p>
                     </div>
                     <span class="text-xs font-bold text-slate-500">Opsional</span>
                 </div>
-                <div class="mt-4 grid gap-5 lg:grid-cols-2">
-                    <label class="grid gap-2">
-                        <span class="text-sm font-black text-slate-700">Unggah File Bukti</span>
-                        <input name="attachment" type="file" accept=".pdf,.jpg,.jpeg,.png,.docx,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="block w-full rounded-2xl border border-slate-200 bg-white text-sm text-slate-600 file:mr-4 file:border-0 file:bg-cyan-50 file:px-4 file:py-3 file:text-sm file:font-black file:text-cyan-800">
-                        <span class="text-xs text-slate-500">PDF, JPG, PNG, atau DOCX. Maksimum {{ number_format(config('my_pkpa.logbook_attachment_max_kb', 5120) / 1024, 0) }} MB.</span>
-                        @error('attachment')
-                            <span class="text-xs font-semibold text-rose-600">{{ $message }}</span>
-                        @enderror
-                    </label>
-                    <label class="grid gap-2">
-                        <span class="text-sm font-black text-slate-700">Tautan Bukti</span>
-                        <input name="external_url" type="url" class="rounded-2xl border-slate-200 px-4 py-3 text-base" placeholder="https://drive.google.com/file/d/.../view">
-                        <span class="text-xs text-slate-500">Tempel tautan Google Drive atau penyimpanan lain yang dapat dibuka oleh reviewer.</span>
-                        @error('external_url')
-                            <span class="text-xs font-semibold text-rose-600">{{ $message }}</span>
-                        @enderror
-                    </label>
+                <div id="evidence-link-list" class="mt-4 space-y-3">
+                    <div data-evidence-link-row class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
+                        <label class="grid gap-2">
+                            <span class="text-sm font-black text-slate-700">Tautan Bukti</span>
+                            <input name="evidence_links[0][external_url]" type="url" class="rounded-xl border-slate-200 bg-white px-4 py-3 text-base" placeholder="https://drive.google.com/file/d/.../view">
+                        </label>
+                        <label class="grid gap-2">
+                            <span class="text-sm font-black text-slate-700">Judul Bukti</span>
+                            <input name="evidence_links[0][link_label]" class="rounded-xl border-slate-200 bg-white px-4 py-3 text-base" placeholder="Contoh: Foto kegiatan pelayanan resep">
+                        </label>
+                        <button type="button" data-remove-evidence-link class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">Hapus</button>
+                    </div>
                 </div>
+                <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <button type="button" id="add-evidence-link" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-black text-cyan-800">Tambah Tautan Bukti</button>
+                    <p class="text-xs text-slate-500">Tambahkan lebih dari satu tautan bila bukti kegiatan berada pada beberapa file atau folder.</p>
+                </div>
+                @error('external_url')
+                    <span class="mt-3 block text-xs font-semibold text-rose-600">{{ $message }}</span>
+                @enderror
             </div>
 
             <div class="grid gap-5 lg:grid-cols-2">
@@ -486,6 +488,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const logbookSubmitButton = document.getElementById('logbook-submit-button');
     const logbookDraftButton = document.getElementById('logbook-draft-button');
     const logbookResetButton = document.getElementById('logbook-reset-button');
+    const evidenceLinkList = document.getElementById('evidence-link-list');
+    const addEvidenceLinkButton = document.getElementById('add-evidence-link');
+    let evidenceLinkIndex = 1;
+
+    const addEvidenceLinkRow = () => {
+        if (!evidenceLinkList || evidenceLinkList.children.length >= 10) {
+            return;
+        }
+
+        const row = document.createElement('div');
+        row.dataset.evidenceLinkRow = '';
+        row.className = 'grid gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end';
+        row.innerHTML = `
+            <label class="grid gap-2">
+                <span class="text-sm font-black text-slate-700">Tautan Bukti</span>
+                <input name="evidence_links[${evidenceLinkIndex}][external_url]" type="url" class="rounded-xl border-slate-200 bg-white px-4 py-3 text-base" placeholder="https://drive.google.com/file/d/.../view">
+            </label>
+            <label class="grid gap-2">
+                <span class="text-sm font-black text-slate-700">Judul Bukti</span>
+                <input name="evidence_links[${evidenceLinkIndex}][link_label]" class="rounded-xl border-slate-200 bg-white px-4 py-3 text-base" placeholder="Contoh: Foto kegiatan pelayanan resep">
+            </label>
+            <button type="button" data-remove-evidence-link class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">Hapus</button>`;
+        evidenceLinkIndex += 1;
+        evidenceLinkList.appendChild(row);
+    };
+
+    addEvidenceLinkButton?.addEventListener('click', addEvidenceLinkRow);
+    evidenceLinkList?.addEventListener('click', (event) => {
+        if (event.target.closest('[data-remove-evidence-link]')) {
+            event.target.closest('[data-evidence-link-row]')?.remove();
+        }
+    });
 
     document.querySelectorAll('.logbook-edit-button').forEach((button) => {
         button.addEventListener('click', () => {
@@ -505,6 +539,14 @@ document.addEventListener('DOMContentLoaded', () => {
     logbookResetButton?.addEventListener('click', () => {
         logbookForm.reset();
         logbookId.value = '';
+        evidenceLinkList?.querySelectorAll('[data-evidence-link-row]').forEach((row, index) => {
+            if (index > 0) {
+                row.remove();
+            }
+        });
+        if (evidenceLinkList && evidenceLinkList.children.length === 0) {
+            addEvidenceLinkRow();
+        }
         logbookSubmitButton.textContent = 'Kirim ke Preseptor';
         logbookDraftButton.textContent = 'Simpan sebagai Draf';
     });

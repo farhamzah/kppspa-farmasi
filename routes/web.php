@@ -449,7 +449,6 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('rotasi-pkpa/{run}/logbooks', [StudentPkpaRotationOperationController::class, 'saveLogbook'])->name('pkpa-logbooks.store');
             Route::post('logbook-pkpa/{entry}/submit', [StudentPkpaRotationOperationController::class, 'submitLogbook'])->name('pkpa-logbooks.submit');
             Route::delete('logbook-pkpa/{entry}', [StudentPkpaRotationOperationController::class, 'deleteLogbook'])->name('pkpa-logbooks.destroy');
-            Route::post('logbook-pkpa/{entry}/attachments', [StudentPkpaRotationOperationController::class, 'uploadAttachment'])->name('pkpa-logbooks.attachments.store');
             Route::post('logbook-pkpa/{entry}/attachment-links', [StudentPkpaRotationOperationController::class, 'uploadAttachmentLink'])->name('pkpa-logbooks.attachment-links.store');
             Route::get('logbook-pkpa/attachments/{attachment}/download', [StudentPkpaRotationOperationController::class, 'downloadAttachment'])->name('pkpa-logbooks.attachments.download');
             Route::get('pendaftaran-pkpa', [KpRegistrationController::class, 'index'])->name('pkpa-registrations.index');

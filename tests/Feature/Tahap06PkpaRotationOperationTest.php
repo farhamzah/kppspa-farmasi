@@ -333,7 +333,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee('Preview Bukti');
     }
 
-    public function test_student_can_attach_evidence_when_saving_and_sending_a_new_logbook(): void
+    public function test_student_can_add_multiple_evidence_links_when_saving_and_sending_a_new_logbook(): void
     {
         Storage::fake('local');
         $run = $this->activatedRun();
@@ -346,8 +346,16 @@ class Tahap06PkpaRotationOperationTest extends TestCase
                 'learning_outcomes' => 'Memahami pemeriksaan kelengkapan resep.',
                 'reflection' => 'Perlu meningkatkan ketelitian saat skrining.',
                 'practice_minutes' => 420,
-                'attachment' => UploadedFile::fake()->create('bukti-kegiatan.pdf', 100, 'application/pdf'),
-                'external_url' => 'drive.google.com/file/d/bukti123/view?usp=sharing',
+                'evidence_links' => [
+                    [
+                        'external_url' => 'drive.google.com/file/d/bukti123/view?usp=sharing',
+                        'link_label' => 'Foto kegiatan',
+                    ],
+                    [
+                        'external_url' => 'drive.google.com/file/d/bukti456/view?usp=sharing',
+                        'link_label' => 'Dokumen pendukung',
+                    ],
+                ],
                 'submission_action' => 'submit',
             ])
             ->assertSessionHasNoErrors();
@@ -357,13 +365,13 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $this->assertSame('submitted', $entry->status);
         $this->assertDatabaseHas('pkpa_logbook_attachments', [
             'pkpa_logbook_entry_id' => $entry->id,
-            'attachment_type' => 'file',
-            'original_filename' => 'bukti-kegiatan.pdf',
+            'attachment_type' => 'external_link',
+            'external_url' => 'https://drive.google.com/file/d/bukti123/view?usp=sharing',
         ]);
         $this->assertDatabaseHas('pkpa_logbook_attachments', [
             'pkpa_logbook_entry_id' => $entry->id,
             'attachment_type' => 'external_link',
-            'external_url' => 'https://drive.google.com/file/d/bukti123/view?usp=sharing',
+            'external_url' => 'https://drive.google.com/file/d/bukti456/view?usp=sharing',
         ]);
     }
 
