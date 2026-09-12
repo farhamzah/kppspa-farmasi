@@ -375,6 +375,48 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         ]);
     }
 
+    public function test_student_can_add_supplementary_evidence_link_while_logbook_waits_for_field_review(): void
+    {
+        $run = $this->activatedRun();
+        $entry = app(PkpaLogbookService::class)->save($run, [
+            'entry_date' => '2026-07-17',
+            'title' => 'Pelayanan resep',
+            'activity_summary' => 'Melakukan skrining resep dan menyerahkan obat.',
+            'learning_outcomes' => 'Memahami pemeriksaan kelengkapan resep.',
+            'reflection' => 'Perlu meningkatkan ketelitian saat skrining.',
+            'practice_minutes' => 420,
+        ], $this->student);
+        app(PkpaLogbookService::class)->submit($entry, $this->student);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/logbook-pkpa/{$entry->id}/attachment-links", [
+                'link_label' => 'Foto kegiatan yang tertinggal',
+                'external_url' => 'drive.google.com/file/d/susulan123/view?usp=sharing',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('submitted', $entry->fresh()->status);
+        $this->assertDatabaseHas('pkpa_logbook_attachments', [
+            'pkpa_logbook_entry_id' => $entry->id,
+            'attachment_type' => 'external_link',
+            'external_url' => 'https://drive.google.com/file/d/susulan123/view?usp=sharing',
+            'link_label' => 'Foto kegiatan yang tertinggal',
+        ]);
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get("/pembimbing-lapangan/operasional-pkpa/{$run->id}?logbook={$entry->id}")
+            ->assertOk()
+            ->assertSee('Foto kegiatan yang tertinggal');
+
+        app(PkpaLogbookService::class)->fieldReview($entry->fresh(), 'approved', 'Bukti sudah sesuai.', $this->fieldSupervisor);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post("/mahasiswa/logbook-pkpa/{$entry->id}/attachment-links", [
+                'external_url' => 'https://drive.google.com/file/d/terlambat456/view',
+            ])
+            ->assertSessionHasErrors('external_url');
+    }
+
     public function test_student_can_update_and_delete_draft_records_before_review(): void
     {
         $run = $this->activatedRun();

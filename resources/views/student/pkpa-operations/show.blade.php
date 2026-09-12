@@ -428,6 +428,20 @@
                                         Draft ini masih bisa diubah, disimpan ulang, atau dihapus sebelum dikirim ke preseptor dan pembimbing dalam.
                                     </div>
                                     <form method="POST" action="{{ route('student.pkpa-logbooks.submit', $entry) }}">@csrf<button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-black text-white">Kirim ke Preseptor</button></form>
+                                @elseif($entry->status === 'submitted')
+                                    <form method="POST" action="{{ route('student.pkpa-logbooks.attachment-links.store', $entry) }}" class="space-y-3 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4">
+                                        @csrf
+                                        <div>
+                                            <p class="text-sm font-black text-slate-900">Bukti Susulan</p>
+                                            <p class="mt-1 text-xs leading-5 text-slate-500">Tambahkan tautan bukti yang tertinggal. Bukti ini langsung terlihat oleh preseptor sebelum ia membuat keputusan.</p>
+                                        </div>
+                                        <input name="link_label" class="block w-full rounded-xl border-slate-200 px-4 py-3 text-sm" placeholder="Judul bukti, misalnya Foto kegiatan 01 Sep">
+                                        <input name="external_url" type="url" class="block w-full rounded-xl border-slate-200 px-4 py-3 text-sm" placeholder="https://drive.google.com/file/d/.../view" required>
+                                        <button class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Simpan Bukti Susulan</button>
+                                    </form>
+                                    <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs leading-5 text-sky-900">
+                                        Isi logbook tidak dapat diubah setelah dikirim. Tautan bukti susulan dapat ditambahkan sampai preseptor memutuskan logbook ini.
+                                    </div>
                                 @else
                                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
                                         Logbook ini sudah masuk alur review sehingga tidak bisa diedit atau dihapus langsung dari sisi mahasiswa.

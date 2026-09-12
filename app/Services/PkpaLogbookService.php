@@ -188,8 +188,8 @@ class PkpaLogbookService
     {
         $run = $entry->rotationRun()->firstOrFail();
         $this->ensureStudentOwnsRun($run, $actor);
-        if (! in_array($entry->status, ['draft', 'revision_requested'], true)) {
-            throw ValidationException::withMessages(['external_url' => 'Tautan bukti hanya dapat ditambahkan sebelum logbook dikirim.']);
+        if (! in_array($entry->status, ['draft', 'revision_requested', 'submitted'], true)) {
+            throw ValidationException::withMessages(['external_url' => 'Tautan bukti hanya dapat ditambahkan saat logbook masih draf, perlu revisi, atau menunggu validasi preseptor.']);
         }
 
         $url = $this->normalizeExternalUrl($data['external_url'] ?? null);
