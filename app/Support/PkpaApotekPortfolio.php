@@ -40,10 +40,10 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua kegiatan pengelolaan sediaan yang dikerjakan.',
-                'fields' => self::reportFields([
+                'activity_items' => [
                     'Perencanaan', 'Pengadaan', 'Penerimaan', 'Penyimpanan', 'FEFO/FIFO', 'Stock Opname', 'Pemusnahan',
-                ]),
+                ],
+                'fields' => self::reportFields(),
             ],
             'prescription_services' => [
                 'title' => 'Laporan Kegiatan: Pelayanan Resep',
@@ -51,10 +51,10 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua tahapan pelayanan resep yang dikerjakan.',
-                'fields' => self::reportFields([
+                'activity_items' => [
                     'Skrining Administrasi', 'Skrining Farmasetik', 'Skrining Klinis', 'Penyiapan Obat', 'Pembuatan Etiket', 'Penyerahan Obat', 'Edukasi Pasien',
-                ]),
+                ],
+                'fields' => self::reportFields(),
             ],
             'self_medication' => [
                 'title' => 'Laporan Kegiatan: Pelayanan Swamedikasi',
@@ -62,10 +62,9 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua tahapan pelayanan swamedikasi yang dikerjakan.',
-                'fields' => self::reportFields([
-                    'Identifikasi Keluhan', 'Anamnesis', 'Identifikasi Red Flag', 'Assessment', 'Rekomendasi Obat', 'Edukasi Pasien', 'Follow-up',
-                ]),
+                'activity_requirement' => 'Minimal 10 kasus.',
+                'activity_items' => ['Keluhan', 'Anamnesis', 'Red Flag', 'Assessment', 'Rekomendasi', 'Obat', 'Edukasi', 'Follow Up'],
+                'fields' => self::reportFields(),
             ],
             'counselling' => [
                 'title' => 'Laporan Kegiatan: Konseling Pasien',
@@ -73,10 +72,8 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua unsur konseling yang dilakukan.',
-                'fields' => self::reportFields([
-                    'Identifikasi Kebutuhan Konseling', 'Penjelasan Tujuan Terapi', 'Cara Penggunaan Obat', 'Efek Samping', 'Penyimpanan Obat', 'Konfirmasi Pemahaman', 'Follow-up',
-                ]),
+                'activity_requirement' => 'Minimal 5 pasien.',
+                'fields' => self::reportFields(),
             ],
             'pio' => [
                 'title' => 'Laporan Kegiatan: Pelayanan Informasi Obat',
@@ -84,10 +81,8 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua tahapan pelayanan informasi obat yang dikerjakan.',
-                'fields' => self::reportFields([
-                    'Penerimaan Pertanyaan', 'Penggalian Informasi', 'Penelusuran Referensi', 'Analisis Informasi', 'Penyampaian Informasi', 'Dokumentasi', 'Follow-up',
-                ]),
+                'activity_requirement' => 'Minimal 5 pasien.',
+                'fields' => self::reportFields(),
             ],
             'narcotics_psychotropics' => [
                 'title' => 'Laporan Kegiatan: Pengelolaan Narkotika dan Psikotropika',
@@ -95,10 +90,8 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua kegiatan pengelolaan narkotika dan psikotropika yang dikerjakan.',
-                'fields' => self::reportFields([
-                    'Penerimaan', 'Penyimpanan', 'Pencatatan', 'Pelayanan', 'Pelaporan', 'Stock Opname', 'Pemusnahan',
-                ]),
+                'activity_items' => ['Penyimpanan', 'Pelaporan', 'Dokumentasi'],
+                'fields' => self::reportFields(),
             ],
             'administration' => [
                 'title' => 'Laporan Kegiatan: Administrasi Kefarmasian',
@@ -106,10 +99,8 @@ class PkpaApotekPortfolio
                 'source_type' => 'structured_form',
                 'reviewer_type' => 'field',
                 'is_required' => true,
-                'activity_hint' => 'Pilih semua kegiatan administrasi yang dikerjakan.',
-                'fields' => self::reportFields([
-                    'Administrasi Penjualan', 'Administrasi Pembelian', 'Pengarsipan Resep', 'Pelaporan', 'Administrasi BPJS', 'Rekonsiliasi Stok',
-                ]),
+                'activity_items' => ['Penjualan', 'Pelaporan', 'BPJS (jika ada)'],
+                'fields' => self::reportFields(),
             ],
             'bibliography' => [
                 'title' => 'Daftar Pustaka',
@@ -147,13 +138,11 @@ class PkpaApotekPortfolio
         ];
     }
 
-    public static function reportFields(array $activityOptions): array
+    public static function reportFields(): array
     {
         return [
-            ['name' => 'purpose', 'label' => 'Tujuan', 'type' => 'textarea', 'rows' => 2],
-            ['name' => 'selected_activities', 'label' => 'Kegiatan yang Dilaksanakan', 'type' => 'multiselect', 'options' => $activityOptions],
-            ['name' => 'activities', 'label' => 'Uraian Kegiatan', 'type' => 'textarea', 'rows' => 4],
-            ['name' => 'result', 'label' => 'Hasil', 'type' => 'textarea', 'rows' => 3],
+            ['name' => 'purpose', 'label' => 'Tujuan', 'type' => 'textarea', 'rows' => 4],
+            ['name' => 'result', 'label' => 'Hasil', 'type' => 'textarea', 'rows' => 4],
         ];
     }
 
@@ -205,8 +194,6 @@ class PkpaApotekPortfolio
             }
 
             return filled($payload['purpose'] ?? null)
-                && filled($payload['selected_activities'] ?? null)
-                && filled($payload['activities'] ?? null)
                 && filled($payload['result'] ?? null);
         }
 
@@ -237,6 +224,23 @@ class PkpaApotekPortfolio
                 })
                 ->values()
                 ->all();
+        }
+
+        if (in_array($code, self::reportSectionCodes(), true)) {
+            $lines = [];
+            if (filled($payload['purpose'] ?? null)) {
+                $lines[] = 'Tujuan: '.trim((string) $payload['purpose']);
+            }
+            if ($items = $definition['activity_items'] ?? []) {
+                $lines[] = 'Kegiatan: '.implode(', ', $items);
+            } elseif (filled($definition['activity_requirement'] ?? null)) {
+                $lines[] = 'Kegiatan: '.$definition['activity_requirement'];
+            }
+            if (filled($payload['result'] ?? null)) {
+                $lines[] = 'Hasil: '.trim((string) $payload['result']);
+            }
+
+            return $lines;
         }
 
         $lines = [];

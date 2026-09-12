@@ -213,7 +213,7 @@ class PkpaPortfolioBuilderService
         return $record->fresh();
     }
 
-    public function saveReportActivity(PkpaRotationPortfolio $portfolio, string $sectionCode, array $data, User $actor, ?string $entryId = null)
+    public function saveReportSection(PkpaRotationPortfolio $portfolio, string $sectionCode, array $data, User $actor)
     {
         $this->ensureStudentOwns($portfolio, $actor);
         $this->ensurePortfolioEditable($portfolio);
@@ -222,59 +222,20 @@ class PkpaPortfolioBuilderService
         }
 
         $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
-        $payload = $record->manual_payload ?? [];
-        $entries = collect($payload['activity_entries'] ?? []);
+        $previousPayload = $record->manual_payload ?? [];
+        $payload = [
+            'purpose' => trim($data['purpose']),
+            'result' => trim($data['result']),
+        ];
 
-        if ($entries->isEmpty() && filled($payload['activities'] ?? null)) {
-            $entries = collect($payload['selected_activities'] ?? [$sectionCode])->map(fn ($activity, $index) => [
-                'id' => 'legacy-'.($index + 1),
-                'activity' => $activity,
-                'purpose' => $payload['purpose'] ?? '',
-                'description' => $payload['activities'] ?? '',
-                'result' => $payload['result'] ?? '',
-            ]);
+        // Preserve entries created with the previous per-activity format for audit and export history.
+        if (is_array($previousPayload['activity_entries'] ?? null)) {
+            $payload['legacy_activity_entries'] = $previousPayload['activity_entries'];
         }
 
-        $entry = collect($data)->map(fn ($value) => is_string($value) ? trim($value) : $value)->all();
-        if ($entryId) {
-            $index = $entries->search(fn ($item) => ($item['id'] ?? null) === $entryId);
-            if ($index === false) {
-                throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan diperbarui tidak ditemukan.']);
-            }
-            $entry['id'] = $entryId;
-            $entries->put($index, $entry);
-        } else {
-            $entry['id'] = (string) str()->uuid();
-            $entries->push($entry);
-        }
-
-        $this->updateReportActivityRecord($portfolio, $record, $sectionCode, $entries->values()->all(), $actor);
-
-        return $record->fresh();
-    }
-
-    public function deleteReportActivity(PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId, User $actor)
-    {
-        $this->ensureStudentOwns($portfolio, $actor);
-        $this->ensurePortfolioEditable($portfolio);
-        if (! in_array($sectionCode, PkpaApotekPortfolio::reportSectionCodes(), true)) {
-            throw ValidationException::withMessages(['section' => 'Bagian ini bukan laporan kegiatan PKPA.']);
-        }
-
-        $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
-        $entries = collect(($record->manual_payload ?? [])['activity_entries'] ?? []);
-        if (! $entries->contains(fn ($item) => ($item['id'] ?? null) === $entryId)) {
-            throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan dihapus tidak ditemukan.']);
-        }
-
-        $this->updateReportActivityRecord($portfolio, $record, $sectionCode, $entries->reject(fn ($item) => ($item['id'] ?? null) === $entryId)->values()->all(), $actor);
-    }
-
-    private function updateReportActivityRecord(PkpaRotationPortfolio $portfolio, $record, string $sectionCode, array $entries, User $actor): void
-    {
-        $completed = PkpaApotekPortfolio::completed(['activity_entries' => $entries], $sectionCode);
+        $completed = PkpaApotekPortfolio::completed($payload, $sectionCode);
         $record->update([
-            'manual_payload' => ['activity_entries' => $entries],
+            'manual_payload' => $payload,
             'status' => $completed ? 'completed' : 'pending',
             'completion_snapshot' => array_merge($record->completion_snapshot ?? [], [
                 'updated_by' => $actor->core_user_id,
@@ -284,6 +245,8 @@ class PkpaPortfolioBuilderService
         ]);
 
         $this->syncProgress($portfolio->fresh());
+
+        return $record->fresh();
     }
 
     public function saveCase(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioCaseReport

@@ -118,26 +118,10 @@ class PkpaPortfolioController extends Controller
 
     public function storeReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode)
     {
-        $definition = $this->reportDefinition($sectionCode);
-        $this->portfolios->saveReportActivity($portfolio, $sectionCode, $request->validate($this->reportActivityRules($definition)), $request->user());
-
-        return redirect()->route('student.pkpa-portfolios.show', $portfolio)->withFragment('laporan-'.$sectionCode)->with('status', 'Kegiatan tersimpan.');
-    }
-
-    public function updateReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId)
-    {
-        $definition = $this->reportDefinition($sectionCode);
-        $this->portfolios->saveReportActivity($portfolio, $sectionCode, $request->validate($this->reportActivityRules($definition)), $request->user(), $entryId);
-
-        return redirect()->route('student.pkpa-portfolios.show', $portfolio)->withFragment('laporan-'.$sectionCode)->with('status', 'Kegiatan diperbarui.');
-    }
-
-    public function destroyReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId)
-    {
         $this->reportDefinition($sectionCode);
-        $this->portfolios->deleteReportActivity($portfolio, $sectionCode, $entryId, $request->user());
+        $this->portfolios->saveReportSection($portfolio, $sectionCode, $request->validate($this->reportSectionRules()), $request->user());
 
-        return redirect()->route('student.pkpa-portfolios.show', $portfolio)->withFragment('laporan-'.$sectionCode)->with('status', 'Kegiatan dihapus.');
+        return redirect()->route('student.pkpa-portfolios.show', $portfolio)->withFragment('laporan-'.$sectionCode)->with('status', 'Laporan kegiatan tersimpan.');
     }
 
     private function reportDefinition(string $sectionCode): array
@@ -148,12 +132,10 @@ class PkpaPortfolioController extends Controller
         return $definition;
     }
 
-    private function reportActivityRules(array $definition): array
+    private function reportSectionRules(): array
     {
         return [
-            'activity' => ['required', 'string', Rule::in(collect($definition['fields'])->firstWhere('name', 'selected_activities')['options'] ?? [])],
             'purpose' => ['required', 'string'],
-            'description' => ['required', 'string'],
             'result' => ['required', 'string'],
         ];
     }

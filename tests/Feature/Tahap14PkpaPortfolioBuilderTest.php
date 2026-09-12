@@ -230,32 +230,20 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         ]);
     }
 
-    public function test_student_can_manage_individual_apotek_report_activities(): void
+    public function test_student_can_save_one_unified_apotek_report_section(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
         $portfolio = $service->ensureForRun($this->run, $this->admin);
-        $entry = $service->saveReportActivity($portfolio, 'supply_management', [
-            'activity' => 'Perencanaan',
+        $entry = $service->saveReportSection($portfolio, 'supply_management', [
             'purpose' => 'Memahami kebutuhan persediaan.',
-            'description' => 'Mempelajari perencanaan kebutuhan obat.',
             'result' => 'Memahami dasar perencanaan persediaan.',
         ], $this->student);
 
-        $stored = data_get($entry->manual_payload, 'activity_entries.0');
-        $this->assertSame('Perencanaan', data_get($stored, 'activity'));
+        $this->assertSame('Memahami kebutuhan persediaan.', data_get($entry->manual_payload, 'purpose'));
+        $this->assertSame('Memahami dasar perencanaan persediaan.', data_get($entry->manual_payload, 'result'));
+        $this->assertArrayNotHasKey('activity_entries', $entry->manual_payload);
         $this->assertSame('completed', $entry->status);
-        $this->assertContains('Kegiatan 1: Perencanaan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload));
-
-        $updated = $service->saveReportActivity($portfolio->fresh(), 'supply_management', [
-            'activity' => 'Pengadaan',
-            'purpose' => 'Memahami proses pengadaan.',
-            'description' => 'Mempelajari pemesanan obat ke pemasok.',
-            'result' => 'Memahami alur pengadaan obat.',
-        ], $this->student, data_get($stored, 'id'));
-        $this->assertSame('Pengadaan', data_get($updated->manual_payload, 'activity_entries.0.activity'));
-
-        $service->deleteReportActivity($portfolio->fresh(), 'supply_management', data_get($stored, 'id'), $this->student);
-        $this->assertSame([], $portfolio->fresh()->sectionRecords()->where('section_code', 'supply_management')->firstOrFail()->manual_payload['activity_entries']);
+        $this->assertContains('Kegiatan: Perencanaan, Pengadaan, Penerimaan, Penyimpanan, FEFO/FIFO, Stock Opname, Pemusnahan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload));
     }
 
     public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void
@@ -278,14 +266,18 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Profil Tempat PKPA')
             ->assertSee('Laporan Kegiatan PKPA')
             ->assertSee('Topik Laporan')
-            ->assertSee('Kegiatan Tersimpan')
+            ->assertSee('Kegiatan pada Topik Ini')
             ->assertSee('Buka Pakta Integritas');
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'?report=narcotics_psychotropics')
             ->assertOk()
             ->assertSee('Pengelolaan Narkotika dan Psikotropika')
-            ->assertSee('Tambah Kegiatan');
+            ->assertSee('Penyimpanan')
+            ->assertSee('Pelaporan')
+            ->assertSee('Dokumentasi')
+            ->assertSee('Simpan Laporan')
+            ->assertDontSee('Pilih kegiatan');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
