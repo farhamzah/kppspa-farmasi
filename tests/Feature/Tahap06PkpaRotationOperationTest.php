@@ -205,6 +205,31 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ]);
     }
 
+    public function test_student_rotation_page_restores_hidden_submitted_logbooks(): void
+    {
+        $run = $this->activatedRun();
+        $service = app(PkpaLogbookService::class);
+        $entry = $service->save($run, [
+            'entry_date' => '2026-07-14',
+            'title' => 'Logbook tersembunyi tanggal empat belas',
+            'activity_summary' => 'Aktivitas yang sudah dikirim.',
+            'learning_outcomes' => 'Kompetensi yang sudah dicapai.',
+            'reflection' => 'Refleksi yang sudah disimpan.',
+        ], $this->student);
+        $service->submit($entry, $this->student);
+        $entry->delete();
+
+        $this->assertSoftDeleted('pkpa_logbook_entries', ['id' => $entry->id]);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get("/mahasiswa/rotasi-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee('Logbook tersembunyi tanggal empat belas')
+            ->assertSee('14 Jul 2026');
+
+        $this->assertDatabaseHas('pkpa_logbook_entries', ['id' => $entry->id, 'deleted_at' => null, 'status' => 'submitted']);
+    }
+
     public function test_progress_completion_and_publication_sync_review_rules(): void
     {
         $fixture = $this->publishedFixture();

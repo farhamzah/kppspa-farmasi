@@ -38,6 +38,8 @@ class PkpaRotationOperationController extends Controller
             403
         );
 
+        $this->logbooks->restoreHiddenSubmittedEntries($run, $request->user());
+
         return view('student.pkpa-operations.show', [
             'run' => $run->load([
                 'enrollment',

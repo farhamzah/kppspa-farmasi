@@ -23,6 +23,26 @@ class PkpaLogbookService
     {
     }
 
+    public function restoreHiddenSubmittedEntries(PkpaRotationRun $run, ?User $actor): int
+    {
+        $this->ensureStudentOwnsRun($run, $actor);
+
+        return DB::transaction(function () use ($run, $actor) {
+            $entries = PkpaLogbookEntry::onlyTrashed()
+                ->where('pkpa_rotation_run_id', $run->id)
+                ->whereIn('status', ['submitted', 'field_approved', 'internal_approved', 'rejected'])
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($entries as $entry) {
+                $entry->restore();
+                $this->audit->record($actor, 'pkpa_logbook_restored', $entry->fresh());
+            }
+
+            return $entries->count();
+        });
+    }
+
     public function save(PkpaRotationRun $run, array $data, ?User $actor): PkpaLogbookEntry
     {
         $this->ensureStudentOwnsRun($run, $actor);
