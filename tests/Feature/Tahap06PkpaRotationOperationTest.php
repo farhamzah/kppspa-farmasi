@@ -521,7 +521,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
 
         app(PkpaLogbookService::class)->save($run, [
             'id' => $entry->id,
-            'entry_date' => '2026-07-17',
+            'entry_date' => '2026-07-16',
             'title' => 'Draft logbook revisi',
             'activity_summary' => 'Isi revisi',
             'learning_outcomes' => 'Revisi',
@@ -531,6 +531,8 @@ class Tahap06PkpaRotationOperationTest extends TestCase
 
         $this->assertDatabaseHas('pkpa_logbook_entries', [
             'id' => $entry->id,
+            'entry_date' => '2026-07-16 00:00:00',
+            'entry_key' => 'RUN:'.$run->id.':2026-07-16',
             'title' => 'Draft logbook revisi',
             'practice_minutes' => 360,
         ]);
@@ -554,7 +556,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             'student_notes' => 'Draf dibuat ulang setelah dihapus.',
         ], $this->student);
         $restoredLogbook = app(PkpaLogbookService::class)->save($run, [
-            'entry_date' => '2026-07-17',
+            'entry_date' => '2026-07-16',
             'title' => 'Draf logbook dibuat ulang',
             'activity_summary' => 'Isi setelah draf sebelumnya dihapus.',
             'learning_outcomes' => 'Memastikan entri dapat digunakan kembali.',

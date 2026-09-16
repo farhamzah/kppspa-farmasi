@@ -50,10 +50,10 @@ class PkpaLogbookService
     {
         $this->ensureStudentOwnsRun($run, $actor);
         $this->validateEntry($run, $data);
-        $keyDate = $data['entry_date'] ?? $data['period_start_date'];
+        $keyDate = Carbon::parse($data['entry_date'] ?? $data['period_start_date'])->toDateString();
         $entryKey = 'RUN:'.$run->id.':'.$keyDate;
 
-        return DB::transaction(function () use ($run, $data, $actor, $entryKey) {
+        return DB::transaction(function () use ($run, $data, $actor, $entryKey, $keyDate) {
             $entry = isset($data['id'])
                 ? PkpaLogbookEntry::withTrashed()->whereKey($data['id'])->lockForUpdate()->first()
                 : null;
@@ -70,6 +70,14 @@ class PkpaLogbookService
                 throw ValidationException::withMessages(['authorization' => 'Logbook tidak sesuai dengan rotasi yang sedang dibuka.']);
             }
 
+            if ($entry && PkpaLogbookEntry::withTrashed()
+                ->where('pkpa_rotation_run_id', $run->id)
+                ->where('entry_key', $entryKey)
+                ->whereKeyNot($entry->id)
+                ->exists()) {
+                throw ValidationException::withMessages(['entry_date' => 'Logbook untuk tanggal ini sudah ada.']);
+            }
+
             if ($entry?->trashed()) {
                 $entry->restore();
                 $entry->refresh();
@@ -80,9 +88,9 @@ class PkpaLogbookService
             }
 
             $payload = [
-                'entry_date' => $data['entry_date'] ?? null,
-                'period_start_date' => $data['period_start_date'] ?? ($data['entry_date'] ?? null),
-                'period_end_date' => $data['period_end_date'] ?? ($data['entry_date'] ?? null),
+                'entry_date' => $keyDate,
+                'period_start_date' => $keyDate,
+                'period_end_date' => $keyDate,
                 'title' => trim($data['title']),
                 'activity_summary' => trim($data['activity_summary']),
                 'learning_outcomes' => trim($data['learning_outcomes']),
@@ -92,6 +100,7 @@ class PkpaLogbookService
                 'practice_minutes' => $data['practice_minutes'] ?? null,
                 'updated_by_core_user_id' => $actor?->core_user_id,
                 'row_version' => ($entry?->row_version ?? 0) + 1,
+                'entry_key' => $entryKey,
             ];
 
             $entry = $entry
@@ -100,7 +109,6 @@ class PkpaLogbookService
                     'pkpa_rotation_run_id' => $run->id,
                     'status' => 'draft',
                     'created_by_core_user_id' => $actor?->core_user_id,
-                    'entry_key' => $entryKey,
                 ]));
 
             $this->audit->record($actor, 'pkpa_logbook_saved', $entry);
