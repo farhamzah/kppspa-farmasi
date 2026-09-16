@@ -44,7 +44,7 @@
     $editableLogbookStatuses = ['draft', 'revision_requested'];
     $editableAttendanceStatuses = ['draft', 'revision_requested'];
     $attendanceList = $run->attendanceRecords->sortByDesc(fn ($record) => sprintf('%d-%s', $record->submission_status === 'submitted' ? 2 : ($record->submission_status === 'draft' ? 0 : 1), optional($record->attendance_date)->format('Y-m-d')))->values();
-    $logbookList = $run->logbookEntries->sortByDesc(fn ($entry) => sprintf('%d-%s', $entry->status === 'submitted' ? 3 : (in_array($entry->status, ['field_approved', 'internal_approved'], true) ? 2 : ($entry->status === 'draft' ? 0 : 1)), optional($entry->entry_date)->format('Y-m-d')))->values();
+    $logbookList = $run->logbookEntries->sortByDesc(fn ($entry) => optional($entry->entry_date)->format('Y-m-d'))->values();
 @endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
@@ -315,10 +315,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h4 class="text-lg font-black text-slate-950">Daftar Logbook</h4>
-                    <p class="text-sm text-slate-500">Kiriman yang sedang diproses ditampilkan lebih dahulu. Draf tampil lebih ringan dan tetap dapat diedit sebelum dikirim.</p>
+                    <p class="text-sm text-slate-500">Diurutkan berdasarkan tanggal terbaru agar tidak ada hari yang terlewat. Draf tetap dapat diedit sebelum dikirim.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">Urut tanggal</span>
+                    <span class="inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">Tanggal terbaru</span>
                     <span class="inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 ring-1 ring-slate-200">{{ $logbookList->count() }} entri</span>
                 </div>
             </div>

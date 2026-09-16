@@ -163,6 +163,48 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $logbookService->downloadResponse($attachment, $this->otherSupervisor);
     }
 
+    public function test_student_logbook_list_is_sorted_by_date_regardless_of_submission_status(): void
+    {
+        $run = $this->activatedRun();
+        $service = app(PkpaLogbookService::class);
+
+        $submittedNewest = $service->save($run, [
+            'entry_date' => '2026-07-17',
+            'title' => 'Logbook tanggal tujuh belas',
+            'activity_summary' => 'Aktivitas tanggal tujuh belas.',
+            'learning_outcomes' => 'Kompetensi tanggal tujuh belas.',
+            'reflection' => 'Refleksi tanggal tujuh belas.',
+        ], $this->student);
+        $service->submit($submittedNewest, $this->student);
+
+        $service->save($run, [
+            'entry_date' => '2026-07-16',
+            'title' => 'Draf tanggal enam belas',
+            'activity_summary' => 'Aktivitas tanggal enam belas.',
+            'learning_outcomes' => 'Kompetensi tanggal enam belas.',
+            'reflection' => 'Refleksi tanggal enam belas.',
+        ], $this->student);
+
+        $submittedOldest = $service->save($run, [
+            'entry_date' => '2026-07-15',
+            'title' => 'Logbook tanggal lima belas',
+            'activity_summary' => 'Aktivitas tanggal lima belas.',
+            'learning_outcomes' => 'Kompetensi tanggal lima belas.',
+            'reflection' => 'Refleksi tanggal lima belas.',
+        ], $this->student);
+        $service->submit($submittedOldest, $this->student);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get("/mahasiswa/rotasi-pkpa/{$run->id}")
+            ->assertOk()
+            ->assertSee('Tanggal terbaru')
+            ->assertSeeInOrder([
+                'Logbook tanggal tujuh belas',
+                'Draf tanggal enam belas',
+                'Logbook tanggal lima belas',
+            ]);
+    }
+
     public function test_progress_completion_and_publication_sync_review_rules(): void
     {
         $fixture = $this->publishedFixture();
