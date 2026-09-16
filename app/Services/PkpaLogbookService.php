@@ -30,7 +30,10 @@ class PkpaLogbookService
         return DB::transaction(function () use ($run, $actor) {
             $entries = PkpaLogbookEntry::onlyTrashed()
                 ->where('pkpa_rotation_run_id', $run->id)
-                ->whereIn('status', ['submitted', 'field_approved', 'internal_approved', 'rejected'])
+                ->where(function ($query) {
+                    $query->whereNotIn('status', ['draft', 'revision_requested'])
+                        ->orWhereNull('status');
+                })
                 ->lockForUpdate()
                 ->get();
 

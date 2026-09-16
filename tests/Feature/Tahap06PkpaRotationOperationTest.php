@@ -217,6 +217,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             'reflection' => 'Refleksi yang sudah disimpan.',
         ], $this->student);
         $service->submit($entry, $this->student);
+        $entry->update(['status' => 'approved']);
         $entry->delete();
 
         $this->assertSoftDeleted('pkpa_logbook_entries', ['id' => $entry->id]);
@@ -227,7 +228,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee('Logbook tersembunyi tanggal empat belas')
             ->assertSee('14 Jul 2026');
 
-        $this->assertDatabaseHas('pkpa_logbook_entries', ['id' => $entry->id, 'deleted_at' => null, 'status' => 'submitted']);
+        $this->assertDatabaseHas('pkpa_logbook_entries', ['id' => $entry->id, 'deleted_at' => null, 'status' => 'approved']);
     }
 
     public function test_progress_completion_and_publication_sync_review_rules(): void
