@@ -244,6 +244,13 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertArrayNotHasKey('activity_entries', $entry->manual_payload);
         $this->assertSame('completed', $entry->status);
         $this->assertContains('Kegiatan: Perencanaan, Pengadaan, Penerimaan, Penyimpanan, FEFO/FIFO, Stock Opname, Pemusnahan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload));
+
+        $updated = $service->saveReportSection($portfolio->fresh(), 'supply_management', [
+            'purpose' => 'Memahami kebutuhan persediaan dan pengadaan.',
+            'result' => 'Memahami dasar perencanaan persediaan serta pemesanan obat ke pemasok.',
+        ], $this->student);
+        $this->assertSame('Memahami kebutuhan persediaan dan pengadaan.', data_get($updated->manual_payload, 'purpose'));
+        $this->assertSame('Memahami dasar perencanaan persediaan serta pemesanan obat ke pemasok.', data_get($updated->manual_payload, 'result'));
     }
 
     public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void
@@ -267,6 +274,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Laporan Kegiatan PKPA')
             ->assertSee('Topik Laporan')
             ->assertSee('Kegiatan pada Topik Ini')
+            ->assertSee('Perbarui Laporan')
+            ->assertSee('Simpan Perubahan')
             ->assertSee('Buka Pakta Integritas');
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
@@ -276,7 +285,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Penyimpanan')
             ->assertSee('Pelaporan')
             ->assertSee('Dokumentasi')
-            ->assertSee('Simpan Laporan')
+            ->assertSee('Perbarui Laporan')
+            ->assertSee('Simpan Perubahan')
             ->assertDontSee('Pilih kegiatan');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])

@@ -324,6 +324,7 @@
                 $activeDefinition = $editableSections[$selectedReportCode];
                 $activeRecord = $sectionRecords->get($selectedReportCode);
                 $activePayload = $activeRecord?->manual_payload ?? [];
+                $hasSavedReport = filled($activePayload['purpose'] ?? null) || filled($activePayload['result'] ?? null);
                 $legacyActivityEntries = collect($activePayload['activity_entries'] ?? $activePayload['legacy_activity_entries'] ?? []);
                 $activityItems = $activeDefinition['activity_items'] ?? [];
                 $activityRequirement = $activeDefinition['activity_requirement'] ?? null;
@@ -396,12 +397,12 @@
                             <form method="POST" action="{{ route('student.pkpa-portfolios.report-activities.store', [$portfolio, $selectedReportCode]) }}" class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
                                 @csrf
                                 <div>
-                                    <h4 class="text-base font-black text-slate-950">Laporan {{ str($activeDefinition['title'])->after(': ') }}</h4>
-                                    <p class="mt-1 text-sm text-slate-600">Satu isian mencakup seluruh kegiatan pada topik ini.</p>
+                                    <h4 class="text-base font-black text-slate-950">{{ $hasSavedReport ? 'Perbarui Laporan' : 'Laporan' }} {{ str($activeDefinition['title'])->after(': ') }}</h4>
+                                    <p class="mt-1 text-sm text-slate-600">{{ $hasSavedReport ? 'Tambahkan hasil kegiatan terbaru atau perbaiki isian yang sudah ada, lalu simpan perubahan.' : 'Satu isian mencakup seluruh kegiatan pada topik ini.' }}</p>
                                 </div>
                                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tujuan</span><textarea name="purpose" rows="5" class="min-h-40 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('purpose', $activePayload['purpose'] ?? '') }}</textarea></label>
                                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hasil</span><textarea name="result" rows="5" class="min-h-40 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('result', $activePayload['result'] ?? '') }}</textarea></label>
-                                <button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">Simpan Laporan</button>
+                                <button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">{{ $hasSavedReport ? 'Simpan Perubahan' : 'Simpan Laporan' }}</button>
                             </form>
                         </div>
 
