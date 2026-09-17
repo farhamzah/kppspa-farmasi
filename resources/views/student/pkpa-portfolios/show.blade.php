@@ -327,13 +327,7 @@
                 $activityEntries = collect(\App\Support\PkpaApotekPortfolio::orderedActivityEntries($selectedReportCode, $activePayload['activity_entries'] ?? $activePayload['legacy_activity_entries'] ?? []));
                 $activityItems = $activeDefinition['activity_items'] ?? [];
                 $activityRequirement = $activeDefinition['activity_requirement'] ?? null;
-                $selectedActivity = request()->string('activity')->toString();
-                if ($activityItems && ! in_array($selectedActivity, $activityItems, true)) {
-                    $selectedActivity = collect($activityItems)->first(fn ($item) => ! $activityEntries->contains(fn ($entry) => ($entry['activity'] ?? null) === $item)) ?? $activityItems[0];
-                }
-                $editingEntry = $activityItems
-                    ? $activityEntries->firstWhere('activity', $selectedActivity)
-                    : $activityEntries->firstWhere('id', request()->string('edit_activity')->toString());
+                $editingEntry = $activityEntries->firstWhere('id', request()->string('edit_activity')->toString());
                 $totalReportActivities = collect($reportCodes)->sum(fn ($code) => count($sectionRecords->get($code)?->manual_payload['activity_entries'] ?? []));
                 $completedReports = collect($reportCodes)->filter(fn ($code) => $sectionRecords->get($code)?->status === 'completed')->count();
             @endphp
@@ -343,10 +337,10 @@
                         <div>
                             <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Portofolio Apotek</p>
                             <h2 class="mt-1 text-xl font-black text-slate-950">Laporan Kegiatan PKPA</h2>
-                            <p class="mt-1 text-sm text-slate-600">Setiap tugas disimpan sendiri, lalu ditampilkan sesuai urutan tugas pada format portofolio Apotek.</p>
+                            <p class="mt-1 text-sm text-slate-600">Tambahkan kegiatan yang benar-benar dikerjakan. Setiap isian tersimpan sebagai entri terpisah sesuai urutan dibuat.</p>
                         </div>
                         <div class="flex items-center gap-3 text-sm">
-                            <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $totalReportActivities }}</p><p class="text-xs text-slate-500">tugas tersimpan</p></div>
+                            <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $totalReportActivities }}</p><p class="text-xs text-slate-500">kegiatan tersimpan</p></div>
                             <div class="border-l-2 border-emerald-500 pl-3"><p class="font-black text-slate-950">{{ $completedReports }}</p><p class="text-xs text-slate-500">topik lengkap</p></div>
                         </div>
                     </div>
@@ -367,7 +361,7 @@
                                     'bg-cyan-700 text-white shadow-sm' => $sectionCode === $selectedReportCode,
                                     'text-slate-700 hover:bg-white hover:shadow-sm' => $sectionCode !== $selectedReportCode,
                                 ])>
-                                    <span class="min-w-0"><span class="block break-words text-sm font-bold leading-5">{{ str($definition['title'])->after(': ') }}</span><span class="mt-1 block text-xs {{ $sectionCode === $selectedReportCode ? 'text-cyan-100' : 'text-slate-500' }}">{{ $entryCount }} tugas tersimpan</span></span>
+                                    <span class="min-w-0"><span class="block break-words text-sm font-bold leading-5">{{ str($definition['title'])->after(': ') }}</span><span class="mt-1 block text-xs {{ $sectionCode === $selectedReportCode ? 'text-cyan-100' : 'text-slate-500' }}">{{ $entryCount }} kegiatan tersimpan</span></span>
                                     <span @class(['shrink-0 rounded-full px-2 py-1 text-xs font-black', 'bg-white/20 text-white' => $sectionCode === $selectedReportCode, 'bg-emerald-50 text-emerald-700' => $sectionCode !== $selectedReportCode && $record?->status === 'completed', 'bg-amber-50 text-amber-700' => $sectionCode !== $selectedReportCode && $record?->status !== 'completed'])>{{ $record?->status === 'completed' ? 'Lengkap' : 'Draf' }}</span>
                                 </a>
                             @endforeach
@@ -386,24 +380,15 @@
 
                         <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
                             <section class="border-y border-slate-200 py-5">
-                                <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Urutan Tugas</p>
+                                <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Referensi Tugas</p>
                                 @if($activityRequirement)
                                     <p class="mt-3 text-sm font-bold text-slate-800">{{ $activityRequirement }}</p>
                                 @endif
                                 @if($activityItems)
-                                    <ol class="mt-3 space-y-2">
+                                    <p class="mt-3 text-sm text-slate-600">Pilih dan isi hanya kegiatan yang benar-benar Anda kerjakan. Daftar ini tidak wajib diselesaikan seluruhnya.</p>
+                                    <ol class="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">
                                         @foreach($activityItems as $index => $item)
-                                            @php $savedEntry = $activityEntries->firstWhere('activity', $item); @endphp
-                                            <li>
-                                                <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode, 'activity' => $item]) }}#laporan-{{ $selectedReportCode }}" @class([
-                                                    'flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-sm font-bold transition',
-                                                    'border-cyan-600 bg-cyan-700 text-white' => $selectedActivity === $item,
-                                                    'border-slate-200 text-slate-700 hover:border-cyan-200 hover:bg-cyan-50' => $selectedActivity !== $item,
-                                                ])>
-                                                    <span class="min-w-0"><span class="mr-2 opacity-70">{{ $index + 1 }}.</span>{{ $item }}</span>
-                                                    <span @class(['shrink-0 rounded-full px-2 py-1 text-xs', 'bg-white/20 text-white' => $selectedActivity === $item, 'bg-emerald-50 text-emerald-700' => $selectedActivity !== $item && $savedEntry, 'bg-slate-100 text-slate-500' => $selectedActivity !== $item && ! $savedEntry])>{{ $savedEntry ? 'Terisi' : 'Belum' }}</span>
-                                                </a>
-                                            </li>
+                                            <li>{{ $item }}</li>
                                         @endforeach
                                     </ol>
                                 @endif
@@ -412,9 +397,9 @@
                                 @endif
                                 @if($activityEntries->isNotEmpty())
                                     <div class="mt-5 space-y-2 border-t border-slate-200 pt-4">
-                                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">Isian Tersimpan</p>
-                                        @foreach($activityEntries as $entry)
-                                            <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode, 'edit_activity' => $entry['id']]) }}#laporan-{{ $selectedReportCode }}" class="block rounded-xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700 hover:border-cyan-200 hover:bg-cyan-50">{{ $entry['activity'] }}</a>
+                                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">Kegiatan Tersimpan</p>
+                                        @foreach($activityEntries as $index => $entry)
+                                            <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode, 'edit_activity' => $entry['id']]) }}#laporan-{{ $selectedReportCode }}" class="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700 hover:border-cyan-200 hover:bg-cyan-50"><span class="text-xs text-slate-400">{{ $index + 1 }}.</span><span>{{ $entry['activity'] }}</span></a>
                                         @endforeach
                                     </div>
                                 @endif
@@ -424,20 +409,22 @@
                                 @csrf
                                 @if($editingEntry) @method('PATCH') @endif
                                 <div>
-                                    <h4 class="text-base font-black text-slate-950">{{ $editingEntry ? 'Perbarui' : 'Isi' }} Tugas</h4>
-                                    <p class="mt-1 text-sm text-slate-600">Setiap penyimpanan hanya berlaku untuk satu tugas dan akan tetap berada pada urutan tugasnya.</p>
+                                    <h4 class="text-base font-black text-slate-950">{{ $editingEntry ? 'Perbarui' : 'Tambah' }} Kegiatan</h4>
+                                    <p class="mt-1 text-sm text-slate-600">Setiap penyimpanan menambahkan satu kegiatan baru. Gunakan Edit pada kegiatan tersimpan untuk memperbaiki isian.</p>
                                 </div>
-                                @if($activityItems)
-                                    <input type="hidden" name="activity" value="{{ $selectedActivity }}">
-                                    <div class="rounded-xl border border-cyan-100 bg-white px-4 py-3 text-sm font-black text-cyan-800">{{ $selectedActivity }}</div>
-                                @else
-                                    <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Nama Kegiatan atau Kasus</span><input name="activity" value="{{ old('activity', $editingEntry['activity'] ?? '') }}" class="rounded-xl border-slate-200 text-sm" required></label>
-                                @endif
+                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Nama Kegiatan atau Kasus</span><input name="activity" value="{{ old('activity', $editingEntry['activity'] ?? '') }}" class="rounded-xl border-slate-200 text-sm" required></label>
                                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tujuan</span><textarea name="purpose" rows="4" class="min-h-36 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('purpose', $editingEntry['purpose'] ?? '') }}</textarea></label>
                                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Uraian Kegiatan</span><textarea name="description" rows="5" class="min-h-44 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('description', $editingEntry['description'] ?? '') }}</textarea></label>
                                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hasil</span><textarea name="result" rows="4" class="min-h-36 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('result', $editingEntry['result'] ?? '') }}</textarea></label>
-                                <button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">{{ $editingEntry ? 'Simpan Perubahan' : 'Simpan Tugas' }}</button>
+                                <div class="flex flex-wrap gap-3"><button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">{{ $editingEntry ? 'Simpan Perubahan' : 'Simpan Kegiatan' }}</button>@if($editingEntry)<a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode]) }}#laporan-{{ $selectedReportCode }}" class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700">Batal</a>@endif</div>
                             </form>
+                            @if($editingEntry)
+                                <form method="POST" action="{{ route('student.pkpa-portfolios.report-activities.destroy', [$portfolio, $selectedReportCode, $editingEntry['id']]) }}" class="-mt-3">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="text-sm font-bold text-rose-700 hover:text-rose-800">Hapus kegiatan ini</button>
+                                </form>
+                            @endif
                         </div>
 
                         @if(filled($activePayload['purpose'] ?? null) || filled($activePayload['result'] ?? null) || filled(data_get($activePayload, 'legacy_unified_report.purpose')) || filled(data_get($activePayload, 'legacy_unified_report.result')))

@@ -261,27 +261,16 @@ class PkpaPortfolioBuilderService
         $previousPayload = $record->manual_payload ?? [];
         $entries = collect($previousPayload['activity_entries'] ?? $previousPayload['legacy_activity_entries'] ?? []);
         $entry = collect($data)->map(fn ($value) => is_string($value) ? trim($value) : $value)->all();
-        $fixedActivities = PkpaApotekPortfolio::sectionDefinition($sectionCode)['activity_items'] ?? [];
-
         if ($entryId) {
             $index = $entries->search(fn ($item) => ($item['id'] ?? null) === $entryId);
             if ($index === false) {
                 throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan diperbarui tidak ditemukan.']);
             }
-            if ($fixedActivities !== [] && $entries->get($index)['activity'] !== $entry['activity']) {
-                throw ValidationException::withMessages(['activity' => 'Nama tugas tidak dapat diubah. Pilih tugas lain dari daftar urutan.']);
-            }
             $entry['id'] = $entryId;
             $entries->put($index, $entry);
         } else {
-            $index = $fixedActivities === [] ? false : $entries->search(fn ($item) => ($item['activity'] ?? null) === $entry['activity']);
-            if ($index === false) {
-                $entry['id'] = (string) str()->uuid();
-                $entries->push($entry);
-            } else {
-                $entry['id'] = $entries->get($index)['id'];
-                $entries->put($index, $entry);
-            }
+            $entry['id'] = (string) str()->uuid();
+            $entries->push($entry);
         }
 
         $payload = ['activity_entries' => PkpaApotekPortfolio::orderedActivityEntries($sectionCode, $entries->all())];

@@ -156,10 +156,6 @@ class PkpaPortfolioController extends Controller
             'result' => ['required', 'string'],
         ];
         $rules['activity'] = ['required', 'string', 'max:255'];
-        if ($items = $definition['activity_items'] ?? []) {
-            $rules['activity'][] = Rule::in($items);
-        }
-
         return $rules;
     }
 

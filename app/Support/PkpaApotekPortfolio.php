@@ -204,15 +204,8 @@ class PkpaApotekPortfolio
 
     public static function orderedActivityEntries(string $code, array $entries): array
     {
-        $items = self::sectionDefinition($code)['activity_items'] ?? [];
-
         return collect($entries)
             ->filter(fn ($entry) => is_array($entry))
-            ->sortBy(function (array $entry) use ($items) {
-                $position = array_search($entry['activity'] ?? null, $items, true);
-
-                return sprintf('%04d-%s-%s', $position === false ? 9999 : $position, mb_strtolower((string) ($entry['activity'] ?? '')), $entry['id'] ?? '');
-            })
             ->values()
             ->all();
     }

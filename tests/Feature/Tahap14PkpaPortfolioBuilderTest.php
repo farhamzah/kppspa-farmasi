@@ -230,35 +230,36 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         ]);
     }
 
-    public function test_student_can_save_each_apotek_report_task_in_its_defined_order(): void
+    public function test_student_can_save_repeated_manual_apotek_report_activities_in_creation_order(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
         $portfolio = $service->ensureForRun($this->run, $this->admin);
         $service->saveReportActivity($portfolio, 'supply_management', [
-            'activity' => 'Pengadaan',
+            'activity' => 'Pemeriksaan stok awal',
             'purpose' => 'Memahami pengadaan sediaan.',
             'description' => 'Mengamati pemesanan kepada pemasok.',
             'result' => 'Memahami alur pemesanan obat.',
         ], $this->student);
         $entry = $service->saveReportActivity($portfolio->fresh(), 'supply_management', [
-            'activity' => 'Perencanaan',
+            'activity' => 'Pemesanan obat',
             'purpose' => 'Memahami kebutuhan persediaan.',
             'description' => 'Menelaah stok dan kebutuhan obat.',
             'result' => 'Memahami dasar perencanaan persediaan.',
         ], $this->student);
 
-        $this->assertSame(['Perencanaan', 'Pengadaan'], collect($entry->manual_payload['activity_entries'])->pluck('activity')->all());
+        $this->assertSame(['Pemeriksaan stok awal', 'Pemesanan obat'], collect($entry->manual_payload['activity_entries'])->pluck('activity')->all());
         $this->assertSame('completed', $entry->status);
-        $this->assertSame('Kegiatan 1: Perencanaan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload)[0]);
+        $this->assertSame('Kegiatan 1: Pemeriksaan stok awal', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload)[0]);
 
         $updated = $service->saveReportActivity($portfolio->fresh(), 'supply_management', [
-            'activity' => 'Pengadaan',
+            'activity' => 'Pemeriksaan stok dan FEFO',
             'purpose' => 'Memahami pengadaan sediaan dan pemasok.',
             'description' => 'Mengamati pemesanan dan penerimaan awal.',
             'result' => 'Memahami alur pemesanan obat ke pemasok.',
-        ], $this->student);
+        ], $this->student, $entry->manual_payload['activity_entries'][0]['id']);
         $this->assertCount(2, $updated->manual_payload['activity_entries']);
-        $this->assertSame('Memahami pengadaan sediaan dan pemasok.', $updated->manual_payload['activity_entries'][1]['purpose']);
+        $this->assertSame(['Pemeriksaan stok dan FEFO', 'Pemesanan obat'], collect($updated->manual_payload['activity_entries'])->pluck('activity')->all());
+        $this->assertSame('Memahami pengadaan sediaan dan pemasok.', $updated->manual_payload['activity_entries'][0]['purpose']);
     }
 
     public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void
@@ -281,9 +282,9 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Profil Tempat PKPA')
             ->assertSee('Laporan Kegiatan PKPA')
             ->assertSee('Topik Laporan')
-            ->assertSee('Urutan Tugas')
-            ->assertSee('Isi Tugas')
-            ->assertSee('Simpan Tugas')
+            ->assertSee('Referensi Tugas')
+            ->assertSee('Tambah Kegiatan')
+            ->assertSee('Simpan Kegiatan')
             ->assertSee('Buka Pakta Integritas');
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
@@ -293,8 +294,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Penyimpanan')
             ->assertSee('Pelaporan')
             ->assertSee('Dokumentasi')
-            ->assertSee('Isi Tugas')
-            ->assertSee('Simpan Tugas')
+            ->assertSee('Tambah Kegiatan')
+            ->assertSee('Simpan Kegiatan')
             ->assertDontSee('Pilih kegiatan');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
