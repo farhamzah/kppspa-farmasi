@@ -324,10 +324,17 @@
                 $activeDefinition = $editableSections[$selectedReportCode];
                 $activeRecord = $sectionRecords->get($selectedReportCode);
                 $activePayload = $activeRecord?->manual_payload ?? [];
-                $hasSavedReport = filled($activePayload['purpose'] ?? null) || filled($activePayload['result'] ?? null);
-                $legacyActivityEntries = collect($activePayload['activity_entries'] ?? $activePayload['legacy_activity_entries'] ?? []);
+                $activityEntries = collect(\App\Support\PkpaApotekPortfolio::orderedActivityEntries($selectedReportCode, $activePayload['activity_entries'] ?? $activePayload['legacy_activity_entries'] ?? []));
                 $activityItems = $activeDefinition['activity_items'] ?? [];
                 $activityRequirement = $activeDefinition['activity_requirement'] ?? null;
+                $selectedActivity = request()->string('activity')->toString();
+                if ($activityItems && ! in_array($selectedActivity, $activityItems, true)) {
+                    $selectedActivity = collect($activityItems)->first(fn ($item) => ! $activityEntries->contains(fn ($entry) => ($entry['activity'] ?? null) === $item)) ?? $activityItems[0];
+                }
+                $editingEntry = $activityItems
+                    ? $activityEntries->firstWhere('activity', $selectedActivity)
+                    : $activityEntries->firstWhere('id', request()->string('edit_activity')->toString());
+                $totalReportActivities = collect($reportCodes)->sum(fn ($code) => count($sectionRecords->get($code)?->manual_payload['activity_entries'] ?? []));
                 $completedReports = collect($reportCodes)->filter(fn ($code) => $sectionRecords->get($code)?->status === 'completed')->count();
             @endphp
             <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
@@ -336,11 +343,11 @@
                         <div>
                             <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Portofolio Apotek</p>
                             <h2 class="mt-1 text-xl font-black text-slate-950">Laporan Kegiatan PKPA</h2>
-                            <p class="mt-1 text-sm text-slate-600">Setiap topik diisi sebagai satu laporan utuh sesuai format portofolio Apotek.</p>
+                            <p class="mt-1 text-sm text-slate-600">Setiap tugas disimpan sendiri, lalu ditampilkan sesuai urutan tugas pada format portofolio Apotek.</p>
                         </div>
                         <div class="flex items-center gap-3 text-sm">
-                            <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $completedReports }}</p><p class="text-xs text-slate-500">topik lengkap</p></div>
-                            <div class="border-l-2 border-emerald-500 pl-3"><p class="font-black text-slate-950">{{ count($reportCodes) }}</p><p class="text-xs text-slate-500">topik laporan</p></div>
+                            <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $totalReportActivities }}</p><p class="text-xs text-slate-500">tugas tersimpan</p></div>
+                            <div class="border-l-2 border-emerald-500 pl-3"><p class="font-black text-slate-950">{{ $completedReports }}</p><p class="text-xs text-slate-500">topik lengkap</p></div>
                         </div>
                     </div>
                 </header>
@@ -353,13 +360,14 @@
                                 @php
                                     $definition = $editableSections[$sectionCode];
                                     $record = $sectionRecords->get($sectionCode);
+                                    $entryCount = count($record?->manual_payload['activity_entries'] ?? []);
                                 @endphp
                                 <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $sectionCode]) }}#laporan-{{ $sectionCode }}" @class([
                                     'flex min-w-0 items-start justify-between gap-3 rounded-xl px-3 py-3 text-left transition',
                                     'bg-cyan-700 text-white shadow-sm' => $sectionCode === $selectedReportCode,
                                     'text-slate-700 hover:bg-white hover:shadow-sm' => $sectionCode !== $selectedReportCode,
                                 ])>
-                                    <span class="min-w-0"><span class="block break-words text-sm font-bold leading-5">{{ str($definition['title'])->after(': ') }}</span><span class="mt-1 block text-xs {{ $sectionCode === $selectedReportCode ? 'text-cyan-100' : 'text-slate-500' }}">Satu laporan utuh</span></span>
+                                    <span class="min-w-0"><span class="block break-words text-sm font-bold leading-5">{{ str($definition['title'])->after(': ') }}</span><span class="mt-1 block text-xs {{ $sectionCode === $selectedReportCode ? 'text-cyan-100' : 'text-slate-500' }}">{{ $entryCount }} tugas tersimpan</span></span>
                                     <span @class(['shrink-0 rounded-full px-2 py-1 text-xs font-black', 'bg-white/20 text-white' => $sectionCode === $selectedReportCode, 'bg-emerald-50 text-emerald-700' => $sectionCode !== $selectedReportCode && $record?->status === 'completed', 'bg-amber-50 text-amber-700' => $sectionCode !== $selectedReportCode && $record?->status !== 'completed'])>{{ $record?->status === 'completed' ? 'Lengkap' : 'Draf' }}</span>
                                 </a>
                             @endforeach
@@ -378,41 +386,65 @@
 
                         <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
                             <section class="border-y border-slate-200 py-5">
-                                <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Kegiatan pada Topik Ini</p>
+                                <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Urutan Tugas</p>
                                 @if($activityRequirement)
                                     <p class="mt-3 text-sm font-bold text-slate-800">{{ $activityRequirement }}</p>
                                 @endif
                                 @if($activityItems)
-                                    <ol class="mt-3 list-decimal space-y-1 pl-5 text-sm leading-6 text-slate-700">
-                                        @foreach($activityItems as $item)
-                                            <li>{{ $item }}</li>
+                                    <ol class="mt-3 space-y-2">
+                                        @foreach($activityItems as $index => $item)
+                                            @php $savedEntry = $activityEntries->firstWhere('activity', $item); @endphp
+                                            <li>
+                                                <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode, 'activity' => $item]) }}#laporan-{{ $selectedReportCode }}" @class([
+                                                    'flex items-center justify-between gap-3 rounded-xl border px-3 py-3 text-sm font-bold transition',
+                                                    'border-cyan-600 bg-cyan-700 text-white' => $selectedActivity === $item,
+                                                    'border-slate-200 text-slate-700 hover:border-cyan-200 hover:bg-cyan-50' => $selectedActivity !== $item,
+                                                ])>
+                                                    <span class="min-w-0"><span class="mr-2 opacity-70">{{ $index + 1 }}.</span>{{ $item }}</span>
+                                                    <span @class(['shrink-0 rounded-full px-2 py-1 text-xs', 'bg-white/20 text-white' => $selectedActivity === $item, 'bg-emerald-50 text-emerald-700' => $selectedActivity !== $item && $savedEntry, 'bg-slate-100 text-slate-500' => $selectedActivity !== $item && ! $savedEntry])>{{ $savedEntry ? 'Terisi' : 'Belum' }}</span>
+                                                </a>
+                                            </li>
                                         @endforeach
                                     </ol>
                                 @endif
                                 @if(! $activityRequirement && ! $activityItems)
-                                    <p class="mt-3 text-sm text-slate-600">Kegiatan dilaksanakan sesuai ruang lingkup topik laporan ini.</p>
+                                    <p class="mt-3 text-sm text-slate-600">Tambahkan kegiatan atau kasus satu per satu. Entri tersimpan tetap dapat dibuka dan diperbarui.</p>
+                                @endif
+                                @if($activityEntries->isNotEmpty())
+                                    <div class="mt-5 space-y-2 border-t border-slate-200 pt-4">
+                                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">Isian Tersimpan</p>
+                                        @foreach($activityEntries as $entry)
+                                            <a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode, 'edit_activity' => $entry['id']]) }}#laporan-{{ $selectedReportCode }}" class="block rounded-xl border border-slate-200 px-3 py-3 text-sm font-bold text-slate-700 hover:border-cyan-200 hover:bg-cyan-50">{{ $entry['activity'] }}</a>
+                                        @endforeach
+                                    </div>
                                 @endif
                             </section>
 
-                            <form method="POST" action="{{ route('student.pkpa-portfolios.report-activities.store', [$portfolio, $selectedReportCode]) }}" class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                            <form method="POST" action="{{ $editingEntry ? route('student.pkpa-portfolios.report-activities.update', [$portfolio, $selectedReportCode, $editingEntry['id']]) : route('student.pkpa-portfolios.report-activities.store', [$portfolio, $selectedReportCode]) }}" class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
                                 @csrf
+                                @if($editingEntry) @method('PATCH') @endif
                                 <div>
-                                    <h4 class="text-base font-black text-slate-950">{{ $hasSavedReport ? 'Perbarui Laporan' : 'Laporan' }} {{ str($activeDefinition['title'])->after(': ') }}</h4>
-                                    <p class="mt-1 text-sm text-slate-600">{{ $hasSavedReport ? 'Tambahkan hasil kegiatan terbaru atau perbaiki isian yang sudah ada, lalu simpan perubahan.' : 'Satu isian mencakup seluruh kegiatan pada topik ini.' }}</p>
+                                    <h4 class="text-base font-black text-slate-950">{{ $editingEntry ? 'Perbarui' : 'Isi' }} Tugas</h4>
+                                    <p class="mt-1 text-sm text-slate-600">Setiap penyimpanan hanya berlaku untuk satu tugas dan akan tetap berada pada urutan tugasnya.</p>
                                 </div>
-                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tujuan</span><textarea name="purpose" rows="5" class="min-h-40 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('purpose', $activePayload['purpose'] ?? '') }}</textarea></label>
-                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hasil</span><textarea name="result" rows="5" class="min-h-40 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('result', $activePayload['result'] ?? '') }}</textarea></label>
-                                <button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">{{ $hasSavedReport ? 'Simpan Perubahan' : 'Simpan Laporan' }}</button>
+                                @if($activityItems)
+                                    <input type="hidden" name="activity" value="{{ $selectedActivity }}">
+                                    <div class="rounded-xl border border-cyan-100 bg-white px-4 py-3 text-sm font-black text-cyan-800">{{ $selectedActivity }}</div>
+                                @else
+                                    <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Nama Kegiatan atau Kasus</span><input name="activity" value="{{ old('activity', $editingEntry['activity'] ?? '') }}" class="rounded-xl border-slate-200 text-sm" required></label>
+                                @endif
+                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tujuan</span><textarea name="purpose" rows="4" class="min-h-36 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('purpose', $editingEntry['purpose'] ?? '') }}</textarea></label>
+                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Uraian Kegiatan</span><textarea name="description" rows="5" class="min-h-44 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('description', $editingEntry['description'] ?? '') }}</textarea></label>
+                                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hasil</span><textarea name="result" rows="4" class="min-h-36 resize-y rounded-xl border-slate-200 text-sm" required>{{ old('result', $editingEntry['result'] ?? '') }}</textarea></label>
+                                <button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">{{ $editingEntry ? 'Simpan Perubahan' : 'Simpan Tugas' }}</button>
                             </form>
                         </div>
 
-                        @if($legacyActivityEntries->isNotEmpty())
+                        @if(filled($activePayload['purpose'] ?? null) || filled($activePayload['result'] ?? null) || filled(data_get($activePayload, 'legacy_unified_report.purpose')) || filled(data_get($activePayload, 'legacy_unified_report.result')))
                             <details class="mt-5 border-t border-slate-100 pt-5">
-                                <summary class="cursor-pointer text-sm font-bold text-slate-700">Lihat isian kegiatan format sebelumnya</summary>
+                                <summary class="cursor-pointer text-sm font-bold text-slate-700">Lihat laporan gabungan sebelumnya</summary>
                                 <div class="mt-3 space-y-3 text-sm text-slate-600">
-                                    @foreach($legacyActivityEntries as $entry)
-                                        <div class="rounded-xl bg-slate-50 px-4 py-3"><p class="font-bold text-slate-900">{{ $entry['activity'] ?? 'Kegiatan' }}</p><p class="mt-1 whitespace-pre-line">{{ $entry['result'] ?? '' }}</p></div>
-                                    @endforeach
+                                    <div class="rounded-xl bg-slate-50 px-4 py-3"><p class="font-bold text-slate-900">Tujuan</p><p class="mt-1 whitespace-pre-line">{{ data_get($activePayload, 'legacy_unified_report.purpose', $activePayload['purpose'] ?? '') }}</p><p class="mt-3 font-bold text-slate-900">Hasil</p><p class="mt-1 whitespace-pre-line">{{ data_get($activePayload, 'legacy_unified_report.result', $activePayload['result'] ?? '') }}</p></div>
                                 </div>
                             </details>
                         @endif

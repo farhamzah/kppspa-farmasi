@@ -118,10 +118,26 @@ class PkpaPortfolioController extends Controller
 
     public function storeReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode)
     {
-        $this->reportDefinition($sectionCode);
-        $this->portfolios->saveReportSection($portfolio, $sectionCode, $request->validate($this->reportSectionRules()), $request->user());
+        $definition = $this->reportDefinition($sectionCode);
+        $this->portfolios->saveReportActivity($portfolio, $sectionCode, $request->validate($this->reportActivityRules($definition)), $request->user());
 
-        return redirect()->route('student.pkpa-portfolios.show', $portfolio)->withFragment('laporan-'.$sectionCode)->with('status', 'Laporan kegiatan tersimpan.');
+        return redirect()->route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $sectionCode])->withFragment('laporan-'.$sectionCode)->with('status', 'Kegiatan tersimpan.');
+    }
+
+    public function updateReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId)
+    {
+        $definition = $this->reportDefinition($sectionCode);
+        $this->portfolios->saveReportActivity($portfolio, $sectionCode, $request->validate($this->reportActivityRules($definition)), $request->user(), $entryId);
+
+        return redirect()->route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $sectionCode])->withFragment('laporan-'.$sectionCode)->with('status', 'Kegiatan diperbarui.');
+    }
+
+    public function destroyReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId)
+    {
+        $this->reportDefinition($sectionCode);
+        $this->portfolios->deleteReportActivity($portfolio, $sectionCode, $entryId, $request->user());
+
+        return redirect()->route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $sectionCode])->withFragment('laporan-'.$sectionCode)->with('status', 'Kegiatan dihapus.');
     }
 
     private function reportDefinition(string $sectionCode): array
@@ -132,12 +148,19 @@ class PkpaPortfolioController extends Controller
         return $definition;
     }
 
-    private function reportSectionRules(): array
+    private function reportActivityRules(array $definition): array
     {
-        return [
+        $rules = [
             'purpose' => ['required', 'string'],
+            'description' => ['required', 'string'],
             'result' => ['required', 'string'],
         ];
+        $rules['activity'] = ['required', 'string', 'max:255'];
+        if ($items = $definition['activity_items'] ?? []) {
+            $rules['activity'][] = Rule::in($items);
+        }
+
+        return $rules;
     }
 
     public function storeCase(Request $request, PkpaRotationPortfolio $portfolio)

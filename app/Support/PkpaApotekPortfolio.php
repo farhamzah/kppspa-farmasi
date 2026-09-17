@@ -202,6 +202,21 @@ class PkpaApotekPortfolio
             ->isNotEmpty();
     }
 
+    public static function orderedActivityEntries(string $code, array $entries): array
+    {
+        $items = self::sectionDefinition($code)['activity_items'] ?? [];
+
+        return collect($entries)
+            ->filter(fn ($entry) => is_array($entry))
+            ->sortBy(function (array $entry) use ($items) {
+                $position = array_search($entry['activity'] ?? null, $items, true);
+
+                return sprintf('%04d-%s-%s', $position === false ? 9999 : $position, mb_strtolower((string) ($entry['activity'] ?? '')), $entry['id'] ?? '');
+            })
+            ->values()
+            ->all();
+    }
+
     public static function summaryLines(string $code, array $payload): array
     {
         $definition = self::sectionDefinition($code);
@@ -210,7 +225,7 @@ class PkpaApotekPortfolio
         }
 
         if (in_array($code, self::reportSectionCodes(), true) && is_array($payload['activity_entries'] ?? null)) {
-            return collect($payload['activity_entries'])
+            return collect(self::orderedActivityEntries($code, $payload['activity_entries']))
                 ->filter(fn ($entry) => is_array($entry))
                 ->flatMap(function (array $entry, int $index) {
                     $number = $index + 1;

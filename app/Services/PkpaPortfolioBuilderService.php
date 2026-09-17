@@ -249,6 +249,88 @@ class PkpaPortfolioBuilderService
         return $record->fresh();
     }
 
+    public function saveReportActivity(PkpaRotationPortfolio $portfolio, string $sectionCode, array $data, User $actor, ?string $entryId = null)
+    {
+        $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
+        if (! in_array($sectionCode, PkpaApotekPortfolio::reportSectionCodes(), true)) {
+            throw ValidationException::withMessages(['section' => 'Bagian ini bukan laporan kegiatan PKPA.']);
+        }
+
+        $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
+        $previousPayload = $record->manual_payload ?? [];
+        $entries = collect($previousPayload['activity_entries'] ?? $previousPayload['legacy_activity_entries'] ?? []);
+        $entry = collect($data)->map(fn ($value) => is_string($value) ? trim($value) : $value)->all();
+        $fixedActivities = PkpaApotekPortfolio::sectionDefinition($sectionCode)['activity_items'] ?? [];
+
+        if ($entryId) {
+            $index = $entries->search(fn ($item) => ($item['id'] ?? null) === $entryId);
+            if ($index === false) {
+                throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan diperbarui tidak ditemukan.']);
+            }
+            if ($fixedActivities !== [] && $entries->get($index)['activity'] !== $entry['activity']) {
+                throw ValidationException::withMessages(['activity' => 'Nama tugas tidak dapat diubah. Pilih tugas lain dari daftar urutan.']);
+            }
+            $entry['id'] = $entryId;
+            $entries->put($index, $entry);
+        } else {
+            $index = $fixedActivities === [] ? false : $entries->search(fn ($item) => ($item['activity'] ?? null) === $entry['activity']);
+            if ($index === false) {
+                $entry['id'] = (string) str()->uuid();
+                $entries->push($entry);
+            } else {
+                $entry['id'] = $entries->get($index)['id'];
+                $entries->put($index, $entry);
+            }
+        }
+
+        $payload = ['activity_entries' => PkpaApotekPortfolio::orderedActivityEntries($sectionCode, $entries->all())];
+        if (filled($previousPayload['purpose'] ?? null) || filled($previousPayload['result'] ?? null)) {
+            $payload['legacy_unified_report'] = [
+                'purpose' => $previousPayload['purpose'] ?? '',
+                'result' => $previousPayload['result'] ?? '',
+            ];
+        }
+
+        $this->updateReportActivityRecord($portfolio, $record, $sectionCode, $payload, $actor);
+
+        return $record->fresh();
+    }
+
+    public function deleteReportActivity(PkpaRotationPortfolio $portfolio, string $sectionCode, string $entryId, User $actor): void
+    {
+        $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
+        $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
+        $previousPayload = $record->manual_payload ?? [];
+        $entries = collect($previousPayload['activity_entries'] ?? []);
+        if (! $entries->contains(fn ($item) => ($item['id'] ?? null) === $entryId)) {
+            throw ValidationException::withMessages(['activity' => 'Kegiatan yang akan dihapus tidak ditemukan.']);
+        }
+
+        $payload = ['activity_entries' => PkpaApotekPortfolio::orderedActivityEntries($sectionCode, $entries->reject(fn ($item) => ($item['id'] ?? null) === $entryId)->all())];
+        if (isset($previousPayload['legacy_unified_report'])) {
+            $payload['legacy_unified_report'] = $previousPayload['legacy_unified_report'];
+        }
+        $this->updateReportActivityRecord($portfolio, $record, $sectionCode, $payload, $actor);
+    }
+
+    private function updateReportActivityRecord(PkpaRotationPortfolio $portfolio, $record, string $sectionCode, array $payload, User $actor): void
+    {
+        $completed = PkpaApotekPortfolio::completed($payload, $sectionCode);
+        $record->update([
+            'manual_payload' => $payload,
+            'status' => $completed ? 'completed' : 'pending',
+            'completion_snapshot' => array_merge($record->completion_snapshot ?? [], [
+                'updated_by' => $actor->core_user_id,
+                'updated_at' => now()->toIso8601String(),
+            ]),
+            'completed_at' => $completed ? now() : null,
+        ]);
+
+        $this->syncProgress($portfolio->fresh());
+    }
+
     public function saveCase(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioCaseReport
     {
         $this->ensureStudentOwns($portfolio, $actor);

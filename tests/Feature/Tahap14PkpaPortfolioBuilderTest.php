@@ -230,27 +230,35 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         ]);
     }
 
-    public function test_student_can_save_one_unified_apotek_report_section(): void
+    public function test_student_can_save_each_apotek_report_task_in_its_defined_order(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
         $portfolio = $service->ensureForRun($this->run, $this->admin);
-        $entry = $service->saveReportSection($portfolio, 'supply_management', [
+        $service->saveReportActivity($portfolio, 'supply_management', [
+            'activity' => 'Pengadaan',
+            'purpose' => 'Memahami pengadaan sediaan.',
+            'description' => 'Mengamati pemesanan kepada pemasok.',
+            'result' => 'Memahami alur pemesanan obat.',
+        ], $this->student);
+        $entry = $service->saveReportActivity($portfolio->fresh(), 'supply_management', [
+            'activity' => 'Perencanaan',
             'purpose' => 'Memahami kebutuhan persediaan.',
+            'description' => 'Menelaah stok dan kebutuhan obat.',
             'result' => 'Memahami dasar perencanaan persediaan.',
         ], $this->student);
 
-        $this->assertSame('Memahami kebutuhan persediaan.', data_get($entry->manual_payload, 'purpose'));
-        $this->assertSame('Memahami dasar perencanaan persediaan.', data_get($entry->manual_payload, 'result'));
-        $this->assertArrayNotHasKey('activity_entries', $entry->manual_payload);
+        $this->assertSame(['Perencanaan', 'Pengadaan'], collect($entry->manual_payload['activity_entries'])->pluck('activity')->all());
         $this->assertSame('completed', $entry->status);
-        $this->assertContains('Kegiatan: Perencanaan, Pengadaan, Penerimaan, Penyimpanan, FEFO/FIFO, Stock Opname, Pemusnahan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload));
+        $this->assertSame('Kegiatan 1: Perencanaan', PkpaApotekPortfolio::summaryLines('supply_management', $entry->manual_payload)[0]);
 
-        $updated = $service->saveReportSection($portfolio->fresh(), 'supply_management', [
-            'purpose' => 'Memahami kebutuhan persediaan dan pengadaan.',
-            'result' => 'Memahami dasar perencanaan persediaan serta pemesanan obat ke pemasok.',
+        $updated = $service->saveReportActivity($portfolio->fresh(), 'supply_management', [
+            'activity' => 'Pengadaan',
+            'purpose' => 'Memahami pengadaan sediaan dan pemasok.',
+            'description' => 'Mengamati pemesanan dan penerimaan awal.',
+            'result' => 'Memahami alur pemesanan obat ke pemasok.',
         ], $this->student);
-        $this->assertSame('Memahami kebutuhan persediaan dan pengadaan.', data_get($updated->manual_payload, 'purpose'));
-        $this->assertSame('Memahami dasar perencanaan persediaan serta pemesanan obat ke pemasok.', data_get($updated->manual_payload, 'result'));
+        $this->assertCount(2, $updated->manual_payload['activity_entries']);
+        $this->assertSame('Memahami pengadaan sediaan dan pemasok.', $updated->manual_payload['activity_entries'][1]['purpose']);
     }
 
     public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void
@@ -273,9 +281,9 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Profil Tempat PKPA')
             ->assertSee('Laporan Kegiatan PKPA')
             ->assertSee('Topik Laporan')
-            ->assertSee('Kegiatan pada Topik Ini')
-            ->assertSee('Perbarui Laporan')
-            ->assertSee('Simpan Perubahan')
+            ->assertSee('Urutan Tugas')
+            ->assertSee('Isi Tugas')
+            ->assertSee('Simpan Tugas')
             ->assertSee('Buka Pakta Integritas');
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
@@ -285,8 +293,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Penyimpanan')
             ->assertSee('Pelaporan')
             ->assertSee('Dokumentasi')
-            ->assertSee('Perbarui Laporan')
-            ->assertSee('Simpan Perubahan')
+            ->assertSee('Isi Tugas')
+            ->assertSee('Simpan Tugas')
             ->assertDontSee('Pilih kegiatan');
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
