@@ -161,7 +161,7 @@ class PkpaRotationAssignmentService
             $errors = array_merge($errors, $result['errors']);
             $warnings = array_merge($warnings, $result['warnings']);
         } else {
-            $warnings[] = 'Preseptor belum dipilih. Lengkapi sebelum rancangan divalidasi dan dipublikasikan.';
+            $warnings[] = 'Preseptor belum ditetapkan. Jadwal dapat diterbitkan, tetapi logbook baru dapat dikirim setelah preseptor ditetapkan.';
         }
 
         return ['errors' => array_values(array_unique($errors)), 'warnings' => array_values(array_unique($warnings))];

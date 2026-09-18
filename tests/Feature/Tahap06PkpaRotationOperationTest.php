@@ -259,15 +259,15 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $this->assertSame('review_required', $run->fresh()->publication_sync_status);
     }
 
-    public function test_runtime_creation_rejects_published_assignment_without_complete_supervisors(): void
+    public function test_runtime_creation_allows_published_assignment_without_field_supervisor(): void
     {
         $fixture = $this->publishedFixture();
         $fixture['assignment']->supervisors()->where('supervisor_type', 'field')->delete();
 
-        $this->expectException(ValidationException::class);
-        $this->expectExceptionMessage('setiap assignment harus memiliki Pembimbing Dalam dan Preseptor');
+        $stats = app(PkpaRotationRunService::class)->createFromPublication($fixture['publication']->fresh(), $this->admin);
 
-        app(PkpaRotationRunService::class)->createFromPublication($fixture['publication']->fresh(), $this->admin);
+        $this->assertSame(['created' => 1, 'existing' => 0], $stats);
+        $this->assertSame(1, PkpaRotationRun::firstOrFail()->supervisorHistories()->count());
     }
 
     public function test_student_can_access_and_save_when_runtime_student_snapshot_is_stale_but_enrollment_matches(): void

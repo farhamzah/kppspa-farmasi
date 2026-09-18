@@ -39,7 +39,7 @@ class PkpaRotationRunService
                 if ($assignment->student_core_user_id === '' || $assignment->enrollment?->status === 'cancelled') {
                     continue;
                 }
-                $this->ensurePublishedAssignmentHasRequiredSupervisors($assignment);
+                $this->ensurePublishedAssignmentHasInternalSupervisor($assignment);
                 $run = PkpaRotationRun::where('origin_published_assignment_id', $assignment->id)->lockForUpdate()->first();
                 if ($run) {
                     $existing++;
@@ -197,13 +197,13 @@ class PkpaRotationRunService
         }
     }
 
-    private function ensurePublishedAssignmentHasRequiredSupervisors(PkpaPublishedAssignment $assignment): void
+    private function ensurePublishedAssignmentHasInternalSupervisor(PkpaPublishedAssignment $assignment): void
     {
         $types = $assignment->supervisors->pluck('supervisor_type')->filter()->unique()->values();
 
-        if (! $types->contains('internal') || ! $types->contains('field')) {
+        if (! $types->contains('internal')) {
             throw ValidationException::withMessages([
-                'publication' => 'Publikasi tidak valid: setiap assignment harus memiliki Pembimbing Dalam dan Preseptor sebelum runtime rotasi dibentuk.',
+                'publication' => 'Publikasi tidak valid: setiap assignment harus memiliki Pembimbing Dalam sebelum runtime rotasi dibentuk.',
             ]);
         }
     }

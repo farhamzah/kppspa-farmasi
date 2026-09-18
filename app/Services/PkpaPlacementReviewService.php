@@ -51,8 +51,7 @@ class PkpaPlacementReviewService
             'no_active_errors' => ['label' => 'Tidak ada error aktif', 'passed' => $errors === 0],
             'complete_assignments' => ['label' => 'Seluruh kebutuhan wahana memiliki penempatan', 'passed' => $requiredAssignments > 0 && $filledAssignments === $requiredAssignments],
             'government_option' => ['label' => 'Penempatan pemerintahan memiliki sub wahana', 'passed' => $assignmentWithGovernmentMissing === 0],
-            'supervisors_complete' => ['label' => 'Setiap penempatan aktif memiliki Pembimbing Dalam dan Preseptor', 'passed' => $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'internal'))->count() === 0
-                && $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'field'))->count() === 0],
+            'internal_supervisors_complete' => ['label' => 'Setiap penempatan aktif memiliki Pembimbing Dalam', 'passed' => $plan->assignments()->whereHas('programDomain', fn ($query) => $query->where('is_active', true))->whereDoesntHave('supervisors', fn ($q) => $q->where('supervisor_type', 'internal'))->count() === 0],
             'not_published_before' => ['label' => 'Rancangan current belum pernah dipublikasikan', 'passed' => $plan->publications()->where('status', 'published')->count() === 0],
         ];
 

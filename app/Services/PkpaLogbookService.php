@@ -124,6 +124,12 @@ class PkpaLogbookService
         if (! in_array($entry->status, ['draft', 'revision_requested'], true)) {
             throw ValidationException::withMessages(['logbook' => 'Logbook tidak dapat dikirim pada status saat ini.']);
         }
+        $run->loadMissing('supervisorHistories', 'currentAssignment.supervisors');
+        $hasFieldSupervisor = $run->activeSupervisor('field') !== null
+            || $run->currentAssignment?->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'field' && $supervisor->status === 'assigned');
+        if (! $hasFieldSupervisor) {
+            throw ValidationException::withMessages(['preseptor' => 'Preseptor belum ditetapkan. Logbook dapat disimpan sebagai draf dan dikirim setelah preseptor tersedia.']);
+        }
         $entry->update(['status' => 'submitted', 'submitted_at' => now(), 'submitted_by_core_user_id' => $actor?->core_user_id, 'row_version' => $entry->row_version + 1]);
         $this->audit->record($actor, 'pkpa_logbook_submitted', $entry);
         $this->progress->snapshot($run, 'logbook_submit');

@@ -48,6 +48,16 @@
                 <input name="end_date" type="date" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
             </div>
             <div class="lg:col-span-2">
+                <label class="text-xs font-black uppercase tracking-widest text-slate-500">Preseptor baru</label>
+                <select name="site_field_supervisor_id" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">Pilih preseptor saat mengubah pembimbing</option>
+                    @foreach($fieldSupervisors as $fieldSupervisor)
+                        <option value="{{ $fieldSupervisor->id }}">{{ $fieldSupervisor->practiceSite?->name }} - {{ $fieldSupervisor->display_name }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-slate-500">Pilih hanya untuk jenis perubahan “Ubah pembimbing”. Sistem memeriksa bahwa preseptor berasal dari wahana mahasiswa.</p>
+            </div>
+            <div class="lg:col-span-2">
                 <label class="text-xs font-black uppercase tracking-widest text-slate-500">Catatan perubahan</label>
                 <textarea name="notes" rows="4" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></textarea>
             </div>

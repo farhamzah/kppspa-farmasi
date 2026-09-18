@@ -100,7 +100,7 @@ class PkpaPlacementPlanService
 
     public function lock(PkpaPlacementPlan $plan, ?User $actor): PkpaPlacementPlan
     {
-        if ($plan->validation_status !== 'valid') {
+        if (! in_array($plan->validation_status, ['valid', 'warning'], true)) {
             throw ValidationException::withMessages(['plan' => 'Rancangan harus tervalidasi tanpa error sebelum dikunci.']);
         }
 

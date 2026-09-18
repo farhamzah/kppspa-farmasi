@@ -7,6 +7,7 @@ use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
 use App\Models\PkpaRotationAssignment;
+use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -212,6 +213,11 @@ class PkpaPlacementPublicationService
                         'pkpa_published_assignment_id' => $copy->id,
                     ])->toArray());
                 }
+
+                if (filled($snapshot['site_field_supervisor_id'] ?? null)) {
+                    $copy->supervisors()->where('supervisor_type', 'field')->delete();
+                    $this->addFieldSupervisorToPublishedAssignment($copy, (int) $snapshot['site_field_supervisor_id']);
+                }
             }
 
             $this->audit->record($actor, 'placement_revision_applied', $new, ['source_publication_id' => $source->id], ['code' => $new->code]);
@@ -230,7 +236,7 @@ class PkpaPlacementPublicationService
             ->whereHas('programDomain', fn ($query) => $query->where('is_active', true))
             ->with(['enrollment.activeGroupMembership.group', 'requirement', 'practiceDomain', 'selectedOption', 'practiceSite', 'programSite', 'availabilityPeriod', 'supervisors.internalEligibility', 'supervisors.fieldSupervisor'])
             ->whereNotIn('status', ['cancelled', 'superseded'])
-            ->when($validOnly, fn ($query) => $query->where('status', 'valid'))
+            ->when($validOnly, fn ($query) => $query->whereIn('validation_status', ['valid', 'warning']))
             ->get();
 
         foreach ($assignments as $assignment) {
@@ -285,6 +291,34 @@ class PkpaPlacementPublicationService
                 ]);
             }
         }
+    }
+
+    private function addFieldSupervisorToPublishedAssignment(PkpaPublishedAssignment $assignment, int $fieldSupervisorId): void
+    {
+        $fieldSupervisor = PkpaSiteFieldSupervisor::query()
+            ->with('user.fieldSupervisor')
+            ->whereKey($fieldSupervisorId)
+            ->where('practice_site_id', $assignment->practice_site_id)
+            ->where('status', 'active')
+            ->first();
+
+        if (! $fieldSupervisor) {
+            throw ValidationException::withMessages(['site_field_supervisor_id' => 'Preseptor aktif tidak ditemukan pada wahana mahasiswa.']);
+        }
+
+        $user = $fieldSupervisor->user;
+        PkpaPublishedAssignmentSupervisor::create([
+            'pkpa_published_assignment_id' => $assignment->id,
+            'source_assignment_supervisor_id' => null,
+            'supervisor_type' => 'field',
+            'core_user_id' => $fieldSupervisor->core_user_id,
+            'name_snapshot' => $user ? user_display_name($user, 'pembimbing_lapangan') : $fieldSupervisor->name_snapshot,
+            'email_snapshot' => $fieldSupervisor->email_snapshot,
+            'role_snapshot' => $fieldSupervisor->role_snapshot,
+            'position_snapshot' => $fieldSupervisor->position_title,
+            'is_primary' => true,
+            'status' => 'assigned',
+        ]);
     }
 
     private function code(PkpaPlacementPlan $plan, int $number, int $revision): string

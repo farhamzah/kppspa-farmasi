@@ -6,6 +6,7 @@ use App\Models\PkpaPlacementChangeRequest;
 use App\Models\PkpaPlacementChangeRequestItem;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPublishedAssignment;
+use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -53,6 +54,17 @@ class PkpaPlacementChangeRequestService
         }
         if (blank($proposed)) {
             $messages[] = 'Proposed change belum diisi.';
+        }
+        if (($proposed['change_type'] ?? null) === 'supervisor_change') {
+            $fieldSupervisor = filled($proposed['site_field_supervisor_id'] ?? null)
+                ? PkpaSiteFieldSupervisor::query()->whereKey($proposed['site_field_supervisor_id'])->where('status', 'active')->first()
+                : null;
+
+            if (! $fieldSupervisor) {
+                $messages[] = 'Preseptor aktif wajib dipilih untuk perubahan pembimbing.';
+            } elseif ($fieldSupervisor->practice_site_id !== $assignment->practice_site_id) {
+                $messages[] = 'Preseptor harus berasal dari wahana mahasiswa yang dipilih.';
+            }
         }
 
         $item = PkpaPlacementChangeRequestItem::create([
@@ -117,7 +129,7 @@ class PkpaPlacementChangeRequestService
         foreach ($request->items()->with('oldAssignment.supervisors')->get() as $item) {
             $snapshot = $item->oldAssignment->toArray();
             foreach (($item->proposed_snapshot ?? []) as $key => $value) {
-                if (array_key_exists($key, $snapshot) || in_array($key, ['start_date', 'end_date', 'notes'], true)) {
+                if (array_key_exists($key, $snapshot) || in_array($key, ['start_date', 'end_date', 'notes', 'site_field_supervisor_id'], true)) {
                     $snapshot[$key] = $value;
                 }
             }

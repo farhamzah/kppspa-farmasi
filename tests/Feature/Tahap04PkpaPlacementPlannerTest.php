@@ -118,7 +118,7 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
         $this->assertSame('pending', $requirement->fresh()->status);
     }
 
-    public function test_draft_assignment_can_wait_for_preceptor_but_final_validation_blocks_it(): void
+    public function test_draft_assignment_can_wait_for_preceptor_and_plan_can_be_locked_with_warning(): void
     {
         [$program, $plan, $programSite, $availability, $internal] = $this->placementFixture('PKPA-04-PRESEPTOR', capacity: 2);
         $enrollment = $this->enroll($program, 'CORE-STUDENT-04-PRESEPTOR', '240099');
@@ -137,7 +137,14 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-placement-plans/{$plan->id}/validate")
             ->assertRedirect();
-        $this->assertDatabaseHas('pkpa_placement_validation_issues', ['issue_code' => 'FIELD_SUPERVISOR_MISSING']);
+        $this->assertDatabaseHas('pkpa_placement_validation_issues', ['issue_code' => 'FIELD_SUPERVISOR_MISSING', 'severity' => 'warning']);
+        $this->assertSame('error', $plan->fresh()->validation_status, 'Fixture ini sengaja belum mengisi seluruh requirement.');
+        $plan->update(['validation_status' => 'warning']);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/publication-lock")
+            ->assertRedirect();
+        $this->assertSame('locked', $plan->fresh()->status);
     }
 
     public function test_csv_import_previews_then_creates_a_new_draft_plan_without_preceptors(): void

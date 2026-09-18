@@ -356,6 +356,37 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertFalse($revision->fresh()->is_current);
     }
 
+    public function test_change_request_can_add_preceptor_after_schedule_is_published(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-PRESEPTOR');
+        $assignment = $publication->assignments()->firstOrFail();
+        $newField = $this->field($assignment->practice_site_id, 'CORE-FIELD-05-LATE');
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-publications/{$publication->id}/change-requests", [
+                'reason' => 'Preseptor ditetapkan setelah mahasiswa mulai PKPA',
+                'request_type' => 'supervisor_change',
+                'assignment_id' => $assignment->id,
+                'site_field_supervisor_id' => $newField->id,
+            ])
+            ->assertRedirect();
+
+        $change = PkpaPlacementChangeRequest::firstOrFail();
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-change-requests/{$change->id}/submit")
+            ->assertRedirect();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post("/management/pkpa-change-requests/{$change->id}/approve")
+            ->assertRedirect();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post("/management/pkpa-change-requests/{$change->id}/apply")
+            ->assertRedirect();
+
+        $revision = PkpaPlacementPublication::whereKeyNot($publication->id)->firstOrFail();
+        $revisedAssignment = $revision->assignments()->where('pkpa_enrollment_requirement_id', $assignment->pkpa_enrollment_requirement_id)->with('supervisors')->firstOrFail();
+        $this->assertTrue($revisedAssignment->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'field' && $supervisor->core_user_id === 'CORE-FIELD-05-LATE'));
+    }
+
     private function publishedFixture(string $code): PkpaPlacementPublication
     {
         [$program, $plan] = $this->readyLockedPlan($code);

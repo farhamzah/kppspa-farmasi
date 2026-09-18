@@ -10,6 +10,7 @@ use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaProgram;
 use App\Models\PkpaPublishedAssignment;
+use App\Models\PkpaSiteFieldSupervisor;
 use App\Services\PkpaPlacementChangeRequestService;
 use App\Services\PkpaPlacementNotificationService;
 use App\Services\PkpaPlacementPlanService;
@@ -133,8 +134,16 @@ class PkpaPlacementPublicationController extends Controller
 
     public function createChange(PkpaPlacementPublication $publication): View
     {
+        $publication->load('assignments.supervisors');
+
         return view('management.pkpa-publications.change-create', [
-            'publication' => $publication->load('assignments.supervisors'),
+            'publication' => $publication,
+            'fieldSupervisors' => PkpaSiteFieldSupervisor::query()
+                ->with('practiceSite')
+                ->whereIn('practice_site_id', $publication->assignments->pluck('practice_site_id')->filter()->unique())
+                ->where('status', 'active')
+                ->orderBy('name_snapshot')
+                ->get(),
         ]);
     }
 
@@ -146,6 +155,7 @@ class PkpaPlacementPublicationController extends Controller
             'assignment_id' => ['required', 'exists:pkpa_published_assignments,id'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date'],
+            'site_field_supervisor_id' => ['nullable', 'required_if:request_type,supervisor_change', 'exists:pkpa_site_field_supervisors,id'],
             'notes' => ['nullable', 'string'],
         ]);
         $change = $this->changeService->create($publication, $data, $request->user());
@@ -154,6 +164,7 @@ class PkpaPlacementPublicationController extends Controller
             'change_type' => $data['request_type'],
             'start_date' => $data['start_date'] ?? null,
             'end_date' => $data['end_date'] ?? null,
+            'site_field_supervisor_id' => $data['site_field_supervisor_id'] ?? null,
             'notes' => $data['notes'] ?? null,
         ]), $request->user());
 
