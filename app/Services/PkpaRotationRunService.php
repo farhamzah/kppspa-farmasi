@@ -40,7 +40,16 @@ class PkpaRotationRunService
                     continue;
                 }
                 $this->ensurePublishedAssignmentHasInternalSupervisor($assignment);
-                $run = PkpaRotationRun::where('origin_published_assignment_id', $assignment->id)->lockForUpdate()->first();
+                $run = PkpaRotationRun::query()
+                    ->where(function ($query) use ($assignment) {
+                        $query->where('origin_published_assignment_id', $assignment->id)
+                            ->orWhere(function ($query) use ($assignment) {
+                                $query->where('pkpa_enrollment_requirement_id', $assignment->pkpa_enrollment_requirement_id)
+                                    ->where('current_key', 'REQUIREMENT:'.$assignment->pkpa_enrollment_requirement_id);
+                            });
+                    })
+                    ->lockForUpdate()
+                    ->first();
                 if ($run) {
                     $existing++;
                     continue;

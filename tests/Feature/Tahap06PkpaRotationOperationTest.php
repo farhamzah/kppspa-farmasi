@@ -270,6 +270,18 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $this->assertSame(1, PkpaRotationRun::firstOrFail()->supervisorHistories()->count());
     }
 
+    public function test_runtime_creation_does_not_duplicate_run_after_schedule_publication_is_revised(): void
+    {
+        $fixture = $this->publishedFixture();
+        app(PkpaRotationRunService::class)->createFromPublication($fixture['publication'], $this->admin);
+        $revision = $this->revisionPublication($fixture);
+
+        $stats = app(PkpaRotationRunService::class)->createFromPublication($revision, $this->admin);
+
+        $this->assertSame(['created' => 0, 'existing' => 1], $stats);
+        $this->assertSame(1, PkpaRotationRun::count());
+    }
+
     public function test_student_can_access_and_save_when_runtime_student_snapshot_is_stale_but_enrollment_matches(): void
     {
         $run = $this->activatedRun();
