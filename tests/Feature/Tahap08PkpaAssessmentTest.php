@@ -225,6 +225,20 @@ class Tahap08PkpaAssessmentTest extends TestCase
             ->assertDontSee('Kehadiran dari presensi mahasiswa');
     }
 
+    public function test_coordinator_can_prepare_all_ready_apotek_assessments_at_once(): void
+    {
+        $fixture = $this->runtimeFixture();
+        $this->activeScheme($fixture['programDomain']);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post(route('management.pkpa-rotation-assessments.prepare', $fixture['programDomain']))
+            ->assertRedirect()
+            ->assertSessionHas('status', 'Penilaian Apotek disiapkan untuk 1 mahasiswa. 0 mahasiswa belum siap dan dilewati.');
+
+        $this->assertDatabaseCount('pkpa_rotation_assessments', 1);
+        $this->assertDatabaseCount('pkpa_rotation_component_scores', 2);
+    }
+
     public function test_routes_are_protected_and_export_available(): void
     {
         $this->runtimeFixture();

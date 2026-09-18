@@ -16,6 +16,7 @@ use App\Services\PkpaAssessmentSchemeService;
 use App\Services\PkpaRotationAssessmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PkpaAssessmentController extends Controller
@@ -135,6 +136,36 @@ class PkpaAssessmentController extends Controller
         $this->assessments->createFromRun($run, $request->user());
 
         return back()->with('status', 'Assessment wahana dibuat.');
+    }
+
+    public function prepareAssessments(Request $request, PkpaProgramDomain $programDomain): RedirectResponse
+    {
+        $programDomain->loadMissing(['practiceDomain', 'activeAssessmentScheme']);
+        if ($programDomain->practiceDomain?->code !== 'APT') {
+            throw ValidationException::withMessages(['domain' => 'Persiapan massal saat ini hanya tersedia untuk PKPA Apotek.']);
+        }
+        if (! $programDomain->activeAssessmentScheme) {
+            throw ValidationException::withMessages(['scheme' => 'Aktifkan skema penilaian Apotek terlebih dahulu.']);
+        }
+
+        $created = 0;
+        $skipped = 0;
+        $runs = PkpaRotationRun::query()
+            ->where('pkpa_program_id', $programDomain->pkpa_program_id)
+            ->where('practice_domain_id', $programDomain->practice_domain_id)
+            ->whereDoesntHave('rotationAssessment')
+            ->get();
+
+        foreach ($runs as $run) {
+            try {
+                $this->assessments->createFromRun($run, $request->user());
+                $created++;
+            } catch (ValidationException) {
+                $skipped++;
+            }
+        }
+
+        return back()->with('status', "Penilaian Apotek disiapkan untuk {$created} mahasiswa. {$skipped} mahasiswa belum siap dan dilewati.");
     }
 
     public function moderate(Request $request, PkpaRotationAssessment $assessment): RedirectResponse

@@ -195,6 +195,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('pkpa-assessment-rubrics/{rubric}/criteria', [ManagementPkpaAssessmentController::class, 'storeCriterion'])->name('pkpa-assessment-criteria.store');
             Route::post('pkpa-assessment-criteria/{criterion}/levels', [ManagementPkpaAssessmentController::class, 'storeLevel'])->name('pkpa-assessment-levels.store');
             Route::post('pkpa-assessment-schemes/{scheme}/activate', [ManagementPkpaAssessmentController::class, 'activateScheme'])->name('pkpa-assessment-schemes.activate');
+            Route::post('pkpa-program-domains/{programDomain}/assessments/prepare', [ManagementPkpaAssessmentController::class, 'prepareAssessments'])->name('pkpa-rotation-assessments.prepare');
             Route::post('pkpa-rotation-runs/{run}/assessment', [ManagementPkpaAssessmentController::class, 'createAssessment'])->name('pkpa-rotation-assessments.store');
             Route::post('pkpa-rotation-assessments/{assessment}/moderate', [ManagementPkpaAssessmentController::class, 'moderate'])->name('pkpa-rotation-assessments.moderate');
             Route::post('pkpa-rotation-assessments/{assessment}/finalize', [ManagementPkpaAssessmentController::class, 'finalize'])->name('pkpa-rotation-assessments.finalize');

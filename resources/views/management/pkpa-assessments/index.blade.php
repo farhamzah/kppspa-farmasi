@@ -46,6 +46,12 @@
                                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Aktif</span>
                             @endif
                         </div>
+                        @if ($domain->activeAssessmentScheme && $domain->practiceDomain?->code === 'APT')
+                            <form method="POST" action="{{ route('management.pkpa-rotation-assessments.prepare', $domain) }}" class="mt-4" onsubmit="return confirm('Siapkan formulir penilaian untuk semua mahasiswa Apotek yang sudah siap dinilai?')">
+                                @csrf
+                                <button class="w-full rounded-xl bg-cyan-700 px-4 py-3 text-sm font-black text-white hover:bg-cyan-800">Siapkan Semua Penilaian Apotek</button>
+                            </form>
+                        @endif
                         <form method="POST" action="{{ route('management.pkpa-assessment-schemes.store', $domain) }}" class="mt-4 grid gap-3">
                             @csrf
                             <div class="grid gap-3 sm:grid-cols-2">
