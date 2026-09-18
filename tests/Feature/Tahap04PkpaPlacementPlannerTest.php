@@ -22,6 +22,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class Tahap04PkpaPlacementPlannerTest extends TestCase
@@ -137,6 +138,38 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
             ->post("/management/pkpa-placement-plans/{$plan->id}/validate")
             ->assertRedirect();
         $this->assertDatabaseHas('pkpa_placement_validation_issues', ['issue_code' => 'FIELD_SUPERVISOR_MISSING']);
+    }
+
+    public function test_csv_import_previews_then_creates_a_new_draft_plan_without_preceptors(): void
+    {
+        [$program, $sourcePlan, $programSite, $availability, $internal] = $this->placementFixture('PKPA-04-CSV', capacity: 2);
+        $this->enroll($program, 'CORE-STUDENT-04-CSV', '240199');
+        $sourcePlan->update(['status' => 'locked', 'validation_status' => 'valid']);
+        Storage::fake('local');
+        Storage::disk('local')->put('imports/placement.csv', implode("\n", [
+            'nim,nama_mahasiswa,nama_wahana,jenis_wahana,tanggal_mulai,tanggal_selesai,pembimbing_dalam,preseptor,catatan',
+            '240199,Mahasiswa CORE-STUDENT-04-CSV,'.($programSite->practiceSite->name).',APT,2026-02-01,2026-02-28,'.($internal->name_snapshot).',,',
+        ]));
+
+        $this->artisan('pkpa:import-placement-csv', [
+            'file' => 'imports/placement.csv',
+            '--source-plan' => $sourcePlan->id,
+        ])->assertExitCode(0);
+        $this->assertSame(1, PkpaPlacementPlan::count());
+        $this->assertSame(0, PkpaRotationAssignment::count());
+
+        $this->artisan('pkpa:import-placement-csv', [
+            'file' => 'imports/placement.csv',
+            '--source-plan' => $sourcePlan->id,
+            '--apply' => true,
+        ])->assertExitCode(0);
+
+        $importedPlan = PkpaPlacementPlan::whereKeyNot($sourcePlan->id)->firstOrFail();
+        $assignment = PkpaRotationAssignment::where('pkpa_placement_plan_id', $importedPlan->id)->firstOrFail();
+        $this->assertSame('draft', $importedPlan->status);
+        $this->assertTrue($importedPlan->is_current);
+        $this->assertSame('needs_attention', $assignment->status);
+        $this->assertCount(1, $assignment->supervisors);
     }
 
     public function test_government_assignment_uses_single_choose_one_requirement_option(): void
