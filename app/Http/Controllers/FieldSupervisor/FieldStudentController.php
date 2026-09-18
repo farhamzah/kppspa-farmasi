@@ -12,13 +12,18 @@ class FieldStudentController extends Controller
     public function index(Request $request): View
     {
         $assignments = PkpaPublishedAssignment::query()
-            ->with(['publication.program', 'supervisors'])
+            ->with(['publication.program', 'practiceDomain', 'supervisors'])
             ->forSupervisor('field', $request->user()->core_user_id)
             ->whereHas('publication', fn ($query) => $query->whereIn('status', ['published', 'withdrawn'])->where('is_current', true))
+            ->orderBy('practice_domain_id')
             ->orderBy('start_date')
-            ->paginate(10);
+            ->orderBy('practice_site_name_snapshot')
+            ->orderBy('student_name_snapshot')
+            ->get();
 
-        return view('field-supervisor.assignments.index', compact('assignments'));
+        $assignmentGroups = $assignments->groupBy(fn (PkpaPublishedAssignment $assignment) => $assignment->practice_domain_id ?: 'unassigned');
+
+        return view('field-supervisor.assignments.index', compact('assignmentGroups', 'assignments'));
     }
 
     public function show(Request $request, PkpaPublishedAssignment $assignment): View

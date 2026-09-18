@@ -120,6 +120,9 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->get('/mahasiswa/pkpa-saya')
             ->assertOk()
             ->assertSee('Jadwal resmi PKPA')
+            ->assertSee('Jadwal &amp; Wahana', false)
+            ->assertSee('Presensi Harian')
+            ->assertSee('Logbook Harian')
             ->assertSee($assignment->practice_site_name_snapshot)
             ->assertSee('apt. Farhamzah, S.Si., M.T.I')
             ->assertSee('apt. Ayda, S.Farm');
@@ -146,6 +149,10 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
             ->get('/pembimbing-dalam/mahasiswa-bimbingan')
             ->assertOk()
+            ->assertSee('Daftar per wahana')
+            ->assertSee('Apotek')
+            ->assertSee('Monitoring PKPA')
+            ->assertSee('Review Logbook')
             ->assertSee($assignment->student_name_snapshot)
             ->assertSee('Aktif di portal');
         $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
@@ -163,6 +170,9 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/mahasiswa-pkpa')
             ->assertOk()
+            ->assertSee('Daftar per wahana')
+            ->assertSee('Mahasiswa Bimbingan')
+            ->assertSee('Validasi Presensi')
             ->assertSee($assignment->student_name_snapshot)
             ->assertSee('Aktif di portal');
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])

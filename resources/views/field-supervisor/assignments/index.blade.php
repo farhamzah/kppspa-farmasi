@@ -1,46 +1,11 @@
 @extends('layouts.app')
-@section('title','Mahasiswa PKPA - '.config('app.name'))
-@section('page_title','Mahasiswa PKPA')
+@section('title','Mahasiswa Bimbingan - '.config('app.name'))
+@section('page_title','Mahasiswa Bimbingan')
 @section('content')
-<section class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-slate-200 text-sm">
-            <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <tr>
-                    <th class="px-4 py-3">Mahasiswa</th>
-                    <th class="px-4 py-3">Periode</th>
-                    <th class="px-4 py-3">Tempat</th>
-                    <th class="px-4 py-3">Pembimbing Dalam</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3 text-right">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-                @forelse($assignments as $assignment)
-                    @php($internal = $assignment->supervisors->firstWhere('supervisor_type', 'internal'))
-                    <tr>
-                        <td class="px-4 py-4">
-                            <div class="font-semibold">{{ $assignment->student_name_snapshot }}</div>
-                            <div class="text-xs text-slate-500">{{ $assignment->student_number_snapshot ?: '-' }}</div>
-                        </td>
-                        <td class="px-4 py-4 whitespace-nowrap">{{ $assignment->start_date?->format('d M Y') }} - {{ $assignment->end_date?->format('d M Y') }}</td>
-                        <td class="px-4 py-4">{{ $assignment->practice_site_name_snapshot }}</td>
-                        <td class="px-4 py-4">{{ $internal?->display_name ?: '-' }}</td>
-                        <td class="px-4 py-4">
-                            <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">Aktif di portal</span>
-                        </td>
-                        <td class="px-4 py-4 text-right">
-                            <a href="{{ route('field-supervisor.pkpa-students.show',$assignment) }}" class="rounded-lg border border-teal-200 px-3 py-1.5 text-xs font-semibold text-teal-700">Detail</a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-10 text-center text-slate-500">Belum ada mahasiswa PKPA.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    <div class="border-t px-4 py-3">{{ $assignments->links() }}</div>
-</section>
+@include('shared.assignments.grouped-student-list', [
+    'counterpartLabel' => 'Pembimbing Dalam',
+    'counterpartType' => 'internal',
+    'detailRoute' => 'field-supervisor.pkpa-students.show',
+    'emptyMessage' => 'Belum ada mahasiswa bimbingan.',
+])
 @endsection
