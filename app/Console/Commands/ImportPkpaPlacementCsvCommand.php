@@ -74,8 +74,8 @@ class ImportPkpaPlacementCsvCommand extends Command
             return self::FAILURE;
         }
 
-        $this->table(['NIM', 'Mahasiswa', 'Wahana', 'Pembimbing Dalam', 'Preseptor'], collect($resolved)->map(fn (array $item) => [
-            $item['row']['nim'], $item['row']['nama_mahasiswa'], $item['row']['nama_wahana'], $item['internal']->name_snapshot, $item['field']?->name_snapshot ?? 'Belum ditetapkan',
+        $this->table(['NIM Core', 'Mahasiswa Core', 'Wahana', 'Pembimbing Dalam', 'Preseptor'], collect($resolved)->map(fn (array $item) => [
+            $item['enrollment']->student_number, $item['enrollment']->student_name_snapshot, $item['row']['nama_wahana'], $item['internal']->name_snapshot, $item['field']?->name_snapshot ?? 'Belum ditetapkan',
         ])->all());
         $this->info(count($resolved).' baris siap diimpor ke revisi dari '.$sourcePlan->code.'.');
 
@@ -153,10 +153,16 @@ class ImportPkpaPlacementCsvCommand extends Command
         }
 
         $domain = PkpaPracticeDomain::where('code', strtoupper($row['jenis_wahana']))->where('is_active', true)->first();
-        $enrollment = PkpaEnrollment::where('pkpa_program_id', $plan->pkpa_program_id)
-            ->where('student_number', $row['nim'])
+        $enrollments = PkpaEnrollment::where('pkpa_program_id', $plan->pkpa_program_id)
             ->whereIn('status', ['active', 'on_hold'])
+            ->get();
+        $enrollment = $enrollments
+            ->where('student_number', $row['nim'])
             ->first();
+        if (! $enrollment) {
+            $nameMatches = $enrollments->filter(fn (PkpaEnrollment $candidate) => $this->personKey($candidate->student_name_snapshot) === $this->personKey($row['nama_mahasiswa']));
+            $enrollment = $nameMatches->count() === 1 ? $nameMatches->first() : null;
+        }
         $requirement = $enrollment?->requirements()->where('practice_domain_id', $domain?->id)->first();
         $programSites = PkpaProgramSite::with('practiceSite')->where('pkpa_program_id', $plan->pkpa_program_id)
             ->where('practice_domain_id', $domain?->id)->where('is_active', true)->whereIn('status', ['ready', 'active'])->get()
@@ -186,6 +192,7 @@ class ImportPkpaPlacementCsvCommand extends Command
 
         return [
             'row' => $row,
+            'enrollment' => $enrollment,
             'requirement' => $requirement,
             'internal' => $internal,
             'field' => $field,
