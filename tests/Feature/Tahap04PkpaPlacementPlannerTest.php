@@ -142,13 +142,14 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
 
     public function test_csv_import_previews_then_creates_a_new_draft_plan_without_preceptors(): void
     {
-        [$program, $sourcePlan, $programSite, $availability, $internal] = $this->placementFixture('PKPA-04-CSV', capacity: 2);
+        [$program, $sourcePlan, $programSite, $availability, $internal] = $this->placementFixture('PKPA-04-CSV', capacity: 2, domainCode: 'PBF');
+        $programSite->practiceSite->update(['name' => 'PT. Alida']);
         $this->enroll($program, 'CORE-STUDENT-04-CSV', '240199');
         $sourcePlan->update(['status' => 'locked', 'validation_status' => 'valid']);
         Storage::fake('local');
         Storage::disk('local')->put('imports/placement.csv', implode("\n", [
             'nim,nama_mahasiswa,nama_wahana,jenis_wahana,tanggal_mulai,tanggal_selesai,pembimbing_dalam,preseptor,catatan',
-            '240199,Mahasiswa CORE-STUDENT-04-CSV,'.($programSite->practiceSite->name).',APT,2026-02-01,2026-02-28,'.($internal->name_snapshot).',,',
+            '240199,Mahasiswa CORE-STUDENT-04-CSV,PT. Alida Bandung,PBF,2026-02-01,2026-02-28,'.($internal->name_snapshot).',,',
         ]));
 
         $this->artisan('pkpa:import-placement-csv', [
@@ -337,10 +338,10 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
         return [$program, PkpaPlacementPlan::where('pkpa_program_id', $program->id)->firstOrFail()];
     }
 
-    private function placementFixture(string $code, int $capacity = 8): array
+    private function placementFixture(string $code, int $capacity = 8, string $domainCode = 'APT'): array
     {
         [$program, $plan] = $this->basicPlan($code);
-        $programSite = $this->createProgramSite($program, 'APT', 'APT-'.$code, $capacity);
+        $programSite = $this->createProgramSite($program, $domainCode, $domainCode.'-'.$code, $capacity);
         $availability = $programSite->availabilityPeriods()->firstOrFail();
         $internal = $this->internal($program, $programSite->practice_domain_id, 'CORE-DOSEN-'.$code);
         $field = $this->field($programSite->practice_site_id, 'CORE-FIELD-'.$code);

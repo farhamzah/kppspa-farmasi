@@ -166,7 +166,7 @@ class ImportPkpaPlacementCsvCommand extends Command
         $requirement = $enrollment?->requirements()->where('practice_domain_id', $domain?->id)->first();
         $programSites = PkpaProgramSite::with('practiceSite')->where('pkpa_program_id', $plan->pkpa_program_id)
             ->where('practice_domain_id', $domain?->id)->where('is_active', true)->whereIn('status', ['ready', 'active'])->get()
-            ->filter(fn (PkpaProgramSite $site) => $this->matches($this->key($site->practiceSite?->name), $this->key($row['nama_wahana'])));
+            ->filter(fn (PkpaProgramSite $site) => $this->siteMatches($this->key($site->practiceSite?->name), $this->key($row['nama_wahana'])));
         $internal = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $plan->pkpa_program_id)
             ->where('practice_domain_id', $domain?->id)->where('status', 'active')->get()
             ->first(fn (PkpaInternalSupervisorEligibility $supervisor) => $this->matches($this->personKey($supervisor->name_snapshot), $this->personKey($row['pembimbing_dalam'])));
@@ -230,5 +230,16 @@ class ImportPkpaPlacementCsvCommand extends Command
 
         return $left === $right
             || (min(strlen($left), strlen($right)) >= 8 && (str_starts_with($left, $right) || str_starts_with($right, $left)));
+    }
+
+    private function siteMatches(string $left, string $right): bool
+    {
+        if ($left === '' || $right === '') {
+            return false;
+        }
+
+        // Some master sites omit a city suffix used by the approved schedule.
+        return $left === $right
+            || (min(strlen($left), strlen($right)) >= 6 && (str_starts_with($left, $right) || str_starts_with($right, $left)));
     }
 }
