@@ -32,7 +32,7 @@ class PkpaAcademicRotationController extends Controller
     {
         return view('management.pkpa-academics.index', [
             'programDomains' => PkpaProgramDomain::with(['program', 'practiceDomain', 'activeCompetencySet', 'activeReportTemplate'])->get(),
-            'runs' => PkpaRotationRun::with(['enrollment', 'practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->latest()->paginate(20),
+            'runs' => PkpaRotationRun::with(['enrollment', 'practiceDomain', 'practiceSite', 'competencyRecords', 'specialTasks', 'rotationReport', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->orderBy('practice_domain_id')->latest()->paginate(20),
             'summary' => [
                 'runs' => PkpaRotationRun::count(),
                 'without_competency' => PkpaRotationRun::doesntHave('competencyRecords')->count(),

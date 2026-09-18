@@ -7,6 +7,7 @@
 @php
     $statusLabels = ['ready' => 'Siap', 'scheduled' => 'Terjadwal', 'active' => 'Aktif', 'on_hold' => 'Ditahan', 'awaiting_operational_review' => 'Menunggu Pemeriksaan', 'operational_complete' => 'Operasional Selesai'];
     $syncLabels = ['current' => 'Terkini', 'review_required' => 'Perlu Review'];
+    $runGroups = $runs->getCollection()->groupBy(fn ($run) => $run->practice_domain_id ?: 'lainnya');
 @endphp
 <div class="space-y-6">
     @if($errors->any())
@@ -83,7 +84,12 @@
             <table class="min-w-full divide-y divide-slate-100 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Mahasiswa</th><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Periode</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Kemajuan</th><th class="px-4 py-3">Aksi</th></tr></thead>
                 <tbody class="divide-y divide-slate-100">
-                    @forelse($runs as $run)
+                    @forelse($runGroups as $domainId => $domainRuns)
+                        @php
+                            $domain = $domainRuns->first()?->practiceDomain;
+                        @endphp
+                        <tr class="bg-cyan-50/80"><td colspan="6" class="px-4 py-3 font-black text-cyan-900">{{ $domain?->name ?? 'Wahana lainnya' }} <span class="ml-2 text-xs font-bold text-cyan-700">{{ $domainRuns->count() }} mahasiswa pada halaman ini</span></td></tr>
+                        @foreach($domainRuns as $run)
                         <tr>
                             <td class="px-4 py-3">
                                 <div class="font-black text-slate-900">{{ $run->studentDisplayName() }}</div>
@@ -103,6 +109,7 @@
                                 </div>
                             </td>
                         </tr>
+                        @endforeach
                     @empty
                         <tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Runtime rotasi belum terbentuk.</td></tr>
                     @endforelse

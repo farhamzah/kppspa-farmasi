@@ -5,6 +5,7 @@
 @php
     $studentCount = $assignments->count();
     $forwardedCount = $assignments->sum(fn ($assignment) => $assignment->rotationRuns->sum(fn ($run) => $run->logbookEntries->whereIn('status', ['field_approved', 'approved'])->count()));
+    $runGroups = $readyRuns->getCollection()->groupBy(fn ($run) => $run->practice_domain_id ?: 'lainnya');
 @endphp
 <div class="space-y-5">
     <section class="grid gap-3 md:grid-cols-3">
@@ -19,7 +20,13 @@
             <a href="{{ route('field-supervisor.pkpa-operations.index') }}" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-800">Buka Operasional PKPA</a>
         </div>
         <div class="space-y-4 bg-slate-50/70 p-4 sm:p-5">
-            @forelse($readyRuns as $run)
+            @forelse($runGroups as $domainId => $domainRuns)
+            @php
+                $domain = $domainRuns->first()?->practiceDomain;
+            @endphp
+            <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainRuns->count()" :anchor="'wahana-'.$domainId">
+            <div class="space-y-4">
+            @foreach($domainRuns as $run)
                 <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <header class="flex flex-col gap-3 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                         <div class="min-w-0">
@@ -40,6 +47,9 @@
                         @endforeach
                     </div>
                 </article>
+            @endforeach
+            </div>
+            </x-pkpa.domain-group>
             @empty
                 <div class="px-5 py-12 text-center"><p class="text-base font-bold text-slate-700">Belum ada logbook yang perlu divalidasi.</p><p class="mt-1 text-sm text-slate-500">Anda tetap dapat memantau presensi dan status seluruh mahasiswa dari Operasional PKPA.</p><a href="{{ route('field-supervisor.pkpa-operations.index') }}" class="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-800">Buka Operasional PKPA</a></div>
             @endforelse

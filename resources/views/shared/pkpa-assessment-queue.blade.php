@@ -15,6 +15,9 @@
             'submitted' => 'Terkirim',
             'completed' => 'Selesai',
         ];
+        $assignmentGroups = $assignments->getCollection()->groupBy(
+            fn ($assignment) => $assignment->assessment?->rotationRun?->practice_domain_id ?? 'unknown'
+        );
     @endphp
     <div class="rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Antrian Penilaian PKPA</p>
@@ -44,9 +47,15 @@
     @if ($errors->any())
         <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">{{ $errors->first() }}</div>
     @endif
-    <div class="grid gap-4">
-        @forelse ($assignments as $assignment)
-            <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+    <div class="space-y-8">
+        @forelse ($assignmentGroups as $domainAssignments)
+            @php
+                $domain = $domainAssignments->first()?->assessment?->rotationRun?->practiceDomain;
+            @endphp
+            <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainAssignments->count()">
+                <div class="grid gap-4">
+                @foreach ($domainAssignments as $assignment)
+                <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
                 <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                         <p class="font-black text-slate-950">{{ $assignment->assessment?->rotationRun?->studentDisplayName() }}</p>
@@ -77,7 +86,10 @@
                         </form>
                     @endif
                 @endforeach
-            </article>
+                </article>
+                @endforeach
+                </div>
+            </x-pkpa.domain-group>
         @empty
             <div class="rounded-3xl border border-slate-100 bg-white p-6 text-sm text-slate-500">Belum ada penilaian yang ditugaskan.</div>
         @endforelse

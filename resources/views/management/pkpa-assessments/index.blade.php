@@ -3,6 +3,10 @@
 @section('title', 'Penilaian PKPA')
 
 @section('content')
+@php
+    $assessmentGroups = $assessments->getCollection()->groupBy(fn ($assessment) => $assessment->rotationRun?->practice_domain_id ?? 'unknown');
+    $runGroups = $runs->groupBy(fn ($run) => $run->practice_domain_id ?? 'unknown');
+@endphp
 <div class="space-y-6">
     <div class="rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -116,13 +120,19 @@
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-xl font-black text-slate-950">Penilaian Wahana</h2>
-        <div class="mt-4 overflow-x-auto">
+        <div class="mt-4 space-y-8">
+            @forelse ($assessmentGroups as $domainAssessments)
+            @php
+                $domain = $domainAssessments->first()?->rotationRun?->practiceDomain;
+            @endphp
+            <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainAssessments->count()">
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
                 <thead class="text-left text-xs uppercase text-slate-500">
-                    <tr><th class="px-3 py-2">Mahasiswa</th><th class="px-3 py-2">Wahana</th><th class="px-3 py-2">Preseptor</th><th class="px-3 py-2">Pembimbing Dalam</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Nilai Akhir</th><th class="px-3 py-2">Aksi</th></tr>
+                    <tr><th class="px-3 py-2">Mahasiswa</th><th class="px-3 py-2">Tempat</th><th class="px-3 py-2">Preseptor</th><th class="px-3 py-2">Pembimbing Dalam</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Nilai Akhir</th><th class="px-3 py-2">Aksi</th></tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                    @foreach ($assessments as $assessment)
+                    @foreach ($domainAssessments as $assessment)
                         @php
                             $fieldScore = $assessment->componentScores->first(fn ($score) => $score->assessor?->assessor_type === 'field_supervisor');
                             $internalScore = $assessment->componentScores->first(fn ($score) => $score->assessor?->assessor_type === 'internal_supervisor');
@@ -132,7 +142,7 @@
                                 <div class="font-bold text-slate-900">{{ $assessment->rotationRun?->studentDisplayName() ?? '-' }}</div>
                                 <div class="text-xs text-slate-500">{{ $assessment->rotationRun?->studentDisplaySecondary() ?? '-' }}</div>
                             </td>
-                            <td class="px-3 py-3">{{ $assessment->rotationRun?->practiceDomain?->name }}</td>
+                            <td class="px-3 py-3">{{ $assessment->rotationRun?->practiceSite?->name }}</td>
                             <td class="px-3 py-3"><span class="font-bold text-slate-900">{{ $fieldScore?->raw_score ?? '-' }}</span><div class="text-xs text-slate-500">{{ str($fieldScore?->status ?? 'belum diisi')->replace('_', ' ')->headline() }}</div></td>
                             <td class="px-3 py-3"><span class="font-bold text-slate-900">{{ $internalScore?->raw_score ?? '-' }}</span><div class="text-xs text-slate-500">{{ str($internalScore?->status ?? 'belum diisi')->replace('_', ' ')->headline() }}</div></td>
                             <td class="px-3 py-3">{{ $assessment->status }} · {{ $assessment->completion_status }}</td>
@@ -149,18 +159,29 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
+            </x-pkpa.domain-group>
+            @empty
+                <p class="text-sm text-slate-500">Belum ada penilaian wahana.</p>
+            @endforelse
         </div>
         <div class="mt-4">{{ $assessments->links() }}</div>
     </section>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-xl font-black text-slate-950">Buat Penilaian dari Rotasi Siap</h2>
-        <div class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            @foreach ($runs as $run)
+        <div class="mt-4 space-y-8">
+            @forelse ($runGroups as $domainRuns)
+            @php
+                $domain = $domainRuns->first()?->practiceDomain;
+            @endphp
+            <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainRuns->count()">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            @foreach ($domainRuns as $run)
                 <div class="rounded-2xl border border-slate-100 p-4">
                     <p class="font-black text-slate-900">{{ $run->studentDisplayName() }}</p>
                     <p class="text-xs text-slate-500">{{ $run->studentDisplaySecondary() }}</p>
-                    <p class="text-sm text-slate-500">{{ $run->practiceDomain?->name }} · {{ $run->practiceSite?->name }}</p>
+                    <p class="text-sm text-slate-500">{{ $run->practiceSite?->name }}</p>
                     <p class="mt-1 text-xs text-slate-500">Kesiapan: {{ $run->academicReadinessReviews->first()?->status ?? '-' }}</p>
                     <form method="POST" action="{{ route('management.pkpa-rotation-assessments.store', $run) }}" class="mt-3">
                         @csrf
@@ -168,6 +189,11 @@
                     </form>
                 </div>
             @endforeach
+            </div>
+            </x-pkpa.domain-group>
+            @empty
+                <p class="text-sm text-slate-500">Belum ada rotasi yang siap dinilai.</p>
+            @endforelse
         </div>
     </section>
 </div>

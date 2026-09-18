@@ -3,6 +3,11 @@
 @section('title', 'Pembuat Portofolio')
 
 @section('content')
+@php
+    $portfolioGroups = $portfolios->getCollection()->groupBy(
+        fn ($portfolio) => $portfolio->practice_domain_id ?? 'unknown'
+    );
+@endphp
 <div class="space-y-6">
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Pembuat Portofolio</p>
@@ -21,14 +26,20 @@
     </section>
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-black text-slate-950">Pemantauan Portofolio</h2>
-        <div class="mt-4 overflow-x-auto">
+        <div class="mt-4 space-y-8">
+            @forelse($portfolioGroups as $domainPortfolios)
+            @php
+                $domain = $domainPortfolios->first()?->practiceDomain;
+            @endphp
+            <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainPortfolios->count()">
+            <div class="overflow-x-auto">
             <table class="min-w-full text-left text-sm">
-                <thead class="text-xs uppercase text-slate-500"><tr><th class="p-3">Mahasiswa</th><th class="p-3">Wahana</th><th class="p-3">Status</th><th class="p-3">Kemajuan</th><th class="p-3">Aksi</th></tr></thead>
+                <thead class="text-xs uppercase text-slate-500"><tr><th class="p-3">Mahasiswa</th><th class="p-3">Tempat</th><th class="p-3">Status</th><th class="p-3">Kemajuan</th><th class="p-3">Aksi</th></tr></thead>
                 <tbody>
-                    @foreach($portfolios as $portfolio)
+                    @foreach($domainPortfolios as $portfolio)
                         <tr class="border-t border-slate-100">
                             <td class="p-3 font-bold">{{ data_get($portfolio->identity_snapshot, 'student_name') }}</td>
-                            <td class="p-3">{{ $portfolio->practiceDomain?->name }}</td>
+                            <td class="p-3">{{ data_get($portfolio->placement_snapshot, 'practice_site', '-') }}</td>
                             <td class="p-3">{{ $portfolio->statusLabel() }}</td>
                             <td class="p-3">{{ count(data_get($portfolio->progress_snapshot, 'blocking', [])) }} catatan</td>
                             <td class="p-3"><div class="flex flex-wrap gap-2"><form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'docx']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh DOCX</button></form><form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'pdf']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh PDF</button></form><form method="POST" action="{{ route('management.pkpa-portfolios.publish', $portfolio) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Terbitkan</button></form></div></td>
@@ -36,6 +47,11 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
+            </x-pkpa.domain-group>
+            @empty
+                <p class="text-sm text-slate-500">Belum ada portofolio yang dipantau.</p>
+            @endforelse
         </div>
         <div class="mt-4">{{ $portfolios->links() }}</div>
     </section>

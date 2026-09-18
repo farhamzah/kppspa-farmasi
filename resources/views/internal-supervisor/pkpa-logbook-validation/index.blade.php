@@ -5,6 +5,7 @@
 @php
     $studentCount = $assignments->count();
     $finalCount = $assignments->sum(fn ($assignment) => $assignment->rotationRuns->sum(fn ($run) => $run->logbookEntries->where('status', 'internal_approved')->count()));
+    $logbookGroups = $readyLogbooks->getCollection()->groupBy(fn ($entry) => $entry->rotationRun?->practice_domain_id ?: 'lainnya');
 @endphp
 <div class="space-y-5">
     <section class="grid gap-3 md:grid-cols-3">
@@ -18,9 +19,17 @@
             <div><h2 class="text-lg font-black text-slate-950">Logbook Siap Divalidasi</h2><p class="mt-1 text-sm text-slate-500">Hanya logbook yang telah disetujui Preseptor tampil di antrean ini.</p></div>
             <a href="{{ route('internal-supervisor.pkpa-operations.index') }}" class="inline-flex min-h-10 items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-800">Buka Pemantauan PKPA</a>
         </div>
-        <div class="divide-y divide-slate-100">
-            @forelse($readyLogbooks as $entry)
-                @php($run = $entry->rotationRun)
+        <div class="space-y-6 bg-slate-50/70 p-4 sm:p-5">
+            @forelse($logbookGroups as $domainId => $domainEntries)
+            @php
+                $domain = $domainEntries->first()?->rotationRun?->practiceDomain;
+            @endphp
+            <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainEntries->count()" :anchor="'wahana-'.$domainId">
+            <div class="divide-y divide-slate-100 overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
+            @foreach($domainEntries as $entry)
+                @php
+                    $run = $entry->rotationRun;
+                @endphp
                 <article class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between">
                     <div>
                         <div class="flex flex-wrap items-center gap-2"><p class="text-lg font-black text-slate-950">{{ $entry->title }}</p><span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Siap validasi akhir</span></div>
@@ -29,6 +38,9 @@
                     </div>
                     <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'logbook' => $entry->id]) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-cyan-700 px-5 py-2 text-sm font-bold text-white">Lihat & Validasi</a>
                 </article>
+            @endforeach
+            </div>
+            </x-pkpa.domain-group>
             @empty
                 <div class="px-5 py-12 text-center"><p class="text-base font-bold text-slate-700">Belum ada logbook siap validasi akhir.</p><p class="mt-1 text-sm text-slate-500">Kiriman yang masih menunggu Preseptor tetap dapat Anda baca dari Pemantauan PKPA.</p><a href="{{ route('internal-supervisor.pkpa-operations.index') }}" class="mt-4 inline-flex min-h-10 items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-800">Buka Pemantauan PKPA</a></div>
             @endforelse

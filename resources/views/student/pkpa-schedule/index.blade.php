@@ -3,6 +3,11 @@
 @section('page_title', 'PKPA Saya')
 
 @section('content')
+@php
+    $assignmentGroups = $assignments->groupBy(
+        fn ($assignment) => $assignment->practice_domain_id ?: $assignment->practice_domain_name_snapshot ?: 'lainnya'
+    );
+@endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
 
@@ -33,9 +38,16 @@
         </article>
     </section>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        @forelse($assignments as $assignment)
-            @php($acknowledged = $assignment->acknowledged_count > 0)
+    @forelse($assignmentGroups as $domainId => $domainAssignments)
+    @php
+        $firstAssignment = $domainAssignments->first();
+    @endphp
+    <x-pkpa.domain-group :name="$firstAssignment?->practice_domain_name_snapshot ?: 'Wahana lainnya'" :count="$domainAssignments->count()" :anchor="'wahana-'.str($domainId)->slug()">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        @foreach($domainAssignments as $assignment)
+            @php
+                $acknowledged = $assignment->acknowledged_count > 0;
+            @endphp
             <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
                 <div class="flex items-start justify-between gap-3">
                     <div>
@@ -58,10 +70,12 @@
                 @endif
                 <a href="{{ route('student.pkpa-schedule.show', $assignment) }}" class="mt-4 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Lihat Detail</a>
             </article>
+        @endforeach
+    </div>
+    </x-pkpa.domain-group>
         @empty
             <div class="rounded-2xl bg-white p-8 text-center text-sm font-semibold text-slate-500 shadow-sm ring-1 ring-slate-200 md:col-span-2 xl:col-span-3">Jadwal PKPA resmi Anda belum dipublikasikan.</div>
         @endforelse
-    </section>
 
     @if($history->count() > 1)
         <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">

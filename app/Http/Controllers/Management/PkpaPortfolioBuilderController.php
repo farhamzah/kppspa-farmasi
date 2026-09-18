@@ -21,7 +21,7 @@ class PkpaPortfolioBuilderController extends Controller
     {
         return view('management.pkpa-portfolios.index', [
             'templates' => PkpaPortfolioTemplate::with(['practiceDomain', 'sections'])->orderBy('code')->get(),
-            'portfolios' => PkpaRotationPortfolio::with(['program', 'practiceDomain', 'rotationRun.practiceSite'])->latest()->paginate(20),
+            'portfolios' => PkpaRotationPortfolio::with(['program', 'practiceDomain', 'rotationRun.practiceSite'])->orderBy('practice_domain_id')->latest()->paginate(20),
         ]);
     }
 

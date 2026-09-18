@@ -28,6 +28,7 @@ class PkpaRotationOperationController extends Controller
     {
         $runQuery = PkpaRotationRun::query()
             ->with(['program', 'enrollment', 'practiceDomain', 'practiceSite', 'requirement.programDomain.activeOperationRule', 'progressSnapshots' => fn ($query) => $query->latest('snapshot_date')->limit(1)])
+            ->orderBy('practice_domain_id')
             ->latest();
 
         return view('management.pkpa-operations.index', [

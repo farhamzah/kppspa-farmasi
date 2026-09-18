@@ -6,6 +6,7 @@
     $totalRuns = $runs->count();
     $totalAttendance = $runs->sum('attendance_records_count');
     $totalLogbooks = $runs->sum('logbook_entries_count');
+    $runGroups = $runs->groupBy(fn ($run) => $run->practice_domain_id ?: 'lainnya');
 @endphp
 <div class="space-y-5">
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -32,8 +33,13 @@
         </article>
     </section>
 
+    @forelse($runGroups as $domainId => $domainRuns)
+    @php
+        $domain = $domainRuns->first()?->practiceDomain;
+    @endphp
+    <x-pkpa.domain-group :name="$domain?->name ?? 'Wahana lainnya'" :code="$domain?->code" :count="$domainRuns->count()" :anchor="'wahana-'.$domainId">
     <div class="grid gap-4 lg:grid-cols-2">
-    @forelse($runs as $run)
+    @foreach($domainRuns as $run)
         <a href="{{ route('student.pkpa-operations.show', $run) }}" class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100 transition hover:ring-cyan-200">
             <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $run->practiceDomain?->name }}</p>
             <h2 class="mt-1 text-xl font-black text-slate-950">{{ $run->practiceSite?->name }}</h2>
@@ -52,9 +58,11 @@
             <p class="mt-2 text-xs font-bold text-slate-500">Kemajuan {{ optional($run->progressSnapshots->first())->progress_percentage ?? 0 }}%</p>
             <span class="mt-4 inline-flex rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Buka Presensi dan Logbook</span>
         </a>
+    @endforeach
+    </div>
+    </x-pkpa.domain-group>
     @empty
         <div class="rounded-2xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-sky-100">Belum ada rotasi operasional aktif dari publikasi resmi.</div>
     @endforelse
-</div>
 </div>
 @endsection

@@ -4,6 +4,11 @@
 @section('page_title', 'Portofolio PKPA')
 
 @section('content')
+@php
+    $portfolioGroups = $portfolios->groupBy(
+        fn ($portfolio) => $portfolio->practice_domain_id ?? data_get($portfolio->placement_snapshot, 'practice_domain', 'unknown')
+    );
+@endphp
 <div class="space-y-6">
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Portofolio PKPA</p>
@@ -22,12 +27,17 @@
             @endif
         </div>
     </section>
-    <div class="grid gap-4">
-        @forelse($portfolios as $portfolio)
+    <div class="space-y-8">
+        @forelse($portfolioGroups as $domainPortfolios)
+        @php
+            $firstPortfolio = $domainPortfolios->first();
+        @endphp
+        <x-pkpa.domain-group :name="$firstPortfolio?->practiceDomain?->name ?? data_get($firstPortfolio?->placement_snapshot, 'practice_domain', 'Wahana lainnya')" :code="$firstPortfolio?->practiceDomain?->code" :count="$domainPortfolios->count()">
+        <div class="grid gap-4">
+        @foreach($domainPortfolios as $portfolio)
             <article class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
                 <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">{{ data_get($portfolio->placement_snapshot, 'practice_domain') }}</p>
                         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ data_get($portfolio->placement_snapshot, 'practice_site') }}</h2>
                         <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
                             <span class="inline-flex rounded-full bg-slate-50 px-3 py-1 font-bold text-slate-600 ring-1 ring-slate-200">{{ $portfolio->statusLabel() }}</span>
@@ -38,6 +48,9 @@
                     <a href="{{ route('student.pkpa-portfolios.show', $portfolio) }}" class="rounded-2xl bg-cyan-700 px-4 py-3 text-center text-sm font-bold text-white">Buka Portofolio</a>
                 </div>
             </article>
+        @endforeach
+        </div>
+        </x-pkpa.domain-group>
         @empty
             <div class="rounded-3xl border border-slate-100 bg-white p-6 text-sm text-slate-500">Belum ada rotasi PKPA yang dapat dibuatkan portofolio.</div>
         @endforelse
