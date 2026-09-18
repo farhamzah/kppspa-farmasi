@@ -160,10 +160,10 @@ class ImportPkpaPlacementCsvCommand extends Command
         $requirement = $enrollment?->requirements()->where('practice_domain_id', $domain?->id)->first();
         $programSites = PkpaProgramSite::with('practiceSite')->where('pkpa_program_id', $plan->pkpa_program_id)
             ->where('practice_domain_id', $domain?->id)->where('is_active', true)->whereIn('status', ['ready', 'active'])->get()
-            ->filter(fn (PkpaProgramSite $site) => $this->key($site->practiceSite?->name) === $this->key($row['nama_wahana']));
+            ->filter(fn (PkpaProgramSite $site) => $this->matches($this->key($site->practiceSite?->name), $this->key($row['nama_wahana'])));
         $internal = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $plan->pkpa_program_id)
             ->where('practice_domain_id', $domain?->id)->where('status', 'active')->get()
-            ->first(fn (PkpaInternalSupervisorEligibility $supervisor) => $this->key($supervisor->name_snapshot) === $this->key($row['pembimbing_dalam']));
+            ->first(fn (PkpaInternalSupervisorEligibility $supervisor) => $this->matches($this->personKey($supervisor->name_snapshot), $this->personKey($row['pembimbing_dalam'])));
 
         if (! $domain || ! $enrollment || ! $requirement || $programSites->count() !== 1 || ! $internal) {
             throw ValidationException::withMessages(['mapping' => 'NIM, wahana, atau Pembimbing Dalam tidak cocok dengan data master aktif.']);
@@ -178,7 +178,7 @@ class ImportPkpaPlacementCsvCommand extends Command
         $field = null;
         if (filled($row['preseptor'] ?? null)) {
             $field = PkpaSiteFieldSupervisor::where('practice_site_id', $site->practice_site_id)->where('status', 'active')->get()
-                ->first(fn (PkpaSiteFieldSupervisor $supervisor) => $this->key($supervisor->name_snapshot) === $this->key($row['preseptor']));
+                ->first(fn (PkpaSiteFieldSupervisor $supervisor) => $this->matches($this->personKey($supervisor->name_snapshot), $this->personKey($row['preseptor'])));
             if (! $field) {
                 throw ValidationException::withMessages(['preseptor' => 'Preseptor pada CSV tidak cocok dengan data master tempat.']);
             }
@@ -205,5 +205,23 @@ class ImportPkpaPlacementCsvCommand extends Command
     private function key(?string $value): string
     {
         return preg_replace('/[^a-z0-9]+/', '', strtolower((string) $value));
+    }
+
+    private function personKey(?string $value): string
+    {
+        $ignored = ['apt', 'dr', 's', 'm', 'farm', 'far', 'si', 'kes', 'hum', 'mm', 'ti', 'msc', 'mmrs'];
+        $tokens = preg_split('/[^a-z0-9]+/', strtolower((string) $value), -1, PREG_SPLIT_NO_EMPTY);
+
+        return implode('', array_values(array_filter($tokens, fn (string $token) => ! in_array($token, $ignored, true))));
+    }
+
+    private function matches(string $left, string $right): bool
+    {
+        if ($left === '' || $right === '') {
+            return false;
+        }
+
+        return $left === $right
+            || (min(strlen($left), strlen($right)) >= 8 && (str_starts_with($left, $right) || str_starts_with($right, $left)));
     }
 }
