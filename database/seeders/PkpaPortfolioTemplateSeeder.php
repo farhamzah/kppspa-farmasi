@@ -40,6 +40,35 @@ class PkpaPortfolioTemplateSeeder extends Seeder
             ['documentation', 'Bukti Kegiatan', 'evidence_gallery', 'field'],
             ['attachments', 'Lampiran', 'attachment_list', 'all'],
         ]);
+
+        $this->seedTemplate('PBF', 'PORT-PBF-v1', 'Template Portofolio PKPA Pedagang Besar Farmasi', [
+            ['cover', 'Sampul', 'static_content', 'all'],
+            ['approval', 'Lembar Pengesahan', 'approval', 'field_internal'],
+            ['common_sections', 'Bagian Umum', 'static_content', 'all'],
+            ['identity', 'Identitas Mahasiswa', 'auto_identity', 'all'],
+            ['integrity_pact', 'Pakta Integritas', 'approval', 'student'],
+            ['site_profile', 'Profil Tempat PKPA PBF', 'structured_form', 'field_internal'],
+            ['daily_logbook', 'Logbook Harian', 'auto_logbook', 'field'],
+            ['pbf_orientation', 'Laporan Kegiatan: Orientasi dan Pengenalan PBF', 'structured_form', 'field'],
+            ['procurement', 'Laporan Kegiatan: Pengadaan', 'structured_form', 'field'],
+            ['goods_receipt', 'Laporan Kegiatan: Penerimaan Barang', 'structured_form', 'field'],
+            ['warehouse_storage', 'Laporan Kegiatan: Gudang dan Penyimpanan', 'structured_form', 'field'],
+            ['cold_chain_product', 'Laporan Kegiatan: Cold Chain Product', 'structured_form', 'field'],
+            ['inventory_control', 'Laporan Kegiatan: Inventory Control', 'structured_form', 'field'],
+            ['picking_packing', 'Laporan Kegiatan: Picking dan Packing', 'structured_form', 'field'],
+            ['distribution', 'Laporan Kegiatan: Distribusi', 'structured_form', 'field'],
+            ['quality_assurance', 'Laporan Kegiatan: Quality Assurance', 'structured_form', 'field'],
+            ['return_recall', 'Laporan Kegiatan: Penanganan Retur dan Recall', 'structured_form', 'field'],
+            ['damaged_expired_products', 'Laporan Kegiatan: Produk Rusak dan Kedaluwarsa', 'structured_form', 'field'],
+            ['weekly_reflection', 'Refleksi Mingguan', 'weekly_reflection', 'internal'],
+            ['case_report', 'Studi Kasus PBF', 'repeatable_case', 'field'],
+            ['self_assessment', 'Self Assessment PBF', 'self_assessment', 'internal'],
+            ['field_assessment', 'Penilaian Preseptor', 'auto_assessment', 'field'],
+            ['internal_assessment', 'Penilaian Pembimbing Dalam', 'auto_assessment', 'internal'],
+            ['documentation', 'Dokumentasi Kegiatan PBF', 'evidence_gallery', 'field'],
+            ['guidance', 'Formulir Bimbingan', 'structured_form', 'field_internal', false],
+            ['attachments', 'Lampiran', 'attachment_list', 'all', false],
+        ]);
     }
 
     private function seedTemplate(string $domainCode, string $code, string $name, array $sections): void
@@ -104,6 +133,51 @@ class PkpaPortfolioTemplateSeeder extends Seeder
                     'fields' => $apotekSection['fields'] ?? [],
                     'activity_hint' => $apotekSection['activity_hint'] ?? null,
                 ]);
+            }
+        }
+
+        if ($domainCode === 'PBF' && $sectionCode) {
+            $field = fn (string $name, string $label, int $rows = 4, bool $required = true): array => [
+                'name' => $name,
+                'label' => $label,
+                'type' => 'textarea',
+                'rows' => $rows,
+                'required' => $required,
+            ];
+
+            if ($sectionCode === 'site_profile') {
+                return ['fields' => [
+                    $field('overview', 'Gambaran Umum PBF', 4),
+                    $field('vision', 'Visi', 3),
+                    $field('mission', 'Misi', 3),
+                    $field('main_duties', 'Tugas dan Tanggung Jawab Utama', 4),
+                    $field('organization_structure', 'Struktur Organisasi', 4),
+                    $field('facilities', 'Sarana dan Prasarana', 4),
+                    $field('units_studied', 'Unit yang Dipelajari', 4),
+                    $field('site_analysis', 'Analisis Pembelajaran di Tempat PKPA', 5),
+                ]];
+            }
+
+            if ($sectionCode === 'guidance') {
+                return ['fields' => [
+                    $field('guidance_date', 'Tanggal Bimbingan', 1, false),
+                    $field('topic', 'Topik Bimbingan', 2, false),
+                    $field('notes', 'Catatan Bimbingan', 4, false),
+                    $field('follow_up', 'Rencana Tindak Lanjut', 3, false),
+                ]];
+            }
+
+            if (in_array($sectionCode, [
+                'pbf_orientation', 'procurement', 'goods_receipt', 'warehouse_storage',
+                'cold_chain_product', 'inventory_control', 'picking_packing', 'distribution',
+                'quality_assurance', 'return_recall', 'damaged_expired_products',
+            ], true)) {
+                return ['fields' => [
+                    $field('purpose', 'Tujuan', 3),
+                    $field('theory', 'Dasar Teori atau Acuan', 4, false),
+                    $field('activity', 'Kegiatan yang Dilaksanakan', 5),
+                    $field('result', 'Hasil dan Pembelajaran', 5),
+                ]];
             }
         }
 

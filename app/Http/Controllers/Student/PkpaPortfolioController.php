@@ -26,7 +26,7 @@ class PkpaPortfolioController extends Controller
             ->latest()
             ->get();
         $supportedRuns = $runs->filter(function (PkpaRotationRun $run) {
-            return PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code)
+            return (PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code) || $run->practiceDomain?->code === 'PBF')
                 && PkpaPortfolioTemplate::query()
                     ->where('practice_domain_id', $run->practice_domain_id)
                     ->where('is_current', true)
@@ -96,11 +96,13 @@ class PkpaPortfolioController extends Controller
 
     public function storeSection(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode)
     {
-        $definition = PkpaApotekPortfolio::sectionDefinition($sectionCode);
-        abort_unless($definition, 404);
+        abort_unless($this->portfolios->canAccess($portfolio, $request->user()), 403);
+        $portfolio->loadMissing('template.sections');
+        $section = $portfolio->template?->sections->firstWhere('code', $sectionCode);
+        abort_unless($section && in_array($section->source_type, ['structured_form', 'attachment_list'], true), 404);
 
         $rules = [];
-        foreach ($definition['fields'] ?? [] as $field) {
+        foreach (data_get($section->content_schema, 'fields', []) as $field) {
             if (($field['type'] ?? null) === 'multiselect') {
                 $rules[$field['name']] = ['nullable', 'array'];
                 $rules[$field['name'].'.*'] = ['string', Rule::in($field['options'] ?? [])];
@@ -113,7 +115,7 @@ class PkpaPortfolioController extends Controller
         $data = $request->validate($rules);
         $this->portfolios->saveSectionRecord($portfolio, $sectionCode, $data, $request->user());
 
-        return back()->with('status', ($definition['title'] ?? 'Bagian portofolio').' tersimpan.');
+        return back()->with('status', $section->title.' tersimpan.');
     }
 
     public function storeReportActivity(Request $request, PkpaRotationPortfolio $portfolio, string $sectionCode)

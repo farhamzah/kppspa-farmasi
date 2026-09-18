@@ -5,11 +5,14 @@
 
 @php
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
+    $isPbf = $portfolio->practiceDomain?->code === 'PBF';
     $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
     $reportCodes = \App\Support\PkpaApotekPortfolio::reportSectionCodes();
-    $completedSections = collect($editableSections)
-        ->keys()
+    $manualSections = $isApotek
+        ? collect($editableSections)->keys()
+        : $portfolio->template->sections->where('source_type', 'structured_form')->pluck('code');
+    $completedSections = $manualSections
         ->filter(fn ($code) => ($sectionRecords->get($code)?->status === 'completed'))
         ->count();
     $previewSections = collect(['site_profile', 'bibliography', 'attachments'])
@@ -38,7 +41,11 @@
     $latestReflection = $portfolio->weeklyReflections->sortByDesc('week_number')->first();
     $latestAssessment = $portfolio->selfAssessments->sortByDesc('id')->first();
     $latestDocumentation = $portfolio->documentationItems->sortByDesc('activity_date')->first();
-    $documentationCategories = [
+    $documentationCategories = $isPbf ? [
+        'Orientasi dan Pengenalan PBF', 'Pengadaan', 'Penerimaan Barang', 'Gudang dan Penyimpanan',
+        'Cold Chain Product', 'Inventory Control', 'Picking dan Packing', 'Distribusi',
+        'Quality Assurance', 'Retur dan Recall', 'Produk Rusak dan Kedaluwarsa',
+    ] : [
         'Orientasi PKPA',
         'Pelayanan Resep',
         'Konseling Pasien',
@@ -50,7 +57,13 @@
         'Administrasi Kefarmasian',
         'Penutupan PKPA',
     ];
-    $selfAssessmentAspects = [
+    $selfAssessmentAspects = $isPbf ? [
+        'Pemahaman CDOB', 'Etika dan Disiplin', 'Komunikasi Profesional', 'Pengadaan',
+        'Penerimaan Barang', 'Penyimpanan', 'Cold Chain Product', 'Pengendalian Persediaan',
+        'Picking dan Packing', 'Distribusi', 'Quality Assurance', 'Penanganan Retur',
+        'Recall Produk', 'Produk Rusak dan Kedaluwarsa', 'Dokumentasi', 'Manajemen Risiko',
+        'Audit dan CAPA', 'Kerja Sama Tim', 'Problem Solving', 'Manajemen Waktu',
+    ] : [
         'Disiplin',
         'Kehadiran',
         'Etika',
@@ -91,8 +104,8 @@
 
     <section class="grid gap-4 md:grid-cols-4">
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <p class="text-xs font-bold uppercase text-slate-500">Bagian Apotek</p>
-            <p class="mt-2 text-2xl font-black text-slate-950">{{ $completedSections }} / {{ count($editableSections) }}</p>
+            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isPbf ? 'PBF' : 'Apotek' }}</p>
+            <p class="mt-2 text-2xl font-black text-slate-950">{{ $completedSections }} / {{ $manualSections->count() }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
             <p class="text-xs font-bold uppercase text-slate-500">Studi Kasus</p>
@@ -220,7 +233,7 @@
         </section>
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-black text-slate-950">Unduhan</h2>
-            <p class="mt-2 text-sm text-slate-600">Unduhan sementara tetap berbentuk draf internal, tetapi isinya mulai mengikuti struktur portofolio PKPA Apotek.</p>
+            <p class="mt-2 text-sm text-slate-600">Unduhan sementara tetap berbentuk draf internal, tetapi isinya mengikuti struktur portofolio PKPA {{ data_get($portfolio->placement_snapshot, 'practice_domain') }}.</p>
             <div class="mt-4 flex flex-wrap gap-3">
                 <form method="POST" action="{{ route('student.pkpa-portfolios.exports.store', [$portfolio, 'docx']) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Unduh DOCX</button></form>
                 <form method="POST" action="{{ route('student.pkpa-portfolios.exports.store', [$portfolio, 'pdf']) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Unduh PDF</button></form>
@@ -441,9 +454,47 @@
         </section>
     @endif
 
+    @if($isPbf)
+        <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Portofolio PBF</p>
+                    <h2 class="mt-1 text-xl font-black text-slate-950">Laporan Kegiatan PKPA PBF</h2>
+                    <p class="mt-1 text-sm text-slate-600">Isi setiap unit yang benar-benar dipelajari. Laporan dapat disimpan sebagai draf dan diperbarui selama portofolio belum dikirim.</p>
+                </div>
+                <span class="w-fit rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">11 Unit Kegiatan</span>
+            </div>
+            <div class="mt-5 space-y-3">
+                @foreach($portfolio->template->sections->where('source_type', 'structured_form') as $section)
+                    @php
+                        $record = $sectionRecords->get($section->code);
+                        $payload = $record?->manual_payload ?? [];
+                        $fields = data_get($section->content_schema, 'fields', []);
+                    @endphp
+                    <details class="group rounded-2xl border border-slate-200 bg-slate-50" @if($section->code === 'site_profile') open @endif>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4">
+                            <span class="min-w-0"><span class="block text-base font-black text-slate-950">{{ $section->title }}</span><span class="mt-1 block text-sm text-slate-600">{{ $section->code === 'site_profile' ? 'Lengkapi gambaran tempat PKPA sebelum membuat laporan unit.' : 'Tujuan, kegiatan, dan hasil pembelajaran.' }}</span></span>
+                            <span class="shrink-0 rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $record?->status === 'completed' ? 'Tersimpan' : 'Belum diisi' }}</span>
+                        </summary>
+                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $section->code]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
+                            @csrf
+                            @foreach($fields as $field)
+                                <label class="grid gap-2">
+                                    <span class="text-sm font-bold text-slate-700">{{ $field['label'] }}</span>
+                                    <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 4 }}" class="min-h-28 resize-y rounded-xl border-slate-200 text-sm" @if($field['required'] ?? true) required @endif>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
+                                </label>
+                            @endforeach
+                            <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $section->title }}</button></div>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">Studi Kasus</h2>
-        <p class="mt-2 text-sm text-slate-600">Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.</p>
+        <h2 class="text-lg font-black text-slate-950">{{ $isPbf ? 'Studi Kasus PBF' : 'Studi Kasus' }}</h2>
+        <p class="mt-2 text-sm text-slate-600">{{ $isPbf ? 'Dokumentasikan satu kasus operasional PBF, misalnya suhu CCP, retur, recall, selisih stok, atau penyimpangan dokumen. Jangan menulis identitas personal yang tidak diperlukan.' : 'Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.' }}</p>
         @php
             $drugRows = range(0, 2);
             $drpTypes = [

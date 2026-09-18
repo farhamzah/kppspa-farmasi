@@ -178,6 +178,7 @@ class PkpaPortfolioBuilderService
         $this->ensureStudentOwns($portfolio, $actor);
 
         $record = $portfolio->sectionRecords()
+            ->with('templateSection')
             ->where('section_code', $sectionCode)
             ->firstOrFail();
 
@@ -196,7 +197,10 @@ class PkpaPortfolioBuilderService
             ->filter(fn ($value) => ! ($value === null || $value === ''))
             ->all();
 
-        $completed = PkpaApotekPortfolio::completed($cleanPayload, $sectionCode);
+        $fields = data_get($record->templateSection?->content_schema, 'fields', []);
+        $completed = PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)
+            ? PkpaApotekPortfolio::completed($cleanPayload, $sectionCode)
+            : $this->genericSectionCompleted($cleanPayload, $fields);
 
         $record->update([
             'manual_payload' => $cleanPayload,
@@ -1293,10 +1297,6 @@ class PkpaPortfolioBuilderService
 
     private function pendingManualSections(PkpaRotationPortfolio $portfolio): array
     {
-        if (! PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
-            return [];
-        }
-
         return $portfolio->sectionRecords
             ->filter(function ($record) {
                 return in_array($record->source_type, ['structured_form'], true)
@@ -1306,6 +1306,19 @@ class PkpaPortfolioBuilderService
             ->map(fn ($record) => $record->templateSection?->title ?? $record->section_code)
             ->values()
             ->all();
+    }
+
+    private function genericSectionCompleted(array $payload, array $fields): bool
+    {
+        $required = collect($fields)
+            ->filter(fn ($field) => ($field['required'] ?? true) && filled($field['name'] ?? null))
+            ->pluck('name');
+
+        if ($required->isEmpty()) {
+            return $payload !== [];
+        }
+
+        return $required->every(fn ($name) => filled($payload[$name] ?? null));
     }
 
     private function ensureStudentOwns(PkpaRotationPortfolio $portfolio, User $actor): void

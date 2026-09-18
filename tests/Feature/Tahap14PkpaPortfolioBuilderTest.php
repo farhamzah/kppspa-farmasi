@@ -62,17 +62,21 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->run = $this->fixtureRun();
     }
 
-    public function test_templates_apotek_and_hospital_are_seeded_and_hospital_label_is_clean(): void
+    public function test_templates_apotek_hospital_and_pbf_are_seeded_with_domain_specific_sections(): void
     {
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-APT-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-RS-v1', 'status' => 'active']);
+        $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PBF-v1', 'status' => 'active']);
         $apotek = PkpaPortfolioTemplate::where('code', 'PORT-APT-v1')->with('sections')->firstOrFail();
         $hospital = PkpaPortfolioTemplate::where('code', 'PORT-RS-v1')->with('sections')->firstOrFail();
+        $pbf = PkpaPortfolioTemplate::where('code', 'PORT-PBF-v1')->with('sections')->firstOrFail();
         $this->assertStringContainsString('Profil Tempat PKPA', $apotek->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Daftar Pustaka', $apotek->sections->pluck('title')->implode(' '));
         $this->assertStringNotContainsString('Apotek', $hospital->name.' '.$hospital->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Logbook', $hospital->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Penilaian Diri', $hospital->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Cold Chain Product', $pbf->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Produk Rusak dan Kedaluwarsa', $pbf->sections->pluck('title')->implode(' '));
     }
 
     public function test_portfolio_auto_create_idempotent_links_existing_data_and_blocks_incomplete_submit(): void
@@ -230,6 +234,39 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         ]);
     }
 
+    public function test_student_can_open_and_save_pbf_portfolio_sections_from_portal(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('PBF', '14PBF');
+        $portfolio = $service->ensureForRun($run, $this->admin);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa')
+            ->assertOk()
+            ->assertSee('Pedagang Besar Farmasi');
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/procurement', [
+                'purpose' => 'Memahami proses pengadaan sesuai CDOB.',
+                'theory' => 'Pedoman CDOB dan SOP pengadaan.',
+                'activity' => 'Mengamati perencanaan kebutuhan dan pemesanan.',
+                'result' => 'Memahami alur pengadaan dan dokumentasinya.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('pkpa_portfolio_section_records', [
+            'pkpa_rotation_portfolio_id' => $portfolio->id,
+            'section_code' => 'procurement',
+            'status' => 'completed',
+        ]);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Laporan Kegiatan PKPA PBF')
+            ->assertSee('Laporan Kegiatan: Pengadaan');
+    }
+
     public function test_student_can_save_repeated_manual_apotek_report_activities_in_creation_order(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
@@ -362,7 +399,11 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $program = app(PkpaProgramService::class)->create(['code' => 'PKPA-'.$suffix, 'name' => 'Program Tahap '.$suffix, 'academic_year' => '2026/2027', 'cohort_name' => 'Demo', 'start_date' => '2026-07-01', 'end_date' => '2026-07-31'], $this->admin);
         $domain = PkpaPracticeDomain::where('code', $domainCode)->firstOrFail();
         $programDomain = $program->domains()->where('practice_domain_id', $domain->id)->firstOrFail();
-        $siteName = $domainCode === 'RS' ? 'Rumah Sakit Tahap 14' : 'Apotek Tahap 14';
+        $siteName = match ($domainCode) {
+            'RS' => 'Rumah Sakit Tahap 14',
+            'PBF' => 'PBF Tahap 14',
+            default => 'Apotek Tahap 14',
+        };
         $site = PkpaPracticeSite::create(['practice_domain_id' => $domain->id, 'code' => $domainCode.'-'.$suffix, 'name' => $siteName, 'address' => 'Karawang', 'city' => 'Karawang', 'province' => 'Jawa Barat', 'cooperation_start_date' => '2026-01-01', 'cooperation_end_date' => '2026-12-31', 'status' => 'active', 'is_active' => true]);
         $programSite = PkpaProgramSite::create(['pkpa_program_id' => $program->id, 'practice_site_id' => $site->id, 'pkpa_program_domain_id' => $programDomain->id, 'practice_domain_id' => $domain->id, 'status' => 'active', 'is_active' => true]);
         $enrollment = PkpaEnrollment::create(['pkpa_program_id' => $program->id, 'core_user_id' => $this->student->core_user_id, 'student_number' => '2400'.$suffix, 'student_name_snapshot' => 'Mahasiswa Tahap 14', 'student_email_snapshot' => $this->student->email, 'status' => 'active', 'core_account_status_snapshot' => 'active']);
