@@ -78,6 +78,11 @@ class PkpaPublishedAssignment extends Model
         return $this->belongsTo(PkpaPracticeSite::class, 'practice_site_id');
     }
 
+    public function availabilityPeriod(): BelongsTo
+    {
+        return $this->belongsTo(PkpaSiteAvailabilityPeriod::class, 'availability_period_id');
+    }
+
     public function supervisors(): HasMany
     {
         return $this->hasMany(PkpaPublishedAssignmentSupervisor::class, 'pkpa_published_assignment_id');

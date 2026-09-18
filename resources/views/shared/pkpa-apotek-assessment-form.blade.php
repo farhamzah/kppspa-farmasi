@@ -46,11 +46,11 @@
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p class="text-sm font-black text-cyan-950">Kehadiran dari presensi mahasiswa</p>
-                    <p class="mt-1 text-sm text-cyan-800">{{ data_get($attendance, 'present_days', 0) }} dari {{ data_get($attendance, 'expected_days', 0) }} hari terpenuhi · {{ number_format((float) data_get($attendance, 'percentage', 0), 1) }}%</p>
+                    <p class="mt-1 text-sm text-cyan-800">{{ data_get($attendance, 'present_days', 0) }} dari {{ data_get($attendance, 'expected_days', 0) }} hari terpenuhi · {{ number_format((float) data_get($attendance, 'percentage', 0), 1) }}% · {{ data_get($attendance, 'late_days', 0) }} kali terlambat</p>
                 </div>
                 <span class="w-fit rounded-xl bg-white px-4 py-2 text-sm font-black text-cyan-800">Skor otomatis: {{ data_get($attendance, 'score', 1) }}/5</span>
             </div>
-            <p class="mt-2 text-xs text-cyan-700">Skor ini membaca presensi berstatus disetujui. Selesaikan validasi presensi sebelum mengirim dan mengunci penilaian.</p>
+            <p class="mt-2 text-xs text-cyan-700">Skor membaca presensi berstatus disetujui{{ data_get($attendance, 'schedule_start_time') ? ' dan membandingkan jam masuk dengan jadwal '.$attendance['schedule_start_time'] : '' }}. Selesaikan validasi presensi sebelum mengirim dan mengunci penilaian.</p>
         </div>
     @endif
 

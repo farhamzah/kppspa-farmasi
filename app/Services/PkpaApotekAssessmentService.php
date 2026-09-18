@@ -115,28 +115,35 @@ class PkpaApotekAssessmentService
 
     public function attendanceSummary(PkpaRotationComponentScore $score): array
     {
-        $score->loadMissing('assessment.rotationRun.requirement');
+        $score->loadMissing('assessment.rotationRun.requirement', 'assessment.rotationRun.currentAssignment.availabilityPeriod');
         $run = $score->assessment->rotationRun;
         $rule = $this->progress->ruleFor($run);
-        $approved = $run->attendanceRecords()->where('submission_status', 'approved')->count();
-        $present = $run->attendanceRecords()
+        $availability = $run->currentAssignment?->availabilityPeriod;
+        $approvedRecords = $run->attendanceRecords()
             ->where('submission_status', 'approved')
-            ->where('attendance_type', 'present')
-            ->count();
+            ->get(['attendance_type', 'check_in_time']);
+        $approved = $approvedRecords->count();
+        $presentRecords = $approvedRecords->where('attendance_type', 'present');
+        $present = $presentRecords->count();
         $expected = $rule?->attendance_required
-            ? $this->businessDays($run->scheduled_start_date, $run->scheduled_end_date)
+            ? $this->operationalDays($run->scheduled_start_date, $run->scheduled_end_date, $availability?->operational_days)
             : 0;
         if ($expected === 0 && $approved > 0) {
             $expected = $approved;
         }
         $missing = max(0, $expected - $present);
+        $startTime = $availability?->daily_start_time;
+        $late = filled($startTime)
+            ? $presentRecords->filter(fn ($record) => filled($record->check_in_time) && $record->check_in_time > $startTime)->count()
+            : 0;
         $scoreValue = match (true) {
             $expected === 0 => 1,
-            $missing === 0 => 5,
-            $missing === 1 => 4,
-            $missing <= 3 => 3,
-            $present > 0 => 2,
-            default => 1,
+            $missing > 0 => 1,
+            blank($startTime) => 5,
+            $late === 0 => 5,
+            $late === 1 => 4,
+            $late <= 3 => 3,
+            default => 2,
         };
 
         return [
@@ -144,6 +151,9 @@ class PkpaApotekAssessmentService
             'approved_records' => $approved,
             'present_days' => $present,
             'missing_days' => $missing,
+            'late_days' => $late,
+            'schedule_start_time' => $startTime,
+            'scoring_basis' => filled($startTime) ? 'attendance_and_punctuality' : 'attendance_completeness',
             'percentage' => $expected > 0 ? round(min(100, ($present / $expected) * 100), 2) : 0,
             'score' => $scoreValue,
             'generated_at' => now()->toIso8601String(),
@@ -161,14 +171,16 @@ class PkpaApotekAssessmentService
         }
     }
 
-    private function businessDays($start, $end): int
+    private function operationalDays($start, $end, ?array $operationalDays): int
     {
         if (! $start || ! $end || $end < $start) {
             return 0;
         }
 
+        $days = collect($operationalDays ?: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']);
+
         return collect(CarbonPeriod::create($start, $end))
-            ->reject(fn ($date) => $date->isWeekend())
+            ->filter(fn ($date) => $days->contains(strtolower($date->englishDayOfWeek)))
             ->count();
     }
 }

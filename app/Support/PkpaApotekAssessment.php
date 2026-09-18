@@ -52,7 +52,7 @@ class PkpaApotekAssessment
     {
         return [
             self::section('professional', 'A. Sikap Profesional', [
-                self::criterionDefinition('attendance', 'Kehadiran', 5, true, [5 => 'Seluruh hari presensi terpenuhi dan tervalidasi.', 4 => 'Terdapat 1 hari tidak terpenuhi.', 3 => 'Terdapat 2-3 hari tidak terpenuhi.', 2 => 'Lebih dari 3 hari tidak terpenuhi.', 1 => 'Kehadiran tidak memenuhi ketentuan.']),
+                self::criterionDefinition('attendance', 'Kehadiran', 5, true, [5 => 'Selalu hadir tepat waktu.', 4 => 'Terlambat 1 kali.', 3 => 'Terlambat 2-3 kali.', 2 => 'Sering terlambat.', 1 => 'Kehadiran tidak memenuhi ketentuan.']),
                 self::criterionDefinition('punctuality', 'Ketepatan waktu', 5),
                 self::criterionDefinition('sop_discipline', 'Disiplin terhadap SOP', 5, false, [5 => 'Selalu mematuhi SOP.', 4 => 'Hampir selalu mematuhi SOP.', 3 => 'Kadang memerlukan pengingat.', 2 => 'Sering melanggar SOP.', 1 => 'Tidak mematuhi SOP.']),
                 self::criterionDefinition('ethics', 'Etika dan sopan santun', 5, false, [5 => 'Sangat sopan, profesional, dan menjaga kerahasiaan pasien.', 4 => 'Sopan dan profesional.', 3 => 'Cukup sopan.', 2 => 'Kurang profesional.', 1 => 'Tidak menunjukkan etika profesi.']),

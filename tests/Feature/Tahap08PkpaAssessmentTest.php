@@ -15,6 +15,7 @@ use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
 use App\Models\PkpaRotationAcademicReadinessReview;
 use App\Models\PkpaRotationRun;
+use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\PkpaAssessmentSchemeService;
@@ -131,6 +132,31 @@ class Tahap08PkpaAssessmentTest extends TestCase
     {
         $fixture = $this->runtimeFixture();
         $this->activeScheme($fixture['programDomain']);
+        $availability = PkpaSiteAvailabilityPeriod::create([
+            'pkpa_program_site_id' => $fixture['assignment']->program_site_id,
+            'start_date' => '2026-07-13',
+            'end_date' => '2026-07-17',
+            'maximum_students' => 1,
+            'operational_days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+            'daily_start_time' => '08:00:00',
+            'daily_end_time' => '16:00:00',
+        ]);
+        $fixture['assignment']->update(['availability_period_id' => $availability->id]);
+        app(PkpaRotationOperationRuleService::class)->save($fixture['programDomain'], [
+            'attendance_required' => true,
+            'logbook_required' => false,
+        ], $this->admin);
+        $fixture['run']->attendanceRecords()->firstOrFail()->update(['check_in_time' => '08:00:00']);
+        foreach (['2026-07-13' => '08:00:00', '2026-07-14' => '08:07:00', '2026-07-15' => '07:55:00', '2026-07-16' => '08:00:00'] as $date => $checkIn) {
+            PkpaAttendanceRecord::create([
+                'pkpa_rotation_run_id' => $fixture['run']->id,
+                'attendance_date' => $date,
+                'attendance_type' => 'present',
+                'check_in_time' => $checkIn,
+                'submission_status' => 'approved',
+                'active_key' => 'RUN:'.$fixture['run']->id.':'.$date,
+            ]);
+        }
         $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
         $score = $assessment->componentScores()
             ->whereHas('assessor', fn ($query) => $query->where('core_user_id', $this->fieldSupervisor->core_user_id))
@@ -150,11 +176,12 @@ class Tahap08PkpaAssessmentTest extends TestCase
             ],
         ], $this->fieldSupervisor);
 
-        $this->assertSame('100.0000', $saved->raw_score);
+        $this->assertSame('99.0000', $saved->raw_score);
         $this->assertSame(PkpaApotekAssessment::VERSION, data_get($saved->source_summary, 'version'));
-        $this->assertSame(5, data_get($saved->source_summary, 'criteria.attendance'), 'Nilai kehadiran harus berasal dari presensi, bukan input form.');
-        $this->assertSame(1, data_get($saved->source_summary, 'attendance.present_days'));
-        $this->assertEquals(100.0, data_get($saved->source_summary, 'calculated_score'));
+        $this->assertSame(4, data_get($saved->source_summary, 'criteria.attendance'), 'Nilai kehadiran harus berasal dari presensi, bukan input form.');
+        $this->assertSame(5, data_get($saved->source_summary, 'attendance.present_days'));
+        $this->assertSame(1, data_get($saved->source_summary, 'attendance.late_days'));
+        $this->assertEquals(99.0, data_get($saved->source_summary, 'calculated_score'));
 
         app(PkpaApotekAssessmentService::class)->submit($saved, $this->fieldSupervisor);
         $this->assertSame('submitted', $saved->fresh()->status);

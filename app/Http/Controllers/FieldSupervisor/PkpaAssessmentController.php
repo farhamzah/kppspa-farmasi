@@ -22,7 +22,7 @@ class PkpaAssessmentController extends Controller
 
     public function index(Request $request): View
     {
-        $assignments = PkpaRotationAssessmentAssessor::with(['assessment.rotationRun.enrollment', 'assessment.rotationRun.requirement', 'assessment.rotationRun.practiceDomain', 'assessment.rotationRun.practiceSite', 'component', 'scores.component'])
+        $assignments = PkpaRotationAssessmentAssessor::with(['assessment.rotationRun.enrollment', 'assessment.rotationRun.requirement', 'assessment.rotationRun.currentAssignment.availabilityPeriod', 'assessment.rotationRun.practiceDomain', 'assessment.rotationRun.practiceSite', 'component', 'scores.component'])
             ->where('assessor_type', 'field_supervisor')
             ->where('core_user_id', $request->user()->core_user_id)
             ->latest()
