@@ -7,6 +7,7 @@ use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
 use App\Models\PkpaRotationAssignment;
+use App\Models\PkpaScheduleAcknowledgement;
 use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -46,10 +47,14 @@ class PkpaPlacementPublicationService
             }
 
             $number = ((int) PkpaPlacementPublication::where('pkpa_program_id', $plan->pkpa_program_id)->lockForUpdate()->max('publication_number')) + 1;
-            PkpaPlacementPublication::where('pkpa_program_id', $plan->pkpa_program_id)
+            $previousPublication = PkpaPlacementPublication::query()
+                ->with(['assignments.supervisors', 'acknowledgements'])
+                ->where('pkpa_program_id', $plan->pkpa_program_id)
                 ->where('is_current', true)
                 ->where('status', 'published')
-                ->update(['is_current' => false, 'current_key' => null, 'status' => 'superseded']);
+                ->lockForUpdate()
+                ->first();
+            $previousPublication?->update(['is_current' => false, 'current_key' => null, 'status' => 'superseded']);
 
             $publication = PkpaPlacementPublication::create([
                 'pkpa_program_id' => $plan->pkpa_program_id,
@@ -67,6 +72,9 @@ class PkpaPlacementPublicationService
             ]);
 
             $this->snapshotAssignments($publication, $plan);
+            if ($previousPublication) {
+                $this->carryForwardUnchangedAcknowledgements($previousPublication, $publication);
+            }
             $publication->update([
                 'status' => 'published',
                 'is_current' => true,
@@ -108,10 +116,14 @@ class PkpaPlacementPublicationService
             $review = $this->reviewService->review($plan, $actor, true);
             $number = ((int) PkpaPlacementPublication::where('pkpa_program_id', $plan->pkpa_program_id)->lockForUpdate()->max('publication_number')) + 1;
 
-            PkpaPlacementPublication::where('pkpa_program_id', $plan->pkpa_program_id)
+            $previousPublication = PkpaPlacementPublication::query()
+                ->with(['assignments.supervisors', 'acknowledgements'])
+                ->where('pkpa_program_id', $plan->pkpa_program_id)
                 ->where('is_current', true)
                 ->where('status', 'published')
-                ->update(['is_current' => false, 'current_key' => null, 'status' => 'superseded']);
+                ->lockForUpdate()
+                ->first();
+            $previousPublication?->update(['is_current' => false, 'current_key' => null, 'status' => 'superseded']);
 
             $publication = PkpaPlacementPublication::create([
                 'pkpa_program_id' => $plan->pkpa_program_id,
@@ -133,6 +145,9 @@ class PkpaPlacementPublicationService
             ]);
 
             $this->snapshotAssignments($publication, $plan, true);
+            if ($previousPublication) {
+                $this->carryForwardUnchangedAcknowledgements($previousPublication, $publication);
+            }
             $publication->update([
                 'summary' => array_merge($publication->summary ?? [], [
                     'assignments' => $publication->assignments()->count(),
@@ -175,7 +190,7 @@ class PkpaPlacementPublicationService
     public function createRevisionFromPublication(PkpaPlacementPublication $source, array $replacementSnapshots, ?User $actor, string $eventType = 'placement_revised'): PkpaPlacementPublication
     {
         $publication = DB::transaction(function () use ($source, $replacementSnapshots, $actor) {
-            $source = PkpaPlacementPublication::with('assignments.supervisors', 'program', 'plan')->whereKey($source->id)->lockForUpdate()->firstOrFail();
+            $source = PkpaPlacementPublication::with(['assignments.supervisors', 'acknowledgements', 'program', 'plan'])->whereKey($source->id)->lockForUpdate()->firstOrFail();
             if ($source->status !== 'published') {
                 throw ValidationException::withMessages(['publication' => 'Hanya publication published yang dapat direvisi.']);
             }
@@ -219,6 +234,7 @@ class PkpaPlacementPublicationService
                     $this->addFieldSupervisorToPublishedAssignment($copy, (int) $snapshot['site_field_supervisor_id']);
                 }
             }
+            $this->carryForwardUnchangedAcknowledgements($source, $new);
 
             $this->audit->record($actor, 'placement_revision_applied', $new, ['source_publication_id' => $source->id], ['code' => $new->code]);
 
@@ -318,6 +334,53 @@ class PkpaPlacementPublicationService
             'position_snapshot' => $fieldSupervisor->position_title,
             'is_primary' => true,
             'status' => 'assigned',
+        ]);
+    }
+
+    private function carryForwardUnchangedAcknowledgements(PkpaPlacementPublication $source, PkpaPlacementPublication $target): void
+    {
+        $source->loadMissing(['assignments.supervisors', 'acknowledgements']);
+        $target->loadMissing('assignments.supervisors');
+
+        $targetAssignments = $target->assignments->keyBy(fn (PkpaPublishedAssignment $assignment) => $this->acknowledgementFingerprint($assignment));
+        $sourceAssignments = $source->assignments->keyBy('id');
+
+        foreach ($source->acknowledgements->whereNotNull('pkpa_published_assignment_id') as $acknowledgement) {
+            $sourceAssignment = $sourceAssignments->get($acknowledgement->pkpa_published_assignment_id);
+            $targetAssignment = $sourceAssignment ? $targetAssignments->get($this->acknowledgementFingerprint($sourceAssignment)) : null;
+
+            if (! $targetAssignment) {
+                continue;
+            }
+
+            PkpaScheduleAcknowledgement::updateOrCreate([
+                'pkpa_placement_publication_id' => $target->id,
+                'pkpa_published_assignment_id' => $targetAssignment->id,
+                'core_user_id' => $acknowledgement->core_user_id,
+                'audience_type' => $acknowledgement->audience_type,
+                'acknowledgement_type' => $acknowledgement->acknowledgement_type,
+            ], [
+                'acknowledged_at' => $acknowledgement->acknowledged_at,
+                'ip_address_hash' => $acknowledgement->ip_address_hash,
+                'user_agent_summary' => $acknowledgement->user_agent_summary,
+            ]);
+        }
+    }
+
+    private function acknowledgementFingerprint(PkpaPublishedAssignment $assignment): string
+    {
+        $supervisors = $assignment->supervisors
+            ->sortBy(fn (PkpaPublishedAssignmentSupervisor $supervisor) => $supervisor->supervisor_type.':'.$supervisor->core_user_id)
+            ->map(fn (PkpaPublishedAssignmentSupervisor $supervisor) => $supervisor->supervisor_type.':'.$supervisor->core_user_id)
+            ->values()
+            ->implode(',');
+
+        return implode('|', [
+            $assignment->pkpa_enrollment_requirement_id,
+            $assignment->practice_site_id,
+            $assignment->start_date?->toDateString(),
+            $assignment->end_date?->toDateString(),
+            $supervisors,
         ]);
     }
 
