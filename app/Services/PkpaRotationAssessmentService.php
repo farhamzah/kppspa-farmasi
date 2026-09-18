@@ -37,11 +37,9 @@ class PkpaRotationAssessmentService
             throw ValidationException::withMessages(['scheme' => 'Skema penilaian aktif belum tersedia untuk wahana ini.']);
         }
         $latestReadiness = $run->academicReadinessReviews->sortByDesc('reviewed_at')->first();
-        if ($scheme->require_academic_readiness && $latestReadiness?->status !== 'ready_for_assessment') {
-            throw ValidationException::withMessages(['academic_readiness' => 'Academic readiness harus ready_for_assessment sebelum assessment dibuat.']);
-        }
+        $isReady = ! $scheme->require_academic_readiness || $latestReadiness?->status === 'ready_for_assessment';
 
-        return DB::transaction(function () use ($run, $scheme, $actor) {
+        return DB::transaction(function () use ($run, $scheme, $actor, $isReady) {
             $assessment = PkpaRotationAssessment::firstOrCreate(
                 ['pkpa_rotation_run_id' => $run->id],
                 [
@@ -54,7 +52,7 @@ class PkpaRotationAssessmentService
                     'rounding_precision_snapshot' => $scheme->rounding_precision,
                     'rounding_mode_snapshot' => $scheme->rounding_mode,
                     'status' => 'in_progress',
-                    'completion_status' => 'incomplete',
+                    'completion_status' => $isReady ? 'incomplete' : 'blocked',
                     'moderation_status' => config('my_pkpa.assessment_moderation_enabled') ? 'pending' : 'not_required',
                     'started_at' => now(),
                     'created_by_core_user_id' => $actor?->core_user_id,
@@ -106,8 +104,9 @@ class PkpaRotationAssessmentService
 
     public function saveDirectScore(PkpaRotationComponentScore $score, string $rawScore, ?string $comments, ?User $actor): PkpaRotationComponentScore
     {
-        $score->loadMissing(['assessment.rotationRun.supervisorHistories', 'component', 'assessor']);
+        $score->loadMissing(['assessment.scheme', 'assessment.rotationRun.supervisorHistories', 'assessment.rotationRun.academicReadinessReviews', 'component', 'assessor']);
         $this->ensureCanScore($score, $actor);
+        $this->ensureAssessmentReady($score);
         if (in_array($score->status, ['submitted', 'approved', 'locked'], true)) {
             throw ValidationException::withMessages(['score' => 'Nilai submitted atau locked tidak dapat diedit langsung.']);
         }
@@ -132,8 +131,9 @@ class PkpaRotationAssessmentService
 
     public function submitScore(PkpaRotationComponentScore $score, ?User $actor): PkpaRotationComponentScore
     {
-        $score->loadMissing(['assessment.rotationRun.supervisorHistories', 'component', 'assessor']);
+        $score->loadMissing(['assessment.scheme', 'assessment.rotationRun.supervisorHistories', 'assessment.rotationRun.academicReadinessReviews', 'component', 'assessor']);
         $this->ensureCanScore($score, $actor);
+        $this->ensureAssessmentReady($score);
         if (is_null($score->raw_score) || is_null($score->weighted_score)) {
             throw ValidationException::withMessages(['score' => 'Nilai belum lengkap.']);
         }
@@ -170,6 +170,20 @@ class PkpaRotationAssessmentService
         $assessment->update(['completion_status' => $status, 'updated_by_core_user_id' => $actor?->core_user_id]);
 
         return $assessment->refresh();
+    }
+
+    private function ensureAssessmentReady(PkpaRotationComponentScore $score): void
+    {
+        if (! $score->assessment?->scheme?->require_academic_readiness) {
+            return;
+        }
+
+        $latest = $score->assessment->rotationRun?->academicReadinessReviews?->sortByDesc('reviewed_at')->first();
+        if ($latest?->status !== 'ready_for_assessment') {
+            throw ValidationException::withMessages([
+                'academic_readiness' => 'Form sudah tersedia, tetapi penilaian baru dapat diisi setelah seluruh proses PKPA selesai dan statusnya siap dinilai.',
+            ]);
+        }
     }
 
     public function moderate(PkpaRotationAssessment $assessment, array $data, ?User $actor): PkpaAssessmentModeration

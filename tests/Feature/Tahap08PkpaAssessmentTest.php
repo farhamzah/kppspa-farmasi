@@ -239,6 +239,54 @@ class Tahap08PkpaAssessmentTest extends TestCase
         $this->assertDatabaseCount('pkpa_rotation_component_scores', 2);
     }
 
+    public function test_default_apotek_setup_is_idempotent_and_uses_guide_forms(): void
+    {
+        $fixture = $this->runtimeFixture();
+
+        $this->artisan('pkpa:setup-apotek-assessment')
+            ->expectsOutputToContain('Penilaian Apotek sudah ditampilkan')
+            ->assertSuccessful();
+
+        $this->assertDatabaseHas('pkpa_assessment_schemes', [
+            'pkpa_program_domain_id' => $fixture['programDomain']->id,
+            'code' => 'APT-PANDUAN-2026',
+            'status' => 'active',
+            'is_current' => true,
+        ]);
+        $this->assertDatabaseHas('pkpa_assessment_components', ['code' => 'PRESEPTOR-APT', 'weight_percentage' => 50]);
+        $this->assertDatabaseHas('pkpa_assessment_components', ['code' => 'PEMBIMBING-APT', 'weight_percentage' => 50]);
+        $this->assertDatabaseCount('pkpa_rotation_assessments', 1);
+
+        $this->artisan('pkpa:setup-apotek-assessment')->assertSuccessful();
+        $this->assertDatabaseCount('pkpa_assessment_schemes', 1);
+        $this->assertDatabaseCount('pkpa_rotation_assessments', 1);
+    }
+
+    public function test_apotek_assessment_is_visible_but_locked_until_process_is_ready(): void
+    {
+        $fixture = $this->runtimeFixture();
+        $fixture['run']->academicReadinessReviews()->delete();
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run']->fresh(), $this->admin);
+        $score = $assessment->componentScores()
+            ->whereHas('assessor', fn ($query) => $query->where('core_user_id', $this->fieldSupervisor->core_user_id))
+            ->firstOrFail();
+
+        $this->assertSame('blocked', $assessment->completion_status);
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/penilaian-pkpa')
+            ->assertOk()
+            ->assertSee('Menunggu Selesai')
+            ->assertSee('Penilaian belum dapat diisi');
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post(route('field-supervisor.pkpa-assessments.scores.save', $score), [
+                'criteria' => ['punctuality' => 5],
+            ])
+            ->assertSessionHasErrors('academic_readiness');
+        $this->assertNull($score->fresh()->raw_score);
+    }
+
     public function test_routes_are_protected_and_export_available(): void
     {
         $this->runtimeFixture();

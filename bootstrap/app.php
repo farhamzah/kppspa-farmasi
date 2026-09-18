@@ -26,6 +26,7 @@ use App\Console\Commands\PkpaE2ePrepareCommand;
 use App\Console\Commands\PkpaHypercareStatusCommand;
 use App\Console\Commands\PkpaIntegrityAuditCommand;
 use App\Console\Commands\PkpaQueueHealthCommand;
+use App\Console\Commands\SetupPkpaApotekAssessmentCommand;
 use App\Console\Commands\ProvisionCoreBridgeUserCommand;
 use App\Console\Commands\ProvisionCoreBridgeUsersCommand;
 use App\Console\Commands\ReleaseCandidateGateCommand;
@@ -68,6 +69,7 @@ return Application::configure(basePath: dirname(__DIR__))
         PkpaHypercareStatusCommand::class,
         PkpaIntegrityAuditCommand::class,
         PkpaQueueHealthCommand::class,
+        SetupPkpaApotekAssessmentCommand::class,
         ProvisionCoreBridgeUserCommand::class,
         ProvisionCoreBridgeUsersCommand::class,
         ReleaseCandidateGateCommand::class,

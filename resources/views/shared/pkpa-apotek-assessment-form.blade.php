@@ -7,7 +7,9 @@
     $feedback = data_get($summary, 'feedback', []);
     $recommendations = data_get($summary, 'recommendations', []);
     $attendance = $attendanceSummary ?? data_get($summary, 'attendance', []);
-    $locked = in_array($score->status, ['submitted', 'approved', 'locked'], true);
+    $latestReadiness = $assignment->assessment?->rotationRun?->academicReadinessReviews?->sortByDesc('reviewed_at')->first();
+    $waitingForCompletion = $assignment->assessment?->scheme?->require_academic_readiness && $latestReadiness?->status !== 'ready_for_assessment';
+    $locked = $waitingForCompletion || in_array($score->status, ['submitted', 'approved', 'locked'], true);
     $formId = 'assessment-form-'.$score->id;
     $isSubmittedForm = (string) old('assessment_score_id') === (string) $score->id;
 @endphp
@@ -15,14 +17,20 @@
 <details class="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white" @if($isSubmittedForm) open @endif>
     <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50 px-4 py-4 marker:hidden sm:px-5">
         <span>
-            <span class="block text-sm font-black text-slate-950">{{ $locked ? 'Lihat Penilaian Apotek' : 'Isi Penilaian Apotek' }}</span>
-            <span class="mt-1 block text-xs text-slate-500">{{ $locked ? 'Nilai sudah dikirim dan terkunci.' : 'Rubrik resmi, nilai otomatis, dan umpan balik.' }}</span>
+            <span class="block text-sm font-black text-slate-950">{{ $waitingForCompletion ? 'Penilaian Apotek' : ($locked ? 'Lihat Penilaian Apotek' : 'Isi Penilaian Apotek') }}</span>
+            <span class="mt-1 block text-xs text-slate-500">{{ $waitingForCompletion ? 'Form tersedia dan akan terbuka setelah seluruh proses PKPA selesai.' : ($locked ? 'Nilai sudah dikirim dan terkunci.' : 'Rubrik resmi, nilai otomatis, dan umpan balik.') }}</span>
         </span>
-        <span class="rounded-xl {{ $locked ? 'bg-emerald-50 text-emerald-700' : 'bg-cyan-700 text-white' }} px-4 py-2 text-xs font-black">{{ $locked ? 'Terkirim' : (($score->status === 'draft') ? 'Lanjutkan Draf' : 'Mulai') }}</span>
+        <span class="rounded-xl {{ $waitingForCompletion ? 'bg-amber-50 text-amber-700' : ($locked ? 'bg-emerald-50 text-emerald-700' : 'bg-cyan-700 text-white') }} px-4 py-2 text-xs font-black">{{ $waitingForCompletion ? 'Menunggu Selesai' : ($locked ? 'Terkirim' : (($score->status === 'draft') ? 'Lanjutkan Draf' : 'Mulai')) }}</span>
     </summary>
 <form id="{{ $formId }}" method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.save', $score) }}" class="border-t border-slate-200" data-assessment-form>
     @csrf
     <input type="hidden" name="assessment_score_id" value="{{ $score->id }}">
+    @if($waitingForCompletion)
+        <div class="border-b border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:px-5">
+            <p class="font-black">Penilaian belum dapat diisi.</p>
+            <p class="mt-1">Selesaikan validasi presensi, logbook, portofolio, dan pemeriksaan kesiapan akademik. Form akan terbuka otomatis setelah status menjadi siap dinilai.</p>
+        </div>
+    @endif
     <div class="border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
