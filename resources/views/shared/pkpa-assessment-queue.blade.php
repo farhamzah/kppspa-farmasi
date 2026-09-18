@@ -56,17 +56,26 @@
                     </div>
                 </div>
                 @foreach ($assignment->scores as $score)
-                    <form method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.save', $score) }}" class="mt-4 grid gap-3 md:grid-cols-[160px_1fr_auto_auto]">
-                        @csrf
-                        <input name="raw_score" type="number" step="0.0001" min="0" max="{{ $score->component?->maximum_raw_score }}" value="{{ $score->raw_score }}" class="rounded-2xl border-slate-200 text-sm" placeholder="Nilai">
-                        <input name="comments" value="{{ $score->comments }}" class="rounded-2xl border-slate-200 text-sm" placeholder="Komentar ringkas">
-                        <div class="flex items-center text-xs font-bold text-slate-500">{{ $statusLabels[$score->status] ?? str($score->status)->replace('_', ' ')->headline() }}</div>
-                        <button class="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" @disabled(in_array($score->status, ['submitted','approved','locked']))>Simpan</button>
-                    </form>
-                    <form method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.submit', $score) }}" class="mt-2">
-                        @csrf
-                        <button class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white" @disabled(in_array($score->status, ['submitted','approved','locked']))>Kirim & Kunci</button>
-                    </form>
+                    @if(\App\Support\PkpaApotekPortfolio::isApotekCode($assignment->assessment?->rotationRun?->practiceDomain?->code))
+                        @include('shared.pkpa-apotek-assessment-form', [
+                            'score' => $score,
+                            'assignment' => $assignment,
+                            'routePrefix' => $routePrefix,
+                            'attendanceSummary' => ($attendanceSummaries ?? [])[$score->id] ?? null,
+                        ])
+                    @else
+                        <form method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.save', $score) }}" class="mt-4 grid gap-3 md:grid-cols-[160px_1fr_auto_auto]">
+                            @csrf
+                            <input name="raw_score" type="number" step="0.0001" min="0" max="{{ $score->component?->maximum_raw_score }}" value="{{ $score->raw_score }}" class="rounded-2xl border-slate-200 text-sm" placeholder="Nilai">
+                            <input name="comments" value="{{ $score->comments }}" class="rounded-2xl border-slate-200 text-sm" placeholder="Komentar ringkas">
+                            <div class="flex items-center text-xs font-bold text-slate-500">{{ $statusLabels[$score->status] ?? str($score->status)->replace('_', ' ')->headline() }}</div>
+                            <button class="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-bold text-white" @disabled(in_array($score->status, ['submitted','approved','locked']))>Simpan</button>
+                        </form>
+                        <form method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.submit', $score) }}" class="mt-2">
+                            @csrf
+                            <button class="rounded-2xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white" @disabled(in_array($score->status, ['submitted','approved','locked']))>Kirim & Kunci</button>
+                        </form>
+                    @endif
                 @endforeach
             </article>
         @empty

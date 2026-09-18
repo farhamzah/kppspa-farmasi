@@ -18,11 +18,13 @@ use App\Models\PkpaRotationRun;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\PkpaAssessmentSchemeService;
+use App\Services\PkpaApotekAssessmentService;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaProgramService;
 use App\Services\PkpaRotationAssessmentService;
 use App\Services\PkpaRotationOperationRuleService;
 use App\Services\PkpaRotationRunService;
+use App\Support\PkpaApotekAssessment;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -125,6 +127,77 @@ class Tahap08PkpaAssessmentTest extends TestCase
         $assessmentService->saveDirectScore($plScore, '80', null, $this->otherSupervisor);
     }
 
+    public function test_apotek_rubric_uses_approved_attendance_and_stores_official_breakdown(): void
+    {
+        $fixture = $this->runtimeFixture();
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()
+            ->whereHas('assessor', fn ($query) => $query->where('core_user_id', $this->fieldSupervisor->core_user_id))
+            ->firstOrFail();
+        $criteria = collect(PkpaApotekAssessment::criteria('field_supervisor'))
+            ->mapWithKeys(fn (array $criterion) => [$criterion['code'] => 5])
+            ->put('attendance', 1)
+            ->all();
+
+        $saved = app(PkpaApotekAssessmentService::class)->save($score, [
+            'criteria' => $criteria,
+            'overall_comments' => 'Praktik sangat baik.',
+            'recommendations' => [
+                'competency_met' => 'yes',
+                'portfolio_accepted' => 'yes',
+                'final_exam_recommended' => 'yes',
+            ],
+        ], $this->fieldSupervisor);
+
+        $this->assertSame('100.0000', $saved->raw_score);
+        $this->assertSame(PkpaApotekAssessment::VERSION, data_get($saved->source_summary, 'version'));
+        $this->assertSame(5, data_get($saved->source_summary, 'criteria.attendance'), 'Nilai kehadiran harus berasal dari presensi, bukan input form.');
+        $this->assertSame(1, data_get($saved->source_summary, 'attendance.present_days'));
+        $this->assertEquals(100.0, data_get($saved->source_summary, 'calculated_score'));
+
+        app(PkpaApotekAssessmentService::class)->submit($saved, $this->fieldSupervisor);
+        $this->assertSame('submitted', $saved->fresh()->status);
+    }
+
+    public function test_apotek_rubric_cannot_be_submitted_until_every_criterion_is_scored(): void
+    {
+        $fixture = $this->runtimeFixture();
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()
+            ->whereHas('assessor', fn ($query) => $query->where('core_user_id', $this->internalSupervisor->core_user_id))
+            ->firstOrFail();
+        $saved = app(PkpaApotekAssessmentService::class)->save($score, [
+            'criteria' => ['portfolio_completeness' => 4],
+        ], $this->internalSupervisor);
+
+        $this->expectException(ValidationException::class);
+        app(PkpaApotekAssessmentService::class)->submit($saved, $this->internalSupervisor);
+    }
+
+    public function test_apotek_assessors_see_role_specific_easy_assessment_forms(): void
+    {
+        $fixture = $this->runtimeFixture();
+        $this->activeScheme($fixture['programDomain']);
+        app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/penilaian-pkpa')
+            ->assertOk()
+            ->assertSee('Rubrik Penilaian PKPA Apotek')
+            ->assertSee('Kehadiran dari presensi mahasiswa')
+            ->assertSee('Simpan Draf')
+            ->assertSee('Kirim & Kunci', false);
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/penilaian-pkpa')
+            ->assertOk()
+            ->assertSee('A. Penilaian Portofolio')
+            ->assertSee('B. Penilaian Studi Kasus')
+            ->assertDontSee('Kehadiran dari presensi mahasiswa');
+    }
+
     public function test_routes_are_protected_and_export_available(): void
     {
         $this->runtimeFixture();
@@ -138,11 +211,15 @@ class Tahap08PkpaAssessmentTest extends TestCase
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/penilaian-pkpa')
             ->assertOk()
-            ->assertSee('Penilaian Pembimbing Lapangan');
-        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->assertSee('Penilaian Preseptor');
+        $export = $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/management/pkpa-assessments/export')
             ->assertOk()
             ->assertHeader('content-disposition');
+        $this->assertStringContainsString('Nilai Preseptor', $export->streamedContent());
+        $this->assertStringContainsString('Nilai Pembimbing Dalam', $export->streamedContent());
+        $this->assertStringContainsString('Sikap Profesional', $export->streamedContent());
+        $this->assertStringContainsString('Portofolio', $export->streamedContent());
     }
 
     private function activeScheme($programDomain): PkpaAssessmentScheme

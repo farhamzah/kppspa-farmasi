@@ -31,7 +31,7 @@ class PkpaAssessmentController extends Controller
         return view('management.pkpa-assessments.index', [
             'programDomains' => PkpaProgramDomain::with(['program', 'practiceDomain', 'activeAssessmentScheme.components'])->get(),
             'schemes' => PkpaAssessmentScheme::with('programDomain.practiceDomain', 'components')->latest()->limit(20)->get(),
-            'assessments' => PkpaRotationAssessment::with(['rotationRun.enrollment', 'rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores', 'gradeResult'])->latest()->paginate(15),
+            'assessments' => PkpaRotationAssessment::with(['rotationRun.enrollment', 'rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores.assessor', 'gradeResult'])->latest()->paginate(15),
             'runs' => PkpaRotationRun::with(['enrollment', 'practiceDomain', 'practiceSite', 'rotationAssessment', 'academicReadinessReviews' => fn ($q) => $q->latest('reviewed_at')->limit(1)])->latest()->limit(30)->get(),
             'summary' => [
                 'schemes' => PkpaAssessmentScheme::count(),
@@ -172,19 +172,40 @@ class PkpaAssessmentController extends Controller
 
     public function export()
     {
-        $assessments = PkpaRotationAssessment::with(['rotationRun.enrollment', 'rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores', 'gradeResult'])->get();
+        $assessments = PkpaRotationAssessment::with(['rotationRun.enrollment', 'rotationRun.practiceDomain', 'rotationRun.practiceSite', 'componentScores.assessor', 'gradeResult'])->get();
 
         return response()->streamDownload(function () use ($assessments) {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, ['Rekap Penilaian Per Wahana PKPA - MY PKPA']);
-            fputcsv($handle, ['Mahasiswa', 'NPM', 'Core ID', 'Wahana', 'Tempat', 'Status Assessment', 'Completion', 'Final Score', 'Release']);
+            fputcsv($handle, [
+                'Mahasiswa', 'NPM', 'Core ID', 'Wahana', 'Tempat',
+                'Nilai Preseptor', 'Status Preseptor', 'Sikap Profesional', 'Kompetensi Teknis', 'Kemampuan Klinis', 'Komunikasi & Administrasi',
+                'Nilai Pembimbing Dalam', 'Status Pembimbing Dalam', 'Portofolio', 'Studi Kasus', 'Presentasi/Seminar', 'Sikap Akademik',
+                'Rekomendasi Preseptor', 'Rekomendasi Pembimbing Dalam', 'Status Assessment', 'Completion', 'Nilai Akhir', 'Release',
+            ]);
             foreach ($assessments as $assessment) {
+                $field = $assessment->componentScores->first(fn ($score) => $score->assessor?->assessor_type === 'field_supervisor');
+                $internal = $assessment->componentScores->first(fn ($score) => $score->assessor?->assessor_type === 'internal_supervisor');
                 fputcsv($handle, [
                     $assessment->rotationRun?->studentDisplayName(),
                     $assessment->rotationRun?->enrollment?->student_number,
                     $assessment->rotationRun?->student_core_user_id,
                     $assessment->rotationRun?->practiceDomain?->name,
                     $assessment->rotationRun?->practiceSite?->name,
+                    $field?->raw_score ?? '-',
+                    $field?->status ?? '-',
+                    $this->sectionScore($field, 'professional'),
+                    $this->sectionScore($field, 'technical'),
+                    $this->sectionScore($field, 'clinical'),
+                    $this->sectionScore($field, 'communication'),
+                    $internal?->raw_score ?? '-',
+                    $internal?->status ?? '-',
+                    $this->sectionScore($internal, 'portfolio'),
+                    $this->sectionScore($internal, 'case_report'),
+                    $this->sectionScore($internal, 'presentation'),
+                    $this->sectionScore($internal, 'academic_attitude'),
+                    $this->recommendationSummary($field),
+                    $this->recommendationSummary($internal),
                     $assessment->status,
                     $assessment->completion_status,
                     $assessment->gradeResult?->final_score ?? '-',
@@ -193,5 +214,31 @@ class PkpaAssessmentController extends Controller
             }
             fclose($handle);
         }, 'rekap_penilaian_wahana_pkpa_'.now()->format('Ymd_His').'.csv', ['Content-Type' => 'text/csv']);
+    }
+
+    private function sectionScore($score, string $sectionCode): string|float
+    {
+        $section = collect(data_get($score?->source_summary, 'sections', []))->firstWhere('code', $sectionCode);
+
+        return $section['score'] ?? '-';
+    }
+
+    private function recommendationSummary($score): string
+    {
+        $labels = [
+            'competency_met' => 'Kompetensi',
+            'portfolio_accepted' => 'Portofolio',
+            'final_exam_recommended' => 'Ujian/Seminar',
+        ];
+
+        return collect($labels)->map(function (string $label, string $key) use ($score) {
+            $value = data_get($score?->source_summary, 'recommendations.'.$key);
+
+            return $label.': '.match ($value) {
+                'yes' => 'Ya',
+                'no' => 'Tidak',
+                default => '-',
+            };
+        })->implode('; ');
     }
 }

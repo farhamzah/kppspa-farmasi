@@ -113,16 +113,22 @@
         <div class="mt-4 overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100 text-sm">
                 <thead class="text-left text-xs uppercase text-slate-500">
-                    <tr><th class="px-3 py-2">Mahasiswa</th><th class="px-3 py-2">Wahana</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Nilai</th><th class="px-3 py-2">Aksi</th></tr>
+                    <tr><th class="px-3 py-2">Mahasiswa</th><th class="px-3 py-2">Wahana</th><th class="px-3 py-2">Preseptor</th><th class="px-3 py-2">Pembimbing Dalam</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Nilai Akhir</th><th class="px-3 py-2">Aksi</th></tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @foreach ($assessments as $assessment)
+                        @php
+                            $fieldScore = $assessment->componentScores->first(fn ($score) => $score->assessor?->assessor_type === 'field_supervisor');
+                            $internalScore = $assessment->componentScores->first(fn ($score) => $score->assessor?->assessor_type === 'internal_supervisor');
+                        @endphp
                         <tr>
                             <td class="px-3 py-3">
                                 <div class="font-bold text-slate-900">{{ $assessment->rotationRun?->studentDisplayName() ?? '-' }}</div>
                                 <div class="text-xs text-slate-500">{{ $assessment->rotationRun?->studentDisplaySecondary() ?? '-' }}</div>
                             </td>
                             <td class="px-3 py-3">{{ $assessment->rotationRun?->practiceDomain?->name }}</td>
+                            <td class="px-3 py-3"><span class="font-bold text-slate-900">{{ $fieldScore?->raw_score ?? '-' }}</span><div class="text-xs text-slate-500">{{ str($fieldScore?->status ?? 'belum diisi')->replace('_', ' ')->headline() }}</div></td>
+                            <td class="px-3 py-3"><span class="font-bold text-slate-900">{{ $internalScore?->raw_score ?? '-' }}</span><div class="text-xs text-slate-500">{{ str($internalScore?->status ?? 'belum diisi')->replace('_', ' ')->headline() }}</div></td>
                             <td class="px-3 py-3">{{ $assessment->status }} · {{ $assessment->completion_status }}</td>
                             <td class="px-3 py-3">{{ $assessment->gradeResult?->final_score ?? '-' }}</td>
                             <td class="px-3 py-3">
