@@ -117,6 +117,28 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
         $this->assertSame('pending', $requirement->fresh()->status);
     }
 
+    public function test_draft_assignment_can_wait_for_preceptor_but_final_validation_blocks_it(): void
+    {
+        [$program, $plan, $programSite, $availability, $internal] = $this->placementFixture('PKPA-04-PRESEPTOR', capacity: 2);
+        $enrollment = $this->enroll($program, 'CORE-STUDENT-04-PRESEPTOR', '240099');
+        $requirement = $enrollment->requirements()->where('practice_domain_id', $programSite->practice_domain_id)->firstOrFail();
+        $payload = $this->assignmentPayload($requirement, $programSite, $availability, $internal, $this->field($programSite->practice_site_id, 'CORE-FIELD-UNUSED'));
+        unset($payload['site_field_supervisor_id']);
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/assignments", $payload)
+            ->assertRedirect();
+
+        $assignment = PkpaRotationAssignment::firstOrFail();
+        $this->assertSame('needs_attention', $assignment->status);
+        $this->assertCount(1, $assignment->supervisors);
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/validate")
+            ->assertRedirect();
+        $this->assertDatabaseHas('pkpa_placement_validation_issues', ['issue_code' => 'FIELD_SUPERVISOR_MISSING']);
+    }
+
     public function test_government_assignment_uses_single_choose_one_requirement_option(): void
     {
         [$program, $plan] = $this->basicPlan('PKPA-04-C');

@@ -128,7 +128,7 @@ class PkpaPlacementPlannerController extends Controller
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],
             'internal_supervisor_eligibility_id' => ['required', 'exists:pkpa_internal_supervisor_eligibilities,id'],
-            'site_field_supervisor_id' => ['required', 'exists:pkpa_site_field_supervisors,id'],
+            'site_field_supervisor_id' => ['nullable', 'exists:pkpa_site_field_supervisors,id'],
             'row_version' => ['nullable', 'integer'],
             'notes' => ['nullable', 'string'],
         ]);
@@ -154,7 +154,7 @@ class PkpaPlacementPlannerController extends Controller
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date'],
             'internal_supervisor_eligibility_id' => ['required', 'exists:pkpa_internal_supervisor_eligibilities,id'],
-            'site_field_supervisor_id' => ['required', 'exists:pkpa_site_field_supervisors,id'],
+            'site_field_supervisor_id' => ['nullable', 'exists:pkpa_site_field_supervisors,id'],
             'enrollment_ids' => ['nullable', 'array'],
             'enrollment_ids.*' => ['integer', 'exists:pkpa_enrollments,id'],
             'student_group_id' => ['nullable', 'exists:pkpa_student_groups,id'],
