@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Management\ReviewKpLogbookRequest;
 use App\Models\KpAssignment;
 use App\Models\KpLogbook;
-use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPublishedAssignment;
-use App\Models\PkpaRotationRun;
 use App\Services\KpLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +17,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class LogbookValidationController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $coreUserId = $request->user()->core_user_id;
         $pkpaAssignments = PkpaPublishedAssignment::query()
@@ -38,38 +36,7 @@ class LogbookValidationController extends Controller
             ->get();
 
         if ($pkpaAssignments->isNotEmpty()) {
-            $readyRuns = PkpaRotationRun::query()
-                ->forSupervisor('field', $coreUserId)
-                ->whereNull('cancelled_at')
-                ->whereHas('logbookEntries', fn ($query) => $query->where('status', 'submitted'))
-                ->with([
-                    'practiceDomain',
-                    'practiceSite',
-                    'enrollment',
-                    'logbookEntries' => fn ($query) => $query
-                        ->where('status', 'submitted')
-                        ->latest('entry_date'),
-                ])
-                ->withCount([
-                    'logbookEntries as pending_logbooks_count' => fn ($query) => $query->where('status', 'submitted'),
-                ])
-                ->orderByDesc('pending_logbooks_count')
-                ->orderByDesc('scheduled_start_date')
-                ->paginate(10)
-                ->withQueryString();
-
-            $pendingLogbookCount = PkpaLogbookEntry::query()
-                ->where('status', 'submitted')
-                ->whereHas('rotationRun', fn ($query) => $query
-                    ->forSupervisor('field', $coreUserId)
-                    ->whereNull('cancelled_at'))
-                ->count();
-
-            return view('field-supervisor.pkpa-logbook-validation.index', [
-                'assignments' => $pkpaAssignments,
-                'readyRuns' => $readyRuns,
-                'pendingLogbookCount' => $pendingLogbookCount,
-            ]);
+            return redirect()->route('field-supervisor.pkpa-operations.index', ['tab' => 'validation']);
         }
 
         /* Legacy KP logbook queue retained below for legacy route actions. */

@@ -48,6 +48,7 @@
         'Mahasiswa PKPA' => 'Daftar mahasiswa yang terhubung ke preseptor.',
         'Pemantauan PKPA' => 'Pantau jadwal, progres, dan aktivitas mahasiswa bimbingan.',
         'Monitoring PKPA' => 'Pantau presensi, logbook, dan kemajuan mahasiswa bimbingan.',
+        'Pemantauan Mahasiswa' => 'Pantau mahasiswa, validasi kiriman, dan lihat riwayat logbook dalam satu tempat.',
         'Validasi Presensi' => 'Periksa dan validasi kehadiran mahasiswa di tempat praktik.',
         'Review Logbook' => 'Periksa aktivitas harian yang dikirim mahasiswa.',
         'Operasional PKPA' => 'Jadwal operasional rotasi yang berjalan di tempat praktik.',
@@ -180,6 +181,9 @@
             : 'internal-supervisor.pkpa-students.index',
         'Pemantauan PKPA' => 'internal-supervisor.pkpa-operations.index',
         'Monitoring PKPA' => 'internal-supervisor.pkpa-operations.index',
+        'Pemantauan Mahasiswa' => $activeRole === 'pembimbing_lapangan'
+            ? 'field-supervisor.pkpa-operations.index'
+            : 'internal-supervisor.pkpa-operations.index',
         'Validasi Presensi' => 'field-supervisor.pkpa-operations.index',
         'Review Logbook' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-journals.index' : 'internal-supervisor.pkpa-journals.index',
         'Logbook Mahasiswa' => 'internal-supervisor.pkpa-journals.index',

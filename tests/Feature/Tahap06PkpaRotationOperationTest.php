@@ -325,10 +325,19 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         ]);
     }
 
-    public function test_field_supervisor_logbook_queue_groups_submitted_entries_by_student_rotation(): void
+    public function test_field_supervisor_validation_workspace_groups_submissions_by_student_rotation(): void
     {
         $run = $this->activatedRun();
         $logbookService = app(PkpaLogbookService::class);
+        $attendanceService = app(PkpaAttendanceService::class);
+
+        $attendance = $attendanceService->save($run, [
+            'attendance_date' => '2026-07-16',
+            'attendance_type' => 'present',
+            'check_in_time' => '08:00',
+            'check_out_time' => '16:00',
+        ], $this->student);
+        $attendanceService->submit($attendance, $this->student);
 
         foreach ([
             ['2026-07-16', 'Konseling pasien'],
@@ -348,9 +357,21 @@ class Tahap06PkpaRotationOperationTest extends TestCase
 
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/jurnal-pkpa')
+            ->assertRedirect(route('field-supervisor.pkpa-operations.index', ['tab' => 'validation']));
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/jurnal-pkpa')
+            ->assertRedirect(route('internal-supervisor.pkpa-operations.index', ['tab' => 'validation']));
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/operasional-pkpa?tab=validation')
             ->assertOk()
+            ->assertSee('Pemantauan Mahasiswa')
+            ->assertSee('Perlu Validasi')
+            ->assertSee('Presensi Perlu Validasi')
+            ->assertSee('1 presensi')
+            ->assertSee('Logbook Perlu Validasi')
             ->assertSee('Mahasiswa Tahap 06')
-            ->assertSee('2 menunggu validasi')
+            ->assertSee('2 logbook')
             ->assertSee('Konseling pasien')
             ->assertSee('Pelayanan resep');
     }

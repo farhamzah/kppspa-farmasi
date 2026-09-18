@@ -22,11 +22,52 @@ class PkpaRotationOperationController extends Controller
 
     public function index(Request $request): View
     {
+        $coreUserId = $request->user()->core_user_id;
+        $tab = in_array($request->query('tab'), ['overview', 'validation', 'history'], true)
+            ? $request->query('tab')
+            : 'overview';
+        $runs = PkpaRotationRun::forSupervisor('field', $coreUserId)
+            ->whereNull('cancelled_at')
+            ->with(['practiceDomain', 'practiceSite', 'enrollment', 'attendanceRecords', 'logbookEntries'])
+            ->latest()
+            ->get();
+        $logbookQuery = PkpaLogbookEntry::query()
+            ->whereHas('rotationRun', fn ($query) => $query
+                ->forSupervisor('field', $coreUserId)
+                ->whereNull('cancelled_at'));
+        $attendanceQuery = PkpaAttendanceRecord::query()
+            ->whereHas('rotationRun', fn ($query) => $query
+                ->forSupervisor('field', $coreUserId)
+                ->whereNull('cancelled_at'));
+        $pendingAttendanceCount = (clone $attendanceQuery)->where('submission_status', 'submitted')->count();
+
         return view('field-supervisor.pkpa-operations.index', [
-            'runs' => PkpaRotationRun::forSupervisor('field', $request->user()->core_user_id)
-                ->with(['practiceDomain', 'practiceSite', 'enrollment', 'attendanceRecords', 'logbookEntries'])
-                ->latest()
-                ->get(),
+            'runs' => $runs,
+            'tab' => $tab,
+            'pendingAttendanceCount' => $pendingAttendanceCount,
+            'pendingAttendances' => $tab === 'validation'
+                ? (clone $attendanceQuery)
+                    ->where('submission_status', 'submitted')
+                    ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
+                    ->latest('attendance_date')
+                    ->paginate(15, ['*'], 'attendance_page')
+                    ->withQueryString()
+                : null,
+            'readyLogbookCount' => (clone $logbookQuery)->where('status', 'submitted')->count(),
+            'completedLogbookCount' => (clone $logbookQuery)->whereIn('status', ['field_approved', 'approved', 'internal_approved'])->count(),
+            'historyLogbookCount' => (clone $logbookQuery)->where('status', '!=', 'draft')->count(),
+            'logbookEntries' => $tab === 'overview'
+                ? null
+                : (clone $logbookQuery)
+                    ->when(
+                        $tab === 'validation',
+                        fn ($query) => $query->where('status', 'submitted'),
+                        fn ($query) => $query->where('status', '!=', 'draft')
+                    )
+                    ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
+                    ->latest('entry_date')
+                    ->paginate(20, ['*'], 'logbook_page')
+                    ->withQueryString(),
         ]);
     }
 

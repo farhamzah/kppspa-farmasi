@@ -89,6 +89,7 @@
                     'Operasional PKPA' => 'Pelaksanaan',
                     'Pemantauan PKPA' => 'Pelaksanaan',
                     'Monitoring PKPA' => 'Pelaksanaan',
+                    'Pemantauan Mahasiswa' => 'Pelaksanaan',
                     'Logbook PKPA' => 'Pelaksanaan',
                     'Antrean Validasi Logbook' => 'Pelaksanaan',
                     'Pemantauan Logbook' => 'Pelaksanaan',
@@ -198,6 +199,9 @@
                         'Validasi Presensi' => 'field-supervisor.pkpa-operations.index',
                         'Pemantauan PKPA' => 'internal-supervisor.pkpa-operations.index',
                         'Monitoring PKPA' => 'internal-supervisor.pkpa-operations.index',
+                        'Pemantauan Mahasiswa' => $activeRole === 'pembimbing_lapangan'
+                            ? 'field-supervisor.pkpa-operations.index'
+                            : 'internal-supervisor.pkpa-operations.index',
                         'Akademik PKPA' => $activeRole === 'pembimbing_lapangan' ? 'field-supervisor.pkpa-academics.index' : 'internal-supervisor.pkpa-academics.index',
                         'Pemantauan Pemilihan' => 'management.place-selections.index',
                         'Monitoring Pemilihan' => 'management.place-selections.index',
@@ -282,6 +286,7 @@
                         'Validasi Presensi' => ['field-supervisor.pkpa-operations.*', 'field-supervisor.pkpa-attendance.*'],
                         'Pemantauan PKPA' => ['internal-supervisor.pkpa-operations.*', 'internal-supervisor.pkpa-logbooks.*'],
                         'Monitoring PKPA' => ['internal-supervisor.pkpa-operations.*', 'internal-supervisor.pkpa-logbooks.*'],
+                        'Pemantauan Mahasiswa' => ['field-supervisor.pkpa-operations.*', 'field-supervisor.pkpa-attendance.*', 'field-supervisor.pkpa-logbooks.*', 'internal-supervisor.pkpa-operations.*', 'internal-supervisor.pkpa-logbooks.*'],
                         'Akademik PKPA' => ['field-supervisor.pkpa-academics.*', 'field-supervisor.pkpa-competencies.*', 'field-supervisor.pkpa-special-tasks.*', 'field-supervisor.pkpa-rotation-reports.*', 'internal-supervisor.pkpa-academics.*', 'internal-supervisor.pkpa-competencies.*', 'internal-supervisor.pkpa-special-tasks.*', 'internal-supervisor.pkpa-rotation-reports.*', 'internal-supervisor.pkpa-guidance.*'],
                         'Penempatan PKPA' => ['student.pkpa-placement.*', 'management.pkpa-assignments.*'],
                         'Logbook PKPA' => ['student.pkpa-journals.*'],

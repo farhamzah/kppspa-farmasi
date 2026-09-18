@@ -19,11 +19,38 @@ class PkpaRotationOperationController extends Controller
 
     public function index(Request $request): View
     {
+        $coreUserId = $request->user()->core_user_id;
+        $tab = in_array($request->query('tab'), ['overview', 'validation', 'history'], true)
+            ? $request->query('tab')
+            : 'overview';
+        $runs = PkpaRotationRun::forSupervisor('internal', $coreUserId)
+            ->whereNull('cancelled_at')
+            ->with(['practiceDomain', 'practiceSite', 'enrollment', 'logbookEntries'])
+            ->latest()
+            ->get();
+        $logbookQuery = PkpaLogbookEntry::query()
+            ->whereHas('rotationRun', fn ($query) => $query
+                ->forSupervisor('internal', $coreUserId)
+                ->whereNull('cancelled_at'));
+
         return view('internal-supervisor.pkpa-operations.index', [
-            'runs' => PkpaRotationRun::forSupervisor('internal', $request->user()->core_user_id)
-                ->with(['practiceDomain', 'practiceSite', 'enrollment', 'logbookEntries'])
-                ->latest()
-                ->get(),
+            'runs' => $runs,
+            'tab' => $tab,
+            'readyLogbookCount' => (clone $logbookQuery)->whereIn('status', ['field_approved', 'approved'])->count(),
+            'completedLogbookCount' => (clone $logbookQuery)->where('status', 'internal_approved')->count(),
+            'historyLogbookCount' => (clone $logbookQuery)->where('status', '!=', 'draft')->count(),
+            'logbookEntries' => $tab === 'overview'
+                ? null
+                : (clone $logbookQuery)
+                    ->when(
+                        $tab === 'validation',
+                        fn ($query) => $query->whereIn('status', ['field_approved', 'approved']),
+                        fn ($query) => $query->where('status', '!=', 'draft')
+                    )
+                    ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
+                    ->latest('entry_date')
+                    ->paginate(20, ['*'], 'logbook_page')
+                    ->withQueryString(),
         ]);
     }
 
