@@ -8,11 +8,13 @@
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
+    $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
     $editableSections = $isApotek
         ? \App\Support\PkpaApotekPortfolio::editableSections()
         : ($isHospital
             ? \App\Support\PkpaHospitalPortfolio::editableSections()
-            : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : []));
+            : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections()
+                : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections() : [])));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
 @endphp
 <div class="space-y-6">
@@ -45,9 +47,9 @@
         </div>
     </section>
 
-    @if($isApotek || $isHospital || $isIndustry)
+    @if($isApotek || $isHospital || $isIndustry || $isPuskesmas)
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-black text-slate-950">Bagian Portofolio {{ $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : 'Apotek') }}</h2>
+            <h2 class="text-lg font-black text-slate-950">Bagian Portofolio {{ $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek')) }}</h2>
             <div class="mt-4 grid gap-4 xl:grid-cols-2">
                 @foreach($editableSections as $code => $definition)
                     @php

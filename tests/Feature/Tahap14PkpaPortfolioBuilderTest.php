@@ -10,6 +10,7 @@ use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPortfolioExportVersion;
 use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaPracticeDomain;
+use App\Models\PkpaPracticeDomainOption;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
@@ -24,6 +25,7 @@ use App\Models\User;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
+use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
@@ -71,6 +73,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-RS-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PBF-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-IND-v1', 'status' => 'active']);
+        $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PKM-v1', 'status' => 'active']);
         $apotek = PkpaPortfolioTemplate::where('code', 'PORT-APT-v1')->with('sections')->firstOrFail();
         $hospital = PkpaPortfolioTemplate::where('code', 'PORT-RS-v1')->with('sections')->firstOrFail();
         $pbf = PkpaPortfolioTemplate::where('code', 'PORT-PBF-v1')->with('sections')->firstOrFail();
@@ -346,6 +349,38 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringNotContainsString('Identitas Pasien', $docxText);
     }
 
+    public function test_puskesmas_option_selects_its_own_portfolio_template_and_sections(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('PEM', '14PKM', 'PUSKESMAS');
+        $portfolio = $service->ensureForRun($run, $this->admin);
+        $this->assertSame(PkpaPuskesmasPortfolio::TEMPLATE_CODE, $portfolio->template->code);
+
+        $profile = collect(PkpaPuskesmasPortfolio::sectionDefinition('site_profile')['fields'])
+            ->mapWithKeys(fn ($field) => [$field['name'] => $field['label'].' Puskesmas Karawang.'])->all();
+        $service->saveSectionRecord($portfolio, 'site_profile', $profile, $this->student);
+        $service->saveSectionRecord($portfolio->fresh(), 'pharmacy_management', [
+            'purpose' => 'Memahami pengelolaan pelayanan kefarmasian Puskesmas.',
+            'theory' => 'Standar pelayanan kefarmasian di Puskesmas.',
+            'activity' => 'Mempelajari perencanaan, permintaan, penerimaan, dan pelaporan obat.',
+            'result' => 'Memahami alur manajerial instalasi farmasi Puskesmas.',
+        ], $this->student);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()->assertSee('Portofolio Puskesmas')->assertSee('Program Kesehatan Puskesmas')
+            ->assertSee('Kegiatan Manajerial di Instalasi Farmasi Puskesmas')->assertSee('Identitas Pasien');
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
+            ->assertOk()->assertSee('Bagian Portofolio Puskesmas')
+            ->assertSee('Mempelajari perencanaan, permintaan, penerimaan, dan pelaporan obat.');
+
+        $docx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $text = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
+        $this->assertStringContainsString('Profil Tempat PKPA Puskesmas', $text);
+        $this->assertStringContainsString('Laporan Kegiatan: Kegiatan Manajerial di Instalasi Farmasi Puskesmas', $text);
+    }
+
     public function test_student_can_store_apotek_section_record_from_portal(): void
     {
         $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
@@ -564,26 +599,30 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Scan untuk mengecek keaslian lembar persetujuan ini.');
     }
 
-    private function fixtureRun(string $domainCode = 'APT', string $suffix = '14'): PkpaRotationRun
+    private function fixtureRun(string $domainCode = 'APT', string $suffix = '14', ?string $domainOptionCode = null): PkpaRotationRun
     {
         $program = app(PkpaProgramService::class)->create(['code' => 'PKPA-'.$suffix, 'name' => 'Program Tahap '.$suffix, 'academic_year' => '2026/2027', 'cohort_name' => 'Demo', 'start_date' => '2026-07-01', 'end_date' => '2026-07-31'], $this->admin);
         $domain = PkpaPracticeDomain::where('code', $domainCode)->firstOrFail();
+        $domainOption = $domainOptionCode
+            ? PkpaPracticeDomainOption::where('practice_domain_id', $domain->id)->where('code', $domainOptionCode)->firstOrFail()
+            : null;
         $programDomain = $program->domains()->where('practice_domain_id', $domain->id)->firstOrFail();
         $siteName = match ($domainCode) {
             'RS' => 'Rumah Sakit Tahap 14',
             'PBF' => 'PBF Tahap 14',
             'IND' => 'Industri Farmasi Tahap 14',
+            'PEM' => $domainOptionCode === 'PUSKESMAS' ? 'Puskesmas Tahap 14' : 'Pemerintahan Tahap 14',
             default => 'Apotek Tahap 14',
         };
-        $site = PkpaPracticeSite::create(['practice_domain_id' => $domain->id, 'code' => $domainCode.'-'.$suffix, 'name' => $siteName, 'address' => 'Karawang', 'city' => 'Karawang', 'province' => 'Jawa Barat', 'cooperation_start_date' => '2026-01-01', 'cooperation_end_date' => '2026-12-31', 'status' => 'active', 'is_active' => true]);
-        $programSite = PkpaProgramSite::create(['pkpa_program_id' => $program->id, 'practice_site_id' => $site->id, 'pkpa_program_domain_id' => $programDomain->id, 'practice_domain_id' => $domain->id, 'status' => 'active', 'is_active' => true]);
+        $site = PkpaPracticeSite::create(['practice_domain_id' => $domain->id, 'practice_domain_option_id' => $domainOption?->id, 'code' => $domainCode.'-'.$suffix, 'name' => $siteName, 'address' => 'Karawang', 'city' => 'Karawang', 'province' => 'Jawa Barat', 'cooperation_start_date' => '2026-01-01', 'cooperation_end_date' => '2026-12-31', 'status' => 'active', 'is_active' => true]);
+        $programSite = PkpaProgramSite::create(['pkpa_program_id' => $program->id, 'practice_site_id' => $site->id, 'pkpa_program_domain_id' => $programDomain->id, 'practice_domain_id' => $domain->id, 'practice_domain_option_id' => $domainOption?->id, 'status' => 'active', 'is_active' => true]);
         $enrollment = PkpaEnrollment::create(['pkpa_program_id' => $program->id, 'core_user_id' => $this->student->core_user_id, 'student_number' => '2400'.$suffix, 'student_name_snapshot' => 'Mahasiswa Tahap 14', 'student_email_snapshot' => $this->student->email, 'status' => 'active', 'core_account_status_snapshot' => 'active']);
         app(PkpaEnrollmentRequirementService::class)->ensureRequirements($enrollment, $this->admin);
         $requirement = $enrollment->requirements()->where('practice_domain_id', $domain->id)->firstOrFail();
         $plan = PkpaPlacementPlan::create(['pkpa_program_id' => $program->id, 'code' => 'PLAN-'.$suffix, 'name' => 'Plan '.$suffix, 'version_number' => 1, 'status' => 'locked', 'is_current' => true, 'current_key' => 'PROGRAM:'.$program->id, 'validation_status' => 'valid']);
         $publication = PkpaPlacementPublication::create(['pkpa_program_id' => $program->id, 'pkpa_placement_plan_id' => $plan->id, 'publication_number' => 1, 'revision_number' => 0, 'code' => 'PUB-'.$suffix, 'title' => 'Publikasi '.$suffix, 'status' => 'published', 'is_current' => true, 'current_key' => 'PROGRAM:'.$program->id, 'published_at' => now()]);
-        $assignment = PkpaPublishedAssignment::create(['pkpa_placement_publication_id' => $publication->id, 'pkpa_enrollment_id' => $enrollment->id, 'pkpa_enrollment_requirement_id' => $requirement->id, 'practice_domain_id' => $domain->id, 'practice_site_id' => $site->id, 'program_site_id' => $programSite->id, 'student_core_user_id' => $this->student->core_user_id, 'student_number_snapshot' => '2400'.$suffix, 'student_name_snapshot' => 'Mahasiswa Tahap 14', 'practice_domain_name_snapshot' => $domain->name, 'practice_site_name_snapshot' => $site->name, 'start_date' => '2026-07-01', 'end_date' => '2026-07-07', 'status' => 'scheduled']);
-        $run = PkpaRotationRun::create(['pkpa_program_id' => $program->id, 'pkpa_enrollment_id' => $enrollment->id, 'pkpa_enrollment_requirement_id' => $requirement->id, 'current_placement_publication_id' => $publication->id, 'origin_published_assignment_id' => $assignment->id, 'current_published_assignment_id' => $assignment->id, 'practice_domain_id' => $domain->id, 'practice_site_id' => $site->id, 'student_core_user_id' => $this->student->core_user_id, 'scheduled_start_date' => '2026-07-01', 'scheduled_end_date' => '2026-07-07', 'status' => 'active', 'operational_status' => 'running', 'publication_sync_status' => 'synced', 'current_key' => 'REQ:'.$requirement->id]);
+        $assignment = PkpaPublishedAssignment::create(['pkpa_placement_publication_id' => $publication->id, 'pkpa_enrollment_id' => $enrollment->id, 'pkpa_enrollment_requirement_id' => $requirement->id, 'practice_domain_id' => $domain->id, 'practice_domain_option_id' => $domainOption?->id, 'practice_site_id' => $site->id, 'program_site_id' => $programSite->id, 'student_core_user_id' => $this->student->core_user_id, 'student_number_snapshot' => '2400'.$suffix, 'student_name_snapshot' => 'Mahasiswa Tahap 14', 'practice_domain_name_snapshot' => $domain->name, 'practice_site_name_snapshot' => $site->name, 'start_date' => '2026-07-01', 'end_date' => '2026-07-07', 'status' => 'scheduled']);
+        $run = PkpaRotationRun::create(['pkpa_program_id' => $program->id, 'pkpa_enrollment_id' => $enrollment->id, 'pkpa_enrollment_requirement_id' => $requirement->id, 'current_placement_publication_id' => $publication->id, 'origin_published_assignment_id' => $assignment->id, 'current_published_assignment_id' => $assignment->id, 'practice_domain_id' => $domain->id, 'practice_domain_option_id' => $domainOption?->id, 'practice_site_id' => $site->id, 'student_core_user_id' => $this->student->core_user_id, 'scheduled_start_date' => '2026-07-01', 'scheduled_end_date' => '2026-07-07', 'status' => 'active', 'operational_status' => 'running', 'publication_sync_status' => 'synced', 'current_key' => 'REQ:'.$requirement->id]);
         foreach ([['field', $this->fieldSupervisor], ['internal', $this->internalSupervisor]] as [$type, $user]) {
             PkpaRotationSupervisorHistory::create(['pkpa_rotation_run_id' => $run->id, 'supervisor_type' => $type, 'core_user_id' => $user->core_user_id, 'name_snapshot' => $user->name, 'role_snapshot' => $type, 'effective_start_date' => '2026-07-01', 'status' => 'active', 'active_key' => $run->id.':'.$type]);
         }

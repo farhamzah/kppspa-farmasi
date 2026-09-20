@@ -7,6 +7,7 @@ use App\Models\PkpaPracticeDomain;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
+use App\Support\PkpaPuskesmasPortfolio;
 use Illuminate\Database\Seeder;
 
 class PkpaPortfolioTemplateSeeder extends Seeder
@@ -18,6 +19,8 @@ class PkpaPortfolioTemplateSeeder extends Seeder
         $this->seedTemplate('RS', 'PORT-RS-v1', 'Template Portofolio PKPA Rumah Sakit', PkpaHospitalPortfolio::templateSections());
 
         $this->seedTemplate('IND', 'PORT-IND-v1', 'Template Portofolio PKPA Industri Farmasi', PkpaIndustryPortfolio::templateSections());
+
+        $this->seedTemplate('PEM', PkpaPuskesmasPortfolio::TEMPLATE_CODE, 'Template Portofolio PKPA Puskesmas', PkpaPuskesmasPortfolio::templateSections());
 
         $this->seedTemplate('PBF', 'PORT-PBF-v1', 'Template Portofolio PKPA Pedagang Besar Farmasi', [
             ['cover', 'Sampul', 'static_content', 'all'],
@@ -94,7 +97,7 @@ class PkpaPortfolioTemplateSeeder extends Seeder
                     'no_duplicate_existing_data' => str_starts_with($sourceType, 'auto_'),
                     'private_files' => in_array($sourceType, ['evidence_gallery', 'attachment_list'], true),
                 ],
-                'content_schema' => $this->schemaFor($sourceType, $sectionCode, $domainCode),
+                'content_schema' => $this->schemaFor($sourceType, $sectionCode, $domainCode, $code),
                 'static_content' => $sourceType === 'static_content'
                     ? ($staticContent ?? 'Konten pola '.$title.' dikelola oleh Pembuat Portofolio MY PKPA.')
                     : null,
@@ -102,7 +105,7 @@ class PkpaPortfolioTemplateSeeder extends Seeder
         }
     }
 
-    private function schemaFor(string $sourceType, ?string $sectionCode = null, ?string $domainCode = null): array
+    private function schemaFor(string $sourceType, ?string $sectionCode = null, ?string $domainCode = null, ?string $templateCode = null): array
     {
         if ($domainCode === 'APT' && $sectionCode) {
             $apotekSection = PkpaApotekPortfolio::sectionDefinition($sectionCode);
@@ -126,6 +129,11 @@ class PkpaPortfolioTemplateSeeder extends Seeder
             if ($industrySection) {
                 return ['fields' => $industrySection['fields'] ?? []];
             }
+        }
+
+        if ($domainCode === 'PEM' && $templateCode === PkpaPuskesmasPortfolio::TEMPLATE_CODE && $sectionCode) {
+            $section = PkpaPuskesmasPortfolio::sectionDefinition($sectionCode);
+            if ($section) return ['fields' => $section['fields'] ?? []];
         }
 
         if ($domainCode === 'PBF' && $sectionCode) {

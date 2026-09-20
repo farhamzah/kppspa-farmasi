@@ -15,6 +15,7 @@ use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
+use App\Support\PkpaPuskesmasPortfolio;
 use App\Models\User;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
@@ -44,16 +45,22 @@ class PkpaPortfolioBuilderService
             'program',
             'enrollment.activeGroupMembership.group',
             'practiceDomain',
+            'practiceDomainOption',
             'practiceSite',
             'currentAssignment.supervisors',
             'supervisorHistories',
         ]);
 
+        $preferredTemplateCode = match ($run->practiceDomainOption?->code) {
+            'PUSKESMAS' => PkpaPuskesmasPortfolio::TEMPLATE_CODE,
+            default => null,
+        };
         $template = PkpaPortfolioTemplate::query()
             ->with('sections')
             ->where('practice_domain_id', $run->practice_domain_id)
             ->where('is_current', true)
             ->where('status', 'active')
+            ->when($preferredTemplateCode, fn ($query) => $query->where('code', $preferredTemplateCode))
             ->where(function ($query) use ($run) {
                 $query->whereNull('pkpa_program_id')->orWhere('pkpa_program_id', $run->pkpa_program_id);
             })
@@ -613,6 +620,10 @@ class PkpaPortfolioBuilderService
             && $portfolio->sectionRecords->whereIn('section_code', PkpaIndustryPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
             $blocking[] = 'Minimal satu laporan kegiatan Industri Farmasi wajib lengkap.';
         }
+        if ($portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE
+            && $portfolio->sectionRecords->whereIn('section_code', PkpaPuskesmasPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
+            $blocking[] = 'Minimal satu laporan kegiatan Puskesmas wajib lengkap.';
+        }
         if ($portfolio->reviews->where('action', 'revision_requested')->where('created_at', '>', $portfolio->updated_at)->isNotEmpty()) {
             $blocking[] = 'Masih ada revisi terbuka.';
         }
@@ -861,8 +872,9 @@ class PkpaPortfolioBuilderService
         $isApotek = PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
         $isHospital = PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
         $isIndustry = PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
+        $isPuskesmas = $portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE;
 
-        if ($isApotek || $isHospital || $isIndustry) {
+        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas) {
             $sections[] = [
                 'title' => 'Lembar Pengesahan',
                 'lines' => $this->approvalLines($portfolio),
@@ -930,6 +942,15 @@ class PkpaPortfolioBuilderService
                     'lines' => $this->sectionPayloadLines($portfolio, $code),
                 ];
             }
+        } elseif ($isPuskesmas) {
+            $sections[] = ['title' => 'Profil Tempat PKPA Puskesmas', 'lines' => $this->sectionPayloadLines($portfolio, 'site_profile')];
+            $sections[] = ['title' => 'Logbook Harian', 'lines' => $this->logbookLines($portfolio)];
+            foreach (PkpaPuskesmasPortfolio::reportSectionCodes() as $code) {
+                $sections[] = [
+                    'title' => PkpaPuskesmasPortfolio::sectionDefinition($code)['title'],
+                    'lines' => $this->sectionPayloadLines($portfolio, $code),
+                ];
+            }
         } else {
             foreach ($portfolio->template->sections->whereIn('source_type', ['structured_form', 'attachment_list']) as $section) {
                 $sections[] = [
@@ -956,7 +977,7 @@ class PkpaPortfolioBuilderService
             'lines' => $this->documentationLines($portfolio),
         ];
 
-        if ($isApotek || $isHospital || $isIndustry) {
+        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas) {
             $sections[] = [
                 'title' => 'Daftar Pustaka',
                 'lines' => $this->sectionPayloadLines($portfolio, 'bibliography'),
@@ -1046,6 +1067,16 @@ class PkpaPortfolioBuilderService
                 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan',
             ])->values();
 
+            return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
+        }
+
+        if ($portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE) {
+            $titles = collect([
+                'Ringkasan Dokumen', 'Identitas Mahasiswa', 'Pakta Integritas', 'Lembar Pengesahan',
+                'Visi, Misi, Tujuan, dan Sasaran', 'Tata Tertib PKPA', 'Daftar Isi',
+                'Profil Tempat PKPA Puskesmas', 'Logbook Harian',
+            ])->merge(collect(PkpaPuskesmasPortfolio::reportSectionCodes())->map(fn ($code) => PkpaPuskesmasPortfolio::sectionDefinition($code)['title']))
+                ->merge(['Studi Kasus', 'Refleksi Mingguan', 'Self Assessment', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan'])->values();
             return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
         }
 

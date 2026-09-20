@@ -8,9 +8,11 @@
     $isPbf = $portfolio->practiceDomain?->code === 'PBF';
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
+    $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
     $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
     $hospitalSections = $isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : [];
     $industrySections = $isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : [];
+    $puskesmasSections = $isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections() : [];
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
     $reportCodes = \App\Support\PkpaApotekPortfolio::reportSectionCodes();
     $manualSections = $isApotek
@@ -56,6 +58,10 @@
     ] : ($isIndustry ? [
         'Orientasi Industri Farmasi', 'Quality Assurance', 'Quality Control', 'Produksi', 'Gudang',
         'Research and Development', 'Regulatory Affairs', 'Validasi', 'PPIC', 'Pharmacovigilance', 'Engineering',
+    ] : ($isPuskesmas ? [
+        'Orientasi Puskesmas', 'Pengelolaan Gudang Farmasi', 'Manajerial Instalasi Farmasi',
+        'Farmasi Klinik', 'Pelayanan Informasi Obat', 'Konseling Pasien', 'Drug Related Problems',
+        'Monitoring Efek Samping Obat', 'Visite Apoteker', 'Pelayanan Obat Steril',
     ] : [
         'Orientasi PKPA',
         'Pelayanan Resep',
@@ -67,7 +73,7 @@
         'Stock Opname',
         'Administrasi Kefarmasian',
         'Penutupan PKPA',
-    ]));
+    ])));
     $selfAssessmentAspects = $isPbf ? [
         'Pemahaman CDOB', 'Etika dan Disiplin', 'Komunikasi Profesional', 'Pengadaan',
         'Penerimaan Barang', 'Penyimpanan', 'Cold Chain Product', 'Pengendalian Persediaan',
@@ -88,6 +94,16 @@
         'Sistem Gudang FIFO/FEFO', 'Research and Development', 'Regulatory Affairs', 'Farmakovigilans',
         'Investigasi Deviasi dan CAPA', 'Manajemen Risiko Mutu', 'Keselamatan dan Kesehatan Kerja',
         'Berpikir Kritis', 'Analisis Masalah', 'Laporan Ilmiah', 'Presentasi', 'Belajar Mandiri',
+    ] : ($isPuskesmas ? [
+        'Struktur Organisasi dan Sistem Pelayanan Puskesmas', 'Tugas dan Tanggung Jawab Apoteker',
+        'Perencanaan Kebutuhan Obat', 'Permintaan dan Penerimaan Obat', 'Penyimpanan FIFO dan FEFO',
+        'Pengendalian Stok Obat', 'Pencatatan dan Pelaporan Logistik', 'Skrining Administratif Resep',
+        'Skrining Farmasetik Resep', 'Skrining Klinis Resep', 'Penyiapan dan Penyerahan Obat',
+        'Pelayanan Informasi Obat', 'Konseling Pasien', 'Identifikasi Drug Related Problems',
+        'Monitoring Efek Samping Obat', 'Penggunaan Obat Rasional', 'Program Kesehatan Puskesmas',
+        'Promosi Kesehatan dan Edukasi Masyarakat', 'Komunikasi Efektif', 'Etika dan Kerahasiaan Pasien',
+        'Kerja Sama Tim', 'Keselamatan Pasien', 'Dokumentasi dan Laporan', 'Manajemen Waktu',
+        'Disiplin Tanggung Jawab dan Profesionalisme',
     ] : [
         'Disiplin',
         'Kehadiran',
@@ -104,7 +120,7 @@
         'Problem Solving',
         'Clinical Reasoning',
         'Manajemen Waktu',
-    ]));
+    ])));
 @endphp
 
 @section('content')
@@ -129,7 +145,7 @@
 
     <section class="grid gap-4 md:grid-cols-4">
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isPbf ? 'PBF' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : 'Apotek')) }}</p>
+            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isPbf ? 'PBF' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek'))) }}</p>
             <p class="mt-2 text-2xl font-black text-slate-950">{{ $completedSections }} / {{ $manualSections->count() }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -517,16 +533,15 @@
         </section>
     @endif
 
-    @if($isHospital || $isIndustry)
+    @if($isHospital || $isIndustry || $isPuskesmas)
         @php
-            $specialSections = $isHospital ? $hospitalSections : $industrySections;
-            $specialReportCodes = $isHospital
-                ? \App\Support\PkpaHospitalPortfolio::reportSectionCodes()
-                : \App\Support\PkpaIndustryPortfolio::reportSectionCodes();
+            $specialSections = $isHospital ? $hospitalSections : ($isIndustry ? $industrySections : $puskesmasSections);
+            $specialReportCodes = $isHospital ? \App\Support\PkpaHospitalPortfolio::reportSectionCodes()
+                : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::reportSectionCodes() : \App\Support\PkpaPuskesmasPortfolio::reportSectionCodes());
             $specialCompletedReports = collect($specialReportCodes)
                 ->filter(fn ($code) => $sectionRecords->get($code)?->status === 'completed')
                 ->count();
-            $specialDomainLabel = $isHospital ? 'Rumah Sakit' : 'Industri Farmasi';
+            $specialDomainLabel = $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : 'Puskesmas');
         @endphp
         <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
             <header class="border-b border-slate-100 p-5 sm:p-6">

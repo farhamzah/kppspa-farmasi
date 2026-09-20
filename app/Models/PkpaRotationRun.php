@@ -95,6 +95,11 @@ class PkpaRotationRun extends Model
         return $this->belongsTo(PkpaPracticeDomain::class, 'practice_domain_id');
     }
 
+    public function practiceDomainOption(): BelongsTo
+    {
+        return $this->belongsTo(PkpaPracticeDomainOption::class, 'practice_domain_option_id');
+    }
+
     public function practiceSite(): BelongsTo
     {
         return $this->belongsTo(PkpaPracticeSite::class, 'practice_site_id');

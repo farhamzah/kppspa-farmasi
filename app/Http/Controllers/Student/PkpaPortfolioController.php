@@ -11,6 +11,7 @@ use App\Services\PkpaPortfolioBuilderService;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
+use App\Support\PkpaPuskesmasPortfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -23,7 +24,7 @@ class PkpaPortfolioController extends Controller
 
     public function index(Request $request)
     {
-        $runs = PkpaRotationRun::with(['program', 'practiceDomain', 'practiceSite'])
+        $runs = PkpaRotationRun::with(['program', 'practiceDomain', 'practiceDomainOption', 'practiceSite'])
             ->forStudent($request->user()->core_user_id)
             ->latest()
             ->get();
@@ -31,11 +32,13 @@ class PkpaPortfolioController extends Controller
             return (PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code)
                 || PkpaHospitalPortfolio::isHospitalCode($run->practiceDomain?->code)
                 || PkpaIndustryPortfolio::isIndustryCode($run->practiceDomain?->code)
+                || $run->practiceDomainOption?->code === 'PUSKESMAS'
                 || $run->practiceDomain?->code === 'PBF')
                 && PkpaPortfolioTemplate::query()
                     ->where('practice_domain_id', $run->practice_domain_id)
                     ->where('is_current', true)
                     ->where('status', 'active')
+                    ->when($run->practiceDomainOption?->code === 'PUSKESMAS', fn ($query) => $query->where('code', PkpaPuskesmasPortfolio::TEMPLATE_CODE))
                     ->where(function ($query) use ($run) {
                         $query->whereNull('pkpa_program_id')->orWhere('pkpa_program_id', $run->pkpa_program_id);
                     })
