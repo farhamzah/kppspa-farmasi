@@ -9,6 +9,7 @@ use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\PkpaHealthOfficePortfolio;
+use App\Support\PkpaLokaPomPortfolio;
 use Illuminate\Database\Seeder;
 
 class PkpaPortfolioTemplateSeeder extends Seeder
@@ -23,6 +24,7 @@ class PkpaPortfolioTemplateSeeder extends Seeder
 
         $this->seedTemplate('PEM', PkpaPuskesmasPortfolio::TEMPLATE_CODE, 'Template Portofolio PKPA Puskesmas', PkpaPuskesmasPortfolio::templateSections());
         $this->seedTemplate('PEM', PkpaHealthOfficePortfolio::TEMPLATE_CODE, 'Template Portofolio PKPA Dinas Kesehatan', PkpaHealthOfficePortfolio::templateSections());
+        $this->seedTemplate('PEM', PkpaLokaPomPortfolio::TEMPLATE_CODE, 'Template Portofolio PKPA Loka POM', PkpaLokaPomPortfolio::templateSections());
 
         $this->seedTemplate('PBF', 'PORT-PBF-v1', 'Template Portofolio PKPA Pedagang Besar Farmasi', [
             ['cover', 'Sampul', 'static_content', 'all'],
@@ -139,6 +141,10 @@ class PkpaPortfolioTemplateSeeder extends Seeder
         }
         if ($domainCode === 'PEM' && $templateCode === PkpaHealthOfficePortfolio::TEMPLATE_CODE && $sectionCode) {
             $section = PkpaHealthOfficePortfolio::sectionDefinition($sectionCode);
+            if ($section) return ['fields' => $section['fields'] ?? []];
+        }
+        if ($domainCode === 'PEM' && $templateCode === PkpaLokaPomPortfolio::TEMPLATE_CODE && $sectionCode) {
+            $section = PkpaLokaPomPortfolio::sectionDefinition($sectionCode);
             if ($section) return ['fields' => $section['fields'] ?? []];
         }
 

@@ -13,6 +13,7 @@ use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\PkpaHealthOfficePortfolio;
+use App\Support\PkpaLokaPomPortfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,7 @@ class PkpaPortfolioController extends Controller
                 || PkpaIndustryPortfolio::isIndustryCode($run->practiceDomain?->code)
                 || $run->practiceDomainOption?->code === 'PUSKESMAS'
                 || $run->practiceDomainOption?->code === 'DINKES'
+                || $run->practiceDomainOption?->code === 'LOKAPOM'
                 || $run->practiceDomain?->code === 'PBF')
                 && PkpaPortfolioTemplate::query()
                     ->where('practice_domain_id', $run->practice_domain_id)
@@ -42,6 +44,7 @@ class PkpaPortfolioController extends Controller
                     ->where('status', 'active')
                     ->when($run->practiceDomainOption?->code === 'PUSKESMAS', fn ($query) => $query->where('code', PkpaPuskesmasPortfolio::TEMPLATE_CODE))
                     ->when($run->practiceDomainOption?->code === 'DINKES', fn ($query) => $query->where('code', PkpaHealthOfficePortfolio::TEMPLATE_CODE))
+                    ->when($run->practiceDomainOption?->code === 'LOKAPOM', fn ($query) => $query->where('code', PkpaLokaPomPortfolio::TEMPLATE_CODE))
                     ->where(function ($query) use ($run) {
                         $query->whereNull('pkpa_program_id')->orWhere('pkpa_program_id', $run->pkpa_program_id);
                     })

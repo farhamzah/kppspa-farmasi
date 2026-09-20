@@ -27,6 +27,7 @@ use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\PkpaHealthOfficePortfolio;
+use App\Support\PkpaLokaPomPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
@@ -76,6 +77,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-IND-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PKM-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-DINKES-v1', 'status' => 'active']);
+        $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-LOKAPOM-v1', 'status' => 'active']);
         $apotek = PkpaPortfolioTemplate::where('code', 'PORT-APT-v1')->with('sections')->firstOrFail();
         $hospital = PkpaPortfolioTemplate::where('code', 'PORT-RS-v1')->with('sections')->firstOrFail();
         $pbf = PkpaPortfolioTemplate::where('code', 'PORT-PBF-v1')->with('sections')->firstOrFail();
@@ -422,6 +424,44 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringNotContainsString('Identitas Pasien', $text);
     }
 
+    public function test_loka_pom_option_uses_surveillance_topics_and_regulatory_case(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->fixtureRun('PEM', '14LP', 'LOKAPOM'), $this->admin);
+        $this->assertSame(PkpaLokaPomPortfolio::TEMPLATE_CODE, $portfolio->template->code);
+        $profile = collect(PkpaLokaPomPortfolio::sectionDefinition('site_profile')['fields'])
+            ->mapWithKeys(fn ($field) => [$field['name'] => $field['label'].' Loka POM Karawang.'])->all();
+        $service->saveSectionRecord($portfolio, 'site_profile', $profile, $this->student);
+        $service->saveSectionRecord($portfolio->fresh(), 'marketplace_surveillance', [
+            'purpose' => 'Memahami pengawasan produk pada perdagangan elektronik.',
+            'theory' => 'Regulasi peredaran obat dan makanan melalui sistem elektronik.',
+            'activity' => 'Mengamati penelusuran produk dan pemeriksaan informasi izin edar.',
+            'result' => 'Memahami identifikasi temuan dan tindak lanjut pengawasan marketplace.',
+        ], $this->student);
+        $service->saveCase($portfolio->fresh(), [
+            'case_code' => 'Produk Tanpa Izin Edar di Marketplace', 'case_date' => '2026-07-05',
+            'complaint' => 'Ditemukan produk yang dipasarkan tanpa informasi izin edar yang sah.',
+            'diagnosis' => 'Dugaan pelanggaran peredaran produk.', 'drp' => 'Analisis berdasarkan ketentuan izin edar dan penandaan.',
+            'intervention' => 'Verifikasi temuan dan rekomendasi tindak lanjut pengawasan.',
+            'monitoring' => 'Mampu menelaah informasi produk dan regulasi terkait.',
+            'conclusion' => 'Temuan memerlukan tindak lanjut sesuai kewenangan pengawasan.',
+            'references' => 'Peraturan BPOM terkait izin edar dan pengawasan daring.', 'anonymization_confirmed' => true,
+        ], $this->student);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)->assertOk()
+            ->assertSee('Portofolio Loka POM')->assertSee('Pengawasan Produk di Marketplace')
+            ->assertSee('Studi Kasus Loka POM')->assertSee('Analisis Berdasarkan Regulasi')->assertDontSee('Identitas Pasien');
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)->assertOk()
+            ->assertSee('Bagian Portofolio Loka POM')->assertSee('Mengamati penelusuran produk dan pemeriksaan informasi izin edar.');
+        $docx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $text = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
+        $this->assertStringContainsString('FORMAT STUDI KASUS LOKA POM', $text);
+        $this->assertStringContainsString('Produk Tanpa Izin Edar di Marketplace', $text);
+        $this->assertStringNotContainsString('Identitas Pasien', $text);
+    }
+
     public function test_student_can_store_apotek_section_record_from_portal(): void
     {
         $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
@@ -655,6 +695,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             'PEM' => match ($domainOptionCode) {
                 'PUSKESMAS' => 'Puskesmas Tahap 14',
                 'DINKES' => 'Dinas Kesehatan Tahap 14',
+                'LOKAPOM' => 'Loka POM Tahap 14',
                 default => 'Pemerintahan Tahap 14',
             },
             default => 'Apotek Tahap 14',

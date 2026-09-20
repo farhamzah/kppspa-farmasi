@@ -17,6 +17,7 @@ use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\PkpaHealthOfficePortfolio;
+use App\Support\PkpaLokaPomPortfolio;
 use App\Models\User;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
@@ -55,6 +56,7 @@ class PkpaPortfolioBuilderService
         $preferredTemplateCode = match ($run->practiceDomainOption?->code) {
             'PUSKESMAS' => PkpaPuskesmasPortfolio::TEMPLATE_CODE,
             'DINKES' => PkpaHealthOfficePortfolio::TEMPLATE_CODE,
+            'LOKAPOM' => PkpaLokaPomPortfolio::TEMPLATE_CODE,
             default => null,
         };
         $template = PkpaPortfolioTemplate::query()
@@ -630,6 +632,10 @@ class PkpaPortfolioBuilderService
             && $portfolio->sectionRecords->whereIn('section_code', PkpaHealthOfficePortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
             $blocking[] = 'Minimal satu laporan kegiatan Dinas Kesehatan wajib lengkap.';
         }
+        if ($portfolio->template?->code === PkpaLokaPomPortfolio::TEMPLATE_CODE
+            && $portfolio->sectionRecords->whereIn('section_code', PkpaLokaPomPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
+            $blocking[] = 'Minimal satu laporan kegiatan Loka POM wajib lengkap.';
+        }
         if ($portfolio->reviews->where('action', 'revision_requested')->where('created_at', '>', $portfolio->updated_at)->isNotEmpty()) {
             $blocking[] = 'Masih ada revisi terbuka.';
         }
@@ -880,8 +886,9 @@ class PkpaPortfolioBuilderService
         $isIndustry = PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
         $isPuskesmas = $portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE;
         $isHealthOffice = $portfolio->template?->code === PkpaHealthOfficePortfolio::TEMPLATE_CODE;
+        $isLokaPom = $portfolio->template?->code === PkpaLokaPomPortfolio::TEMPLATE_CODE;
 
-        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice) {
+        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom) {
             $sections[] = [
                 'title' => 'Lembar Pengesahan',
                 'lines' => $this->approvalLines($portfolio),
@@ -964,6 +971,12 @@ class PkpaPortfolioBuilderService
             foreach (PkpaHealthOfficePortfolio::reportSectionCodes() as $code) {
                 $sections[] = ['title' => PkpaHealthOfficePortfolio::sectionDefinition($code)['title'], 'lines' => $this->sectionPayloadLines($portfolio, $code)];
             }
+        } elseif ($isLokaPom) {
+            $sections[] = ['title' => 'Profil Tempat PKPA Loka POM', 'lines' => $this->sectionPayloadLines($portfolio, 'site_profile')];
+            $sections[] = ['title' => 'Logbook Harian', 'lines' => $this->logbookLines($portfolio)];
+            foreach (PkpaLokaPomPortfolio::reportSectionCodes() as $code) {
+                $sections[] = ['title' => PkpaLokaPomPortfolio::sectionDefinition($code)['title'], 'lines' => $this->sectionPayloadLines($portfolio, $code)];
+            }
         } else {
             foreach ($portfolio->template->sections->whereIn('source_type', ['structured_form', 'attachment_list']) as $section) {
                 $sections[] = [
@@ -990,7 +1003,7 @@ class PkpaPortfolioBuilderService
             'lines' => $this->documentationLines($portfolio),
         ];
 
-        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice) {
+        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom) {
             $sections[] = [
                 'title' => 'Daftar Pustaka',
                 'lines' => $this->sectionPayloadLines($portfolio, 'bibliography'),
@@ -1100,6 +1113,13 @@ class PkpaPortfolioBuilderService
             return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
         }
 
+        if ($portfolio->template?->code === PkpaLokaPomPortfolio::TEMPLATE_CODE) {
+            $titles = collect(['Ringkasan Dokumen', 'Identitas Mahasiswa', 'Pakta Integritas', 'Lembar Pengesahan', 'Visi, Misi, Tujuan, dan Sasaran', 'Tata Tertib PKPA', 'Daftar Isi', 'Profil Tempat PKPA Loka POM', 'Logbook Harian'])
+                ->merge(collect(PkpaLokaPomPortfolio::reportSectionCodes())->map(fn ($code) => PkpaLokaPomPortfolio::sectionDefinition($code)['title']))
+                ->merge(['Studi Kasus Loka POM', 'Refleksi Mingguan', 'Self Assessment', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan'])->values();
+            return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
+        }
+
         $titles = collect([
             'Ringkasan Dokumen',
             'Identitas Mahasiswa',
@@ -1194,6 +1214,7 @@ class PkpaPortfolioBuilderService
             $detail = match (true) {
                 PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code) => $this->industryCaseReportDetailLines($case),
                 $portfolio->template?->code === PkpaHealthOfficePortfolio::TEMPLATE_CODE => $this->healthOfficeCaseReportDetailLines($case),
+                $portfolio->template?->code === PkpaLokaPomPortfolio::TEMPLATE_CODE => $this->lokaPomCaseReportDetailLines($case),
                 default => $this->caseReportDetailLines($case),
             };
             $lines = array_merge($lines, $detail, ['']);
@@ -1229,6 +1250,17 @@ class PkpaPortfolioBuilderService
             'Analisis Masalah: '.($case->drp ?: '-'), 'Alternatif Solusi: '.($case->intervention ?: '-'),
             'Rekomendasi: '.($case->monitoring ?: '-'), 'Kesimpulan: '.($case->conclusion ?: '-'),
             'Daftar Pustaka: '.($case->references ?: '-'),
+        ];
+    }
+
+    private function lokaPomCaseReportDetailLines(PkpaPortfolioCaseReport $case): array
+    {
+        return [
+            'FORMAT STUDI KASUS LOKA POM', 'Judul Kasus: '.$case->case_code,
+            'Tanggal: '.($case->case_date?->format('d M Y') ?: '-'), 'Latar Belakang: '.($case->complaint ?: '-'),
+            'Identifikasi Masalah: '.($case->diagnosis ?: '-'), 'Analisis Berdasarkan Regulasi: '.($case->drp ?: '-'),
+            'Penyelesaian dan Rekomendasi: '.($case->intervention ?: '-'), 'Kompetensi yang Dicapai: '.($case->monitoring ?: '-'),
+            'Kesimpulan: '.($case->conclusion ?: '-'), 'Daftar Pustaka: '.($case->references ?: '-'),
         ];
     }
 
