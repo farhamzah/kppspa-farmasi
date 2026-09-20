@@ -7,9 +7,12 @@
 @php
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
+    $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
     $editableSections = $isApotek
         ? \App\Support\PkpaApotekPortfolio::editableSections()
-        : ($isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : []);
+        : ($isHospital
+            ? \App\Support\PkpaHospitalPortfolio::editableSections()
+            : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : []));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
 @endphp
 <div class="space-y-6">
@@ -42,9 +45,9 @@
         </div>
     </section>
 
-    @if($isApotek || $isHospital)
+    @if($isApotek || $isHospital || $isIndustry)
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isHospital ? 'Rumah Sakit' : 'Apotek' }}</h2>
+            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : 'Apotek') }}</h2>
             <div class="mt-4 grid gap-4 xl:grid-cols-2">
                 @foreach($editableSections as $code => $definition)
                     @php

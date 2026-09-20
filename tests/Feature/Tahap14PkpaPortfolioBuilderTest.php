@@ -23,6 +23,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHospitalPortfolio;
+use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
@@ -69,9 +70,11 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-APT-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-RS-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PBF-v1', 'status' => 'active']);
+        $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-IND-v1', 'status' => 'active']);
         $apotek = PkpaPortfolioTemplate::where('code', 'PORT-APT-v1')->with('sections')->firstOrFail();
         $hospital = PkpaPortfolioTemplate::where('code', 'PORT-RS-v1')->with('sections')->firstOrFail();
         $pbf = PkpaPortfolioTemplate::where('code', 'PORT-PBF-v1')->with('sections')->firstOrFail();
+        $industry = PkpaPortfolioTemplate::where('code', 'PORT-IND-v1')->with('sections')->firstOrFail();
         $this->assertStringContainsString('Profil Tempat PKPA', $apotek->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Daftar Pustaka', $apotek->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Logbook', $hospital->sections->pluck('title')->implode(' '));
@@ -80,6 +83,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertFalse($hospital->sections->firstWhere('code', 'pharmacy_warehouse')->is_required);
         $this->assertStringContainsString('Cold Chain Product', $pbf->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Produk Rusak dan Kedaluwarsa', $pbf->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Quality Assurance', $industry->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Production Planning and Inventory Control', $industry->sections->pluck('title')->implode(' '));
     }
 
     public function test_portfolio_auto_create_idempotent_links_existing_data_and_blocks_incomplete_submit(): void
@@ -277,6 +282,68 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertOk()
             ->assertSee('Ringkasan Portofolio Rumah Sakit')
             ->assertSee('Mengikuti visite bersama tim interprofesional.');
+    }
+
+    public function test_industry_portfolio_uses_industry_units_and_operational_case_format(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('IND', '14IND');
+        $portfolio = $service->ensureForRun($run, $this->admin);
+        $profile = collect(PkpaIndustryPortfolio::sectionDefinition('site_profile')['fields'])
+            ->mapWithKeys(fn ($field) => [$field['name'] => $field['label'].' Industri Farmasi Karawang.'])
+            ->all();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/site_profile', $profile)
+            ->assertRedirect();
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/quality_assurance', [
+                'purpose' => 'Memahami penerapan sistem manajemen mutu.',
+                'theory' => 'CPOB dan sistem mutu industri farmasi.',
+                'activity' => 'Menelaah alur deviasi dan CAPA bersama unit QA.',
+                'result' => 'Memahami hubungan investigasi, akar masalah, dan CAPA.',
+            ])
+            ->assertRedirect();
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/studi-kasus', [
+                'case_code' => 'DEV-01',
+                'case_date' => '2026-07-03',
+                'complaint' => 'Terjadi penyimpangan parameter proses.',
+                'diagnosis' => 'Deviasi proses produksi.',
+                'history' => 'Dilakukan penelusuran tahapan proses dan dokumentasi terkait.',
+                'drp' => 'CPOB dan prosedur penanganan deviasi.',
+                'intervention' => 'Investigasi akar masalah dan penyusunan CAPA.',
+                'monitoring' => 'Apoteker memastikan investigasi dan efektivitas CAPA.',
+                'conclusion' => 'CAPA ditetapkan dan dipantau efektivitasnya.',
+                'references' => 'Pedoman CPOB yang berlaku.',
+                'anonymization_confirmed' => '1',
+            ])
+            ->assertRedirect();
+
+        $this->assertNotContains(
+            'Minimal satu laporan kegiatan Industri Farmasi wajib lengkap.',
+            $service->completeness($portfolio->fresh())['blocking']
+        );
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Portofolio Industri Farmasi')
+            ->assertSee('Quality Assurance (QA)')
+            ->assertSee('Studi Kasus Industri Farmasi')
+            ->assertSee('Regulasi yang Digunakan')
+            ->assertDontSee('Identitas Pasien');
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Bagian Portofolio Industri Farmasi')
+            ->assertSee('Menelaah alur deviasi dan CAPA bersama unit QA.');
+
+        $docx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $docxText = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
+        $this->assertStringContainsString('Profil Tempat PKPA Industri Farmasi', $docxText);
+        $this->assertStringContainsString('FORMAT STUDI KASUS INDUSTRI FARMASI', $docxText);
+        $this->assertStringContainsString('Investigasi akar masalah dan penyusunan CAPA.', $docxText);
+        $this->assertStringNotContainsString('Identitas Pasien', $docxText);
     }
 
     public function test_student_can_store_apotek_section_record_from_portal(): void
@@ -505,6 +572,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $siteName = match ($domainCode) {
             'RS' => 'Rumah Sakit Tahap 14',
             'PBF' => 'PBF Tahap 14',
+            'IND' => 'Industri Farmasi Tahap 14',
             default => 'Apotek Tahap 14',
         };
         $site = PkpaPracticeSite::create(['practice_domain_id' => $domain->id, 'code' => $domainCode.'-'.$suffix, 'name' => $siteName, 'address' => 'Karawang', 'city' => 'Karawang', 'province' => 'Jawa Barat', 'cooperation_start_date' => '2026-01-01', 'cooperation_end_date' => '2026-12-31', 'status' => 'active', 'is_active' => true]);

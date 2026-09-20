@@ -6,6 +6,7 @@ use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaPracticeDomain;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHospitalPortfolio;
+use App\Support\PkpaIndustryPortfolio;
 use Illuminate\Database\Seeder;
 
 class PkpaPortfolioTemplateSeeder extends Seeder
@@ -15,6 +16,8 @@ class PkpaPortfolioTemplateSeeder extends Seeder
         $this->seedTemplate('APT', 'PORT-APT-v1', 'Template Portofolio PKPA Apotek', PkpaApotekPortfolio::templateSections());
 
         $this->seedTemplate('RS', 'PORT-RS-v1', 'Template Portofolio PKPA Rumah Sakit', PkpaHospitalPortfolio::templateSections());
+
+        $this->seedTemplate('IND', 'PORT-IND-v1', 'Template Portofolio PKPA Industri Farmasi', PkpaIndustryPortfolio::templateSections());
 
         $this->seedTemplate('PBF', 'PORT-PBF-v1', 'Template Portofolio PKPA Pedagang Besar Farmasi', [
             ['cover', 'Sampul', 'static_content', 'all'],
@@ -115,6 +118,13 @@ class PkpaPortfolioTemplateSeeder extends Seeder
             $hospitalSection = PkpaHospitalPortfolio::sectionDefinition($sectionCode);
             if ($hospitalSection) {
                 return ['fields' => $hospitalSection['fields'] ?? []];
+            }
+        }
+
+        if ($domainCode === 'IND' && $sectionCode) {
+            $industrySection = PkpaIndustryPortfolio::sectionDefinition($sectionCode);
+            if ($industrySection) {
+                return ['fields' => $industrySection['fields'] ?? []];
             }
         }
 
