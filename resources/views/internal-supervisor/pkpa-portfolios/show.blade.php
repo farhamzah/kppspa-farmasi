@@ -9,12 +9,14 @@
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
     $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
+    $isHealthOffice = $portfolio->template?->code === \App\Support\PkpaHealthOfficePortfolio::TEMPLATE_CODE;
     $editableSections = $isApotek
         ? \App\Support\PkpaApotekPortfolio::editableSections()
         : ($isHospital
             ? \App\Support\PkpaHospitalPortfolio::editableSections()
             : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections()
-                : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections() : [])));
+                : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections()
+                    : ($isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections() : []))));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
 @endphp
 <div class="space-y-6">
@@ -47,9 +49,9 @@
         </div>
     </section>
 
-    @if($isApotek || $isHospital || $isIndustry || $isPuskesmas)
+    @if($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice)
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek')) }}</h2>
+            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isHealthOffice ? 'Dinas Kesehatan' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek'))) }}</h2>
             <div class="mt-4 grid gap-4 xl:grid-cols-2">
                 @foreach($editableSections as $code => $definition)
                     @php

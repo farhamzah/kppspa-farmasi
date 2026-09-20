@@ -9,10 +9,12 @@
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
     $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
+    $isHealthOffice = $portfolio->template?->code === \App\Support\PkpaHealthOfficePortfolio::TEMPLATE_CODE;
     $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
     $hospitalSections = $isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : [];
     $industrySections = $isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : [];
     $puskesmasSections = $isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections() : [];
+    $healthOfficeSections = $isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections() : [];
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
     $reportCodes = \App\Support\PkpaApotekPortfolio::reportSectionCodes();
     $manualSections = $isApotek
@@ -121,6 +123,22 @@
         'Clinical Reasoning',
         'Manajemen Waktu',
     ])));
+    if ($isHealthOffice) {
+        $documentationCategories = [
+            'Orientasi Dinas Kesehatan', 'Perencanaan Obat dan BMHP', 'Pengadaan Obat Pemerintah',
+            'Penerimaan dan Pemeriksaan Obat', 'Penyimpanan', 'Distribusi', 'Monitoring dan Evaluasi',
+            'Obat Program', 'Pembinaan dan Supervisi', 'Pelaporan dan Analisis Data',
+        ];
+        $selfAssessmentAspects = [
+            'Struktur Organisasi Dinas Kesehatan', 'Tugas dan Fungsi Dinas Kesehatan', 'Sistem Kesehatan Daerah',
+            'Peran Apoteker di Pemerintahan', 'Hubungan dengan Fasilitas Pelayanan Kesehatan', 'Program Pembangunan Kesehatan',
+            'Perencanaan Kebutuhan Obat', 'Metode Konsumsi', 'Metode Morbiditas', 'Analisis Data Pemakaian Obat',
+            'Perencanaan Berdasarkan Anggaran', 'Prioritas Obat Program', 'Pengadaan Obat', 'Penerimaan dan Pemeriksaan',
+            'Penyimpanan FIFO dan FEFO', 'Distribusi Obat', 'Monitoring Stok', 'Obat Kedaluwarsa dan Penghapusan',
+            'Indikator Pengelolaan Obat', 'Analisis Stockout dan Overstock', 'Program Kesehatan Daerah',
+            'Penggunaan Obat Rasional', 'Regulasi Kefarmasian', 'Pencatatan dan Pelaporan', 'Sikap dan Profesionalisme',
+        ];
+    }
 @endphp
 
 @section('content')
@@ -145,7 +163,7 @@
 
     <section class="grid gap-4 md:grid-cols-4">
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isPbf ? 'PBF' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek'))) }}</p>
+            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isHealthOffice ? 'Dinas Kesehatan' : ($isPbf ? 'PBF' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek')))) }}</p>
             <p class="mt-2 text-2xl font-black text-slate-950">{{ $completedSections }} / {{ $manualSections->count() }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -533,15 +551,16 @@
         </section>
     @endif
 
-    @if($isHospital || $isIndustry || $isPuskesmas)
+    @if($isHospital || $isIndustry || $isPuskesmas || $isHealthOffice)
         @php
-            $specialSections = $isHospital ? $hospitalSections : ($isIndustry ? $industrySections : $puskesmasSections);
+            $specialSections = $isHospital ? $hospitalSections : ($isIndustry ? $industrySections : ($isPuskesmas ? $puskesmasSections : $healthOfficeSections));
             $specialReportCodes = $isHospital ? \App\Support\PkpaHospitalPortfolio::reportSectionCodes()
-                : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::reportSectionCodes() : \App\Support\PkpaPuskesmasPortfolio::reportSectionCodes());
+                : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::reportSectionCodes()
+                    : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::reportSectionCodes() : \App\Support\PkpaHealthOfficePortfolio::reportSectionCodes()));
             $specialCompletedReports = collect($specialReportCodes)
                 ->filter(fn ($code) => $sectionRecords->get($code)?->status === 'completed')
                 ->count();
-            $specialDomainLabel = $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : 'Puskesmas');
+            $specialDomainLabel = $isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Dinas Kesehatan'));
         @endphp
         <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
             <header class="border-b border-slate-100 p-5 sm:p-6">
@@ -594,8 +613,8 @@
     @endif
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">{{ $isIndustry ? 'Studi Kasus Industri Farmasi' : ($isPbf ? 'Studi Kasus PBF' : 'Studi Kasus') }}</h2>
-        <p class="mt-2 text-sm text-slate-600">{{ $isIndustry ? 'Dokumentasikan satu masalah mutu atau proses, misalnya deviasi, OOS, OOT, CAPA, change control, validasi, keluhan, atau penarikan produk.' : ($isPbf ? 'Dokumentasikan satu kasus operasional PBF, misalnya suhu CCP, retur, recall, selisih stok, atau penyimpangan dokumen. Jangan menulis identitas personal yang tidak diperlukan.' : 'Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.') }}</p>
+        <h2 class="text-lg font-black text-slate-950">{{ $isHealthOffice ? 'Studi Kasus Dinas Kesehatan' : ($isIndustry ? 'Studi Kasus Industri Farmasi' : ($isPbf ? 'Studi Kasus PBF' : 'Studi Kasus')) }}</h2>
+        <p class="mt-2 text-sm text-slate-600">{{ $isHealthOffice ? 'Analisis satu permasalahan nyata dalam pengelolaan obat, BMHP, distribusi, pelaporan, atau program kesehatan.' : ($isIndustry ? 'Dokumentasikan satu masalah mutu atau proses, misalnya deviasi, OOS, OOT, CAPA, change control, validasi, keluhan, atau penarikan produk.' : ($isPbf ? 'Dokumentasikan satu kasus operasional PBF, misalnya suhu CCP, retur, recall, selisih stok, atau penyimpangan dokumen. Jangan menulis identitas personal yang tidak diperlukan.' : 'Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.')) }}</p>
         @if($isIndustry)
             <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
                 @csrf
@@ -615,6 +634,22 @@
                 @endforeach
                 <label class="flex items-start gap-2 text-sm font-semibold text-slate-700 md:col-span-2"><input type="checkbox" name="anonymization_confirmed" value="1" class="mt-1" required> Saya memastikan isi tidak memuat informasi rahasia perusahaan, formula, data bets, atau identitas personal yang tidak diizinkan.</label>
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus Industri</button>
+            </form>
+        @elseif($isHealthOffice)
+            <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+                @csrf
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Judul Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                @foreach([
+                    'medication_use' => 'Identitas Kasus (lokasi, unit, waktu, dan pihak terkait)', 'complaint' => 'Latar Belakang',
+                    'diagnosis' => 'Identifikasi Masalah', 'history' => 'Tujuan Analisis', 'past_medical_history' => 'Data Kasus',
+                    'drp' => 'Analisis Masalah', 'intervention' => 'Alternatif Solusi', 'monitoring' => 'Rekomendasi',
+                    'conclusion' => 'Kesimpulan', 'references' => 'Daftar Pustaka',
+                ] as $name => $label)
+                    <label class="grid gap-2 {{ in_array($name, ['complaint', 'past_medical_history', 'drp'], true) ? 'md:col-span-2' : '' }}"><span class="text-sm font-bold text-slate-700">{{ $label }}</span><textarea name="{{ $name }}" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old($name) }}</textarea></label>
+                @endforeach
+                <label class="flex items-start gap-2 text-sm font-semibold text-slate-700 md:col-span-2"><input type="checkbox" name="anonymization_confirmed" value="1" class="mt-1" required> Saya memastikan data yang ditulis telah disamarkan dan tidak memuat informasi terbatas yang tidak diizinkan.</label>
+                <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus Dinas Kesehatan</button>
             </form>
         @else
         @php

@@ -26,6 +26,7 @@ use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaPuskesmasPortfolio;
+use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
@@ -74,6 +75,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PBF-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-IND-v1', 'status' => 'active']);
         $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-PKM-v1', 'status' => 'active']);
+        $this->assertDatabaseHas('pkpa_portfolio_templates', ['code' => 'PORT-DINKES-v1', 'status' => 'active']);
         $apotek = PkpaPortfolioTemplate::where('code', 'PORT-APT-v1')->with('sections')->firstOrFail();
         $hospital = PkpaPortfolioTemplate::where('code', 'PORT-RS-v1')->with('sections')->firstOrFail();
         $pbf = PkpaPortfolioTemplate::where('code', 'PORT-PBF-v1')->with('sections')->firstOrFail();
@@ -381,6 +383,45 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringContainsString('Laporan Kegiatan: Kegiatan Manajerial di Instalasi Farmasi Puskesmas', $text);
     }
 
+    public function test_health_office_option_uses_management_case_and_its_own_template(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->fixtureRun('PEM', '14DK', 'DINKES'), $this->admin);
+        $this->assertSame(PkpaHealthOfficePortfolio::TEMPLATE_CODE, $portfolio->template->code);
+        $profile = collect(PkpaHealthOfficePortfolio::sectionDefinition('site_profile')['fields'])
+            ->mapWithKeys(fn ($field) => [$field['name'] => $field['label'].' Kabupaten Karawang.'])->all();
+        $service->saveSectionRecord($portfolio, 'site_profile', $profile, $this->student);
+        $service->saveSectionRecord($portfolio->fresh(), 'medicine_planning', [
+            'purpose' => 'Memahami perencanaan kebutuhan obat daerah.', 'theory' => 'Metode konsumsi dan morbiditas.',
+            'activity' => 'Menganalisis data pemakaian dan kebutuhan obat program.',
+            'result' => 'Memahami penyusunan kebutuhan berdasarkan data dan anggaran.',
+        ], $this->student);
+        $service->saveCase($portfolio->fresh(), [
+            'case_code' => 'Analisis Stockout Obat Program', 'case_date' => '2026-07-04',
+            'medication_use' => 'Gudang farmasi kabupaten, unit logistik.', 'complaint' => 'Terjadi kekosongan obat program.',
+            'diagnosis' => 'Ketidaksesuaian perencanaan dengan pemakaian.', 'history' => 'Mengidentifikasi penyebab dan menyusun solusi.',
+            'past_medical_history' => 'Data stok, pemakaian, distribusi, dan laporan logistik.',
+            'drp' => 'Analisis dilakukan dengan pendekatan 5 Why dan indikator stok.',
+            'intervention' => 'Perbaikan perencanaan dan jadwal pemantauan stok.',
+            'monitoring' => 'Terapkan pemantauan stok minimum dan evaluasi bulanan.',
+            'conclusion' => 'Rekomendasi diarahkan untuk mencegah stockout berulang.', 'references' => 'Pedoman pengelolaan obat pemerintah.',
+            'anonymization_confirmed' => true,
+        ], $this->student);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)->assertOk()
+            ->assertSee('Portofolio Dinas Kesehatan')->assertSee('Pengadaan Obat Pemerintah')
+            ->assertSee('Studi Kasus Dinas Kesehatan')->assertSee('Data Kasus')->assertDontSee('Identitas Pasien');
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/review-portofolio/'.$portfolio->id)->assertOk()
+            ->assertSee('Ringkasan Portofolio Dinas Kesehatan')->assertSee('Menganalisis data pemakaian dan kebutuhan obat program.');
+        $docx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $text = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
+        $this->assertStringContainsString('FORMAT STUDI KASUS DINAS KESEHATAN', $text);
+        $this->assertStringContainsString('Analisis Stockout Obat Program', $text);
+        $this->assertStringNotContainsString('Identitas Pasien', $text);
+    }
+
     public function test_student_can_store_apotek_section_record_from_portal(): void
     {
         $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
@@ -611,7 +652,11 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             'RS' => 'Rumah Sakit Tahap 14',
             'PBF' => 'PBF Tahap 14',
             'IND' => 'Industri Farmasi Tahap 14',
-            'PEM' => $domainOptionCode === 'PUSKESMAS' ? 'Puskesmas Tahap 14' : 'Pemerintahan Tahap 14',
+            'PEM' => match ($domainOptionCode) {
+                'PUSKESMAS' => 'Puskesmas Tahap 14',
+                'DINKES' => 'Dinas Kesehatan Tahap 14',
+                default => 'Pemerintahan Tahap 14',
+            },
             default => 'Apotek Tahap 14',
         };
         $site = PkpaPracticeSite::create(['practice_domain_id' => $domain->id, 'practice_domain_option_id' => $domainOption?->id, 'code' => $domainCode.'-'.$suffix, 'name' => $siteName, 'address' => 'Karawang', 'city' => 'Karawang', 'province' => 'Jawa Barat', 'cooperation_start_date' => '2026-01-01', 'cooperation_end_date' => '2026-12-31', 'status' => 'active', 'is_active' => true]);
