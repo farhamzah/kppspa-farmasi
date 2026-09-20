@@ -6,7 +6,10 @@
 @section('content')
 @php
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
-    $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
+    $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
+    $editableSections = $isApotek
+        ? \App\Support\PkpaApotekPortfolio::editableSections()
+        : ($isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : []);
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
 @endphp
 <div class="space-y-6">
@@ -39,14 +42,19 @@
         </div>
     </section>
 
-    @if($isApotek)
+    @if($isApotek || $isHospital)
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio Apotek</h2>
+            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isHospital ? 'Rumah Sakit' : 'Apotek' }}</h2>
             <div class="mt-4 grid gap-4 xl:grid-cols-2">
                 @foreach($editableSections as $code => $definition)
                     @php
                         $record = $sectionRecords->get($code);
-                        $lines = \App\Support\PkpaApotekPortfolio::summaryLines($code, $record?->manual_payload ?? []);
+                        $lines = $isApotek
+                            ? \App\Support\PkpaApotekPortfolio::summaryLines($code, $record?->manual_payload ?? [])
+                            : collect($definition['fields'] ?? [])->map(function ($field) use ($record) {
+                                $value = data_get($record?->manual_payload, $field['name']);
+                                return filled($value) ? $field['label'].': '.$value : null;
+                            })->filter()->values()->all();
                     @endphp
                     <article class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                         <div class="flex items-start justify-between gap-3">

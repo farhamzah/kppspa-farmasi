@@ -9,6 +9,7 @@ use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
 use App\Services\PkpaPortfolioBuilderService;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaHospitalPortfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -26,7 +27,9 @@ class PkpaPortfolioController extends Controller
             ->latest()
             ->get();
         $supportedRuns = $runs->filter(function (PkpaRotationRun $run) {
-            return (PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code) || $run->practiceDomain?->code === 'PBF')
+            return (PkpaApotekPortfolio::isApotekCode($run->practiceDomain?->code)
+                || PkpaHospitalPortfolio::isHospitalCode($run->practiceDomain?->code)
+                || $run->practiceDomain?->code === 'PBF')
                 && PkpaPortfolioTemplate::query()
                     ->where('practice_domain_id', $run->practice_domain_id)
                     ->where('is_current', true)

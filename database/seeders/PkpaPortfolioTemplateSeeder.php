@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaPracticeDomain;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaHospitalPortfolio;
 use Illuminate\Database\Seeder;
 
 class PkpaPortfolioTemplateSeeder extends Seeder
@@ -13,33 +14,7 @@ class PkpaPortfolioTemplateSeeder extends Seeder
     {
         $this->seedTemplate('APT', 'PORT-APT-v1', 'Template Portofolio PKPA Apotek', PkpaApotekPortfolio::templateSections());
 
-        $this->seedTemplate('RS', 'PORT-RS-v1', 'Template Portofolio PKPA Rumah Sakit', [
-            ['cover', 'Sampul', 'static_content', 'all'],
-            ['approval', 'Lembar Pengesahan', 'approval', 'field_internal'],
-            ['common_sections', 'Bagian Umum', 'static_content', 'all'],
-            ['identity', 'Identitas Mahasiswa', 'auto_identity', 'all'],
-            ['integrity_pact', 'Pakta Integritas', 'approval', 'student'],
-            ['hospital_competencies', 'Kompetensi Rumah Sakit', 'auto_competency', 'field_internal'],
-            ['daily_logbook', 'Logbook Harian', 'auto_logbook', 'field'],
-            ['pharmacy_warehouse', 'Gudang Farmasi Rumah Sakit', 'structured_form', 'field'],
-            ['outpatient_pharmacy', 'Farmasi Rawat Jalan', 'structured_form', 'field'],
-            ['inpatient_pharmacy', 'Farmasi Rawat Inap', 'structured_form', 'field'],
-            ['clinical_pharmacy', 'Farmasi Klinik', 'structured_form', 'field_internal'],
-            ['pio', 'Pelayanan Informasi Obat', 'structured_form', 'field'],
-            ['counselling', 'Konseling', 'structured_form', 'field'],
-            ['medication_reconciliation', 'Rekonsiliasi Obat', 'structured_form', 'field_internal'],
-            ['adr_meso', 'ADR/MESO', 'structured_form', 'field_internal'],
-            ['ward_round', 'Visite Ruang Rawat', 'structured_form', 'field_internal'],
-            ['sterile_preparations', 'Sediaan Steril', 'structured_form', 'field'],
-            ['weekly_reflection', 'Refleksi Mingguan', 'weekly_reflection', 'internal'],
-            ['case_report', 'Studi Kasus', 'repeatable_case', 'field'],
-            ['self_assessment', 'Penilaian Diri', 'self_assessment', 'internal'],
-            ['field_assessment', 'Penilaian Pembimbing Lapangan', 'auto_assessment', 'field'],
-            ['internal_assessment', 'Penilaian Pembimbing Dalam', 'auto_assessment', 'internal'],
-            ['rubric', 'Rubrik', 'static_content', 'all'],
-            ['documentation', 'Bukti Kegiatan', 'evidence_gallery', 'field'],
-            ['attachments', 'Lampiran', 'attachment_list', 'all'],
-        ]);
+        $this->seedTemplate('RS', 'PORT-RS-v1', 'Template Portofolio PKPA Rumah Sakit', PkpaHospitalPortfolio::templateSections());
 
         $this->seedTemplate('PBF', 'PORT-PBF-v1', 'Template Portofolio PKPA Pedagang Besar Farmasi', [
             ['cover', 'Sampul', 'static_content', 'all'],
@@ -133,6 +108,13 @@ class PkpaPortfolioTemplateSeeder extends Seeder
                     'fields' => $apotekSection['fields'] ?? [],
                     'activity_hint' => $apotekSection['activity_hint'] ?? null,
                 ]);
+            }
+        }
+
+        if ($domainCode === 'RS' && $sectionCode) {
+            $hospitalSection = PkpaHospitalPortfolio::sectionDefinition($sectionCode);
+            if ($hospitalSection) {
+                return ['fields' => $hospitalSection['fields'] ?? []];
             }
         }
 

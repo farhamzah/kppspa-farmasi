@@ -22,6 +22,7 @@ use App\Models\PkpaRotationSupervisorHistory;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
@@ -73,9 +74,10 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $pbf = PkpaPortfolioTemplate::where('code', 'PORT-PBF-v1')->with('sections')->firstOrFail();
         $this->assertStringContainsString('Profil Tempat PKPA', $apotek->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Daftar Pustaka', $apotek->sections->pluck('title')->implode(' '));
-        $this->assertStringNotContainsString('Apotek', $hospital->name.' '.$hospital->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Logbook', $hospital->sections->pluck('title')->implode(' '));
-        $this->assertStringContainsString('Penilaian Diri', $hospital->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Profil Tempat PKPA Rumah Sakit', $hospital->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Visite Apoteker', $hospital->sections->pluck('title')->implode(' '));
+        $this->assertFalse($hospital->sections->firstWhere('code', 'pharmacy_warehouse')->is_required);
         $this->assertStringContainsString('Cold Chain Product', $pbf->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Produk Rusak dan Kedaluwarsa', $pbf->sections->pluck('title')->implode(' '));
     }
@@ -195,6 +197,12 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $service = app(PkpaPortfolioBuilderService::class);
         $run = $this->fixtureRun('RS', '14RS');
         $portfolio = $service->ensureForRun($run, $this->admin);
+        $service->saveSectionRecord($portfolio, 'pharmacy_warehouse', [
+            'purpose' => 'Memahami pengelolaan perbekalan farmasi rumah sakit.',
+            'theory' => 'Pengelolaan mengikuti standar pelayanan kefarmasian rumah sakit.',
+            'activity' => 'Mengamati penerimaan, penyimpanan, dan distribusi obat.',
+            'result' => 'Memahami alur stok dan penerapan FEFO di gudang farmasi.',
+        ], $this->student);
         $docx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
         $pdf = $service->export($portfolio->fresh(), 'pdf', $this->koordinator);
 
@@ -202,8 +210,73 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         Storage::disk('local')->assertExists($pdf->path);
         $docxText = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
         $this->assertStringContainsString('Rumah Sakit', $docxText);
-        $this->assertStringNotContainsString('Apotek', $docxText);
+        $this->assertStringContainsString('Logbook Harian', $docxText);
+        $this->assertStringContainsString('Laporan Kegiatan: Gudang Farmasi', $docxText);
+        $this->assertStringContainsString('penerapan FEFO di gudang farmasi', $docxText);
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($pdf->path));
+    }
+
+    public function test_hospital_portfolio_can_be_filled_and_reviewed_from_all_portals(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('RS', '14RSFORM');
+        $portfolio = $service->ensureForRun($run, $this->admin);
+        $profile = collect(PkpaHospitalPortfolio::sectionDefinition('site_profile')['fields'])
+            ->mapWithKeys(fn ($field) => [$field['name'] => $field['label'].' Rumah Sakit Pendidikan Karawang.'])
+            ->all();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa')
+            ->assertOk()
+            ->assertSee('Rumah Sakit');
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/site_profile', $profile)
+            ->assertRedirect();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/ward_round', [
+                'purpose' => 'Memahami kontribusi apoteker saat visite.',
+                'theory' => 'Visite mendukung terapi obat yang efektif dan aman.',
+                'activity' => 'Mengikuti visite bersama tim interprofesional.',
+                'result' => 'Mampu mengidentifikasi masalah terkait obat saat visite.',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('pkpa_portfolio_section_records', [
+            'pkpa_rotation_portfolio_id' => $portfolio->id,
+            'section_code' => 'site_profile',
+            'status' => 'completed',
+        ]);
+        $this->assertDatabaseHas('pkpa_portfolio_section_records', [
+            'pkpa_rotation_portfolio_id' => $portfolio->id,
+            'section_code' => 'ward_round',
+            'status' => 'completed',
+        ]);
+        $this->assertNotContains(
+            'Minimal satu laporan kegiatan Rumah Sakit wajib lengkap.',
+            $service->completeness($portfolio->fresh())['blocking']
+        );
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Portofolio Rumah Sakit')
+            ->assertSee('Profil Tempat PKPA Rumah Sakit')
+            ->assertSee('Visite Apoteker')
+            ->assertSee('minimal satu laporan kegiatan harus lengkap');
+
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get('/pembimbing-lapangan/review-portofolio/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Bagian Portofolio Rumah Sakit')
+            ->assertSee('Mengikuti visite bersama tim interprofesional.');
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/review-portofolio/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Ringkasan Portofolio Rumah Sakit')
+            ->assertSee('Mengikuti visite bersama tim interprofesional.');
     }
 
     public function test_student_can_store_apotek_section_record_from_portal(): void

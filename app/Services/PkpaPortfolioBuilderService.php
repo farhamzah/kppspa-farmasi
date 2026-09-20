@@ -13,6 +13,7 @@ use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
+use App\Support\PkpaHospitalPortfolio;
 use App\Models\User;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
@@ -603,6 +604,10 @@ class PkpaPortfolioBuilderService
         if ($portfolio->documentationItems->whereIn('status', ['submitted', 'verified'])->isEmpty()) {
             $blocking[] = 'Dokumentasi kegiatan belum tersedia.';
         }
+        if (PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code)
+            && $portfolio->sectionRecords->whereIn('section_code', PkpaHospitalPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
+            $blocking[] = 'Minimal satu laporan kegiatan Rumah Sakit wajib lengkap.';
+        }
         if ($portfolio->reviews->where('action', 'revision_requested')->where('created_at', '>', $portfolio->updated_at)->isNotEmpty()) {
             $blocking[] = 'Masih ada revisi terbuka.';
         }
@@ -848,7 +853,10 @@ class PkpaPortfolioBuilderService
             ],
         ];
 
-        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+        $isApotek = PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
+        $isHospital = PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
+
+        if ($isApotek || $isHospital) {
             $sections[] = [
                 'title' => 'Lembar Pengesahan',
                 'lines' => $this->approvalLines($portfolio),
@@ -868,7 +876,7 @@ class PkpaPortfolioBuilderService
             'lines' => $this->exportTableOfContents($portfolio),
         ];
 
-        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+        if ($isApotek) {
             $sections[] = [
                 'title' => 'Profil Tempat PKPA',
                 'lines' => $this->sectionPayloadLines($portfolio, 'site_profile'),
@@ -882,6 +890,29 @@ class PkpaPortfolioBuilderService
                     'title' => $portfolio->sectionRecords->firstWhere('section_code', $code)?->templateSection?->title
                         ?? (PkpaApotekPortfolio::sectionDefinition($code)['title'] ?? str($code)->headline()->toString()),
                     'lines' => $this->sectionPayloadLines($portfolio, $code),
+                ];
+            }
+        } elseif ($isHospital) {
+            $sections[] = [
+                'title' => 'Profil Tempat PKPA Rumah Sakit',
+                'lines' => $this->sectionPayloadLines($portfolio, 'site_profile'),
+            ];
+            $sections[] = [
+                'title' => 'Logbook Harian',
+                'lines' => $this->logbookLines($portfolio),
+            ];
+            foreach (PkpaHospitalPortfolio::reportSectionCodes() as $code) {
+                $sections[] = [
+                    'title' => $portfolio->sectionRecords->firstWhere('section_code', $code)?->templateSection?->title
+                        ?? (PkpaHospitalPortfolio::sectionDefinition($code)['title'] ?? str($code)->headline()->toString()),
+                    'lines' => $this->sectionPayloadLines($portfolio, $code),
+                ];
+            }
+        } else {
+            foreach ($portfolio->template->sections->whereIn('source_type', ['structured_form', 'attachment_list']) as $section) {
+                $sections[] = [
+                    'title' => $section->title,
+                    'lines' => $this->sectionPayloadLines($portfolio, $section->code),
                 ];
             }
         }
@@ -903,7 +934,7 @@ class PkpaPortfolioBuilderService
             'lines' => $this->documentationLines($portfolio),
         ];
 
-        if (PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code)) {
+        if ($isApotek || $isHospital) {
             $sections[] = [
                 'title' => 'Daftar Pustaka',
                 'lines' => $this->sectionPayloadLines($portfolio, 'bibliography'),
@@ -953,17 +984,51 @@ class PkpaPortfolioBuilderService
             ];
         }
 
-        return [
-            '1. Ringkasan Dokumen',
-            '2. Daftar Isi',
-            '3. Identitas Mahasiswa',
-            '4. Pakta Integritas',
-            '5. Studi Kasus',
-            '6. Refleksi Mingguan',
-            '7. Self Assessment',
-            '8. Dokumentasi Kegiatan',
-            '9. Status Pemeriksaan',
-        ];
+        if (PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code)) {
+            $titles = collect([
+                'Ringkasan Dokumen',
+                'Identitas Mahasiswa',
+                'Pakta Integritas',
+                'Lembar Pengesahan',
+                'Visi, Misi, Tujuan, dan Sasaran',
+                'Tata Tertib PKPA',
+                'Daftar Isi',
+                'Profil Tempat PKPA Rumah Sakit',
+                'Logbook Harian',
+            ])->merge(
+                collect(PkpaHospitalPortfolio::reportSectionCodes())
+                    ->map(fn ($code) => PkpaHospitalPortfolio::sectionDefinition($code)['title'])
+            )->merge([
+                'Studi Kasus',
+                'Refleksi Mingguan',
+                'Self Assessment',
+                'Dokumentasi Kegiatan',
+                'Daftar Pustaka',
+                'Lampiran',
+                'Status Pemeriksaan',
+            ])->values();
+
+            return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
+        }
+
+        $titles = collect([
+            'Ringkasan Dokumen',
+            'Identitas Mahasiswa',
+            'Pakta Integritas',
+            'Daftar Isi',
+        ])->merge(
+            $portfolio->template->sections
+                ->whereIn('source_type', ['structured_form', 'attachment_list'])
+                ->pluck('title')
+        )->merge([
+            'Studi Kasus',
+            'Refleksi Mingguan',
+            'Self Assessment',
+            'Dokumentasi Kegiatan',
+            'Status Pemeriksaan',
+        ])->values();
+
+        return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
     }
 
     private function sectionPayloadLines(PkpaRotationPortfolio $portfolio, string $sectionCode): array
@@ -973,7 +1038,21 @@ class PkpaPortfolioBuilderService
             return ['Belum ada isi untuk bagian ini.'];
         }
 
-        return PkpaApotekPortfolio::summaryLines($sectionCode, $record->manual_payload ?? []);
+        $apotekLines = PkpaApotekPortfolio::summaryLines($sectionCode, $record->manual_payload ?? []);
+        if ($apotekLines !== []) {
+            return $apotekLines;
+        }
+
+        $fields = data_get($record->templateSection?->content_schema, 'fields', []);
+
+        return collect($fields)->map(function ($field) use ($record) {
+            $value = data_get($record->manual_payload, $field['name']);
+            if (is_array($value)) {
+                $value = implode(', ', array_filter($value));
+            }
+
+            return filled($value) ? ($field['label'] ?? str($field['name'])->headline()).': '.$value : null;
+        })->filter()->values()->all() ?: ['Belum ada isi untuk bagian ini.'];
     }
 
     private function logbookLines(PkpaRotationPortfolio $portfolio): array

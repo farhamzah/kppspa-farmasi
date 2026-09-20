@@ -6,7 +6,9 @@
 @php
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
     $isPbf = $portfolio->practiceDomain?->code === 'PBF';
+    $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
+    $hospitalSections = $isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : [];
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
     $reportCodes = \App\Support\PkpaApotekPortfolio::reportSectionCodes();
     $manualSections = $isApotek
@@ -45,6 +47,10 @@
         'Orientasi dan Pengenalan PBF', 'Pengadaan', 'Penerimaan Barang', 'Gudang dan Penyimpanan',
         'Cold Chain Product', 'Inventory Control', 'Picking dan Packing', 'Distribusi',
         'Quality Assurance', 'Retur dan Recall', 'Produk Rusak dan Kedaluwarsa',
+    ] : ($isHospital ? [
+        'Orientasi Instalasi Farmasi Rumah Sakit', 'Gudang Farmasi', 'Pelayanan Farmasi Rawat Jalan',
+        'Pelayanan Farmasi Rawat Inap', 'Farmasi Klinik', 'Pelayanan Informasi Obat', 'Konseling Pasien',
+        'Rekonsiliasi Obat', 'Monitoring Efek Samping Obat', 'Visite Apoteker', 'Pelayanan Sediaan Steril',
     ] : [
         'Orientasi PKPA',
         'Pelayanan Resep',
@@ -56,13 +62,19 @@
         'Stock Opname',
         'Administrasi Kefarmasian',
         'Penutupan PKPA',
-    ];
+    ]);
     $selfAssessmentAspects = $isPbf ? [
         'Pemahaman CDOB', 'Etika dan Disiplin', 'Komunikasi Profesional', 'Pengadaan',
         'Penerimaan Barang', 'Penyimpanan', 'Cold Chain Product', 'Pengendalian Persediaan',
         'Picking dan Packing', 'Distribusi', 'Quality Assurance', 'Penanganan Retur',
         'Recall Produk', 'Produk Rusak dan Kedaluwarsa', 'Dokumentasi', 'Manajemen Risiko',
         'Audit dan CAPA', 'Kerja Sama Tim', 'Problem Solving', 'Manajemen Waktu',
+    ] : ($isHospital ? [
+        'Kehadiran', 'Disiplin', 'Etika Profesi', 'Tanggung Jawab', 'Komunikasi', 'Kerja Sama Tim',
+        'Dispensing', 'Pengelolaan Obat', 'Pelayanan Informasi Obat', 'Konseling Pasien',
+        'Rekonsiliasi Obat', 'Monitoring Efek Samping Obat', 'Drug Related Problem',
+        'Monitoring Terapi Obat', 'Pelayanan Steril', 'Dokumentasi', 'Kemampuan Analisis Kasus',
+        'Problem Solving', 'Inisiatif', 'Pengembangan Diri',
     ] : [
         'Disiplin',
         'Kehadiran',
@@ -79,7 +91,7 @@
         'Problem Solving',
         'Clinical Reasoning',
         'Manajemen Waktu',
-    ];
+    ]);
 @endphp
 
 @section('content')
@@ -104,7 +116,7 @@
 
     <section class="grid gap-4 md:grid-cols-4">
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isPbf ? 'PBF' : 'Apotek' }}</p>
+            <p class="text-xs font-bold uppercase text-slate-500">Bagian {{ $isPbf ? 'PBF' : ($isHospital ? 'Rumah Sakit' : 'Apotek') }}</p>
             <p class="mt-2 text-2xl font-black text-slate-950">{{ $completedSections }} / {{ $manualSections->count() }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -485,6 +497,63 @@
                                 </label>
                             @endforeach
                             <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $section->title }}</button></div>
+                        </form>
+                    </details>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    @if($isHospital)
+        @php
+            $hospitalReportCodes = \App\Support\PkpaHospitalPortfolio::reportSectionCodes();
+            $hospitalCompletedReports = collect($hospitalReportCodes)
+                ->filter(fn ($code) => $sectionRecords->get($code)?->status === 'completed')
+                ->count();
+        @endphp
+        <section class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+            <header class="border-b border-slate-100 p-5 sm:p-6">
+                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Portofolio Rumah Sakit</p>
+                        <h2 class="mt-1 text-xl font-black text-slate-950">Profil dan Laporan Kegiatan</h2>
+                        <p class="mt-2 max-w-3xl text-sm text-slate-600">Isi profil rumah sakit, lalu lengkapi unit yang benar-benar Anda ikuti. Tidak semua unit wajib tersedia; minimal satu laporan kegiatan harus lengkap.</p>
+                    </div>
+                    <div class="flex gap-3 text-sm">
+                        <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $hospitalCompletedReports }}</p><p class="text-xs text-slate-500">unit terisi</p></div>
+                        <div class="border-l-2 border-slate-300 pl-3"><p class="font-black text-slate-950">{{ count($hospitalReportCodes) }}</p><p class="text-xs text-slate-500">unit tersedia</p></div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="border-b border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div><h3 class="font-black text-slate-950">Logbook Harian</h3><p class="mt-1 text-sm text-slate-600">Terhubung otomatis dengan logbook operasional Rumah Sakit.</p></div>
+                    <span class="w-fit rounded-full px-3 py-1 text-xs font-bold {{ $sectionRecords->get('daily_logbook')?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $sectionRecords->get('daily_logbook')?->status === 'completed' ? 'Sudah terbaca' : 'Belum tersedia' }}</span>
+                </div>
+            </section>
+
+            <div class="space-y-3 p-4 sm:p-5">
+                @foreach($hospitalSections as $sectionCode => $definition)
+                    @php
+                        $record = $sectionRecords->get($sectionCode);
+                        $payload = $record?->manual_payload ?? [];
+                        $isProfile = $sectionCode === 'site_profile';
+                    @endphp
+                    <details class="group rounded-2xl border border-slate-200 bg-slate-50" @if($isProfile) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4">
+                            <span class="min-w-0"><span class="block text-base font-black text-slate-950">{{ $definition['title'] }}</span><span class="mt-1 block text-sm text-slate-600">{{ $definition['description'] }}</span></span>
+                            <span class="shrink-0 rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $record?->status === 'completed' ? 'Tersimpan' : ($definition['is_required'] ? 'Wajib' : 'Opsional') }}</span>
+                        </summary>
+                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
+                            @csrf
+                            @foreach($definition['fields'] as $field)
+                                <label class="grid gap-2">
+                                    <span class="text-sm font-bold text-slate-700">{{ $field['label'] }}</span>
+                                    <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 4 }}" class="min-h-28 resize-y rounded-xl border-slate-200 text-sm" @if($field['required'] ?? true) required @endif>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
+                                </label>
+                            @endforeach
+                            <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $definition['title'] }}</button></div>
                         </form>
                     </details>
                 @endforeach
