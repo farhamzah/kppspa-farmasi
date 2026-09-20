@@ -12,6 +12,7 @@ use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaPortfolioTextFormatter;
 use App\Models\User;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
@@ -30,6 +31,10 @@ class PkpaPortfolioBuilderService
         '/\b(jalan|jl\.|rt\s*\d+|rw\s*\d+|kelurahan|kecamatan)\b/i',
         '/\b(nama\s*pasien|pasien\s*bernama)\b/i',
     ];
+
+    public function __construct(private readonly PkpaPortfolioTextFormatter $textFormatter)
+    {
+    }
 
     public function ensureForRun(PkpaRotationRun $run, ?User $actor = null): PkpaRotationPortfolio
     {
@@ -186,14 +191,7 @@ class PkpaPortfolioBuilderService
             throw ValidationException::withMessages(['section' => 'Bagian portofolio ini tidak dapat diisi manual dari portal mahasiswa.']);
         }
 
-        $cleanPayload = collect($payload)
-            ->map(function ($value) {
-                if (is_string($value)) {
-                    return trim($value);
-                }
-
-                return $value;
-            })
+        $cleanPayload = collect($this->textFormatter->normalize($payload))
             ->filter(fn ($value) => ! ($value === null || $value === ''))
             ->all();
 
@@ -228,8 +226,8 @@ class PkpaPortfolioBuilderService
         $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
         $previousPayload = $record->manual_payload ?? [];
         $payload = [
-            'purpose' => trim($data['purpose']),
-            'result' => trim($data['result']),
+            'purpose' => $this->textFormatter->normalize($data['purpose']),
+            'result' => $this->textFormatter->normalize($data['result']),
         ];
 
         // Preserve entries created with the previous per-activity format for audit and export history.
@@ -264,7 +262,7 @@ class PkpaPortfolioBuilderService
         $record = $portfolio->sectionRecords()->where('section_code', $sectionCode)->firstOrFail();
         $previousPayload = $record->manual_payload ?? [];
         $entries = collect($previousPayload['activity_entries'] ?? $previousPayload['legacy_activity_entries'] ?? []);
-        $entry = collect($data)->map(fn ($value) => is_string($value) ? trim($value) : $value)->all();
+        $entry = $this->textFormatter->normalize($data);
         if ($entryId) {
             $index = $entries->search(fn ($item) => ($item['id'] ?? null) === $entryId);
             if ($index === false) {
@@ -327,6 +325,7 @@ class PkpaPortfolioBuilderService
     public function saveCase(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioCaseReport
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $data = $this->textFormatter->normalize($data);
         $warnings = $this->patientPrivacyWarnings($data);
         if ($warnings !== []) {
             throw ValidationException::withMessages(['privacy' => implode(' ', $warnings)]);
@@ -352,6 +351,7 @@ class PkpaPortfolioBuilderService
     public function saveReflection(PkpaRotationPortfolio $portfolio, array $data, User $actor)
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $data = $this->textFormatter->normalize($data);
         $record = $portfolio->weeklyReflections()->updateOrCreate([
             'week_number' => $data['week_number'],
         ], array_merge($data, ['status' => 'completed']));
@@ -363,6 +363,7 @@ class PkpaPortfolioBuilderService
     public function saveSelfAssessment(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioSelfAssessment
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $data = $this->textFormatter->normalize($data);
         if (($data['score'] ?? 0) < 1 || ($data['score'] ?? 0) > 5) {
             throw ValidationException::withMessages(['score' => 'Skor penilaian diri wajib 1 sampai 5.']);
         }
@@ -375,6 +376,7 @@ class PkpaPortfolioBuilderService
     public function saveDocumentation(PkpaRotationPortfolio $portfolio, array $data, ?UploadedFile $file, User $actor): PkpaPortfolioDocumentationItem
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $data = $this->textFormatter->normalize($data);
         if (empty($data['anonymization_confirmed']) || empty($data['consent_confirmed'])) {
             throw ValidationException::withMessages(['documentation' => 'Konfirmasi izin dan anonimisasi dokumentasi wajib.']);
         }
@@ -791,7 +793,13 @@ class PkpaPortfolioBuilderService
             }
 
             foreach ($section['lines'] as $index => $line) {
-                $rows[] = [$index === 0 ? $section['title'] : '', trim($line) !== '' ? $line : ' '];
+                $physicalLines = preg_split('/\R/u', $this->textFormatter->normalize((string) $line)) ?: [''];
+                foreach ($physicalLines as $lineIndex => $physicalLine) {
+                    $rows[] = [
+                        $index === 0 && $lineIndex === 0 ? $section['title'] : '',
+                        trim($physicalLine) !== '' ? $physicalLine : ' ',
+                    ];
+                }
             }
         }
 
@@ -1189,7 +1197,9 @@ class PkpaPortfolioBuilderService
         foreach ($this->exportSections($portfolio) as $section) {
             $paragraphs[] = $this->docxParagraph($section['title'], 'heading');
             foreach ($section['lines'] as $line) {
-                $paragraphs[] = $this->docxParagraph($line, $this->detectDocxLineStyle($line));
+                foreach (preg_split('/\R/u', $this->textFormatter->normalize((string) $line)) ?: [''] as $physicalLine) {
+                    $paragraphs[] = $this->docxParagraph($physicalLine, $this->detectDocxLineStyle($physicalLine));
+                }
             }
             $paragraphs[] = $this->docxParagraph('', $this->shouldPageBreakAfterSection($section['title']) ? 'pagebreak' : 'spacer');
         }
@@ -1241,9 +1251,10 @@ class PkpaPortfolioBuilderService
             'subheading' => '<w:p><w:pPr><w:spacing w:before="120" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'meta' => '<w:p><w:pPr><w:spacing w:after="50"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'toc' => '<w:p><w:pPr><w:ind w:left="280"/><w:spacing w:after="40"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'bullet' => '<w:p><w:pPr><w:ind w:left="360" w:hanging="180"/><w:spacing w:after="50"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'spacer' => '<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>',
             'pagebreak' => '<w:p><w:r><w:br w:type="page"/></w:r></w:p>',
-            default => '<w:p><w:pPr><w:spacing w:after="70"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            default => '<w:p><w:pPr><w:jc w:val="both"/><w:spacing w:line="276" w:lineRule="auto" w:after="100"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
         };
     }
 
@@ -1263,6 +1274,10 @@ class PkpaPortfolioBuilderService
 
         if (preg_match('/^\d+\.\s/', $trimmed) === 1) {
             return 'toc';
+        }
+
+        if (str_starts_with($trimmed, '- ')) {
+            return 'bullet';
         }
 
         if (preg_match('/^(Entri \d+|Aspek \d+ -|Ringkasan Logbook PKPA|Panduan Penilaian Diri|Pihak Yang Mengetahui)$/', $trimmed) === 1) {

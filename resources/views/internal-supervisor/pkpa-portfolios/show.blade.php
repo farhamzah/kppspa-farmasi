@@ -60,7 +60,7 @@
                         </div>
                         <div class="mt-3 space-y-2 text-sm text-slate-700">
                             @forelse($lines as $line)
-                                <p>{{ \Illuminate\Support\Str::limit($line, 220) }}</p>
+                                <p class="whitespace-pre-line leading-6">{{ \Illuminate\Support\Str::limit($line, 600) }}</p>
                             @empty
                                 <p class="text-slate-500">Belum ada isi yang disimpan di bagian ini.</p>
                             @endforelse

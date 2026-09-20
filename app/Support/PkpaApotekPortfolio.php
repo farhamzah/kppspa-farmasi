@@ -213,6 +213,7 @@ class PkpaApotekPortfolio
     public static function summaryLines(string $code, array $payload): array
     {
         $definition = self::sectionDefinition($code);
+        $format = fn ($value) => app(PkpaPortfolioTextFormatter::class)->normalize((string) $value);
         if (! $definition) {
             return [];
         }
@@ -220,14 +221,14 @@ class PkpaApotekPortfolio
         if (in_array($code, self::reportSectionCodes(), true) && is_array($payload['activity_entries'] ?? null)) {
             return collect(self::orderedActivityEntries($code, $payload['activity_entries']))
                 ->filter(fn ($entry) => is_array($entry))
-                ->flatMap(function (array $entry, int $index) {
+                ->flatMap(function (array $entry, int $index) use ($format) {
                     $number = $index + 1;
 
                     return [
-                        'Kegiatan '.$number.': '.($entry['activity'] ?? '-'),
-                        'Tujuan: '.($entry['purpose'] ?? '-'),
-                        'Uraian Kegiatan: '.($entry['description'] ?? '-'),
-                        'Hasil: '.($entry['result'] ?? '-'),
+                        'Kegiatan '.$number.': '.$format($entry['activity'] ?? '-'),
+                        'Tujuan: '.$format($entry['purpose'] ?? '-'),
+                        'Uraian Kegiatan: '.$format($entry['description'] ?? '-'),
+                        'Hasil: '.$format($entry['result'] ?? '-'),
                     ];
                 })
                 ->values()
@@ -237,7 +238,7 @@ class PkpaApotekPortfolio
         if (in_array($code, self::reportSectionCodes(), true)) {
             $lines = [];
             if (filled($payload['purpose'] ?? null)) {
-                $lines[] = 'Tujuan: '.trim((string) $payload['purpose']);
+                $lines[] = 'Tujuan: '.$format($payload['purpose']);
             }
             if ($items = $definition['activity_items'] ?? []) {
                 $lines[] = 'Kegiatan: '.implode(', ', $items);
@@ -245,7 +246,7 @@ class PkpaApotekPortfolio
                 $lines[] = 'Kegiatan: '.$definition['activity_requirement'];
             }
             if (filled($payload['result'] ?? null)) {
-                $lines[] = 'Hasil: '.trim((string) $payload['result']);
+                $lines[] = 'Hasil: '.$format($payload['result']);
             }
 
             return $lines;
@@ -254,7 +255,7 @@ class PkpaApotekPortfolio
         $lines = [];
         foreach ($definition['fields'] ?? [] as $field) {
             $value = $payload[$field['name']] ?? '';
-            $value = is_array($value) ? implode(', ', array_filter($value)) : trim((string) $value);
+            $value = is_array($value) ? implode(', ', array_filter($value)) : $format($value);
             if ($value !== '') {
                 $lines[] = $field['label'].': '.$value;
             }

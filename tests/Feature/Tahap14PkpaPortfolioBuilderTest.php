@@ -22,6 +22,7 @@ use App\Models\PkpaRotationSupervisorHistory;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
 use App\Services\PkpaProgramService;
@@ -297,6 +298,35 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertCount(2, $updated->manual_payload['activity_entries']);
         $this->assertSame(['Pemeriksaan stok dan FEFO', 'Pemesanan obat'], collect($updated->manual_payload['activity_entries'])->pluck('activity')->all());
         $this->assertSame('Memahami pengadaan sediaan dan pemasok.', $updated->manual_payload['activity_entries'][0]['purpose']);
+    }
+
+    public function test_portfolio_text_is_normalized_for_pasted_content_and_lists(): void
+    {
+        $formatter = app(PkpaPortfolioTextFormatter::class);
+
+        $this->assertSame(
+            "Tujuan kegiatan\n\n- Tahap pertama\n2. Tahap kedua",
+            $formatter->normalize("  Tujuan   kegiatan \r\n\r\n\r\n•  Tahap   pertama\r\n(2) Tahap kedua\t")
+        );
+
+        $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
+        $record = app(PkpaPortfolioBuilderService::class)->saveReportActivity($portfolio, 'supply_management', [
+            'activity' => '  Pemeriksaan   stok  ',
+            'purpose' => "Memahami   persediaan.\n\n\n•  Menilai stok",
+            'description' => "Mengamati\tproses.\n-   Mencatat hasil",
+            'result' => 'Hasil dicatat  dengan baik .',
+        ], $this->student);
+        $entry = $record->manual_payload['activity_entries'][0];
+
+        $this->assertSame('Pemeriksaan stok', $entry['activity']);
+        $this->assertSame("Memahami persediaan.\n\n- Menilai stok", $entry['purpose']);
+        $this->assertSame("Mengamati proses.\n- Mencatat hasil", $entry['description']);
+        $this->assertSame('Hasil dicatat dengan baik.', $entry['result']);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('data-portfolio-writing-assistant', false);
     }
 
     public function test_apotek_portfolio_detail_pages_render_new_structure_for_three_portals(): void

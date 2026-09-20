@@ -83,7 +83,7 @@
 @endphp
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" data-portfolio-writing-assistant>
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -153,7 +153,7 @@
                         @forelse($section['payload'] as $label => $value)
                             <div>
                                 <dt class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $label }}</dt>
-                                <dd class="mt-1 text-sm leading-6 text-slate-800">{{ $value }}</dd>
+                                <dd class="mt-1 whitespace-pre-line text-sm leading-6 text-slate-800">{{ app(\App\Support\PkpaPortfolioTextFormatter::class)->normalize($value) }}</dd>
                             </div>
                         @empty
                             <p class="text-sm text-slate-500">Belum ada isian tersimpan.</p>
