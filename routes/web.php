@@ -390,10 +390,12 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('recaps/{type}/preview', [RecapController::class, 'preview'])->name('recaps.preview');
             Route::get('recaps/{type}/download/{format}', [RecapController::class, 'download'])->name('recaps.download');
             Route::get('recaps/students', [RecapController::class, 'students'])->name('recaps.students');
+            Route::get('recaps/sites', [RecapController::class, 'sites'])->name('recaps.sites');
             Route::get('recaps/placements', [RecapController::class, 'placements'])->name('recaps.placements');
-            Route::get('recaps/logbooks', [RecapController::class, 'logbooks'])->name('recaps.logbooks');
-            Route::get('recaps/exams', [RecapController::class, 'exams'])->name('recaps.exams');
-            Route::get('recaps/scores', [RecapController::class, 'scores'])->name('recaps.scores');
+            Route::get('recaps/supervisors', [RecapController::class, 'supervisors'])->name('recaps.supervisors');
+            Route::get('recaps/operations', [RecapController::class, 'operations'])->name('recaps.operations');
+            Route::get('recaps/portfolios', [RecapController::class, 'portfolios'])->name('recaps.portfolios');
+            Route::get('recaps/assessments', [RecapController::class, 'assessments'])->name('recaps.assessments');
             Route::get('exports/{type}', ExportController::class)->name('exports.download');
             Route::get('integration/tu-payload-preview', [IntegrationReviewController::class, 'tuPayloadPreview'])->name('integration.tu-payload-preview');
             Route::get('integration/tu-payload-preview.json', [IntegrationReviewController::class, 'tuPayloadPreviewJson'])->name('integration.tu-payload-preview.json');

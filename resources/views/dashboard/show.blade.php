@@ -88,6 +88,7 @@
         'Persyaratan Dokumen' => 'Aturan berkas yang wajib dipenuhi peserta.',
         'Verifikasi Pendaftaran' => 'Pemeriksaan administrasi pendaftaran peserta PKPA.',
         'Rekap PKPA' => 'Rekap operasional dan ekspor data PKPA.',
+        'Rekap & Laporan' => 'Pratinjau, cetak A4, serta unduh laporan resmi PKPA dalam Excel dan PDF.',
         'Hasil Pembekalan' => 'Monitoring hasil pembekalan seluruh peserta.',
         'Panduan Kompetensi' => 'Master kompetensi, capaian, dan penugasan wahana.',
         'Pemantauan Logbook' => 'Monitoring logbook lintas peserta dan wahana.',
@@ -237,6 +238,7 @@
         'Penyelesaian PKPA' => 'management.pkpa-final-program.index',
         'Dokumen PKPA' => $activeRole === 'mahasiswa' ? 'student.pkpa-documents.index' : 'management.pkpa-documents.index',
         'Rekap PKPA' => 'management.recaps.index',
+        'Rekap & Laporan' => 'management.recaps.index',
         'Pelaporan Analitik' => 'management.pkpa-analytics.index',
         'Pemeriksaan Integrasi' => 'management.integration.tu-payload-preview',
     ];

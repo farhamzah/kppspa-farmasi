@@ -129,7 +129,7 @@ class SimplePdfReport
         $y = 558;
 
         self::text($commands, $margin, $y, $title, 17, true, [15, 23, 42]);
-        self::text($commands, $margin, $y - 18, 'SI-KP Farmasi UBP', 9, false, [71, 85, 105]);
+        self::text($commands, $margin, $y - 18, 'MY PKPA Farmasi UBP', 9, false, [71, 85, 105]);
 
         self::text($commands, 718, 558, 'Halaman '.$page.' dari '.$totalPages, 8, false, [71, 85, 105]);
 
@@ -148,6 +148,7 @@ class SimplePdfReport
                 self::rect($commands, $margin, $y - $row['height'], $tableWidth, $row['height'], [255, 255, 255], [219, 227, 239]);
                 self::cellText($commands, $row['cells'][0], $margin + 8, $y - 13, 8, false, [15, 23, 42]);
                 $y -= $row['height'];
+
                 continue;
             }
 
@@ -162,11 +163,11 @@ class SimplePdfReport
             $y -= $height;
         }
 
-        self::text($commands, $margin, 24, 'Dicetak dari SI-KP Farmasi UBP', 7.5, false, [71, 85, 105]);
+        self::text($commands, $margin, 24, 'Dicetak dari MY PKPA Farmasi UBP', 7.5, false, [71, 85, 105]);
 
         $stream = implode("\n", $commands);
 
-        return "<< /Length ".strlen($stream)." >>\nstream\n{$stream}\nendstream";
+        return '<< /Length '.strlen($stream)." >>\nstream\n{$stream}\nendstream";
     }
 
     private static function tableStartY(array $meta): int

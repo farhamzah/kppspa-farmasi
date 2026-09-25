@@ -15,8 +15,8 @@ use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
-use App\Models\PkpaRotationRun;
 use App\Models\PkpaRotationAssignment;
+use App\Models\PkpaRotationRun;
 use App\Models\PkpaScheduleAcknowledgement;
 use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\PkpaSiteFieldSupervisor;
@@ -38,11 +38,17 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $student;
+
     private User $otherStudent;
+
     private User $internalSupervisor;
+
     private User $fieldSupervisor;
+
     private User $otherSupervisor;
 
     protected function setUp(): void
@@ -190,6 +196,35 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->actingAs($this->otherSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
             ->get("/pembimbing-dalam/jadwal-pkpa/{$assignment->id}")
             ->assertForbidden();
+    }
+
+    public function test_report_center_uses_current_pkpa_publication_and_supports_filters_and_exports(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-REPORT');
+        $assignment = $publication->assignments()->where('practice_domain_name_snapshot', 'Apotek')->firstOrFail();
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/recaps/placements?program='.$publication->pkpa_program_id.'&domain='.$assignment->practice_domain_id)
+            ->assertOk()
+            ->assertSee($assignment->student_name_snapshot)
+            ->assertSee($assignment->practice_site_name_snapshot)
+            ->assertSee('Cetak A4');
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/recaps/sites/preview?program='.$publication->pkpa_program_id)
+            ->assertOk()
+            ->assertSee('A4 landscape')
+            ->assertSee($assignment->practice_site_name_snapshot);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/recaps/supervisors/download/pdf?program='.$publication->pkpa_program_id)
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/recaps/students/download/excel?program='.$publication->pkpa_program_id)
+            ->assertOk()
+            ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
 
     public function test_student_detail_and_acknowledge_allow_numeric_like_core_user_id(): void

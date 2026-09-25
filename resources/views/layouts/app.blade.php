@@ -128,6 +128,7 @@
                     'Hasil Akhir PKPA' => 'Pelaporan & Akhir',
                     'Dokumen PKPA' => 'Pelaporan & Akhir',
                     'Rekap PKPA' => 'Pelaporan & Akhir',
+                    'Rekap & Laporan' => 'Pelaporan & Akhir',
                     'Pelaporan Analitik' => 'Pelaporan & Akhir',
                     'Pemeriksaan Integrasi' => 'Pelaporan & Akhir',
                 ];
@@ -247,6 +248,7 @@
                         'Hasil Pembekalan' => 'management.orientation-tests.index',
                         'Log Nilai' => 'management.pkpa-score-logs.index',
                         'Rekap PKPA' => 'management.recaps.index',
+                        'Rekap & Laporan' => 'management.recaps.index',
                         'Pemeriksaan Integrasi' => 'management.integration.tu-payload-preview',
                         'Review Integrasi' => 'management.integration.tu-payload-preview',
                         'Penilaian Pembimbing' => 'internal-supervisor.assessments.index',
@@ -346,6 +348,7 @@
                         'Hasil Pembekalan' => ['management.orientation-tests.*'],
                         'Log Nilai' => ['management.pkpa-score-logs.*'],
                         'Rekap PKPA' => ['management.recaps.*', 'management.exports.*'],
+                        'Rekap & Laporan' => ['management.recaps.*', 'management.exports.*'],
                         'Pemeriksaan Integrasi' => ['management.integration.*'],
                         'Review Integrasi' => ['management.integration.*'],
                         'Penilaian Pembimbing' => ['internal-supervisor.assessments.*'],

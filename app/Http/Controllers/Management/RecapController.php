@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Management;
 
 use App\Exports\KpRecapExport;
 use App\Http\Controllers\Controller;
-use App\Models\KpPeriod;
-use App\Services\KpRecapService;
+use App\Models\PkpaPracticeDomain;
+use App\Models\PkpaPracticeSite;
+use App\Models\PkpaProgram;
+use App\Services\PkpaReportService;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -15,37 +17,51 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class RecapController extends Controller
 {
-    public function index(KpRecapService $service): View
+    public function index(PkpaReportService $service): View
     {
-        return view('management.recaps.index', ['summary' => $service->summary()]);
+        return view('management.recaps.index', [
+            'summary' => $service->summary(),
+            'reports' => $service->definitions(),
+            ...$service->filterOptions(),
+        ]);
     }
 
-    public function students(Request $request, KpRecapService $service): View
+    public function students(Request $request, PkpaReportService $service): View
     {
-        return $this->table('Rekap Mahasiswa PKPA', 'students', $request, $service);
+        return $this->table('Daftar Mahasiswa PKPA', 'students', $request, $service);
     }
 
-    public function placements(Request $request, KpRecapService $service): View
+    public function placements(Request $request, PkpaReportService $service): View
     {
-        return $this->table('Rekap Penempatan PKPA', 'placements', $request, $service);
+        return $this->table('Penempatan Mahasiswa dan Wahana', 'placements', $request, $service);
     }
 
-    public function logbooks(Request $request, KpRecapService $service): View
+    public function sites(Request $request, PkpaReportService $service): View
     {
-        return $this->table('Rekap Logbook PKPA', 'logbooks', $request, $service);
+        return $this->table('Daftar Wahana dan Tempat PKPA', 'sites', $request, $service);
     }
 
-    public function exams(Request $request, KpRecapService $service): View
+    public function supervisors(Request $request, PkpaReportService $service): View
     {
-        return $this->table('Rekap Ujian PKPA', 'exams', $request, $service);
+        return $this->table('Pembimbing dan Mahasiswa Bimbingan', 'supervisors', $request, $service);
     }
 
-    public function scores(Request $request, KpRecapService $service): View
+    public function operations(Request $request, PkpaReportService $service): View
     {
-        return $this->table('Rekap Nilai PKPA', 'scores', $request, $service);
+        return $this->table('Pelaksanaan, Presensi, dan Logbook', 'operations', $request, $service);
     }
 
-    public function preview(string $type, Request $request, KpRecapService $service): View
+    public function portfolios(Request $request, PkpaReportService $service): View
+    {
+        return $this->table('Status Portofolio PKPA', 'portfolios', $request, $service);
+    }
+
+    public function assessments(Request $request, PkpaReportService $service): View
+    {
+        return $this->table('Status Penilaian PKPA', 'assessments', $request, $service);
+    }
+
+    public function preview(string $type, Request $request, PkpaReportService $service): View
     {
         abort_unless(array_key_exists($type, $this->types()), 404);
 
@@ -58,10 +74,10 @@ class RecapController extends Controller
         ]);
     }
 
-    public function download(string $type, string $format, Request $request, KpRecapService $service): Response|BinaryFileResponse
+    public function download(string $type, string $format, Request $request, PkpaReportService $service): Response|BinaryFileResponse
     {
         abort_unless(array_key_exists($type, $this->types()), 404);
-        abort_unless(in_array($format, ['word', 'excel', 'pdf'], true), 404);
+        abort_unless(in_array($format, ['excel', 'pdf'], true), 404);
 
         $rows = $service->rows($type, $request);
         $title = $this->types()[$type];
@@ -85,46 +101,43 @@ class RecapController extends Controller
             ]);
         }
 
-        return response()
-            ->view('management.recaps.report-word', [
-                'title' => $title,
-                'rows' => $rows,
-                'filters' => $this->filterSummary($request),
-            ], 200, [
-                'Content-Type' => 'application/msword; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="'.$filename.'.doc"',
-            ]);
+        abort(404);
     }
 
-    private function table(string $title, string $type, Request $request, KpRecapService $service): View
+    private function table(string $title, string $type, Request $request, PkpaReportService $service): View
     {
         return view('management.recaps.table', [
             'title' => $title,
             'type' => $type,
             'rows' => $service->rows($type, $request),
-            'periods' => KpPeriod::latest()->get(),
-            'filters' => $request->only(['period', 'status', 'q']),
+            ...$service->filterOptions(),
+            'filters' => $request->only(['program', 'domain', 'site', 'q']),
         ]);
     }
 
     private function types(): array
     {
         return [
-            'students' => 'Rekap Mahasiswa PKPA',
-            'placements' => 'Rekap Penempatan PKPA',
-            'logbooks' => 'Rekap Logbook PKPA',
-            'exams' => 'Rekap Ujian PKPA',
-            'scores' => 'Rekap Nilai PKPA',
+            'students' => 'Daftar Mahasiswa PKPA',
+            'sites' => 'Daftar Wahana dan Tempat PKPA',
+            'placements' => 'Penempatan Mahasiswa dan Wahana',
+            'supervisors' => 'Pembimbing dan Mahasiswa Bimbingan',
+            'operations' => 'Pelaksanaan, Presensi, dan Logbook',
+            'portfolios' => 'Status Portofolio PKPA',
+            'assessments' => 'Status Penilaian PKPA',
         ];
     }
 
     private function filterSummary(Request $request): array
     {
-        $period = $request->filled('period') ? KpPeriod::find($request->period)?->name : null;
+        $program = $request->filled('program') ? PkpaProgram::find($request->program)?->name : null;
+        $domain = $request->filled('domain') ? PkpaPracticeDomain::find($request->domain)?->name : null;
+        $site = $request->filled('site') ? PkpaPracticeSite::find($request->site)?->name : null;
 
         return [
-            'Periode' => $period ?: 'Semua periode',
-            'Status' => $request->filled('status') ? ucfirst(str_replace('_', ' ', (string) $request->status)) : 'Semua status',
+            'Program/Periode' => $program ?: 'Semua program',
+            'Wahana' => $domain ?: 'Semua wahana',
+            'Tempat Praktik' => $site ?: 'Semua tempat',
             'Pencarian' => $request->filled('q') ? (string) $request->q : '-',
             'Dicetak pada' => now()->format('d M Y H:i'),
         ];

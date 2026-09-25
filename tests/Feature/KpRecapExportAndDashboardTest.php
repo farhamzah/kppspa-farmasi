@@ -19,10 +19,15 @@ class KpRecapExportAndDashboardTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $mahasiswa;
+
     private User $internal;
+
     private User $field;
+
     private User $examiner;
 
     protected function setUp(): void
@@ -43,15 +48,17 @@ class KpRecapExportAndDashboardTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/management/recaps')
             ->assertOk()
-            ->assertSee('Rekap, Pemantauan, dan Ekspor KP')
+            ->assertSee('Pusat Laporan PKPA')
+            ->assertSee('Rekap &amp; Laporan', false)
             ->assertSee('Pratinjau')
-            ->assertSee('Excel');
+            ->assertSee('Excel')
+            ->assertSee('Cetak A4');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/recaps/students')
             ->assertOk()
-            ->assertSee('Rekap Mahasiswa KP')
-            ->assertSee('Pratinjau Cetak')
+            ->assertSee('Daftar Mahasiswa PKPA')
+            ->assertSee('Pratinjau')
             ->assertSee('PDF');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
@@ -81,25 +88,26 @@ class KpRecapExportAndDashboardTest extends TestCase
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/recaps/students/preview')
             ->assertOk()
-            ->assertSee('Rekap Mahasiswa KP');
+            ->assertSee('Daftar Mahasiswa PKPA')
+            ->assertSee('A4 landscape');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
-            ->get('/management/recaps/placements/download/word')
-            ->assertOk()
-            ->assertHeader('content-type', 'application/msword; charset=UTF-8');
-
-        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
-            ->get('/management/recaps/logbooks/download/pdf')
+            ->get('/management/recaps/placements/download/pdf')
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
-            ->get('/management/recaps/scores/download/excel')
+            ->get('/management/recaps/operations/download/pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/recaps/assessments/download/excel')
             ->assertOk()
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
-            ->get('/management/recaps/scores/download/pdf')
+            ->get('/management/recaps/assessments/download/pdf')
             ->assertForbidden();
     }
 
@@ -117,7 +125,7 @@ class KpRecapExportAndDashboardTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/admin/dashboard')->assertOk()->assertSee('Dashboard Admin')->assertDontSee('Segera');
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')->assertOk()->assertSee('Dashboard Koordinator PKPA')->assertDontSee('Segera');
         $this->actingAs($this->internal)->withSession(['active_role' => 'pembimbing_dalam'])->get('/pembimbing-dalam/dashboard')->assertOk()->assertSee('Dashboard Pembimbing Dalam')->assertDontSee('Segera');
-        $this->actingAs($this->field)->withSession(['active_role' => 'pembimbing_lapangan'])->get('/pembimbing-lapangan/dashboard')->assertOk()->assertSee('Dashboard Pembimbing Luar')->assertDontSee('Segera');
+        $this->actingAs($this->field)->withSession(['active_role' => 'pembimbing_lapangan'])->get('/pembimbing-lapangan/dashboard')->assertOk()->assertSee('Dashboard Preseptor')->assertDontSee('Segera');
         $this->actingAs($this->examiner)->withSession(['active_role' => 'penguji'])->get('/penguji/dashboard')->assertOk()->assertSee('Dashboard Penguji')->assertDontSee('Segera');
     }
 
@@ -129,7 +137,7 @@ class KpRecapExportAndDashboardTest extends TestCase
             ->withSession(['active_role' => 'pembimbing_lapangan'])
             ->get('/pembimbing-lapangan/dashboard')
             ->assertOk()
-            ->assertSee('Dashboard Pembimbing Luar')
+            ->assertSee('Dashboard Preseptor')
             ->assertSee('Tidak ada antrian mendesak')
             ->assertDontSee('Nilai belum submit');
     }
