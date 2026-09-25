@@ -14,6 +14,7 @@ use App\Models\PkpaProgramSite;
 use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\PkpaSupervisorUnavailabilityPeriod;
+use App\Services\PkpaCapacityReportService;
 use App\Services\PkpaFieldSupervisorService;
 use App\Services\PkpaProgramSiteService;
 use App\Services\PkpaSiteAvailabilityService;
@@ -135,16 +136,12 @@ class PkpaProgramSiteController extends Controller
 
     private function renderIndex(Request $request, string $mode = 'sites'): View
     {
-        $query = PkpaProgramSite::query()
-            ->with(['program', 'practiceSite', 'practiceDomain', 'practiceDomainOption'])
+        $query = app(PkpaCapacityReportService::class)->query('program-sites', $request)
             ->withCount(['availabilityPeriods'])
-            ->search($request->input('q'))
-            ->when($request->filled('program_id'), fn ($q) => $q->where('pkpa_program_id', $request->program_id))
-            ->when($request->filled('practice_domain_id'), fn ($q) => $q->where('practice_domain_id', $request->practice_domain_id))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status));
+            ->withSum(['availabilityPeriods as maximum_students_sum' => fn ($periods) => $periods->whereIn('status', ['available', 'full'])], 'maximum_students');
 
         return view('management.pkpa-program-sites.index', [
-            'programSites' => $query->latest()->paginate(12)->withQueryString(),
+            'programSites' => $query->paginate(20)->withQueryString(),
             'programs' => PkpaProgram::orderByDesc('id')->get(),
             'domains' => PkpaPracticeDomain::orderBy('sort_order')->get(),
             'filters' => $request->only(['q', 'program_id', 'practice_domain_id', 'status']),

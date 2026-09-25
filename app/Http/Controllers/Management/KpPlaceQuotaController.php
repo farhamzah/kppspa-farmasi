@@ -9,6 +9,7 @@ use App\Models\KpPeriod;
 use App\Models\KpPlace;
 use App\Models\KpPlaceQuota;
 use App\Services\LegacyKpCatalogSyncService;
+use App\Services\PkpaCapacityReportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,21 +18,15 @@ class KpPlaceQuotaController extends Controller
 {
     public function __construct(
         private readonly LegacyKpCatalogSyncService $catalogSync,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
         $this->catalogSync->sync($request->user());
 
-        $quotas = KpPlaceQuota::query()
-            ->with(['period', 'place'])
-            ->when($request->filled('period'), fn ($query) => $query->where('kp_period_id', $request->period))
-            ->when($request->filled('type'), fn ($query) => $query->whereHas('place', fn ($place) => $place->where('type', $request->type)))
-            ->when($request->filled('status'), fn ($query) => $query->where('is_open', $request->status === 'open'))
-            ->when($request->filled('q'), fn ($query) => $query->whereHas('place', fn ($place) => $place->where('name', 'like', '%'.$request->q.'%')))
-            ->latest()
-            ->paginate(10)
+        $quotas = app(PkpaCapacityReportService::class)
+            ->query('quotas', $request)
+            ->paginate(20)
             ->withQueryString();
 
         return view('management.quotas.index', [

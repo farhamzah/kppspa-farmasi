@@ -328,6 +328,56 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])->get('/dashboard')->assertRedirect('/admin/dashboard');
     }
 
+    public function test_site_and_capacity_lists_are_grouped_and_support_all_report_formats(): void
+    {
+        $programSite = $this->createProgramSite('PKPA-03-REPORT', 'APT-03-REPORT');
+        PkpaSiteAvailabilityPeriod::create([
+            'pkpa_program_site_id' => $programSite->id,
+            'start_date' => '2026-02-01',
+            'end_date' => '2026-02-28',
+            'minimum_students' => 1,
+            'maximum_students' => 4,
+            'reserved_slots' => 0,
+            'status' => 'available',
+        ]);
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-program-sites')
+            ->assertOk()
+            ->assertSee('Tempat aktif per program')
+            ->assertSee('Wahana PKPA')
+            ->assertSee('Laporan sesuai filter')
+            ->assertSee('Tempat APT-03-REPORT');
+
+        $this->get('/management/pkpa-capacity-reports/program-sites/preview')
+            ->assertOk()
+            ->assertSee('Daftar Tempat Tersedia PKPA')
+            ->assertSee('Tempat APT-03-REPORT');
+
+        $this->get('/management/pkpa-capacity-reports/program-sites/download/pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+        $this->get('/management/pkpa-capacity-reports/program-sites/download/xlsx')
+            ->assertOk()
+            ->assertDownload();
+        $this->get('/management/pkpa-capacity-reports/program-sites/download/word')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/msword; charset=UTF-8');
+
+        $this->get('/management/kp-place-quotas')
+            ->assertOk()
+            ->assertSee('Kuota operasional per program/periode')
+            ->assertSee('Tempat APT-03-REPORT');
+        $this->get('/management/pkpa-capacity-reports/quotas/preview')
+            ->assertOk()
+            ->assertSee('Kapasitas Tempat PKPA')
+            ->assertSee('Tempat APT-03-REPORT');
+
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/management/pkpa-capacity-reports/program-sites/preview')
+            ->assertForbidden();
+    }
+
     private function makeUser(string $email, array $roles, string $coreUserId): User
     {
         $user = User::factory()->create([
