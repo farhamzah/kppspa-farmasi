@@ -11,8 +11,8 @@ use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
-use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\PkpaSiteAvailabilityPeriod;
+use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\PkpaSupervisorUnavailabilityPeriod;
 use App\Services\PkpaFieldSupervisorService;
 use App\Services\PkpaProgramSiteService;
@@ -31,8 +31,7 @@ class PkpaProgramSiteController extends Controller
         private readonly PkpaFieldSupervisorService $fieldSupervisorService,
         private readonly PkpaSupervisorAvailabilityService $supervisorAvailabilityService,
         private readonly PkpaSupervisorCoreSyncService $syncService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -41,6 +40,7 @@ class PkpaProgramSiteController extends Controller
 
     public function preceptorsIndex(Request $request): View
     {
+        $statusFilter = $request->input('status', 'active');
         $supervisors = PkpaSiteFieldSupervisor::query()
             ->with([
                 'practiceSite.programSites.program',
@@ -66,16 +66,48 @@ class PkpaProgramSiteController extends Controller
             })
             ->when($request->filled('program_id'), fn ($query) => $query->whereHas('practiceSite.programSites', fn ($sites) => $sites->where('pkpa_program_id', $request->integer('program_id'))))
             ->when($request->filled('practice_domain_id'), fn ($query) => $query->whereHas('practiceSite.programSites', fn ($sites) => $sites->where('practice_domain_id', $request->integer('practice_domain_id'))))
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->input('status')))
-            ->latest()
+            ->when($statusFilter !== 'all', fn ($query) => $query->where('status', $statusFilter))
+            ->orderBy('name_snapshot')
             ->paginate(12)
             ->withQueryString();
 
+        $groupedSupervisors = $supervisors->getCollection()
+            ->map(function (PkpaSiteFieldSupervisor $supervisor) use ($request) {
+                $programSites = $supervisor->practiceSite?->programSites
+                    ?->filter(function (PkpaProgramSite $programSite) use ($request) {
+                        if ($request->filled('program_id') && $programSite->pkpa_program_id !== $request->integer('program_id')) {
+                            return false;
+                        }
+
+                        if ($request->filled('practice_domain_id') && $programSite->practice_domain_id !== $request->integer('practice_domain_id')) {
+                            return false;
+                        }
+
+                        return true;
+                    })
+                    ->sortBy(fn (PkpaProgramSite $programSite) => $programSite->program?->start_date)
+                    ->values() ?? collect();
+                $programSite = $programSites->first();
+
+                return [
+                    'supervisor' => $supervisor,
+                    'program_sites' => $programSites,
+                    'domain' => $programSite?->practiceDomain,
+                    'domain_sort_order' => $programSite?->practiceDomain?->sort_order ?? PHP_INT_MAX,
+                ];
+            })
+            ->groupBy(fn (array $card) => $card['domain']?->id ?? 'unassigned')
+            ->sortBy(fn ($cards) => $cards->first()['domain_sort_order']);
+
         return view('management.pkpa-preceptors.index', [
             'supervisors' => $supervisors,
+            'groupedSupervisors' => $groupedSupervisors,
             'programs' => PkpaProgram::orderByDesc('id')->get(),
             'domains' => PkpaPracticeDomain::orderBy('sort_order')->get(),
-            'filters' => $request->only(['q', 'program_id', 'practice_domain_id', 'status']),
+            'filters' => [
+                ...$request->only(['q', 'program_id', 'practice_domain_id']),
+                'status' => $statusFilter,
+            ],
         ]);
     }
 
