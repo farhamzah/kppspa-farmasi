@@ -13,8 +13,7 @@ class PkpaFieldSupervisorService
     public function __construct(
         private readonly PkpaSupervisorCoreResolver $resolver,
         private readonly PkpaAuditService $audit,
-    ) {
-    }
+    ) {}
 
     public function create(PkpaPracticeSite $site, array $data, ?User $actor): PkpaSiteFieldSupervisor
     {
@@ -43,6 +42,7 @@ class PkpaFieldSupervisorService
         if (! ($resolved['ok'] ?? false) && ! isset($resolved['person'])) {
             $supervisor->update(['last_core_sync_status' => 'failed', 'last_core_sync_message' => $resolved['message'] ?? 'Core tidak tersedia.']);
             $this->audit->record($actor, 'field_supervisor_sync_failed', $supervisor, null, ['core_user_id' => $supervisor->core_user_id]);
+
             return $supervisor->refresh();
         }
 
@@ -66,9 +66,6 @@ class PkpaFieldSupervisorService
 
     private function validatePayload(array $data): void
     {
-        if (filled($data['effective_start_date'] ?? null) && filled($data['effective_end_date'] ?? null) && $data['effective_end_date'] < $data['effective_start_date']) {
-            throw ValidationException::withMessages(['effective_end_date' => 'Masa efektif selesai harus setelah mulai.']);
-        }
         if (($data['maximum_active_students'] ?? 0) < 0) {
             throw ValidationException::withMessages(['maximum_active_students' => 'Batas mahasiswa tidak boleh negatif.']);
         }
@@ -86,8 +83,8 @@ class PkpaFieldSupervisorService
             'position_title' => $data['position_title'] ?? null,
             'is_primary_contact' => (bool) ($data['is_primary_contact'] ?? false),
             'maximum_active_students' => $data['maximum_active_students'] ?? null,
-            'effective_start_date' => $data['effective_start_date'] ?? null,
-            'effective_end_date' => $data['effective_end_date'] ?? null,
+            'effective_start_date' => null,
+            'effective_end_date' => null,
             'status' => $data['status'] ?? 'active',
             'notes' => $data['notes'] ?? null,
             'last_core_synced_at' => now(),

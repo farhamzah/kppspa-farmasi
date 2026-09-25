@@ -40,46 +40,54 @@ class PkpaProgramSiteController extends Controller
 
     public function preceptorsIndex(Request $request): View
     {
+        $domains = PkpaPracticeDomain::query()->where('is_active', true)->orderBy('sort_order')->get();
+        $selectedDomain = $domains->firstWhere('id', $request->integer('practice_domain_id')) ?? $domains->first();
         $statusFilter = $request->input('status', 'active');
-        $supervisors = PkpaSiteFieldSupervisor::query()
-            ->with([
-                'practiceSite.programSites.program',
-                'practiceSite.programSites.practiceDomain',
-                'practiceSite.programSites.practiceDomainOption',
-                'user.lecturer',
-            ])
-            ->whereHas('practiceSite.programSites')
-            ->when($request->filled('q'), function ($query) use ($request) {
-                $search = trim((string) $request->input('q'));
+        $supervisorQuery = function (int $domainId) use ($request, $statusFilter) {
+            return PkpaSiteFieldSupervisor::query()
+                ->whereHas('practiceSite.programSites', fn ($sites) => $sites
+                    ->where('practice_domain_id', $domainId)
+                    ->when($request->filled('program_id'), fn ($query) => $query->where('pkpa_program_id', $request->integer('program_id'))))
+                ->when($request->filled('q'), function ($query) use ($request) {
+                    $search = trim((string) $request->input('q'));
 
-                $query->where(function ($sub) use ($search) {
-                    $sub
-                        ->where('name_snapshot', 'like', '%'.$search.'%')
-                        ->orWhere('email_snapshot', 'like', '%'.$search.'%')
-                        ->orWhere('core_user_id', 'like', '%'.$search.'%')
-                        ->orWhere('position_title', 'like', '%'.$search.'%')
-                        ->orWhereHas('practiceSite', fn ($site) => $site
-                            ->where('name', 'like', '%'.$search.'%')
-                            ->orWhere('code', 'like', '%'.$search.'%')
-                            ->orWhere('city', 'like', '%'.$search.'%'));
-                });
-            })
-            ->when($request->filled('program_id'), fn ($query) => $query->whereHas('practiceSite.programSites', fn ($sites) => $sites->where('pkpa_program_id', $request->integer('program_id'))))
-            ->when($request->filled('practice_domain_id'), fn ($query) => $query->whereHas('practiceSite.programSites', fn ($sites) => $sites->where('practice_domain_id', $request->integer('practice_domain_id'))))
-            ->when($statusFilter !== 'all', fn ($query) => $query->where('status', $statusFilter))
-            ->orderBy('name_snapshot')
-            ->paginate(12)
-            ->withQueryString();
+                    $query->where(function ($sub) use ($search) {
+                        $sub
+                            ->where('name_snapshot', 'like', '%'.$search.'%')
+                            ->orWhere('email_snapshot', 'like', '%'.$search.'%')
+                            ->orWhere('core_user_id', 'like', '%'.$search.'%')
+                            ->orWhere('position_title', 'like', '%'.$search.'%')
+                            ->orWhereHas('practiceSite', fn ($site) => $site
+                                ->where('name', 'like', '%'.$search.'%')
+                                ->orWhere('code', 'like', '%'.$search.'%')
+                                ->orWhere('city', 'like', '%'.$search.'%'));
+                    });
+                })
+                ->when($statusFilter !== 'all', fn ($query) => $query->where('status', $statusFilter));
+        };
 
-        $groupedSupervisors = $supervisors->getCollection()
-            ->map(function (PkpaSiteFieldSupervisor $supervisor) use ($request) {
+        $supervisors = $selectedDomain
+            ? $supervisorQuery($selectedDomain->id)
+                ->with([
+                    'practiceSite.programSites.program',
+                    'practiceSite.programSites.practiceDomain',
+                    'practiceSite.programSites.practiceDomainOption',
+                    'user.lecturer',
+                ])
+                ->orderBy('name_snapshot')
+                ->paginate(12)
+                ->withQueryString()
+            : PkpaSiteFieldSupervisor::query()->whereRaw('1 = 0')->paginate(12);
+
+        $preceptorCards = $supervisors->getCollection()
+            ->map(function (PkpaSiteFieldSupervisor $supervisor) use ($request, $selectedDomain) {
                 $programSites = $supervisor->practiceSite?->programSites
-                    ?->filter(function (PkpaProgramSite $programSite) use ($request) {
+                    ?->filter(function (PkpaProgramSite $programSite) use ($request, $selectedDomain) {
                         if ($request->filled('program_id') && $programSite->pkpa_program_id !== $request->integer('program_id')) {
                             return false;
                         }
 
-                        if ($request->filled('practice_domain_id') && $programSite->practice_domain_id !== $request->integer('practice_domain_id')) {
+                        if ($selectedDomain && $programSite->practice_domain_id !== $selectedDomain->id) {
                             return false;
                         }
 
@@ -92,20 +100,24 @@ class PkpaProgramSiteController extends Controller
                 return [
                     'supervisor' => $supervisor,
                     'program_sites' => $programSites,
-                    'domain' => $programSite?->practiceDomain,
-                    'domain_sort_order' => $programSite?->practiceDomain?->sort_order ?? PHP_INT_MAX,
+                    'program_site' => $programSite,
                 ];
-            })
-            ->groupBy(fn (array $card) => $card['domain']?->id ?? 'unassigned')
-            ->sortBy(fn ($cards) => $cards->first()['domain_sort_order']);
+            });
+
+        $domainCounts = $domains->mapWithKeys(fn (PkpaPracticeDomain $domain) => [
+            $domain->id => $supervisorQuery($domain->id)->count(),
+        ]);
 
         return view('management.pkpa-preceptors.index', [
             'supervisors' => $supervisors,
-            'groupedSupervisors' => $groupedSupervisors,
+            'preceptorCards' => $preceptorCards,
             'programs' => PkpaProgram::orderByDesc('id')->get(),
-            'domains' => PkpaPracticeDomain::orderBy('sort_order')->get(),
+            'domains' => $domains,
+            'selectedDomain' => $selectedDomain,
+            'domainCounts' => $domainCounts,
             'filters' => [
-                ...$request->only(['q', 'program_id', 'practice_domain_id']),
+                ...$request->only(['q', 'program_id']),
+                'practice_domain_id' => $selectedDomain?->id,
                 'status' => $statusFilter,
             ],
         ]);
@@ -163,10 +175,16 @@ class PkpaProgramSiteController extends Controller
     {
         $pkpaProgramSite->load(['program', 'practiceSite.fieldSupervisors.unavailabilityPeriods', 'practiceDomain', 'practiceDomainOption', 'availabilityPeriods']);
 
+        if ($mode === 'preceptors') {
+            return view('management.pkpa-preceptors.show', [
+                'programSite' => $pkpaProgramSite,
+            ]);
+        }
+
         return view('management.pkpa-program-sites.show', [
             'programSite' => $pkpaProgramSite,
             'pageMode' => $mode,
-            'pageTitle' => $mode === 'preceptors' ? 'Kelola Preseptor' : 'Kelola Tempat Tersedia',
+            'pageTitle' => 'Kelola Tempat Tersedia',
         ]);
     }
 

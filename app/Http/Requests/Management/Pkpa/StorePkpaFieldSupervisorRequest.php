@@ -20,8 +20,6 @@ class StorePkpaFieldSupervisorRequest extends FormRequest
             'position_title' => ['nullable', 'string', 'max:255'],
             'is_primary_contact' => ['nullable', 'boolean'],
             'maximum_active_students' => ['nullable', 'integer', 'min:0'],
-            'effective_start_date' => ['nullable', 'date'],
-            'effective_end_date' => ['nullable', 'date', 'after_or_equal:effective_start_date'],
             'status' => ['required', Rule::in(PkpaSiteFieldSupervisor::STATUSES)],
             'notes' => ['nullable', 'string', 'max:4000'],
         ];

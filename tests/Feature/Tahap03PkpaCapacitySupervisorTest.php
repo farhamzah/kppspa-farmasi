@@ -249,20 +249,35 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
                 'core_user_id' => 'CORE-FIELD-1',
                 'position_title' => 'Apoteker Pendamping',
                 'maximum_active_students' => 8,
+                'effective_start_date' => '2026-01-01',
+                'effective_end_date' => '2026-12-31',
                 'status' => 'active',
             ])->assertRedirect();
+
+        $createdSupervisor = PkpaSiteFieldSupervisor::where('practice_site_id', $programSite->practice_site_id)->firstOrFail();
+        $this->assertNull($createdSupervisor->effective_start_date);
+        $this->assertNull($createdSupervisor->effective_end_date);
 
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/management/pkpa-preceptors')
             ->assertOk()
             ->assertSee('Preseptor per Wahana')
-            ->assertSee('Wahana PKPA')
+            ->assertSee('Pilih wahana')
             ->assertSee('Tempat Praktik')
             ->assertSee('Preseptor Satu')
             ->assertSee('Tempat APT-03-F')
             ->assertSee('PKPA-03-F')
             ->assertSee('Apotek')
             ->assertSee('Apoteker Pendamping');
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get("/management/pkpa-preceptors/{$programSite->id}")
+            ->assertOk()
+            ->assertSee('Tambahkan Preseptor')
+            ->assertSee('Preseptor Terhubung')
+            ->assertDontSee('Efektif Mulai')
+            ->assertDontSee('Efektif Selesai')
+            ->assertDontSee('Availability Tempat');
     }
 
     public function test_readiness_dashboard_requires_capacity_and_supervisors_without_creating_placement(): void

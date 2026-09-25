@@ -96,10 +96,6 @@
                     <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Beban Maks</label><input type="number" name="maximum_active_students" min="0" value="0" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
                     <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Status</label><select name="status" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">@foreach(\App\Models\PkpaSiteFieldSupervisor::STATUSES as $status)<option value="{{ $status }}" @selected($status === 'active')>{{ str($status)->headline() }}</option>@endforeach</select></div>
                 </div>
-                <div class="grid gap-3 md:grid-cols-2">
-                    <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Efektif Mulai</label><input type="date" name="effective_start_date" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
-                    <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Efektif Selesai</label><input type="date" name="effective_end_date" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
-                </div>
                 <label class="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700"><input type="checkbox" name="is_primary_contact" value="1"> Kontak utama</label>
                 <button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Tambah dari Core</button>
             </form>
