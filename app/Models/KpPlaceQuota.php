@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class KpPlaceQuota extends Model
 {
+    private bool $filledCountResolved = false;
+
+    private int $resolvedFilledCount = 0;
+
     protected $fillable = [
         'kp_period_id',
         'kp_place_id',
@@ -55,7 +59,15 @@ class KpPlaceQuota extends Model
 
     public function filledCount(): int
     {
-        return $this->selections()->where('status', 'aktif')->count();
+        if ($this->filledCountResolved) {
+            return $this->resolvedFilledCount;
+        }
+
+        $officialCount = $this->officialPkpaFilledCount();
+        $this->resolvedFilledCount = $officialCount ?? $this->selections()->where('status', 'aktif')->count();
+        $this->filledCountResolved = true;
+
+        return $this->resolvedFilledCount;
     }
 
     public function remainingQuota(): int
@@ -84,5 +96,48 @@ class KpPlaceQuota extends Model
         }
 
         return $this->is_open ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700';
+    }
+
+    private function officialPkpaFilledCount(): ?int
+    {
+        $this->loadMissing(['period', 'place']);
+
+        if (! $this->period || ! $this->place) {
+            return null;
+        }
+
+        $programCode = trim(str($this->period->name)->before(' - ')->toString());
+        $program = PkpaProgram::query()->where('code', $programCode)->first();
+
+        if (! $program) {
+            return null;
+        }
+
+        $domainCode = match ($this->place->type) {
+            'apotek' => 'APT',
+            'distributor' => 'PBF',
+            'rumah_sakit' => 'RS',
+            'industri' => 'IND',
+            'puskesmas', 'lainnya' => 'PEM',
+            default => null,
+        };
+
+        $site = PkpaPracticeSite::query()
+            ->where('name', $this->place->name)
+            ->when($domainCode, fn ($query) => $query->whereHas('practiceDomain', fn ($domain) => $domain->where('code', $domainCode)))
+            ->first();
+
+        if (! $site) {
+            return null;
+        }
+
+        $publication = $program->currentPlacementPublication()->first()
+            ?? $program->placementPublications()->where('status', 'published')->first();
+
+        if (! $publication) {
+            return 0;
+        }
+
+        return $publication->assignments()->where('practice_site_id', $site->id)->count();
     }
 }

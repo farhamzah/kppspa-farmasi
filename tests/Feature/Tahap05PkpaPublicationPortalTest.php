@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\KpAssignment;
+use App\Models\KpPeriod;
+use App\Models\KpPlace;
+use App\Models\KpPlaceQuota;
 use App\Models\PkpaEnrollment;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaNotificationDelivery;
@@ -205,6 +208,42 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $publication = $this->publishedFixture('PKPA-05-REPORT');
         $assignment = $publication->assignments()->with('supervisors')->where('practice_domain_name_snapshot', 'Apotek')->firstOrFail();
         $internal = $assignment->supervisors->firstWhere('supervisor_type', 'internal');
+        $pbfAssignment = $publication->assignments()->where('practice_domain_name_snapshot', 'Pedagang Besar Farmasi')->firstOrFail();
+        $period = KpPeriod::create([
+            'name' => $publication->program->code.' - '.$publication->program->name,
+            'status' => 'dibuka',
+        ]);
+        $place = KpPlace::create([
+            'name' => $assignment->practice_site_name_snapshot,
+            'type' => 'apotek',
+            'status' => 'aktif',
+        ]);
+        $quota = KpPlaceQuota::create([
+            'kp_period_id' => $period->id,
+            'kp_place_id' => $place->id,
+            'quota' => 1,
+            'is_open' => true,
+        ]);
+
+        $this->assertSame(1, $quota->filledCount());
+        $this->assertSame(0, $quota->remainingQuota());
+        $this->assertSame('Penuh', $quota->statusLabel());
+
+        $pbfPlace = KpPlace::create([
+            'name' => $pbfAssignment->practice_site_name_snapshot,
+            'type' => 'distributor',
+            'status' => 'aktif',
+        ]);
+        $pbfQuota = KpPlaceQuota::create([
+            'kp_period_id' => $period->id,
+            'kp_place_id' => $pbfPlace->id,
+            'quota' => 1,
+            'is_open' => true,
+        ]);
+
+        $this->assertSame(1, $pbfQuota->filledCount());
+        $this->assertSame(0, $pbfQuota->remainingQuota());
+        $this->assertSame('Penuh', $pbfQuota->statusLabel());
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/recaps/placements?program='.$publication->pkpa_program_id.'&domain='.$assignment->practice_domain_id)
