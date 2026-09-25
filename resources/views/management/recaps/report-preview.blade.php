@@ -28,7 +28,7 @@
 <body @if($printMode) onload="window.print()" @endif>
     <div class="toolbar">
         <button onclick="window.print()">Print</button>
-        <a href="{{ route('management.recaps.'.$type, request()->only(['program', 'domain', 'site', 'q'])) }}">Kembali</a>
+        <a href="{{ route('management.recaps.'.$type, request()->only(['program', 'domain', 'site', 'internal_supervisor', 'field_supervisor', 'q'])) }}">Kembali</a>
     </div>
 
     <h1>{{ $title }}</h1>

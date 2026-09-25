@@ -25,10 +25,12 @@ use App\Models\User;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPlacementNotificationService;
 use App\Services\PkpaProgramService;
+use App\Services\PkpaReportService;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -201,7 +203,8 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     public function test_report_center_uses_current_pkpa_publication_and_supports_filters_and_exports(): void
     {
         $publication = $this->publishedFixture('PKPA-05-REPORT');
-        $assignment = $publication->assignments()->where('practice_domain_name_snapshot', 'Apotek')->firstOrFail();
+        $assignment = $publication->assignments()->with('supervisors')->where('practice_domain_name_snapshot', 'Apotek')->firstOrFail();
+        $internal = $assignment->supervisors->firstWhere('supervisor_type', 'internal');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/recaps/placements?program='.$publication->pkpa_program_id.'&domain='.$assignment->practice_domain_id)
@@ -209,6 +212,13 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->assertSee($assignment->student_name_snapshot)
             ->assertSee($assignment->practice_site_name_snapshot)
             ->assertSee('Cetak A4');
+
+        $filteredRows = app(PkpaReportService::class)->rows('placements', Request::create('/management/recaps/placements', 'GET', [
+            'program' => $publication->pkpa_program_id,
+            'internal_supervisor' => $internal->core_user_id,
+        ]));
+        $this->assertCount(1, $filteredRows);
+        $this->assertSame($assignment->student_name_snapshot, $filteredRows->first()['Nama Mahasiswa']);
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get('/management/recaps/sites/preview?program='.$publication->pkpa_program_id)
@@ -225,6 +235,12 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->get('/management/recaps/students/download/excel?program='.$publication->pkpa_program_id)
             ->assertOk()
             ->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        $publication->update(['is_current' => false, 'current_key' => null]);
+        $fallbackRows = app(PkpaReportService::class)->rows('placements', Request::create('/management/recaps/placements', 'GET', [
+            'program' => $publication->pkpa_program_id,
+        ]));
+        $this->assertCount(5, $fallbackRows);
     }
 
     public function test_student_detail_and_acknowledge_allow_numeric_like_core_user_id(): void

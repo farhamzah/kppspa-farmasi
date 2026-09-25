@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
+use App\Models\PkpaPublishedAssignmentSupervisor;
 use App\Services\PkpaReportService;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\Request;
@@ -19,10 +20,15 @@ class RecapController extends Controller
 {
     public function index(PkpaReportService $service): View
     {
+        $reports = $service->definitions();
+
         return view('management.recaps.index', [
             'summary' => $service->summary(),
-            'reports' => $service->definitions(),
-            ...$service->filterOptions(),
+            'reports' => $reports,
+            'reportCounts' => collect($reports)->mapWithKeys(fn (array $report, string $type) => [
+                $type => $service->rows($type, request())->count(),
+            ]),
+            ...$service->filterOptions(request()),
         ]);
     }
 
@@ -110,8 +116,8 @@ class RecapController extends Controller
             'title' => $title,
             'type' => $type,
             'rows' => $service->rows($type, $request),
-            ...$service->filterOptions(),
-            'filters' => $request->only(['program', 'domain', 'site', 'q']),
+            ...$service->filterOptions($request),
+            'filters' => $request->only(['program', 'domain', 'site', 'internal_supervisor', 'field_supervisor', 'q']),
         ]);
     }
 
@@ -133,13 +139,29 @@ class RecapController extends Controller
         $program = $request->filled('program') ? PkpaProgram::find($request->program)?->name : null;
         $domain = $request->filled('domain') ? PkpaPracticeDomain::find($request->domain)?->name : null;
         $site = $request->filled('site') ? PkpaPracticeSite::find($request->site)?->name : null;
+        $internalSupervisor = $this->supervisorFilterName($request, 'internal_supervisor', 'internal');
+        $fieldSupervisor = $this->supervisorFilterName($request, 'field_supervisor', 'field');
 
         return [
             'Program/Periode' => $program ?: 'Semua program',
             'Wahana' => $domain ?: 'Semua wahana',
             'Tempat Praktik' => $site ?: 'Semua tempat',
+            'Pembimbing Dalam' => $internalSupervisor ?: 'Semua pembimbing',
+            'Preseptor' => $fieldSupervisor ?: 'Semua preseptor',
             'Pencarian' => $request->filled('q') ? (string) $request->q : '-',
             'Dicetak pada' => now()->format('d M Y H:i'),
         ];
+    }
+
+    private function supervisorFilterName(Request $request, string $parameter, string $type): ?string
+    {
+        if (! $request->filled($parameter)) {
+            return null;
+        }
+
+        return PkpaPublishedAssignmentSupervisor::query()
+            ->where('supervisor_type', $type)
+            ->where('core_user_id', (string) $request->input($parameter))
+            ->value('name_snapshot');
     }
 }

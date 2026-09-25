@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PkpaEnrollment;
+use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
@@ -58,12 +59,21 @@ class PkpaReportService
         ];
     }
 
-    public function filterOptions(): array
+    public function filterOptions(Request $request): array
     {
+        $supervisors = PkpaPublishedAssignment::query()
+            ->whereIn('pkpa_placement_publication_id', $this->officialPublicationIds($request))
+            ->with('supervisors')
+            ->get()
+            ->flatMap->supervisors
+            ->where('status', 'assigned');
+
         return [
             'programs' => PkpaProgram::query()->orderByDesc('start_date')->get(),
             'domains' => PkpaPracticeDomain::query()->active()->orderBy('sort_order')->orderBy('name')->get(),
             'sites' => PkpaPracticeSite::query()->where('is_active', true)->orderBy('name')->get(),
+            'internalSupervisors' => $this->supervisorOptions($supervisors, 'internal'),
+            'fieldSupervisors' => $this->supervisorOptions($supervisors, 'field'),
         ];
     }
 
@@ -83,19 +93,21 @@ class PkpaReportService
 
     private function studentRows(Request $request): Collection
     {
-        $assignmentEnrollmentIds = $this->assignmentQuery($request)->pluck('pkpa_enrollment_id');
+        $assignmentsByEnrollment = $this->assignmentQuery($request)->get()->groupBy('pkpa_enrollment_id');
+        $assignmentEnrollmentIds = $assignmentsByEnrollment->keys();
 
         return PkpaEnrollment::query()
             ->with('program')
             ->when($request->filled('program'), fn (Builder $query) => $query->where('pkpa_program_id', $request->integer('program')))
-            ->when($request->filled('domain') || $request->filled('site'), fn (Builder $query) => $query->whereIn('id', $assignmentEnrollmentIds))
+            ->when(
+                $request->filled('domain') || $request->filled('site') || $request->filled('internal_supervisor') || $request->filled('field_supervisor'),
+                fn (Builder $query) => $query->whereIn('id', $assignmentEnrollmentIds)
+            )
             ->when($request->filled('q'), fn (Builder $query) => $query->search((string) $request->q))
             ->orderBy('student_name_snapshot')
             ->get()
-            ->map(function (PkpaEnrollment $enrollment) use ($request) {
-                $placements = $this->assignmentQuery($request)
-                    ->where('pkpa_enrollment_id', $enrollment->id)
-                    ->get();
+            ->map(function (PkpaEnrollment $enrollment) use ($assignmentsByEnrollment) {
+                $placements = $assignmentsByEnrollment->get($enrollment->id, collect());
 
                 return [
                     'Program/Periode' => $enrollment->program?->name ?? '-',
@@ -256,26 +268,43 @@ class PkpaReportService
     {
         return PkpaPublishedAssignment::query()
             ->with('publication.program')
-            ->whereHas('publication', fn (Builder $query) => $query->current())
+            ->whereIn('pkpa_placement_publication_id', $this->officialPublicationIds($request))
             ->when($request->filled('program'), fn (Builder $query) => $query->whereHas('publication', fn (Builder $publication) => $publication->where('pkpa_program_id', $request->integer('program'))))
             ->when($request->filled('domain'), fn (Builder $query) => $query->where('practice_domain_id', $request->integer('domain')))
             ->when($request->filled('site'), fn (Builder $query) => $query->where('practice_site_id', $request->integer('site')))
+            ->when($request->filled('internal_supervisor'), fn (Builder $query) => $query->whereHas('supervisors', fn (Builder $supervisor) => $supervisor
+                ->where('supervisor_type', 'internal')
+                ->where('core_user_id', (string) $request->internal_supervisor)
+                ->where('status', 'assigned')))
+            ->when($request->filled('field_supervisor'), fn (Builder $query) => $query->whereHas('supervisors', fn (Builder $supervisor) => $supervisor
+                ->where('supervisor_type', 'field')
+                ->where('core_user_id', (string) $request->field_supervisor)
+                ->where('status', 'assigned')))
             ->when($request->filled('q'), function (Builder $query) use ($request) {
                 $search = '%'.trim((string) $request->q).'%';
                 $query->where(fn (Builder $sub) => $sub
                     ->where('student_number_snapshot', 'like', $search)
                     ->orWhere('student_name_snapshot', 'like', $search)
-                    ->orWhere('practice_site_name_snapshot', 'like', $search));
+                    ->orWhere('practice_site_name_snapshot', 'like', $search)
+                    ->orWhereHas('supervisors', fn (Builder $supervisor) => $supervisor->where('name_snapshot', 'like', $search)));
             });
     }
 
     private function runQuery(Request $request): Builder
     {
         return PkpaRotationRun::query()
-            ->whereHas('publication', fn (Builder $query) => $query->current())
+            ->whereIn('current_placement_publication_id', $this->officialPublicationIds($request))
             ->when($request->filled('program'), fn (Builder $query) => $query->where('pkpa_program_id', $request->integer('program')))
             ->when($request->filled('domain'), fn (Builder $query) => $query->where('practice_domain_id', $request->integer('domain')))
             ->when($request->filled('site'), fn (Builder $query) => $query->where('practice_site_id', $request->integer('site')))
+            ->when($request->filled('internal_supervisor'), fn (Builder $query) => $query->whereHas('currentAssignment.supervisors', fn (Builder $supervisor) => $supervisor
+                ->where('supervisor_type', 'internal')
+                ->where('core_user_id', (string) $request->internal_supervisor)
+                ->where('status', 'assigned')))
+            ->when($request->filled('field_supervisor'), fn (Builder $query) => $query->whereHas('currentAssignment.supervisors', fn (Builder $supervisor) => $supervisor
+                ->where('supervisor_type', 'field')
+                ->where('core_user_id', (string) $request->field_supervisor)
+                ->where('status', 'assigned')))
             ->when($request->filled('q'), function (Builder $query) use ($request) {
                 $search = '%'.trim((string) $request->q).'%';
                 $query->where(fn (Builder $sub) => $sub
@@ -284,6 +313,52 @@ class PkpaReportService
                         ->orWhere('student_name_snapshot', 'like', $search))
                     ->orWhereHas('practiceSite', fn (Builder $site) => $site->where('name', 'like', $search)));
             });
+    }
+
+    private function officialPublicationIds(Request $request): Collection
+    {
+        $currentIds = PkpaPlacementPublication::query()
+            ->where('status', 'published')
+            ->where('is_current', true)
+            ->when($request->filled('program'), fn (Builder $query) => $query->where('pkpa_program_id', $request->integer('program')))
+            ->pluck('id');
+
+        if ($currentIds->isNotEmpty()) {
+            return $currentIds;
+        }
+
+        $runtimeIds = PkpaRotationRun::query()
+            ->whereNotNull('current_placement_publication_id')
+            ->whereHas('publication', fn (Builder $query) => $query->where('status', 'published'))
+            ->when($request->filled('program'), fn (Builder $query) => $query->where('pkpa_program_id', $request->integer('program')))
+            ->pluck('current_placement_publication_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($runtimeIds->isNotEmpty()) {
+            return $runtimeIds;
+        }
+
+        return PkpaPlacementPublication::query()
+            ->whereIn('status', ['published', 'superseded'])
+            ->when($request->filled('program'), fn (Builder $query) => $query->where('pkpa_program_id', $request->integer('program')))
+            ->orderByDesc('publication_number')
+            ->orderByDesc('revision_number')
+            ->get()
+            ->unique('pkpa_program_id')
+            ->pluck('id')
+            ->values();
+    }
+
+    private function supervisorOptions(Collection $supervisors, string $type): Collection
+    {
+        return $supervisors
+            ->where('supervisor_type', $type)
+            ->filter(fn ($supervisor) => filled($supervisor->core_user_id))
+            ->unique('core_user_id')
+            ->sortBy(fn ($supervisor) => strtolower((string) $supervisor->name_snapshot))
+            ->values();
     }
 
     private function supervisorName(PkpaPublishedAssignment $assignment, string $type): string
