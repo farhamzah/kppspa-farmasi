@@ -6,6 +6,7 @@ use App\Models\KpPeriod;
 use App\Models\KpPlace;
 use App\Models\KpPlaceQuota;
 use App\Models\PkpaPracticeDomain;
+use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,10 +15,11 @@ use Illuminate\Support\Collection;
 
 class PkpaCapacityReportService
 {
-    public const TYPES = ['program-sites', 'quotas'];
+    public const TYPES = ['practice-sites', 'program-sites', 'quotas'];
 
     public function __construct(
         private readonly LegacyKpCatalogSyncService $catalogSync,
+        private readonly PkpaPracticeSiteService $practiceSiteService,
     ) {}
 
     public function prepare(string $type, Request $request): void
@@ -30,6 +32,21 @@ class PkpaCapacityReportService
     public function query(string $type, Request $request): Builder
     {
         abort_unless(in_array($type, self::TYPES, true), 404);
+
+        if ($type === 'practice-sites') {
+            return $this->practiceSiteService->query($request->only([
+                'q',
+                'practice_domain_id',
+                'practice_domain_option_id',
+                'city',
+                'province',
+                'status',
+                'active',
+                'cooperation',
+            ]))
+                ->orderBy('practice_domain_id')
+                ->orderBy('name');
+        }
 
         if ($type === 'program-sites') {
             return PkpaProgramSite::query()
@@ -65,6 +82,20 @@ class PkpaCapacityReportService
     public function rows(string $type, Request $request): Collection
     {
         return $this->query($type, $request)->get()->values()->map(function ($item, int $index) use ($type) {
+            if ($type === 'practice-sites') {
+                return [
+                    'No' => $index + 1,
+                    'Kode' => $item->code,
+                    'Tempat Praktik' => $item->name,
+                    'Wahana' => $item->practiceDomain?->name ?? '-',
+                    'Jenis' => $item->practiceDomainOption?->name ?? '-',
+                    'Kota' => $item->city ?? '-',
+                    'Provinsi' => $item->province ?? '-',
+                    'Kerja Sama' => $item->cooperationStatusLabel(),
+                    'Status' => $item->statusLabel(),
+                ];
+            }
+
             if ($type === 'quotas') {
                 return [
                     'No' => $index + 1,
@@ -101,18 +132,42 @@ class PkpaCapacityReportService
 
     public function title(string $type): string
     {
-        return $type === 'program-sites'
-            ? 'Daftar Tempat Tersedia PKPA'
-            : 'Kapasitas Tempat PKPA';
+        return match ($type) {
+            'practice-sites' => 'Daftar Master Tempat Praktik PKPA',
+            'program-sites' => 'Daftar Tempat Tersedia PKPA',
+            default => 'Kapasitas Tempat PKPA',
+        };
     }
 
     public function filename(string $type): string
     {
-        return ($type === 'program-sites' ? 'tempat-tersedia-pkpa-' : 'kapasitas-tempat-pkpa-').now()->format('Ymd-His');
+        return match ($type) {
+            'practice-sites' => 'tempat-praktik-pkpa-',
+            'program-sites' => 'tempat-tersedia-pkpa-',
+            default => 'kapasitas-tempat-pkpa-',
+        }.now()->format('Ymd-His');
     }
 
     public function filterSummary(string $type, Request $request): array
     {
+        if ($type === 'practice-sites') {
+            return [
+                'Wahana' => $request->filled('practice_domain_id') ? PkpaPracticeDomain::find($request->integer('practice_domain_id'))?->name ?? 'Tidak ditemukan' : 'Semua wahana',
+                'Status' => $request->filled('status') ? str($request->status)->headline()->toString() : 'Semua status',
+                'Aktif' => match ((string) $request->active) {
+                    '1' => 'Ya',
+                    '0' => 'Tidak',
+                    default => 'Semua',
+                },
+                'Kerja Sama' => match ($request->cooperation) {
+                    'valid' => 'Berlaku',
+                    'expired' => 'Berakhir',
+                    default => 'Semua',
+                },
+                'Pencarian' => $request->filled('q') ? trim((string) $request->q) : '-',
+            ];
+        }
+
         if ($type === 'program-sites') {
             return [
                 'Program' => $request->filled('program_id') ? PkpaProgram::find($request->integer('program_id'))?->name ?? 'Tidak ditemukan' : 'Semua program',
@@ -131,6 +186,58 @@ class PkpaCapacityReportService
                 default => 'Semua status',
             },
             'Pencarian' => $request->filled('q') ? trim((string) $request->q) : '-',
+        ];
+    }
+
+    public function coverage(?PkpaProgram $program = null): array
+    {
+        $program ??= PkpaProgram::query()
+            ->where('is_active', true)
+            ->whereIn('status', ['ready', 'active'])
+            ->orderByDesc('id')
+            ->first()
+            ?? PkpaProgram::query()->whereIn('status', ['ready', 'active'])->orderByDesc('id')->first();
+
+        $domains = PkpaPracticeDomain::query()->where('is_active', true)->orderBy('sort_order')->get();
+
+        $rows = $domains->map(function (PkpaPracticeDomain $domain) use ($program) {
+            $masterSites = PkpaPracticeSite::query()
+                ->where('practice_domain_id', $domain->id)
+                ->where('is_active', true)
+                ->where('status', 'active')
+                ->get(['id', 'name']);
+
+            $programSites = $program
+                ? PkpaProgramSite::query()
+                    ->with('practiceSite:id,name')
+                    ->where('pkpa_program_id', $program->id)
+                    ->where('practice_domain_id', $domain->id)
+                    ->where('is_active', true)
+                    ->whereIn('status', ['ready', 'active'])
+                    ->get()
+                : collect();
+
+            $capacitySites = $programSites->filter(fn (PkpaProgramSite $site) => $site->availabilityPeriods()
+                ->whereIn('status', ['available', 'full'])
+                ->where('maximum_students', '>', 0)
+                ->exists());
+            $programSiteIds = $programSites->pluck('practice_site_id');
+            $capacitySiteIds = $capacitySites->pluck('practice_site_id');
+
+            return [
+                'domain' => $domain,
+                'master' => $masterSites->count(),
+                'program' => $programSites->unique('practice_site_id')->count(),
+                'capacity' => $capacitySites->unique('practice_site_id')->count(),
+                'missing_program' => $masterSites->whereNotIn('id', $programSiteIds)->pluck('name')->values(),
+                'missing_capacity' => $programSites->whereNotIn('practice_site_id', $capacitySiteIds)->pluck('practiceSite.name')->filter()->values(),
+            ];
+        });
+
+        return [
+            'program' => $program,
+            'rows' => $rows,
+            'consistent' => $rows->every(fn (array $row) => $row['master'] === $row['program'] && $row['program'] === $row['capacity']),
         ];
     }
 }

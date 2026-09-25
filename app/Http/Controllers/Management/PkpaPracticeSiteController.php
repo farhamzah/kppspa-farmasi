@@ -7,6 +7,7 @@ use App\Http\Requests\Management\Pkpa\StorePkpaPracticeSiteRequest;
 use App\Http\Requests\Management\Pkpa\UpdatePkpaPracticeSiteRequest;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
+use App\Services\PkpaCapacityReportService;
 use App\Services\PkpaPracticeSiteService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,30 +15,20 @@ use Illuminate\View\View;
 
 class PkpaPracticeSiteController extends Controller
 {
-    public function __construct(private readonly PkpaPracticeSiteService $siteService)
-    {
-    }
+    public function __construct(private readonly PkpaPracticeSiteService $siteService) {}
 
-    public function index(Request $request): View
+    public function index(Request $request, PkpaCapacityReportService $reportService): View
     {
-        $sites = $this->siteService->query($request->only([
-            'q',
-            'practice_domain_id',
-            'practice_domain_option_id',
-            'city',
-            'province',
-            'status',
-            'active',
-            'cooperation',
-        ]))
-            ->latest()
-            ->paginate(12)
+        $filters = $request->only(['q', 'practice_domain_id', 'practice_domain_option_id', 'city', 'province', 'status', 'active', 'cooperation']);
+        $sites = $reportService->query('practice-sites', $request)
+            ->paginate(20)
             ->withQueryString();
 
         return view('management.pkpa-practice-sites.index', [
             'sites' => $sites,
             'domains' => $this->domains(),
-            'filters' => $request->only(['q', 'practice_domain_id', 'practice_domain_option_id', 'city', 'province', 'status', 'active', 'cooperation']),
+            'filters' => $filters,
+            'coverage' => $reportService->coverage(),
         ]);
     }
 

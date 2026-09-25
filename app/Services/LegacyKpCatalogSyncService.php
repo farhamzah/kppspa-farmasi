@@ -12,6 +12,8 @@ use App\Models\User;
 
 class LegacyKpCatalogSyncService
 {
+    private const AUTO_QUOTA_NOTE = 'Kapasitas disinkronkan dari ketersediaan tempat PKPA resmi.';
+
     public function sync(?User $actor = null): void
     {
         $this->syncPeriods($actor);
@@ -100,19 +102,20 @@ class LegacyKpCatalogSyncService
                     return;
                 }
 
-                KpPlaceQuota::firstOrCreate(
-                    [
-                        'kp_period_id' => $period->id,
-                        'kp_place_id' => $place->id,
-                    ],
-                    [
+                $quota = KpPlaceQuota::firstOrNew([
+                    'kp_period_id' => $period->id,
+                    'kp_place_id' => $place->id,
+                ]);
+
+                if (! $quota->exists || $quota->notes === self::AUTO_QUOTA_NOTE) {
+                    $quota->fill([
                         'quota' => $capacity,
-                        'is_open' => false,
-                        'notes' => 'Kapasitas disinkronkan dari ketersediaan tempat PKPA resmi.',
-                        'created_by' => $actor?->id,
+                        'is_open' => $quota->exists ? $quota->is_open : false,
+                        'notes' => self::AUTO_QUOTA_NOTE,
+                        'created_by' => $quota->exists ? $quota->created_by : $actor?->id,
                         'updated_by' => $actor?->id,
-                    ]
-                );
+                    ])->save();
+                }
             });
     }
 

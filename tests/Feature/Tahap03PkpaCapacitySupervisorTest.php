@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\KpAssignment;
+use App\Models\KpPlaceQuota;
 use App\Models\PkpaEnrollment;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaPracticeDomain;
@@ -342,6 +343,28 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-practice-sites')
+            ->assertOk()
+            ->assertSee('Master tempat praktik per wahana')
+            ->assertSee('Wahana PKPA')
+            ->assertSee('Laporan sesuai filter')
+            ->assertSee('Tempat APT-03-REPORT');
+
+        $this->get('/management/pkpa-capacity-reports/practice-sites/preview')
+            ->assertOk()
+            ->assertSee('Daftar Master Tempat Praktik PKPA')
+            ->assertSee('Tempat APT-03-REPORT');
+        $this->get('/management/pkpa-capacity-reports/practice-sites/download/pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+        $this->get('/management/pkpa-capacity-reports/practice-sites/download/xlsx')
+            ->assertOk()
+            ->assertDownload();
+        $this->get('/management/pkpa-capacity-reports/practice-sites/download/word')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/msword; charset=UTF-8');
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->get('/management/pkpa-program-sites')
             ->assertOk()
             ->assertSee('Tempat aktif per program')
@@ -368,6 +391,11 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
             ->assertOk()
             ->assertSee('Kuota operasional per program/periode')
             ->assertSee('Tempat APT-03-REPORT');
+        $quota = KpPlaceQuota::query()->firstOrFail();
+        $this->assertSame(4, $quota->quota);
+        $quota->update(['quota' => 1]);
+        $this->get('/management/kp-place-quotas')->assertOk();
+        $this->assertSame(4, $quota->fresh()->quota, 'Kuota sinkron otomatis harus mengikuti kapasitas resmi terbaru.');
         $this->get('/management/pkpa-capacity-reports/quotas/preview')
             ->assertOk()
             ->assertSee('Kapasitas Tempat PKPA')
@@ -376,6 +404,25 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/management/pkpa-capacity-reports/program-sites/preview')
             ->assertForbidden();
+    }
+
+    public function test_site_coverage_audit_names_places_missing_from_the_next_stage_without_writing_data(): void
+    {
+        $program = $this->createProgram('PKPA-03-AUDIT');
+        $linked = $this->createProgramSite('IGNORED', 'APT-03-LINKED', $program);
+        $missing = $this->createSite('APT-03-MISSING', 'APT');
+
+        $this->artisan('pkpa:audit-site-coverage', ['--program' => $program->code])
+            ->expectsOutputToContain('Cakupan tempat untuk PKPA-03-AUDIT')
+            ->expectsOutputToContain('Belum masuk program [APT]')
+            ->expectsOutputToContain($missing->name)
+            ->expectsOutputToContain('Belum punya kapasitas [APT]')
+            ->expectsOutputToContain($linked->practiceSite->name)
+            ->expectsOutputToContain('Tidak ada data yang diubah')
+            ->assertSuccessful();
+
+        $this->assertSame(1, $program->programSites()->count());
+        $this->assertSame(0, PkpaSiteAvailabilityPeriod::where('pkpa_program_site_id', $linked->id)->count());
     }
 
     private function makeUser(string $email, array $roles, string $coreUserId): User

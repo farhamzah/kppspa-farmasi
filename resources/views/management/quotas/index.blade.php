@@ -37,7 +37,7 @@
         <section class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
             <header class="flex items-center justify-between border-b border-cyan-100 bg-cyan-50 px-5 py-4">
                 <div><p class="text-xs font-black uppercase text-cyan-700">Wahana PKPA</p><h2 class="mt-1 text-xl font-black text-slate-950">{{ $domainName }}</h2></div>
-                <div class="flex gap-2 text-xs font-black"><span class="rounded-full bg-white px-3 py-1 text-cyan-800 ring-1 ring-cyan-200">{{ $items->count() }} tempat</span><span class="rounded-full bg-white px-3 py-1 text-slate-700 ring-1 ring-slate-200">Kapasitas {{ $items->sum('quota') }}</span></div>
+                <div class="flex gap-2 text-xs font-black"><span class="rounded-full bg-white px-3 py-1 text-cyan-800 ring-1 ring-cyan-200">{{ $items->unique('kp_place_id')->count() }} tempat</span><span class="rounded-full bg-white px-3 py-1 text-slate-700 ring-1 ring-slate-200">Kapasitas {{ $items->sum('quota') }}</span></div>
             </header>
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 text-sm">
