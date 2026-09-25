@@ -7,7 +7,8 @@ use App\Models\KpPlace;
 use App\Models\KpPlaceQuota;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
-use App\Models\PkpaProgram;
+use App\Models\PkpaProgramSite;
+use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\PkpaProgramService;
@@ -163,6 +164,64 @@ class KpManagementTest extends TestCase
 
         $this->assertDatabaseHas('kp_periods', ['name' => $program->code.' - '.$program->name]);
         $this->assertDatabaseHas('kp_places', ['name' => 'Apotek Uji Kuota', 'type' => 'apotek']);
+    }
+
+    public function test_quota_page_creates_missing_pbf_capacity_from_official_availability(): void
+    {
+        $program = app(PkpaProgramService::class)->create([
+            'code' => 'PKPA-KUOTA-PBF',
+            'name' => 'PKPA PBF 2026',
+            'academic_year' => '2026/2027',
+            'cohort_name' => 'Angkatan 2026',
+            'start_date' => '2026-09-01',
+            'end_date' => '2027-08-31',
+            'status' => 'active',
+        ], $this->admin);
+        $domain = PkpaPracticeDomain::where('code', 'PBF')->firstOrFail();
+        $programDomain = $program->domains()->where('practice_domain_id', $domain->id)->firstOrFail();
+        $site = PkpaPracticeSite::create([
+            'practice_domain_id' => $domain->id,
+            'code' => 'PBF-KUOTA-01',
+            'name' => 'PT. Distributor Uji Kuota',
+            'city' => 'Karawang',
+            'province' => 'Jawa Barat',
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+        $programSite = PkpaProgramSite::create([
+            'pkpa_program_id' => $program->id,
+            'practice_site_id' => $site->id,
+            'pkpa_program_domain_id' => $programDomain->id,
+            'practice_domain_id' => $domain->id,
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+        PkpaSiteAvailabilityPeriod::create([
+            'pkpa_program_site_id' => $programSite->id,
+            'start_date' => '2026-10-05',
+            'end_date' => '2026-11-06',
+            'minimum_students' => 1,
+            'maximum_students' => 3,
+            'reserved_slots' => 0,
+            'status' => 'available',
+        ]);
+
+        $this->assertSame(0, KpPlaceQuota::count());
+
+        $this->actingAs($this->admin)
+            ->withSession(['active_role' => 'admin'])
+            ->get('/management/kp-place-quotas')
+            ->assertOk()
+            ->assertSee('PT. Distributor Uji Kuota')
+            ->assertSee('Distributor');
+
+        $period = KpPeriod::where('name', $program->code.' - '.$program->name)->firstOrFail();
+        $place = KpPlace::where('name', $site->name)->where('type', 'distributor')->firstOrFail();
+        $this->assertDatabaseHas('kp_place_quotas', [
+            'kp_period_id' => $period->id,
+            'kp_place_id' => $place->id,
+            'quota' => 3,
+        ]);
     }
 
     public function test_quota_update_and_toggle_create_logs(): void

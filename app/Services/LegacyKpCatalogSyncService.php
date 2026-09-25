@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\KpPeriod;
 use App\Models\KpPlace;
+use App\Models\KpPlaceQuota;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
+use App\Models\PkpaProgramSite;
 use App\Models\User;
 
 class LegacyKpCatalogSyncService
@@ -14,6 +16,7 @@ class LegacyKpCatalogSyncService
     {
         $this->syncPeriods($actor);
         $this->syncPlaces($actor);
+        $this->syncQuotas($actor);
     }
 
     private function syncPeriods(?User $actor = null): void
@@ -62,6 +65,50 @@ class LegacyKpCatalogSyncService
                         'email' => $site->email,
                         'description' => $site->description,
                         'status' => $site->status === 'active' ? 'aktif' : 'nonaktif',
+                        'created_by' => $actor?->id,
+                        'updated_by' => $actor?->id,
+                    ]
+                );
+            });
+    }
+
+    private function syncQuotas(?User $actor = null): void
+    {
+        PkpaProgramSite::query()
+            ->with(['program', 'practiceSite.practiceDomain', 'practiceSite.practiceDomainOption', 'availabilityPeriods'])
+            ->where('is_active', true)
+            ->whereIn('status', ['ready', 'active'])
+            ->whereHas('availabilityPeriods', fn ($query) => $query->whereIn('status', ['available', 'full']))
+            ->get()
+            ->each(function (PkpaProgramSite $programSite) use ($actor): void {
+                if (! $programSite->program || ! $programSite->practiceSite) {
+                    return;
+                }
+
+                $period = KpPeriod::query()
+                    ->where('name', trim($programSite->program->code.' - '.$programSite->program->name))
+                    ->first();
+                $place = KpPlace::query()
+                    ->where('name', $programSite->practiceSite->name)
+                    ->where('type', $this->mapPlaceType($programSite->practiceSite))
+                    ->first();
+                $capacity = (int) $programSite->availabilityPeriods
+                    ->whereIn('status', ['available', 'full'])
+                    ->sum('maximum_students');
+
+                if (! $period || ! $place || $capacity < 1) {
+                    return;
+                }
+
+                KpPlaceQuota::firstOrCreate(
+                    [
+                        'kp_period_id' => $period->id,
+                        'kp_place_id' => $place->id,
+                    ],
+                    [
+                        'quota' => $capacity,
+                        'is_open' => false,
+                        'notes' => 'Kapasitas disinkronkan dari ketersediaan tempat PKPA resmi.',
                         'created_by' => $actor?->id,
                         'updated_by' => $actor?->id,
                     ]
