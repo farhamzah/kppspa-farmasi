@@ -4,6 +4,59 @@ namespace App\Support;
 
 class RoleDashboard
 {
+    private const MANAGEMENT_MENU = [
+        'Dashboard',
+        'Profil Saya',
+
+        // 1. Siapkan program dan master tempat praktik.
+        'Program PKPA',
+        'Tempat Praktik',
+
+        // 2. Siapkan peserta dan administrasinya.
+        'Persyaratan Dokumen',
+        'Peserta PKPA',
+        'Verifikasi Pendaftaran',
+        'Pembekalan',
+
+        // 3. Siapkan kapasitas, pembimbing, dan kesiapan jadwal.
+        'Tempat Tersedia',
+        'Kapasitas Tempat',
+        'Pembimbing Dalam',
+        'Preseptor',
+        'Kesiapan Penempatan',
+
+        // 4. Susun, terbitkan, dan tinjau hasil penempatan.
+        'Penyusunan Penempatan',
+        'Publikasi Penempatan',
+        'Penempatan PKPA',
+
+        // 5. Pantau pelaksanaan dan hasil akademik.
+        'Pelaksanaan PKPA',
+        'Panduan Kompetensi',
+        'Portofolio PKPA',
+
+        // 6. Kelola evaluasi hingga nilai akhir.
+        'Pengajuan Ujian',
+        'Jadwal Ujian',
+        'Penilaian PKPA',
+        'Pemantauan Nilai',
+
+        // 7. Selesaikan program dan keluarkan laporan.
+        'Penyelesaian PKPA',
+        'Dokumen PKPA',
+        'Rekap & Laporan',
+    ];
+
+    private const MANAGEMENT_FEATURES = [
+        'Peserta PKPA',
+        'Kesiapan Penempatan',
+        'Penyusunan Penempatan',
+        'Pelaksanaan PKPA',
+        'Portofolio PKPA',
+        'Penilaian PKPA',
+        'Rekap & Laporan',
+    ];
+
     public const ROLES = [
         'mahasiswa' => [
             'label' => 'Mahasiswa',
@@ -16,15 +69,15 @@ class RoleDashboard
             'label' => 'Admin',
             'route' => 'admin.dashboard',
             'path' => '/admin/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Kapasitas Tempat', 'Peserta PKPA', 'Kelompok PKPA', 'Pembimbing Dalam', 'Preseptor', 'Persyaratan Dokumen', 'Verifikasi Pendaftaran', 'Pembekalan', 'Hasil Pembekalan', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan', 'Penempatan PKPA', 'Pelaksanaan PKPA', 'Pengaturan Akademik', 'Panduan Kompetensi', 'Portofolio PKPA', 'Pengajuan Ujian', 'Jadwal Ujian', 'Komponen Penilaian', 'Penilaian PKPA', 'Pemantauan Nilai', 'Penyelesaian PKPA', 'Dokumen PKPA', 'Pelaporan Analitik', 'Rekap & Laporan'],
-            'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Peserta PKPA', 'Pembimbing Dalam', 'Preseptor', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
+            'menu' => self::MANAGEMENT_MENU,
+            'features' => self::MANAGEMENT_FEATURES,
         ],
         'koordinator_kp' => [
             'label' => 'Koordinator PKPA',
             'route' => 'koordinator.dashboard',
             'path' => '/koordinator/dashboard',
-            'menu' => ['Dashboard', 'Profil Saya', 'Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Kapasitas Tempat', 'Peserta PKPA', 'Kelompok PKPA', 'Pembimbing Dalam', 'Preseptor', 'Persyaratan Dokumen', 'Verifikasi Pendaftaran', 'Pembekalan', 'Hasil Pembekalan', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan', 'Penempatan PKPA', 'Pelaksanaan PKPA', 'Pengaturan Akademik', 'Panduan Kompetensi', 'Portofolio PKPA', 'Pengajuan Ujian', 'Jadwal Ujian', 'Komponen Penilaian', 'Penilaian PKPA', 'Pemantauan Nilai', 'Penyelesaian PKPA', 'Dokumen PKPA', 'Pelaporan Analitik', 'Rekap & Laporan'],
-            'features' => ['Program PKPA', 'Wahana PKPA', 'Tempat Praktik', 'Tempat Tersedia', 'Peserta PKPA', 'Pembimbing Dalam', 'Preseptor', 'Kesiapan Penempatan', 'Penyusunan Penempatan', 'Publikasi Penempatan'],
+            'menu' => self::MANAGEMENT_MENU,
+            'features' => self::MANAGEMENT_FEATURES,
         ],
         'pembimbing_dalam' => [
             'label' => 'Pembimbing Dalam',
