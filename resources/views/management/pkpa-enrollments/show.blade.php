@@ -22,7 +22,7 @@
             <div class="mt-4 space-y-3 text-sm">
                 <div class="flex justify-between gap-3"><span class="text-slate-500">Program</span><span class="text-right font-bold">{{ $enrollment->program?->code }}</span></div>
                 <div class="flex justify-between gap-3"><span class="text-slate-500">Status</span><span class="font-bold">{{ $enrollment->statusLabel() }}</span></div>
-                <div class="flex justify-between gap-3"><span class="text-slate-500">Kelompok</span><span class="font-bold">{{ $enrollment->activeGroupMembership?->group?->code ?: 'Belum' }}</span></div>
+                @if($enrollment->activeGroupMembership?->group)<div class="flex justify-between gap-3"><span class="text-slate-500">Kelompok opsional</span><span class="font-bold">{{ $enrollment->activeGroupMembership->group->code }}</span></div>@endif
                 <div class="flex justify-between gap-3"><span class="text-slate-500">Terdaftar</span><span class="font-bold">{{ $enrollment->enrolled_at?->format('d M Y') ?: '-' }}</span></div>
             </div>
             <form method="POST" action="{{ route('management.pkpa-enrollments.status', $enrollment) }}" class="mt-5 flex gap-2">@csrf<select name="status" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">@foreach(['active' => 'Aktif', 'on_hold' => 'Ditahan', 'archived' => 'Arsip'] as $value => $label)<option value="{{ $value }}" @selected($enrollment->status === $value)>{{ $label }}</option>@endforeach</select><button class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-black text-white">Ubah</button></form>
@@ -30,17 +30,17 @@
         </aside>
     </div>
     <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <div class="border-b border-slate-200 px-5 py-4"><h3 class="font-black text-slate-950">Lima Kewajiban Wahana</h3></div>
+        <div class="border-b border-slate-200 px-5 py-4"><h3 class="font-black text-slate-950">Kemajuan 5 Wahana PKPA</h3><p class="mt-1 text-sm text-slate-600">Setiap peserta mengikuti lima jenis wahana. Status selesai diberikan setelah pelaksanaan, validasi, dan penilaian pada wahana tersebut terpenuhi.</p></div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
-                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Mode</th><th class="px-4 py-3">Pilihan</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Kemajuan</th></tr></thead>
+                <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-4 py-3">Wahana</th><th class="px-4 py-3">Ketentuan</th><th class="px-4 py-3">Jenis yang Dipilih</th><th class="px-4 py-3">Status</th><th class="px-4 py-3">Kemajuan</th></tr></thead>
                 <tbody class="divide-y divide-slate-100">
                 @foreach($enrollment->requirements as $requirement)
                     <tr>
                         <td class="px-4 py-4 font-bold">{{ $requirement->practiceDomain?->name }}</td>
                         <td class="px-4 py-4">{{ $requirement->modeLabel() }}</td>
                         <td class="px-4 py-4">{{ $requirement->selectedOption?->name ?? ($requirement->selection_mode === 'choose_one' ? 'Belum ditentukan' : '-') }}</td>
-                        <td class="px-4 py-4">{{ str($requirement->status)->replace('_', ' ')->headline() }}</td>
+                        <td class="px-4 py-4">{{ $requirement->statusLabel() }}</td>
                         <td class="px-4 py-4">{{ $requirement->completion_percentage }}%</td>
                     </tr>
                 @endforeach

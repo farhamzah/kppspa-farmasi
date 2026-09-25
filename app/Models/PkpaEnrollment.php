@@ -78,6 +78,12 @@ class PkpaEnrollment extends Model
         return $this->hasMany(PkpaRotationAssignment::class, 'pkpa_enrollment_id');
     }
 
+    public function currentPublishedAssignments(): HasMany
+    {
+        return $this->hasMany(PkpaPublishedAssignment::class, 'pkpa_enrollment_id')
+            ->whereHas('publication', fn (Builder $query) => $query->current());
+    }
+
     public function activeGroupMembership(): HasOne
     {
         return $this->hasOne(PkpaStudentGroupMember::class)->where('status', 'active')->whereNull('left_at')->latestOfMany();

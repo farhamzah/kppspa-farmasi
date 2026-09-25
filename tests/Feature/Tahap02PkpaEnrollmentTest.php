@@ -3,13 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\PkpaEnrollment;
+use App\Models\PkpaEnrollmentImportBatch;
 use App\Models\PkpaEnrollmentImportRow;
 use App\Models\PkpaEnrollmentRequirement;
-use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaProgram;
 use App\Models\PkpaStudentGroup;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaProgramService;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
@@ -25,8 +26,11 @@ class Tahap02PkpaEnrollmentTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $mahasiswa;
+
     private array $coreStudents = [];
 
     protected function setUp(): void
@@ -75,8 +79,19 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         $this->assertSame(1, $enrollment->requirements->where('practiceDomain.code', 'PEM')->count());
         $this->assertDatabaseMissing('pkpa_enrollment_requirements', ['selection_mode' => 'LOKAPOM']);
 
-        app(\App\Services\PkpaEnrollmentRequirementService::class)->ensureRequirements($enrollment, $this->admin);
+        app(PkpaEnrollmentRequirementService::class)->ensureRequirements($enrollment, $this->admin);
         $this->assertSame(5, $enrollment->requirements()->count(), 'Requirement harus idempotent.');
+
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-enrollments')
+            ->assertOk()
+            ->assertSee('Kemajuan PKPA')
+            ->assertSee('0 dari 5 dijadwalkan');
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-enrollments/'.$enrollment->id)
+            ->assertOk()
+            ->assertSee('Kemajuan 5 Wahana PKPA')
+            ->assertSee('Belum dijadwalkan');
 
         $this->expectException(QueryException::class);
         PkpaEnrollmentRequirement::create($government->replicate(['id'])->fill([])->toArray());
@@ -314,7 +329,7 @@ class Tahap02PkpaEnrollmentTest extends TestCase
         $this->assertSame(1, PkpaEnrollmentImportRow::where('validation_status', 'not_found')->count());
         $this->assertSame(1, PkpaEnrollmentImportRow::where('validation_status', 'group_not_found')->count());
 
-        $batch = \App\Models\PkpaEnrollmentImportBatch::firstOrFail();
+        $batch = PkpaEnrollmentImportBatch::firstOrFail();
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
             ->post("/management/pkpa-enrollment-imports/{$batch->id}/run")
             ->assertRedirect();

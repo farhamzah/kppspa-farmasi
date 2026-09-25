@@ -25,13 +25,13 @@ class PkpaEnrollmentController extends Controller
         private readonly PkpaEnrollmentService $enrollmentService,
         private readonly PkpaEnrollmentCoreSyncService $syncService,
         private readonly PkpaEnrollmentImportService $importService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
         $enrollments = PkpaEnrollment::query()
-            ->with(['program', 'requirements', 'activeGroupMembership.group'])
+            ->with(['program', 'requirements'])
+            ->withCount('currentPublishedAssignments')
             ->search($request->input('q'))
             ->when($request->filled('program_id'), fn ($query) => $query->where('pkpa_program_id', $request->program_id))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))

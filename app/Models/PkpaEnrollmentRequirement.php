@@ -68,6 +68,20 @@ class PkpaEnrollmentRequirement extends Model
 
     public function modeLabel(): string
     {
-        return $this->selection_mode === 'choose_one' ? 'Pilih satu' : 'Langsung';
+        return $this->selection_mode === 'choose_one' ? 'Pilih salah satu' : 'Wajib';
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            'planned' => 'Sudah dijadwalkan',
+            'in_progress' => 'Sedang berjalan',
+            'completed' => 'Selesai',
+            'failed' => 'Belum lulus',
+            'repeating' => 'Mengulang',
+            'waived' => 'Dibebaskan',
+            'cancelled' => 'Dibatalkan',
+            default => 'Belum dijadwalkan',
+        };
     }
 }
