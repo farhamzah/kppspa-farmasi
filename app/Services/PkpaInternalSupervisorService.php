@@ -16,8 +16,7 @@ class PkpaInternalSupervisorService
         private readonly CoreFarmasiClient $coreClient,
         private readonly PkpaSupervisorCoreResolver $resolver,
         private readonly PkpaAuditService $audit,
-    ) {
-    }
+    ) {}
 
     public function create(PkpaProgram $program, PkpaPracticeDomain $domain, array $data, ?User $actor): PkpaInternalSupervisorEligibility
     {
@@ -125,6 +124,7 @@ class PkpaInternalSupervisorService
         $resolved = $this->resolver->resolveInternal(['core_user_id' => $eligibility->core_user_id]);
         if (! ($resolved['ok'] ?? false) && ! isset($resolved['person'])) {
             $eligibility->update(['last_core_sync_status' => 'failed', 'last_core_sync_message' => $resolved['message'] ?? 'Core tidak tersedia.']);
+
             return $eligibility->refresh();
         }
         $person = $resolved['person'];
@@ -143,6 +143,95 @@ class PkpaInternalSupervisorService
         $this->audit->record($actor, 'internal_supervisor_eligibility_synced', $eligibility, $old, $eligibility->only(array_keys($old)));
 
         return $eligibility->refresh();
+    }
+
+    /**
+     * @return array{created:int,restored:int,supervisors:int,domains:int}
+     */
+    public function completeProgramDomains(PkpaProgram $program, ?User $actor): array
+    {
+        $domainIds = $program->domains()
+            ->where('is_active', true)
+            ->pluck('practice_domain_id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        if ($domainIds->isEmpty()) {
+            return ['created' => 0, 'restored' => 0, 'supervisors' => 0, 'domains' => 0];
+        }
+
+        $groups = PkpaInternalSupervisorEligibility::withTrashed()
+            ->where('pkpa_program_id', $program->id)
+            ->get()
+            ->groupBy(fn (PkpaInternalSupervisorEligibility $item) => (string) $item->core_user_id);
+        $created = 0;
+        $restored = 0;
+        $supervisors = 0;
+
+        DB::transaction(function () use ($program, $domainIds, $groups, $actor, &$created, &$restored, &$supervisors): void {
+            foreach ($groups as $group) {
+                $lead = $group->first(fn (PkpaInternalSupervisorEligibility $item) => ! $item->trashed() && $item->status === 'active' && $item->core_account_status_snapshot === 'active');
+
+                if (! $lead) {
+                    continue;
+                }
+
+                $supervisors++;
+                $shared = $lead->only([
+                    'core_user_id',
+                    'name_snapshot',
+                    'email_snapshot',
+                    'lecturer_id_snapshot',
+                    'core_account_status_snapshot',
+                    'role_snapshot',
+                    'maximum_active_students',
+                    'maximum_students_per_program',
+                    'effective_start_date',
+                    'effective_end_date',
+                    'status',
+                    'notes',
+                    'last_core_synced_at',
+                    'last_core_sync_status',
+                    'last_core_sync_message',
+                ]);
+
+                foreach ($domainIds as $domainId) {
+                    $eligibility = $group->firstWhere('practice_domain_id', $domainId);
+
+                    if ($eligibility) {
+                        $wasTrashed = $eligibility->trashed();
+
+                        if ($wasTrashed) {
+                            $eligibility->restore();
+                        }
+
+                        if ($wasTrashed || $eligibility->status !== 'active') {
+                            $eligibility->forceFill($shared + ['updated_by_core_user_id' => $actor?->core_user_id])->save();
+                            $restored++;
+                        }
+
+                        continue;
+                    }
+
+                    $eligibility = PkpaInternalSupervisorEligibility::create(array_merge($shared, [
+                        'pkpa_program_id' => $program->id,
+                        'practice_domain_id' => $domainId,
+                        'last_core_sync_message' => 'Cakupan otomatis dilengkapi untuk seluruh wahana aktif program.',
+                        'created_by_core_user_id' => $actor?->core_user_id,
+                        'updated_by_core_user_id' => $actor?->core_user_id,
+                    ]));
+                    $this->audit->record($actor, 'internal_supervisor_eligibility_created', $eligibility, null, $eligibility->only(['pkpa_program_id', 'practice_domain_id', 'core_user_id']));
+                    $created++;
+                }
+            }
+        });
+
+        return [
+            'created' => $created,
+            'restored' => $restored,
+            'supervisors' => $supervisors,
+            'domains' => $domainIds->count(),
+        ];
     }
 
     public function deactivate(PkpaInternalSupervisorEligibility $eligibility, ?User $actor): PkpaInternalSupervisorEligibility
@@ -268,7 +357,7 @@ class PkpaInternalSupervisorService
             return null;
         }
 
-        $front = filled($frontTitle) ? rtrim(trim((string) $frontTitle), '., ') . '.' : null;
+        $front = filled($frontTitle) ? rtrim(trim((string) $frontTitle), '., ').'.' : null;
         $back = filled($backTitle) ? trim((string) $backTitle) : null;
 
         return collect([$front, $name, $back])->filter(fn ($value) => filled($value))->implode(' ');

@@ -13,6 +13,7 @@ use App\Services\PkpaSupervisorAvailabilityService;
 use App\Services\PkpaSupervisorCoreSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class PkpaInternalSupervisorController extends Controller
@@ -21,38 +22,63 @@ class PkpaInternalSupervisorController extends Controller
         private readonly PkpaInternalSupervisorService $internalService,
         private readonly PkpaSupervisorAvailabilityService $availabilityService,
         private readonly PkpaSupervisorCoreSyncService $syncService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
-        if ($request->filled('program_id')) {
-            $program = PkpaProgram::find($request->program_id);
-            if ($program) {
-                $this->internalService->bootstrapProgram($program, ['status' => 'active'], $request->user());
-            }
+        $programs = PkpaProgram::query()->orderByDesc('id')->get();
+        $program = $request->filled('program_id')
+            ? $programs->firstWhere('id', (int) $request->program_id)
+            : ($programs->firstWhere('status', 'active') ?? $programs->first());
+
+        if ($program) {
+            $this->internalService->completeProgramDomains($program, $request->user());
         }
+
+        $statusFilter = $request->input('status', 'active');
 
         $eligibilities = PkpaInternalSupervisorEligibility::query()
             ->with(['program', 'practiceDomain', 'unavailabilityPeriods'])
-            ->when($request->filled('program_id'), fn ($q) => $q->where('pkpa_program_id', $request->program_id))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->when($program, fn ($q) => $q->where('pkpa_program_id', $program->id))
+            ->when($statusFilter !== 'all', fn ($q) => $q->where('status', $statusFilter))
             ->when($request->filled('q'), fn ($q) => $q->where(fn ($sub) => $sub->where('name_snapshot', 'like', '%'.$request->q.'%')->orWhere('core_user_id', 'like', '%'.$request->q.'%')))
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+            ->orderBy('name_snapshot')
+            ->get();
 
-        $cards = $eligibilities->getCollection()
+        $activeDomains = $program
+            ? $program->domains()->with('practiceDomain')->where('is_active', true)->orderBy('sort_order')->get()
+            : collect();
+        $activeDomainIds = $activeDomains->pluck('practice_domain_id')->map(fn ($id) => (int) $id);
+
+        $cards = $eligibilities
             ->groupBy(fn (PkpaInternalSupervisorEligibility $eligibility) => $eligibility->pkpa_program_id.'|'.$eligibility->core_user_id)
-            ->map(function ($group) {
+            ->map(function ($group) use ($activeDomainIds) {
                 /** @var PkpaInternalSupervisorEligibility $lead */
-                $lead = $group->first();
-                $allPeriods = $group->flatMap(fn (PkpaInternalSupervisorEligibility $eligibility) => $eligibility->unavailabilityPeriods)->unique('id')->sortBy('start_date')->values();
+                $lead = $group->firstWhere('status', 'active') ?? $group->first();
+                $allPeriods = $group
+                    ->flatMap(fn (PkpaInternalSupervisorEligibility $eligibility) => $eligibility->unavailabilityPeriods)
+                    ->unique(fn ($period) => implode('|', [
+                        $period->start_date?->toDateString(),
+                        $period->end_date?->toDateString(),
+                        $period->reason,
+                        $period->status,
+                    ]))
+                    ->sortBy('start_date')
+                    ->values();
+                $coveredDomainIds = $group
+                    ->where('status', 'active')
+                    ->pluck('practice_domain_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->intersect($activeDomainIds)
+                    ->unique()
+                    ->values();
 
                 return [
                     'lead' => $lead,
                     'domains' => $group->map(fn (PkpaInternalSupervisorEligibility $eligibility) => $eligibility->practiceDomain?->name)->filter()->unique()->values(),
-                    'domain_count' => $group->count(),
+                    'domain_ids' => $coveredDomainIds,
+                    'domain_count' => $coveredDomainIds->count(),
+                    'domain_complete' => $activeDomainIds->isNotEmpty() && $coveredDomainIds->count() === $activeDomainIds->count(),
                     'unavailability_periods' => $allPeriods,
                 ];
             })
@@ -74,13 +100,30 @@ class PkpaInternalSupervisorController extends Controller
                 : ($lead->name_snapshot ?: $lead->core_user_id);
 
             return $card;
-        });
+        })->sortBy('display_name', SORT_NATURAL | SORT_FLAG_CASE)->values();
+
+        $totalCards = $cards->count();
+        $completeCards = $cards->where('domain_complete', true)->count();
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $cards = new LengthAwarePaginator(
+            $cards->forPage($page, 10)->values(),
+            $totalCards,
+            10,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('management.pkpa-internal-supervisors.index', [
-            'eligibilities' => $eligibilities,
             'cards' => $cards,
-            'programs' => PkpaProgram::orderByDesc('id')->get(),
-            'filters' => $request->only(['q', 'program_id', 'status']),
+            'programs' => $programs,
+            'selectedProgram' => $program,
+            'activeDomains' => $activeDomains,
+            'summary' => [
+                'total' => $totalCards,
+                'complete' => $completeCards,
+                'incomplete' => $totalCards - $completeCards,
+            ],
+            'filters' => ['q' => $request->input('q'), 'status' => $statusFilter, 'program_id' => $program?->id],
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\KpAssignment;
 use App\Models\PkpaEnrollment;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaPracticeDomain;
@@ -10,6 +11,7 @@ use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\PkpaSiteFieldSupervisor;
+use App\Models\PkpaSupervisorUnavailabilityPeriod;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\PkpaProgramService;
@@ -26,8 +28,11 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $mahasiswa;
+
     private array $coreUsers = [];
 
     protected function setUp(): void
@@ -195,6 +200,18 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
 
         $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::count());
 
+        $partialEligibilities = PkpaInternalSupervisorEligibility::query()->orderBy('id')->get();
+        $partialEligibilities->get(1)->update(['status' => 'inactive']);
+        $partialEligibilities->skip(2)->each->forceDelete();
+        $this->assertSame(2, PkpaInternalSupervisorEligibility::count());
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->get('/management/pkpa-internal-supervisors')
+            ->assertOk()
+            ->assertSee('5/5')
+            ->assertSee('Cakupan Lengkap');
+        $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::count());
+        $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::where('status', 'active')->count());
+
         $eligibility = PkpaInternalSupervisorEligibility::firstOrFail();
         $this->assertSame('Dosen Satu', $eligibility->name_snapshot);
         $this->assertSame('core-koor-03', $eligibility->created_by_core_user_id);
@@ -209,7 +226,7 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
                 'end_date' => '2026-03-05',
                 'reason' => 'Pelatihan',
             ])->assertRedirect();
-        $this->assertSame($activeDomainCount, \App\Models\PkpaSupervisorUnavailabilityPeriod::where('supervisor_type', 'internal')->where('reason', 'Pelatihan')->count());
+        $this->assertSame($activeDomainCount, PkpaSupervisorUnavailabilityPeriod::where('supervisor_type', 'internal')->where('reason', 'Pelatihan')->count());
 
         $this->fakeCore(['CORE-DOSEN-1' => $this->corePerson('CORE-DOSEN-1', 'Dosen Satu Baru', ['pembimbing_dalam'])]);
         $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
@@ -285,7 +302,7 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
             ->assertSee('Siap menyusun penempatan')
             ->assertSee('Belum siap');
 
-        $this->assertSame(0, \App\Models\KpAssignment::count(), 'Tahap 03 tidak boleh membuat penempatan atau assignment.');
+        $this->assertSame(0, KpAssignment::count(), 'Tahap 03 tidak boleh membuat penempatan atau assignment.');
         $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
             ->get('/management/pkpa-placement-readiness?program_id='.$program->id)
             ->assertForbidden();
