@@ -11,16 +11,17 @@ use App\Models\PkpaPortfolioSelfAssessment;
 use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
+use App\Models\User;
 use App\Support\PkpaApotekPortfolio;
-use App\Support\PkpaPortfolioTextFormatter;
+use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
-use App\Support\PkpaPuskesmasPortfolio;
-use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaLokaPomPortfolio;
-use App\Models\User;
+use App\Support\PkpaPortfolioTextFormatter;
+use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\SimplePdfReport;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -29,6 +30,11 @@ use ZipArchive;
 
 class PkpaPortfolioBuilderService
 {
+    private const EXPORT_GENERATOR_VERSIONS = [
+        'docx' => 2,
+        'pdf' => 1,
+    ];
+
     public const PATIENT_IDENTIFIER_PATTERNS = [
         '/\b(no\.?\s*)?(rm|rekam\s*medis|medical\s*record)\b/i',
         '/\b(nik|ktp|kk|bpjs)\b/i',
@@ -37,9 +43,7 @@ class PkpaPortfolioBuilderService
         '/\b(nama\s*pasien|pasien\s*bernama)\b/i',
     ];
 
-    public function __construct(private readonly PkpaPortfolioTextFormatter $textFormatter)
-    {
-    }
+    public function __construct(private readonly PkpaPortfolioTextFormatter $textFormatter) {}
 
     public function ensureForRun(PkpaRotationRun $run, ?User $actor = null): PkpaRotationPortfolio
     {
@@ -542,8 +546,18 @@ class PkpaPortfolioBuilderService
         }
 
         $publication = $portfolio->publications()->latest('publication_number')->first();
-        if ($publication && $existing = $portfolio->exportVersions()->where('pkpa_portfolio_publication_id', $publication->id)->where('output_format', $format)->first()) {
-            return $existing;
+        if ($publication) {
+            $existing = $portfolio->exportVersions()
+                ->where('pkpa_portfolio_publication_id', $publication->id)
+                ->where('output_format', $format)
+                ->latest('version_number')
+                ->get()
+                ->first(fn (PkpaPortfolioExportVersion $export) => $format === 'pdf'
+                    || (int) data_get($export->metadata, 'generator_version') === self::EXPORT_GENERATOR_VERSIONS[$format]);
+
+            if ($existing) {
+                return $existing;
+            }
         }
 
         $version = ((int) $portfolio->exportVersions()->max('version_number')) + 1;
@@ -564,7 +578,10 @@ class PkpaPortfolioBuilderService
             'mime_type' => $format === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'file_size' => strlen($bytes),
             'checksum' => hash('sha256', $bytes),
-            'metadata' => ['label' => $publication ? 'Unduhan versi terbit' : 'Draf unduhan internal'],
+            'metadata' => [
+                'label' => $publication ? 'Unduhan versi terbit' : 'Draf unduhan internal',
+                'generator_version' => self::EXPORT_GENERATOR_VERSIONS[$format],
+            ],
             'generated_at' => now(),
             'generated_by_core_user_id' => $actor->core_user_id,
         ]);
@@ -779,12 +796,16 @@ class PkpaPortfolioBuilderService
     private function docx(PkpaRotationPortfolio $portfolio): string
     {
         $tmp = tempnam(sys_get_temp_dir(), 'pkpa-portfolio-docx-');
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $zip->open($tmp, ZipArchive::OVERWRITE);
-        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>');
         $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+        $zip->addFromString('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/></Relationships>');
+        $zip->addFromString('word/styles.xml', $this->docxStylesXml());
+        $zip->addFromString('word/settings.xml', $this->docxSettingsXml());
+        $zip->addFromString('word/footer1.xml', $this->docxFooterXml());
         $body = $this->docxBody($portfolio);
-        $zip->addFromString('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'.$body.'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/></w:sectPr></w:body></w:document>');
+        $zip->addFromString('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'.$body.'<w:sectPr><w:footerReference w:type="default" r:id="rId3"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1134" w:bottom="1417" w:left="1701" w:header="708" w:footer="708" w:gutter="0"/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>');
         $zip->close();
         $bytes = file_get_contents($tmp);
         @unlink($tmp);
@@ -822,6 +843,7 @@ class PkpaPortfolioBuilderService
         foreach ($this->exportSections($portfolio) as $section) {
             if ($section['lines'] === []) {
                 $rows[] = [$section['title'], '-'];
+
                 continue;
             }
 
@@ -1103,6 +1125,7 @@ class PkpaPortfolioBuilderService
                 'Profil Tempat PKPA Puskesmas', 'Logbook Harian',
             ])->merge(collect(PkpaPuskesmasPortfolio::reportSectionCodes())->map(fn ($code) => PkpaPuskesmasPortfolio::sectionDefinition($code)['title']))
                 ->merge(['Studi Kasus', 'Refleksi Mingguan', 'Self Assessment', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan'])->values();
+
             return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
         }
 
@@ -1110,6 +1133,7 @@ class PkpaPortfolioBuilderService
             $titles = collect(['Ringkasan Dokumen', 'Identitas Mahasiswa', 'Pakta Integritas', 'Lembar Pengesahan', 'Visi, Misi, Tujuan, dan Sasaran', 'Tata Tertib PKPA', 'Daftar Isi', 'Profil Tempat PKPA Dinas Kesehatan', 'Logbook Harian'])
                 ->merge(collect(PkpaHealthOfficePortfolio::reportSectionCodes())->map(fn ($code) => PkpaHealthOfficePortfolio::sectionDefinition($code)['title']))
                 ->merge(['Studi Kasus Dinas Kesehatan', 'Refleksi Mingguan', 'Self Assessment', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan'])->values();
+
             return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
         }
 
@@ -1117,6 +1141,7 @@ class PkpaPortfolioBuilderService
             $titles = collect(['Ringkasan Dokumen', 'Identitas Mahasiswa', 'Pakta Integritas', 'Lembar Pengesahan', 'Visi, Misi, Tujuan, dan Sasaran', 'Tata Tertib PKPA', 'Daftar Isi', 'Profil Tempat PKPA Loka POM', 'Logbook Harian'])
                 ->merge(collect(PkpaLokaPomPortfolio::reportSectionCodes())->map(fn ($code) => PkpaLokaPomPortfolio::sectionDefinition($code)['title']))
                 ->merge(['Studi Kasus Loka POM', 'Refleksi Mingguan', 'Self Assessment', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan'])->values();
+
             return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
         }
 
@@ -1422,21 +1447,34 @@ class PkpaPortfolioBuilderService
     private function docxBody(PkpaRotationPortfolio $portfolio): string
     {
         $paragraphs = [];
+        $paragraphs[] = $this->docxParagraph('FAKULTAS FARMASI', 'cover-kicker');
+        $paragraphs[] = $this->docxParagraph('UNIVERSITAS BUANA PERJUANGAN KARAWANG', 'cover-kicker');
         $paragraphs[] = $this->docxParagraph($this->documentTitle($portfolio), 'title');
         $paragraphs[] = $this->docxParagraph($this->documentSubtitle($portfolio), 'subtitle');
         $paragraphs[] = $this->docxParagraph('Program: '.(data_get($portfolio->identity_snapshot, 'program') ?: '-'), 'cover-meta');
         $paragraphs[] = $this->docxParagraph('Mahasiswa: '.(data_get($portfolio->identity_snapshot, 'student_name') ?: '-'), 'cover-meta');
+        $paragraphs[] = $this->docxParagraph('NIM: '.(data_get($portfolio->identity_snapshot, 'student_number') ?: '-'), 'cover-meta');
         $paragraphs[] = $this->docxParagraph('Tempat PKPA: '.(data_get($portfolio->placement_snapshot, 'practice_site') ?: '-'), 'cover-meta');
+        $paragraphs[] = $this->docxParagraph('Periode: '.$this->portfolioPeriod($portfolio), 'cover-meta');
+        $paragraphs[] = $this->docxParagraph('Tahun Akademik '.(data_get($portfolio->identity_snapshot, 'academic_year') ?: '-'), 'cover-year');
         $paragraphs[] = $this->docxParagraph('', 'pagebreak');
 
-        foreach ($this->exportSections($portfolio) as $section) {
+        foreach ($this->exportSections($portfolio) as $sectionIndex => $section) {
+            if ($sectionIndex > 0 && $this->sectionStartsNewPage($section['title'])) {
+                $paragraphs[] = $this->docxParagraph('', 'pagebreak');
+            }
             $paragraphs[] = $this->docxParagraph($section['title'], 'heading');
-            foreach ($section['lines'] as $line) {
-                foreach (preg_split('/\R/u', $this->textFormatter->normalize((string) $line)) ?: [''] as $physicalLine) {
-                    $paragraphs[] = $this->docxParagraph($physicalLine, $this->detectDocxLineStyle($physicalLine));
+
+            if (in_array($section['title'], ['Ringkasan Dokumen', 'Identitas Mahasiswa'], true)) {
+                $paragraphs[] = $this->docxKeyValueTable($section['lines']);
+            } else {
+                foreach ($section['lines'] as $line) {
+                    foreach (preg_split('/\R/u', $this->textFormatter->normalize((string) $line)) ?: [''] as $physicalLine) {
+                        $paragraphs[] = $this->docxParagraph($physicalLine, $this->detectDocxLineStyle($physicalLine));
+                    }
                 }
             }
-            $paragraphs[] = $this->docxParagraph('', $this->shouldPageBreakAfterSection($section['title']) ? 'pagebreak' : 'spacer');
+            $paragraphs[] = $this->docxParagraph('', 'spacer');
         }
 
         return implode('', $paragraphs);
@@ -1462,7 +1500,7 @@ class PkpaPortfolioBuilderService
             'Paraf Pembimbing Dalam: ____________________',
             'Status Pembimbing Dalam: '.($portfolio->internal_approved_at ? 'Disetujui pada '.$portfolio->internal_approved_at->format('d M Y H:i') : 'Belum menyetujui'),
             '',
-            'Catatan: pada portal lokal ini pengesahan masih berbentuk persetujuan elektronik internal.',
+            'Catatan: pengesahan pada dokumen ini menggunakan persetujuan elektronik dalam sistem MY PKPA.',
         ];
     }
 
@@ -1477,26 +1515,36 @@ class PkpaPortfolioBuilderService
     private function docxParagraph(string $text, string $style = 'body'): string
     {
         $escaped = htmlspecialchars($text, ENT_XML1, 'UTF-8');
+        $font = '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/>';
+
+        if ($style === 'meta' && preg_match('/^([^:]{1,55}):\s*(.*)$/u', trim($text), $matches) === 1) {
+            $label = htmlspecialchars(trim($matches[1]).':', ENT_XML1, 'UTF-8');
+            $value = htmlspecialchars(trim($matches[2]), ENT_XML1, 'UTF-8');
+
+            return '<w:p><w:pPr><w:spacing w:after="70" w:line="300" w:lineRule="auto"/><w:widowControl/></w:pPr>'
+                .'<w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$label.' </w:t></w:r>'
+                .'<w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$value.'</w:t></w:r></w:p>';
+        }
 
         return match ($style) {
-            'title' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="220"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'subtitle' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="180"/></w:pPr><w:r><w:rPr><w:i/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'cover-meta' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="70"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'heading' => '<w:p><w:pPr><w:spacing w:before="220" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="26"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'subheading' => '<w:p><w:pPr><w:spacing w:before="120" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'meta' => '<w:p><w:pPr><w:spacing w:after="50"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'toc' => '<w:p><w:pPr><w:ind w:left="280"/><w:spacing w:after="40"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'bullet' => '<w:p><w:pPr><w:ind w:left="360" w:hanging="180"/><w:spacing w:after="50"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
-            'spacer' => '<w:p><w:pPr><w:spacing w:after="120"/></w:pPr></w:p>',
+            'cover-kicker' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="30"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'title' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="1200" w:after="260"/><w:keepNext/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="36"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'subtitle' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="720"/><w:keepNext/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'cover-meta' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="90"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'cover-year' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="900"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'heading' => '<w:p><w:pPr><w:spacing w:before="180" w:after="140"/><w:keepNext/><w:keepLines/><w:outlineLvl w:val="0"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'subheading' => '<w:p><w:pPr><w:spacing w:before="150" w:after="90"/><w:keepNext/><w:keepLines/><w:outlineLvl w:val="1"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'toc' => '<w:p><w:pPr><w:ind w:left="360"/><w:spacing w:after="70" w:line="300" w:lineRule="auto"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'bullet' => '<w:p><w:pPr><w:ind w:left="540" w:hanging="260"/><w:spacing w:after="70" w:line="300" w:lineRule="auto"/><w:widowControl/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.htmlspecialchars('• '.preg_replace('/^-\s*/u', '', trim($text)), ENT_XML1, 'UTF-8').'</w:t></w:r></w:p>',
+            'spacer' => '<w:p><w:pPr><w:spacing w:after="140"/></w:pPr></w:p>',
             'pagebreak' => '<w:p><w:r><w:br w:type="page"/></w:r></w:p>',
-            default => '<w:p><w:pPr><w:jc w:val="both"/><w:spacing w:line="276" w:lineRule="auto" w:after="100"/></w:pPr><w:r><w:rPr><w:sz w:val="22"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            default => '<w:p><w:pPr><w:jc w:val="both"/><w:spacing w:line="360" w:lineRule="auto" w:after="100"/><w:widowControl/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
         };
     }
 
     private function documentSubtitle(PkpaRotationPortfolio $portfolio): string
     {
-        return 'Dokumen internal MY PKPA. Struktur isi mengikuti template portofolio PKPA aktif dan panduan program 2026 untuk '
-            .(data_get($portfolio->placement_snapshot, 'practice_domain') ?: 'wahana PKPA').'.';
+        return strtoupper((string) (data_get($portfolio->placement_snapshot, 'practice_domain') ?: 'PKPA'));
     }
 
     private function detectDocxLineStyle(string $line): string
@@ -1519,21 +1567,74 @@ class PkpaPortfolioBuilderService
             return 'subheading';
         }
 
-        if (str_contains($trimmed, ':')) {
+        if (preg_match('/^[^:]{1,55}:\s*/u', $trimmed) === 1) {
             return 'meta';
         }
 
         return 'body';
     }
 
-    private function shouldPageBreakAfterSection(string $title): bool
+    private function sectionStartsNewPage(string $title): bool
     {
         return in_array($title, [
             'Lembar Pengesahan',
+            'Visi, Misi, Tujuan, dan Sasaran',
             'Daftar Isi',
             'Logbook Harian',
-            'Self Assessment',
+            'Studi Kasus',
         ], true);
+    }
+
+    private function portfolioPeriod(PkpaRotationPortfolio $portfolio): string
+    {
+        $start = data_get($portfolio->placement_snapshot, 'start_date');
+        $end = data_get($portfolio->placement_snapshot, 'end_date');
+
+        if (! $start && ! $end) {
+            return '-';
+        }
+
+        return collect([$start, $end])
+            ->filter()
+            ->map(fn ($date) => Carbon::parse($date)->translatedFormat('d F Y'))
+            ->join(' - ');
+    }
+
+    private function docxKeyValueTable(array $lines): string
+    {
+        $rows = collect($lines)->map(function ($line) {
+            $parts = explode(':', (string) $line, 2);
+
+            return [trim($parts[0]), trim($parts[1] ?? '-')];
+        });
+        $font = '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/>';
+        $borders = '<w:tblBorders><w:top w:val="single" w:sz="4" w:color="D9D9D9"/><w:left w:val="single" w:sz="4" w:color="D9D9D9"/><w:bottom w:val="single" w:sz="4" w:color="D9D9D9"/><w:right w:val="single" w:sz="4" w:color="D9D9D9"/><w:insideH w:val="single" w:sz="4" w:color="D9D9D9"/><w:insideV w:val="single" w:sz="4" w:color="D9D9D9"/></w:tblBorders>';
+
+        return '<w:tbl><w:tblPr><w:tblW w:w="9070" w:type="dxa"/><w:tblLayout w:type="fixed"/>'.$borders.'<w:tblCellMar><w:top w:w="100" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2550"/><w:gridCol w:w="6520"/></w:tblGrid>'
+            .$rows->map(function (array $row) use ($font) {
+                $label = htmlspecialchars($row[0], ENT_XML1, 'UTF-8');
+                $value = htmlspecialchars($row[1] !== '' ? $row[1] : '-', ENT_XML1, 'UTF-8');
+
+                return '<w:tr><w:trPr><w:cantSplit/></w:trPr>'
+                    .'<w:tc><w:tcPr><w:tcW w:w="2550" w:type="dxa"/><w:shd w:val="clear" w:fill="F2F2F2"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$label.'</w:t></w:r></w:p></w:tc>'
+                    .'<w:tc><w:tcPr><w:tcW w:w="6520" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="300" w:lineRule="auto"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$value.'</w:t></w:r></w:p></w:tc></w:tr>';
+            })->implode('')
+            .'</w:tbl>';
+    }
+
+    private function docxStylesXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/><w:lang w:val="id-ID"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:widowControl/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:jc w:val="center"/></w:pPr><w:rPr><w:b/><w:sz w:val="36"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:style></w:styles>';
+    }
+
+    private function docxSettingsXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:zoom w:percent="100"/><w:defaultTabStop w:val="720"/><w:updateFields w:val="true"/><w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat></w:settings>';
+    }
+
+    private function docxFooterXml(): string
+    {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="20"/></w:rPr><w:t xml:space="preserve">Halaman </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>';
     }
 
     private function trimTrailingBlankLines(array $lines): array

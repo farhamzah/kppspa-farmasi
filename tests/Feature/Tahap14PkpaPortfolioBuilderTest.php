@@ -22,16 +22,16 @@ use App\Models\PkpaRotationRun;
 use App\Models\PkpaRotationSupervisorHistory;
 use App\Models\Role;
 use App\Models\User;
-use App\Support\PkpaApotekPortfolio;
-use App\Support\PkpaHospitalPortfolio;
-use App\Support\PkpaIndustryPortfolio;
-use App\Support\PkpaPuskesmasPortfolio;
-use App\Support\PkpaHealthOfficePortfolio;
-use App\Support\PkpaLokaPomPortfolio;
-use App\Support\PkpaPortfolioTextFormatter;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
 use App\Services\PkpaProgramService;
+use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaHealthOfficePortfolio;
+use App\Support\PkpaHospitalPortfolio;
+use App\Support\PkpaIndustryPortfolio;
+use App\Support\PkpaLokaPomPortfolio;
+use App\Support\PkpaPortfolioTextFormatter;
+use App\Support\PkpaPuskesmasPortfolio;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
@@ -48,11 +48,17 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $student;
+
     private User $otherStudent;
+
     private User $fieldSupervisor;
+
     private User $internalSupervisor;
+
     private PkpaRotationRun $run;
 
     protected function setUp(): void
@@ -202,6 +208,12 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringStartsWith('%PDF', Storage::disk('local')->get($pdf->path));
         $this->assertSame($docx->id, $service->export($portfolio->fresh(), 'docx', $this->koordinator)->id);
         $this->assertSame($publication->id, PkpaPortfolioExportVersion::find($docx->id)->pkpa_portfolio_publication_id);
+
+        $docx->update(['metadata' => ['generator_version' => 1]]);
+        $regeneratedDocx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $this->assertNotSame($docx->id, $regeneratedDocx->id);
+        $this->assertSame(2, data_get($regeneratedDocx->metadata, 'generator_version'));
+        Storage::disk('local')->assertExists($regeneratedDocx->path);
     }
 
     public function test_hospital_portfolio_docx_pdf_exports_keep_hospital_labels(): void
@@ -732,15 +744,28 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
 
     private function assertDocx(string $path): void
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $this->assertTrue($zip->open($path) === true);
         $this->assertNotFalse($zip->locateName('[Content_Types].xml'));
+        $this->assertNotFalse($zip->locateName('word/styles.xml'));
+        $this->assertNotFalse($zip->locateName('word/settings.xml'));
+        $this->assertNotFalse($zip->locateName('word/footer1.xml'));
+        $document = $zip->getFromName('word/document.xml');
+        $footer = $zip->getFromName('word/footer1.xml');
         $zip->close();
+        $this->assertIsString($document);
+        $this->assertStringContainsString('<w:pgSz w:w="11906" w:h="16838"/>', $document);
+        $this->assertStringContainsString('<w:pgMar ', $document);
+        $this->assertStringContainsString('<w:footerReference ', $document);
+        $this->assertStringContainsString('<w:tbl>', $document);
+        $this->assertIsString($footer);
+        $this->assertStringContainsString('Halaman ', $footer);
+        $this->assertStringContainsString(' PAGE ', $footer);
     }
 
     private function docxDocumentXml(string $path): string
     {
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $this->assertTrue($zip->open($path) === true);
         $contents = $zip->getFromName('word/document.xml');
         $zip->close();
