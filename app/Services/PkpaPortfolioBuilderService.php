@@ -344,6 +344,10 @@ class PkpaPortfolioBuilderService
     {
         $this->ensureStudentOwns($portfolio, $actor);
         $data = $this->textFormatter->normalize($data);
+        $data['drug_data'] = collect($data['drug_data'] ?? [])
+            ->filter(fn (mixed $drug): bool => is_array($drug) && collect($drug)->contains(fn (mixed $value): bool => filled($value)))
+            ->values()
+            ->all();
         $warnings = $this->patientPrivacyWarnings($data);
         if ($warnings !== []) {
             throw ValidationException::withMessages(['privacy' => implode(' ', $warnings)]);

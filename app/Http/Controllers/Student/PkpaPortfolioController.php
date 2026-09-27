@@ -192,7 +192,7 @@ class PkpaPortfolioController extends Controller
             'family_history' => ['nullable', 'string'],
             'allergy' => ['nullable', 'string'],
             'medication_use' => ['nullable', 'string'],
-            'drug_data' => ['nullable', 'array', 'max:5'],
+            'drug_data' => ['nullable', 'array', 'max:30'],
             'drug_data.*.name' => ['nullable', 'string', 'max:255'],
             'drug_data.*.dose' => ['nullable', 'string', 'max:100'],
             'drug_data.*.frequency' => ['nullable', 'string', 'max:100'],

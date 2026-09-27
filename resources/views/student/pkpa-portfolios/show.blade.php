@@ -707,7 +707,10 @@
             </form>
         @else
         @php
-            $drugRows = range(0, 2);
+            $drugRows = array_values(is_array(old('drug_data')) ? old('drug_data') : []);
+            while (count($drugRows) < 3) {
+                $drugRows[] = [];
+            }
             $drpTypes = [
                 'Indikasi tanpa obat', 'Obat tanpa indikasi', 'Dosis terlalu rendah', 'Dosis terlalu tinggi',
                 'Interaksi obat', 'Efek samping obat', 'Ketidakpatuhan pasien', 'Duplikasi terapi', 'Lainnya',
@@ -739,21 +742,41 @@
 
             <fieldset class="border-t border-slate-200 pt-5">
                 <legend class="pr-3 text-base font-black text-slate-950">C. Data Obat</legend>
-                <div class="mt-3 overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="min-w-[760px] w-full text-left text-sm">
-                        <thead class="bg-slate-50 text-xs font-black uppercase text-slate-600"><tr><th class="p-3">Nama Obat</th><th class="p-3">Dosis</th><th class="p-3">Frekuensi</th><th class="p-3">Rute</th><th class="p-3">Indikasi</th></tr></thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @foreach($drugRows as $row)
-                                <tr>
-                                    <td class="p-2"><input name="drug_data[{{ $row }}][name]" value="{{ old("drug_data.$row.name") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
-                                    <td class="p-2"><input name="drug_data[{{ $row }}][dose]" value="{{ old("drug_data.$row.dose") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
-                                    <td class="p-2"><input name="drug_data[{{ $row }}][frequency]" value="{{ old("drug_data.$row.frequency") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
-                                    <td class="p-2"><input name="drug_data[{{ $row }}][route]" value="{{ old("drug_data.$row.route") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
-                                    <td class="p-2"><input name="drug_data[{{ $row }}][indication]" value="{{ old("drug_data.$row.indication") }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                <div data-drug-table data-max-rows="30" class="mt-3">
+                    <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p class="text-sm text-slate-600">Tambahkan seluruh obat yang digunakan dalam kasus. Maksimal 30 obat.</p>
+                        <div class="flex items-center gap-3">
+                            <span data-drug-count class="text-xs font-bold text-slate-500"></span>
+                            <button type="button" data-add-drug class="rounded-xl border border-cyan-300 bg-white px-4 py-2 text-sm font-bold text-cyan-700 hover:bg-cyan-50">Tambah Obat</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-200">
+                        <table class="min-w-[860px] w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-xs font-black uppercase text-slate-600"><tr><th class="p-3">Nama Obat</th><th class="p-3">Dosis</th><th class="p-3">Frekuensi</th><th class="p-3">Rute</th><th class="p-3">Indikasi</th><th class="w-20 p-3 text-center">Aksi</th></tr></thead>
+                            <tbody data-drug-rows data-next-index="{{ count($drugRows) }}" class="divide-y divide-slate-100">
+                            @foreach($drugRows as $row => $drug)
+                                <tr data-drug-row>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][name]" value="{{ $drug['name'] ?? '' }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][dose]" value="{{ $drug['dose'] ?? '' }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][frequency]" value="{{ $drug['frequency'] ?? '' }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][route]" value="{{ $drug['route'] ?? '' }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2"><input name="drug_data[{{ $row }}][indication]" value="{{ $drug['indication'] ?? '' }}" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                                    <td class="p-2 text-center"><button type="button" data-remove-drug title="Hapus obat" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Hapus</button></td>
                                 </tr>
                             @endforeach
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
+                    <template data-drug-row-template>
+                        <tr data-drug-row>
+                            <td class="p-2"><input name="drug_data[__INDEX__][name]" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                            <td class="p-2"><input name="drug_data[__INDEX__][dose]" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                            <td class="p-2"><input name="drug_data[__INDEX__][frequency]" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                            <td class="p-2"><input name="drug_data[__INDEX__][route]" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                            <td class="p-2"><input name="drug_data[__INDEX__][indication]" class="w-full rounded-xl border-slate-200 text-sm"></td>
+                            <td class="p-2 text-center"><button type="button" data-remove-drug title="Hapus obat" class="rounded-lg px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Hapus</button></td>
+                        </tr>
+                    </template>
                 </div>
             </fieldset>
 
@@ -868,3 +891,46 @@
     </section>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector('[data-drug-table]');
+    if (!container) return;
+
+    const rows = container.querySelector('[data-drug-rows]');
+    const template = container.querySelector('[data-drug-row-template]');
+    const addButton = container.querySelector('[data-add-drug]');
+    const counter = container.querySelector('[data-drug-count]');
+    const maxRows = Number(container.dataset.maxRows || 30);
+    let nextIndex = Number(rows.dataset.nextIndex || rows.children.length);
+
+    const refresh = () => {
+        const count = rows.querySelectorAll('[data-drug-row]').length;
+        counter.textContent = `${count}/${maxRows} baris`;
+        addButton.disabled = count >= maxRows;
+        addButton.classList.toggle('opacity-50', addButton.disabled);
+        rows.querySelectorAll('[data-remove-drug]').forEach((button) => {
+            button.disabled = count <= 1;
+            button.classList.toggle('opacity-40', button.disabled);
+        });
+    };
+
+    addButton.addEventListener('click', () => {
+        if (rows.querySelectorAll('[data-drug-row]').length >= maxRows) return;
+        rows.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__INDEX__', String(nextIndex++)));
+        rows.lastElementChild?.querySelector('input')?.focus();
+        refresh();
+    });
+
+    rows.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-remove-drug]');
+        if (!button || button.disabled) return;
+        button.closest('[data-drug-row]')?.remove();
+        refresh();
+    });
+
+    refresh();
+});
+</script>
+@endpush

@@ -160,6 +160,37 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $service->reopen($submitted->fresh(), '', $this->koordinator);
     }
 
+    public function test_student_can_save_more_than_five_drugs_in_case_report(): void
+    {
+        $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
+        $drugData = collect(range(1, 8))->map(fn (int $number): array => [
+            'name' => 'Obat '.$number,
+            'dose' => $number.' tablet',
+            'frequency' => '1 kali sehari',
+            'route' => 'Oral',
+            'indication' => 'Indikasi '.$number,
+        ])->all();
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/studi-kasus', [
+                'case_code' => 'CASE-MULTI-DRUG',
+                'drug_data' => $drugData,
+                'anonymization_confirmed' => '1',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $case = $portfolio->caseReports()->where('case_code', 'CASE-MULTI-DRUG')->firstOrFail();
+        $this->assertCount(8, $case->drug_data);
+        $this->assertSame('Obat 8', $case->drug_data[7]['name']);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Tambah Obat')
+            ->assertSee('Maksimal 30 obat.');
+    }
+
     public function test_export_docx_pdf_and_published_export_are_versioned_without_overwrite(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
