@@ -6,6 +6,7 @@
 @section('content')
 @php
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
+    $isPbf = \App\Support\PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code);
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
     $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
@@ -13,12 +14,14 @@
     $isLokaPom = $portfolio->template?->code === \App\Support\PkpaLokaPomPortfolio::TEMPLATE_CODE;
     $editableSections = $isApotek
         ? \App\Support\PkpaApotekPortfolio::editableSections()
-        : ($isHospital
+        : ($isPbf
+            ? \App\Support\PkpaPbfPortfolio::editableSections()
+            : ($isHospital
             ? \App\Support\PkpaHospitalPortfolio::editableSections()
             : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections()
                 : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections()
                     : ($isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections()
-                        : ($isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : [])))));
+                        : ($isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : []))))));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
 @endphp
 <div class="space-y-6">
@@ -51,9 +54,9 @@
         </div>
     </section>
 
-    @if($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom)
+    @if($isApotek || $isPbf || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom)
         <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isLokaPom ? 'Loka POM' : ($isHealthOffice ? 'Dinas Kesehatan' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek')))) }}</h2>
+            <h2 class="text-lg font-black text-slate-950">Ringkasan Portofolio {{ $isPbf ? 'PBF' : ($isLokaPom ? 'Loka POM' : ($isHealthOffice ? 'Dinas Kesehatan' : ($isHospital ? 'Rumah Sakit' : ($isIndustry ? 'Industri Farmasi' : ($isPuskesmas ? 'Puskesmas' : 'Apotek'))))) }}</h2>
             <div class="mt-4 grid gap-4 xl:grid-cols-2">
                 @foreach($editableSections as $code => $definition)
                     @php

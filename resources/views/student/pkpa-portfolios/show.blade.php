@@ -5,7 +5,7 @@
 
 @php
     $isApotek = \App\Support\PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
-    $isPbf = $portfolio->practiceDomain?->code === 'PBF';
+    $isPbf = \App\Support\PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code);
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
     $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
@@ -14,6 +14,7 @@
     $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
     $hospitalSections = $isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : [];
     $industrySections = $isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : [];
+    $pbfSections = $isPbf ? \App\Support\PkpaPbfPortfolio::editableSections() : [];
     $puskesmasSections = $isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections() : [];
     $healthOfficeSections = $isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections() : [];
     $lokaPomSections = $isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : [];
@@ -538,21 +539,21 @@
                     <h2 class="mt-1 text-xl font-black text-slate-950">Laporan Kegiatan PKPA PBF</h2>
                     <p class="mt-1 text-sm text-slate-600">Isi setiap unit yang benar-benar dipelajari. Laporan dapat disimpan sebagai draf dan diperbarui selama portofolio belum dikirim.</p>
                 </div>
-                <span class="w-fit rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">11 Unit Kegiatan</span>
+                <span class="w-fit rounded-full bg-cyan-50 px-3 py-1 text-xs font-bold text-cyan-700">{{ count(\App\Support\PkpaPbfPortfolio::reportSectionCodes()) }} Unit Kegiatan</span>
             </div>
             <div class="mt-5 space-y-3">
-                @foreach($portfolio->template->sections->where('source_type', 'structured_form') as $section)
+                @foreach($pbfSections as $sectionCode => $definition)
                     @php
-                        $record = $sectionRecords->get($section->code);
+                        $record = $sectionRecords->get($sectionCode);
                         $payload = $record?->manual_payload ?? [];
-                        $fields = data_get($section->content_schema, 'fields', []);
+                        $fields = $definition['fields'];
                     @endphp
-                    <details class="group rounded-2xl border border-slate-200 bg-slate-50" @if($section->code === 'site_profile') open @endif>
+                    <details class="group rounded-2xl border border-slate-200 bg-slate-50" @if($sectionCode === 'site_profile') open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4">
-                            <span class="min-w-0"><span class="block text-base font-black text-slate-950">{{ $section->title }}</span><span class="mt-1 block text-sm text-slate-600">{{ $section->code === 'site_profile' ? 'Lengkapi gambaran tempat PKPA sebelum membuat laporan unit.' : 'Tujuan, kegiatan, dan hasil pembelajaran.' }}</span></span>
+                            <span class="min-w-0"><span class="block text-base font-black text-slate-950">{{ $definition['title'] }}</span><span class="mt-1 block text-sm text-slate-600">{{ $definition['description'] }}</span></span>
                             <span class="shrink-0 rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $record?->status === 'completed' ? 'Tersimpan' : 'Belum diisi' }}</span>
                         </summary>
-                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $section->code]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
+                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
                             @csrf
                             @foreach($fields as $field)
                                 <label class="grid gap-2">
@@ -560,7 +561,7 @@
                                     <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 4 }}" class="min-h-28 resize-y rounded-xl border-slate-200 text-sm" @if($field['required'] ?? true) required @endif>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
                                 </label>
                             @endforeach
-                            <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $section->title }}</button></div>
+                            <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $definition['title'] }}</button></div>
                         </form>
                     </details>
                 @endforeach
@@ -683,6 +684,26 @@
                 @endforeach
                 <label class="flex items-start gap-2 text-sm font-semibold text-slate-700 md:col-span-2"><input type="checkbox" name="anonymization_confirmed" value="1" class="mt-1" required> Saya memastikan data sarana, pelaku usaha, produk, dan hasil pengawasan telah disamarkan sesuai izin.</label>
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus Loka POM</button>
+            </form>
+        @elseif($isPbf)
+            <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+                @csrf
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Judul atau Nomor Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
+                <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
+                @foreach([
+                    'complaint' => 'Latar Belakang',
+                    'diagnosis' => 'Identifikasi Masalah',
+                    'history' => 'Data dan Fakta Kasus',
+                    'drp' => 'Analisis Akar Masalah dan Acuan CDOB/Regulasi',
+                    'intervention' => 'Solusi atau Tindakan Perbaikan',
+                    'monitoring' => 'Evaluasi Efektivitas dan Tindak Lanjut',
+                    'conclusion' => 'Kesimpulan',
+                    'references' => 'Daftar Pustaka',
+                ] as $name => $label)
+                    <label class="grid gap-2 {{ in_array($name, ['complaint', 'history', 'drp'], true) ? 'md:col-span-2' : '' }}"><span class="text-sm font-bold text-slate-700">{{ $label }}</span><textarea name="{{ $name }}" rows="4" class="min-h-36 resize-y rounded-2xl border-slate-200 text-sm">{{ old($name) }}</textarea></label>
+                @endforeach
+                <label class="flex items-start gap-2 text-sm font-semibold text-slate-700 md:col-span-2"><input type="checkbox" name="anonymization_confirmed" value="1" class="mt-1" required> Saya memastikan data perusahaan, pelanggan, dokumen, dan produk telah disamarkan sesuai izin PBF.</label>
+                <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus PBF</button>
             </form>
         @else
         @php
@@ -831,8 +852,8 @@
                 <input name="competency_label" placeholder="Kompetensi terkait" class="rounded-2xl border-slate-200 text-sm">
                 <textarea name="description" placeholder="Keterangan dokumentasi" class="rounded-2xl border-slate-200 text-sm"></textarea>
                 <input type="file" name="file" class="rounded-2xl border border-slate-200 p-2 text-sm">
-                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="anonymization_confirmed" value="1" required> Identitas pasien disamarkan</label>
-                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="consent_confirmed" value="1" required> Sudah ada izin dokumentasi</label>
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="anonymization_confirmed" value="1" required> {{ $isPbf ? 'Data perusahaan, pelanggan, dokumen, dan produk telah disamarkan' : 'Identitas pasien disamarkan' }}</label>
+                <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="consent_confirmed" value="1" required> {{ $isPbf ? 'Dokumentasi telah mendapat izin PBF' : 'Sudah ada izin dokumentasi' }}</label>
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white">Simpan Dokumentasi</button>
             </div>
         </form>

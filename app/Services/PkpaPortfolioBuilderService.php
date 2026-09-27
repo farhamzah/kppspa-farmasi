@@ -17,6 +17,7 @@ use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaLokaPomPortfolio;
+use App\Support\PkpaPbfPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Support\PkpaPuskesmasPortfolio;
 use App\Support\SimplePdfReport;
@@ -31,7 +32,7 @@ use ZipArchive;
 class PkpaPortfolioBuilderService
 {
     private const EXPORT_GENERATOR_VERSIONS = [
-        'docx' => 2,
+        'docx' => 3,
         'pdf' => 1,
     ];
 
@@ -641,6 +642,10 @@ class PkpaPortfolioBuilderService
             && $portfolio->sectionRecords->whereIn('section_code', PkpaIndustryPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
             $blocking[] = 'Minimal satu laporan kegiatan Industri Farmasi wajib lengkap.';
         }
+        if (PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code)
+            && $portfolio->sectionRecords->whereIn('section_code', PkpaPbfPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
+            $blocking[] = 'Minimal satu laporan kegiatan PBF wajib lengkap.';
+        }
         if ($portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE
             && $portfolio->sectionRecords->whereIn('section_code', PkpaPuskesmasPortfolio::reportSectionCodes())->where('status', 'completed')->isEmpty()) {
             $blocking[] = 'Minimal satu laporan kegiatan Puskesmas wajib lengkap.';
@@ -805,7 +810,7 @@ class PkpaPortfolioBuilderService
         $zip->addFromString('word/settings.xml', $this->docxSettingsXml());
         $zip->addFromString('word/footer1.xml', $this->docxFooterXml());
         $body = $this->docxBody($portfolio);
-        $zip->addFromString('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'.$body.'<w:sectPr><w:footerReference w:type="default" r:id="rId3"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="1134" w:bottom="1417" w:left="1701" w:header="708" w:footer="708" w:gutter="0"/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>');
+        $zip->addFromString('word/document.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>'.$body.'<w:sectPr><w:footerReference w:type="default" r:id="rId3"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="2268" w:right="1701" w:bottom="1701" w:left="2268" w:header="708" w:footer="708" w:gutter="0"/><w:docGrid w:linePitch="360"/></w:sectPr></w:body></w:document>');
         $zip->close();
         $bytes = file_get_contents($tmp);
         @unlink($tmp);
@@ -904,19 +909,20 @@ class PkpaPortfolioBuilderService
         ];
 
         $isApotek = PkpaApotekPortfolio::isApotekCode($portfolio->practiceDomain?->code);
+        $isPbf = PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code);
         $isHospital = PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
         $isIndustry = PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
         $isPuskesmas = $portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE;
         $isHealthOffice = $portfolio->template?->code === PkpaHealthOfficePortfolio::TEMPLATE_CODE;
         $isLokaPom = $portfolio->template?->code === PkpaLokaPomPortfolio::TEMPLATE_CODE;
 
-        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom) {
+        if ($isApotek || $isPbf || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom) {
             $sections[] = [
                 'title' => 'Lembar Pengesahan',
                 'lines' => $this->approvalLines($portfolio),
             ];
             $sections[] = [
-                'title' => 'Visi, Misi, Tujuan, dan Sasaran',
+                'title' => $isPbf ? 'Visi dan Misi' : 'Visi, Misi, Tujuan, dan Sasaran',
                 'lines' => $this->staticSectionLines($portfolio, 'vision_mission'),
             ];
             $sections[] = [
@@ -943,6 +949,22 @@ class PkpaPortfolioBuilderService
                 $sections[] = [
                     'title' => $portfolio->sectionRecords->firstWhere('section_code', $code)?->templateSection?->title
                         ?? (PkpaApotekPortfolio::sectionDefinition($code)['title'] ?? str($code)->headline()->toString()),
+                    'lines' => $this->sectionPayloadLines($portfolio, $code),
+                ];
+            }
+        } elseif ($isPbf) {
+            $sections[] = [
+                'title' => 'Profil Tempat PKPA PBF',
+                'lines' => $this->sectionPayloadLines($portfolio, 'site_profile'),
+            ];
+            $sections[] = [
+                'title' => 'Logbook Harian',
+                'lines' => $this->logbookLines($portfolio),
+            ];
+            foreach (PkpaPbfPortfolio::reportSectionCodes() as $code) {
+                $sections[] = [
+                    'title' => $portfolio->sectionRecords->firstWhere('section_code', $code)?->templateSection?->title
+                        ?? (PkpaPbfPortfolio::sectionDefinition($code)['title'] ?? str($code)->headline()->toString()),
                     'lines' => $this->sectionPayloadLines($portfolio, $code),
                 ];
             }
@@ -1009,7 +1031,7 @@ class PkpaPortfolioBuilderService
         }
 
         $sections[] = [
-            'title' => 'Studi Kasus',
+            'title' => $isPbf ? 'Studi Kasus PBF' : 'Studi Kasus',
             'lines' => $this->caseReportLines($portfolio),
         ];
         $sections[] = [
@@ -1017,15 +1039,15 @@ class PkpaPortfolioBuilderService
             'lines' => $this->reflectionLines($portfolio),
         ];
         $sections[] = [
-            'title' => 'Self Assessment',
+            'title' => $isPbf ? 'Self Assessment PBF' : 'Self Assessment',
             'lines' => $this->selfAssessmentLines($portfolio),
         ];
         $sections[] = [
-            'title' => 'Dokumentasi Kegiatan',
+            'title' => $isPbf ? 'Dokumentasi Kegiatan PBF' : 'Dokumentasi Kegiatan',
             'lines' => $this->documentationLines($portfolio),
         ];
 
-        if ($isApotek || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom) {
+        if ($isApotek || $isPbf || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom) {
             $sections[] = [
                 'title' => 'Daftar Pustaka',
                 'lines' => $this->sectionPayloadLines($portfolio, 'bibliography'),
@@ -1073,6 +1095,21 @@ class PkpaPortfolioBuilderService
                 '16. Lampiran',
                 '17. Status Pemeriksaan',
             ];
+        }
+
+        if (PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code)) {
+            $titles = collect([
+                'Ringkasan Dokumen', 'Identitas Mahasiswa', 'Pakta Integritas', 'Lembar Pengesahan',
+                'Visi dan Misi', 'Tata Tertib PKPA', 'Daftar Isi', 'Profil Tempat PKPA PBF', 'Logbook Harian',
+            ])->merge(
+                collect(PkpaPbfPortfolio::reportSectionCodes())
+                    ->map(fn ($code) => PkpaPbfPortfolio::sectionDefinition($code)['title'])
+            )->merge([
+                'Studi Kasus PBF', 'Refleksi Mingguan', 'Self Assessment PBF',
+                'Dokumentasi Kegiatan PBF', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan',
+            ])->values();
+
+            return $titles->map(fn ($title, $index) => ($index + 1).'. '.$title)->all();
         }
 
         if (PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code)) {
@@ -1237,6 +1274,7 @@ class PkpaPortfolioBuilderService
         $lines = [];
         foreach ($portfolio->caseReports as $case) {
             $detail = match (true) {
+                PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code) => $this->pbfCaseReportDetailLines($case),
                 PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code) => $this->industryCaseReportDetailLines($case),
                 $portfolio->template?->code === PkpaHealthOfficePortfolio::TEMPLATE_CODE => $this->healthOfficeCaseReportDetailLines($case),
                 $portfolio->template?->code === PkpaLokaPomPortfolio::TEMPLATE_CODE => $this->lokaPomCaseReportDetailLines($case),
@@ -1260,6 +1298,23 @@ class PkpaPortfolioBuilderService
             'Regulasi yang Digunakan: '.($case->drp ?: '-'),
             'Penyelesaian: '.($case->intervention ?: '-'),
             'Peran Apoteker: '.($case->monitoring ?: '-'),
+            'Kesimpulan: '.($case->conclusion ?: '-'),
+            'Daftar Pustaka: '.($case->references ?: '-'),
+        ];
+    }
+
+    private function pbfCaseReportDetailLines(PkpaPortfolioCaseReport $case): array
+    {
+        return [
+            'FORMAT STUDI KASUS PBF',
+            'Judul/Nomor Kasus: '.$case->case_code,
+            'Tanggal: '.($case->case_date?->format('d M Y') ?: '-'),
+            'Latar Belakang: '.($case->complaint ?: '-'),
+            'Identifikasi Masalah: '.($case->diagnosis ?: '-'),
+            'Data dan Fakta Kasus: '.($case->history ?: '-'),
+            'Analisis Akar Masalah dan Acuan CDOB/Regulasi: '.($case->drp ?: '-'),
+            'Solusi atau Tindakan Perbaikan: '.($case->intervention ?: '-'),
+            'Evaluasi Efektivitas dan Tindak Lanjut: '.($case->monitoring ?: '-'),
             'Kesimpulan: '.($case->conclusion ?: '-'),
             'Daftar Pustaka: '.($case->references ?: '-'),
         ];
@@ -1460,10 +1515,11 @@ class PkpaPortfolioBuilderService
         $paragraphs[] = $this->docxParagraph('', 'pagebreak');
 
         foreach ($this->exportSections($portfolio) as $sectionIndex => $section) {
-            if ($sectionIndex > 0 && $this->sectionStartsNewPage($section['title'])) {
-                $paragraphs[] = $this->docxParagraph('', 'pagebreak');
-            }
-            $paragraphs[] = $this->docxParagraph($section['title'], 'heading');
+            $startsNewPage = $sectionIndex > 0 && $this->sectionStartsNewPage($section['title']);
+            $headingStyle = $startsNewPage
+                ? 'heading-pagebreak'
+                : 'heading';
+            $paragraphs[] = $this->docxParagraph($section['title'], $headingStyle);
 
             if (in_array($section['title'], ['Ringkasan Dokumen', 'Identitas Mahasiswa'], true)) {
                 $paragraphs[] = $this->docxKeyValueTable($section['lines']);
@@ -1533,6 +1589,7 @@ class PkpaPortfolioBuilderService
             'cover-meta' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="90"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'cover-year' => '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="900"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'heading' => '<w:p><w:pPr><w:spacing w:before="180" w:after="140"/><w:keepNext/><w:keepLines/><w:outlineLvl w:val="0"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
+            'heading-pagebreak' => '<w:p><w:pPr><w:pageBreakBefore/><w:spacing w:before="180" w:after="140"/><w:keepNext/><w:keepLines/><w:outlineLvl w:val="0"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="28"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'subheading' => '<w:p><w:pPr><w:spacing w:before="150" w:after="90"/><w:keepNext/><w:keepLines/><w:outlineLvl w:val="1"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'toc' => '<w:p><w:pPr><w:ind w:left="360"/><w:spacing w:after="70" w:line="300" w:lineRule="auto"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$escaped.'</w:t></w:r></w:p>',
             'bullet' => '<w:p><w:pPr><w:ind w:left="540" w:hanging="260"/><w:spacing w:after="70" w:line="300" w:lineRule="auto"/><w:widowControl/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.htmlspecialchars('• '.preg_replace('/^-\s*/u', '', trim($text)), ENT_XML1, 'UTF-8').'</w:t></w:r></w:p>',
@@ -1577,11 +1634,11 @@ class PkpaPortfolioBuilderService
     private function sectionStartsNewPage(string $title): bool
     {
         return in_array($title, [
-            'Lembar Pengesahan',
             'Visi, Misi, Tujuan, dan Sasaran',
             'Daftar Isi',
             'Logbook Harian',
             'Studi Kasus',
+            'Studi Kasus PBF',
         ], true);
     }
 
@@ -1610,14 +1667,14 @@ class PkpaPortfolioBuilderService
         $font = '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman"/>';
         $borders = '<w:tblBorders><w:top w:val="single" w:sz="4" w:color="D9D9D9"/><w:left w:val="single" w:sz="4" w:color="D9D9D9"/><w:bottom w:val="single" w:sz="4" w:color="D9D9D9"/><w:right w:val="single" w:sz="4" w:color="D9D9D9"/><w:insideH w:val="single" w:sz="4" w:color="D9D9D9"/><w:insideV w:val="single" w:sz="4" w:color="D9D9D9"/></w:tblBorders>';
 
-        return '<w:tbl><w:tblPr><w:tblW w:w="9070" w:type="dxa"/><w:tblLayout w:type="fixed"/>'.$borders.'<w:tblCellMar><w:top w:w="100" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2550"/><w:gridCol w:w="6520"/></w:tblGrid>'
+        return '<w:tbl><w:tblPr><w:tblW w:w="7937" w:type="dxa"/><w:tblLayout w:type="fixed"/>'.$borders.'<w:tblCellMar><w:top w:w="100" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="100" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2300"/><w:gridCol w:w="5637"/></w:tblGrid>'
             .$rows->map(function (array $row) use ($font) {
                 $label = htmlspecialchars($row[0], ENT_XML1, 'UTF-8');
                 $value = htmlspecialchars($row[1] !== '' ? $row[1] : '-', ENT_XML1, 'UTF-8');
 
                 return '<w:tr><w:trPr><w:cantSplit/></w:trPr>'
-                    .'<w:tc><w:tcPr><w:tcW w:w="2550" w:type="dxa"/><w:shd w:val="clear" w:fill="F2F2F2"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$label.'</w:t></w:r></w:p></w:tc>'
-                    .'<w:tc><w:tcPr><w:tcW w:w="6520" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="300" w:lineRule="auto"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$value.'</w:t></w:r></w:p></w:tc></w:tr>';
+                    .'<w:tc><w:tcPr><w:tcW w:w="2300" w:type="dxa"/><w:shd w:val="clear" w:fill="F2F2F2"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r><w:rPr>'.$font.'<w:b/><w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$label.'</w:t></w:r></w:p></w:tc>'
+                    .'<w:tc><w:tcPr><w:tcW w:w="5637" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0" w:line="300" w:lineRule="auto"/></w:pPr><w:r><w:rPr>'.$font.'<w:sz w:val="24"/></w:rPr><w:t xml:space="preserve">'.$value.'</w:t></w:r></w:p></w:tc></w:tr>';
             })->implode('')
             .'</w:tbl>';
     }

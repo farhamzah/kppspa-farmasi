@@ -30,6 +30,7 @@ use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaLokaPomPortfolio;
+use App\Support\PkpaPbfPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Support\PkpaPuskesmasPortfolio;
 use Database\Seeders\PkpaMasterSeeder;
@@ -95,7 +96,9 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertStringContainsString('Visite Apoteker', $hospital->sections->pluck('title')->implode(' '));
         $this->assertFalse($hospital->sections->firstWhere('code', 'pharmacy_warehouse')->is_required);
         $this->assertStringContainsString('Cold Chain Product', $pbf->sections->pluck('title')->implode(' '));
-        $this->assertStringContainsString('Produk Rusak dan Kedaluwarsa', $pbf->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Produk Rusak, Kedaluwarsa, Karantina, dan Pemusnahan', $pbf->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Dokumentasi dan Administrasi Distribusi', $pbf->sections->pluck('title')->implode(' '));
+        $this->assertStringContainsString('Narkotika, Psikotropika, Prekursor, dan Regulasi', $pbf->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Quality Assurance', $industry->sections->pluck('title')->implode(' '));
         $this->assertStringContainsString('Production Planning and Inventory Control', $industry->sections->pluck('title')->implode(' '));
     }
@@ -212,7 +215,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $docx->update(['metadata' => ['generator_version' => 1]]);
         $regeneratedDocx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
         $this->assertNotSame($docx->id, $regeneratedDocx->id);
-        $this->assertSame(2, data_get($regeneratedDocx->metadata, 'generator_version'));
+        $this->assertSame(3, data_get($regeneratedDocx->metadata, 'generator_version'));
         Storage::disk('local')->assertExists($regeneratedDocx->path);
     }
 
@@ -533,7 +536,36 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
             ->assertOk()
             ->assertSee('Laporan Kegiatan PKPA PBF')
-            ->assertSee('Laporan Kegiatan: Pengadaan');
+            ->assertSee('Laporan Kegiatan: Perencanaan dan Pengadaan')
+            ->assertSee('Analisis Akar Masalah dan Acuan CDOB/Regulasi')
+            ->assertDontSee('Identitas Pasien');
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/studi-kasus', [
+                'case_code' => 'PBF-CASE-01',
+                'case_date' => '2026-10-20',
+                'complaint' => 'Terjadi penyimpangan suhu pada produk rantai dingin.',
+                'diagnosis' => 'Suhu penyimpanan berada di luar rentang yang ditentukan.',
+                'history' => 'Data logger menunjukkan penyimpangan selama 25 menit.',
+                'drp' => 'Dilakukan analisis akar masalah berdasarkan CDOB dan SOP CCP.',
+                'intervention' => 'Produk dikarantina dan dibuat CAPA.',
+                'monitoring' => 'Efektivitas CAPA dievaluasi melalui pemantauan suhu.',
+                'conclusion' => 'Produk ditangani sesuai sistem mutu PBF.',
+                'references' => 'Pedoman CDOB 2020.',
+                'anonymization_confirmed' => '1',
+            ])
+            ->assertRedirect();
+
+        $docx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $docxText = $this->docxDocumentXml(Storage::disk('local')->path($docx->path));
+        $this->assertStringContainsString('Portofolio PKPA Pedagang Besar Farmasi', $docxText);
+        $this->assertStringContainsString('Logbook Harian', $docxText);
+        $this->assertStringContainsString('Laporan Kegiatan: Perencanaan dan Pengadaan', $docxText);
+        $this->assertStringContainsString('FORMAT STUDI KASUS PBF', $docxText);
+        $this->assertStringContainsString('Analisis Akar Masalah dan Acuan CDOB/Regulasi', $docxText);
+        $this->assertStringNotContainsString('A. Identitas Pasien', $docxText);
+        $this->assertStringNotContainsString('D. Analisis SOAP', $docxText);
+        $this->assertSame(PkpaPbfPortfolio::TEMPLATE_CODE, $portfolio->template->code);
     }
 
     public function test_student_can_save_repeated_manual_apotek_report_activities_in_creation_order(): void
@@ -755,7 +787,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $zip->close();
         $this->assertIsString($document);
         $this->assertStringContainsString('<w:pgSz w:w="11906" w:h="16838"/>', $document);
-        $this->assertStringContainsString('<w:pgMar ', $document);
+        $this->assertStringContainsString('<w:pgMar w:top="2268" w:right="1701" w:bottom="1701" w:left="2268"', $document);
         $this->assertStringContainsString('<w:footerReference ', $document);
         $this->assertStringContainsString('<w:tbl>', $document);
         $this->assertIsString($footer);
