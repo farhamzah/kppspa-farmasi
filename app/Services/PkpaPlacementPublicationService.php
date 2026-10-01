@@ -11,6 +11,7 @@ use App\Models\PkpaRotationAssignment;
 use App\Models\PkpaScheduleAcknowledgement;
 use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -216,6 +217,8 @@ class PkpaPlacementPublicationService
 
             foreach ($source->assignments as $assignment) {
                 $snapshot = $replacementSnapshots[$assignment->id] ?? $assignment->toArray();
+                $snapshot['start_date'] = $this->dateOnly($snapshot['start_date'] ?? null);
+                $snapshot['end_date'] = $this->dateOnly($snapshot['end_date'] ?? null);
                 $copy = PkpaPublishedAssignment::create(array_merge(
                     collect($snapshot)->only((new PkpaPublishedAssignment)->getFillable())->except(['id', 'created_at', 'updated_at'])->all(),
                     [
@@ -279,8 +282,8 @@ class PkpaPlacementPublicationService
                 'practice_domain_option_name_snapshot' => $assignment->selectedOption?->name,
                 'practice_site_name_snapshot' => $assignment->practiceSite?->name,
                 'practice_site_address_snapshot' => $assignment->practiceSite?->address,
-                'start_date' => $assignment->start_date,
-                'end_date' => $assignment->end_date,
+                'start_date' => $assignment->start_date?->toDateString(),
+                'end_date' => $assignment->end_date?->toDateString(),
                 'duration_value_snapshot' => $assignment->planned_duration_value,
                 'duration_unit_snapshot' => $assignment->planned_duration_unit,
                 'effective_days_snapshot' => $assignment->calculated_effective_days,
@@ -419,5 +422,14 @@ class PkpaPlacementPublicationService
             'is_primary' => true,
             'status' => 'assigned',
         ]);
+    }
+
+    private function dateOnly(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return Carbon::parse($value)->setTimezone(config('app.timezone'))->toDateString();
     }
 }

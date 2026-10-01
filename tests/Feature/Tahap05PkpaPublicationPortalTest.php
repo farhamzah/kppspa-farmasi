@@ -30,7 +30,9 @@ use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\PkpaAttendanceService;
 use App\Services\PkpaEnrollmentRequirementService;
+use App\Services\PkpaLogbookService;
 use App\Services\PkpaPlacementNotificationService;
 use App\Services\PkpaProgramService;
 use App\Services\PkpaReportService;
@@ -40,6 +42,7 @@ use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -122,6 +125,69 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->get("/management/pkpa-publications/{$publication->id}/export")
             ->assertOk()
             ->assertHeader('content-disposition');
+    }
+
+    public function test_date_only_values_do_not_shift_between_plan_publication_and_runtime_and_can_be_repaired(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-DATES');
+        $assignment = $publication->assignments()->with('sourceAssignment')->firstOrFail();
+        $expectedStart = $assignment->sourceAssignment->start_date->toDateString();
+        $expectedEnd = $assignment->sourceAssignment->end_date->toDateString();
+
+        $this->assertSame($expectedStart, $assignment->start_date->toDateString());
+        $this->assertSame($expectedEnd, $assignment->end_date->toDateString());
+
+        $assignment->sourceAssignment->update(['start_date' => '2026-09-01', 'end_date' => '2026-10-02']);
+        $assignment->update(['start_date' => '2026-09-01', 'end_date' => '2026-10-02']);
+        $expectedStart = '2026-09-01';
+        $expectedEnd = '2026-10-02';
+
+        app(PkpaRotationRunService::class)->createFromPublication($publication->fresh(), $this->admin);
+        $run = PkpaRotationRun::where('current_published_assignment_id', $assignment->id)->firstOrFail();
+        $this->assertSame($expectedStart, $run->scheduled_start_date->toDateString());
+        $this->assertSame($expectedEnd, $run->scheduled_end_date->toDateString());
+
+        DB::table('pkpa_published_assignments')->where('id', $assignment->id)->update([
+            'start_date' => '2026-01-31',
+            'end_date' => '2026-01-31',
+        ]);
+        DB::table('pkpa_rotation_runs')->where('id', $run->id)->update([
+            'scheduled_start_date' => '2026-01-30',
+            'scheduled_end_date' => '2026-01-30',
+        ]);
+
+        $this->artisan('pkpa:repair-rotation-dates', ['--program' => $publication->program->code])
+            ->expectsOutputToContain('Ini hanya preview')
+            ->assertSuccessful();
+        $this->assertSame('2026-01-30', $run->fresh()->scheduled_start_date->toDateString());
+
+        $this->artisan('pkpa:repair-rotation-dates', [
+            '--program' => $publication->program->code,
+            '--apply' => true,
+        ])->assertSuccessful();
+
+        $this->assertSame($expectedStart, $assignment->fresh()->start_date->toDateString());
+        $this->assertSame($expectedEnd, $assignment->fresh()->end_date->toDateString());
+        $this->assertSame($expectedStart, $run->fresh()->scheduled_start_date->toDateString());
+        $this->assertSame($expectedEnd, $run->fresh()->scheduled_end_date->toDateString());
+
+        $this->travelTo('2026-10-02 12:00:00');
+        $attendance = app(PkpaAttendanceService::class)->save($run->fresh(), [
+            'attendance_date' => '2026-10-02',
+            'attendance_type' => 'present',
+            'check_in_time' => '08:00',
+            'check_out_time' => '16:00',
+        ], $this->student);
+        $logbook = app(PkpaLogbookService::class)->save($run->fresh(), [
+            'entry_date' => '2026-10-02',
+            'title' => 'Kegiatan hari terakhir',
+            'activity_summary' => 'Pelayanan kefarmasian pada hari terakhir PKPA Apotek.',
+            'learning_outcomes' => 'Menyelesaikan pelayanan sesuai prosedur.',
+            'reflection' => 'Mengevaluasi pelaksanaan PKPA Apotek.',
+        ], $this->student);
+
+        $this->assertSame('2026-10-02', $attendance->attendance_date->toDateString());
+        $this->assertSame('2026-10-02', $logbook->entry_date->toDateString());
     }
 
     public function test_student_and_supervisor_portals_read_only_current_snapshot_with_acknowledgement(): void

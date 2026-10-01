@@ -35,6 +35,7 @@ use App\Console\Commands\SafaPublicInfoPreviewCommand;
 use App\Console\Commands\StagingRehearsalCheckCommand;
 use App\Console\Commands\TuDocumentPayloadPreviewCommand;
 use App\Console\Commands\UiReadinessCheckCommand;
+use App\Console\Commands\RepairPkpaRotationDatesCommand;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -69,6 +70,7 @@ return Application::configure(basePath: dirname(__DIR__))
         PkpaHypercareStatusCommand::class,
         PkpaIntegrityAuditCommand::class,
         PkpaQueueHealthCommand::class,
+        RepairPkpaRotationDatesCommand::class,
         SetupPkpaApotekAssessmentCommand::class,
         ProvisionCoreBridgeUserCommand::class,
         ProvisionCoreBridgeUsersCommand::class,
