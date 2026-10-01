@@ -29,6 +29,7 @@ use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPlacementNotificationService;
 use App\Services\PkpaProgramService;
 use App\Services\PkpaReportService;
+use App\Services\PkpaRotationRunService;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
@@ -485,6 +486,74 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $revision = PkpaPlacementPublication::whereKeyNot($publication->id)->firstOrFail();
         $revisedAssignment = $revision->assignments()->where('pkpa_enrollment_requirement_id', $assignment->pkpa_enrollment_requirement_id)->with('supervisors')->firstOrFail();
         $this->assertTrue($revisedAssignment->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'field' && $supervisor->core_user_id === 'CORE-FIELD-05-LATE'));
+    }
+
+    public function test_internal_supervisor_can_be_replaced_in_bulk_without_erasing_history(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-INTERNAL-REPLACEMENT');
+        $assignments = $publication->assignments()
+            ->with(['supervisors', 'practiceDomain'])
+            ->whereIn('practice_domain_name_snapshot', ['Apotek', 'Pedagang Besar Farmasi'])
+            ->get();
+        $this->assertCount(2, $assignments);
+
+        foreach ($assignments as $assignment) {
+            $this->internal($publication->program, $assignment->practice_domain_id, $this->otherSupervisor->core_user_id);
+        }
+        app(PkpaRotationRunService::class)->createFromPublication($publication, $this->koordinator);
+        $runs = PkpaRotationRun::whereIn('pkpa_enrollment_requirement_id', $assignments->pluck('pkpa_enrollment_requirement_id'))->get();
+        $this->assertCount(2, $runs);
+        $fieldHistoryIds = $runs->mapWithKeys(fn ($run) => [
+            $run->id => $run->supervisorHistories()->where('supervisor_type', 'field')->where('status', 'active')->value('id'),
+        ]);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get("/management/pkpa-publications/{$publication->id}/internal-supervisor-replacement")
+            ->assertOk()
+            ->assertSee('Alihkan mahasiswa ke dosen pengganti')
+            ->assertSee('Pembimbing saat ini')
+            ->assertSee('Pilih semua bimbingan');
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post("/management/pkpa-publications/{$publication->id}/internal-supervisor-replacement", [
+                'assignment_ids' => $assignments->pluck('id')->all(),
+                'replacement_core_user_id' => $this->otherSupervisor->core_user_id,
+                'effective_date' => '2026-02-02',
+                'reason' => 'Pembimbing lama mengundurkan diri dan tanggung jawab dialihkan.',
+                'confirmation' => '1',
+            ])
+            ->assertRedirect();
+
+        $change = PkpaPlacementChangeRequest::where('request_type', 'internal_supervisor_replacement')->firstOrFail();
+        $this->assertSame('draft', $change->status);
+        $this->assertSame(2, $change->items()->count());
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get("/management/pkpa-change-requests/{$change->id}")
+            ->assertOk()
+            ->assertSee('Konfirmasi dan Terapkan')
+            ->assertSee('Pembimbing lama')
+            ->assertSee('Pembimbing baru');
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post("/management/pkpa-change-requests/{$change->id}/confirm-internal-supervisor-replacement")
+            ->assertRedirect();
+
+        $this->assertSame('applied', $change->fresh()->status);
+        $this->assertSame('superseded', $publication->fresh()->status);
+        $revision = PkpaPlacementPublication::where('pkpa_program_id', $publication->pkpa_program_id)->where('is_current', true)->firstOrFail();
+        $revised = $revision->assignments()->whereIn('pkpa_enrollment_requirement_id', $assignments->pluck('pkpa_enrollment_requirement_id'))->with('supervisors')->get();
+        $this->assertCount(2, $revised);
+        $this->assertTrue($revised->every(fn ($assignment) => $assignment->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'internal' && $supervisor->core_user_id === $this->otherSupervisor->core_user_id)));
+        $this->assertTrue($assignments->every(fn ($assignment) => $assignment->fresh('supervisors')->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'internal' && $supervisor->core_user_id !== $this->otherSupervisor->core_user_id)), 'Snapshot publikasi lama harus tetap utuh.');
+
+        foreach ($runs as $run) {
+            $run->refresh();
+            $this->assertSame($this->otherSupervisor->core_user_id, $run->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'active')->value('core_user_id'));
+            $this->assertTrue($run->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'ended')->exists());
+            $this->assertSame($fieldHistoryIds[$run->id], $run->supervisorHistories()->where('supervisor_type', 'field')->where('status', 'active')->value('id'), 'Preseptor yang tidak berubah tidak boleh dibuat ulang.');
+            $this->assertSame('current', $run->publication_sync_status);
+        }
     }
 
     private function publishedFixture(string $code): PkpaPlacementPublication

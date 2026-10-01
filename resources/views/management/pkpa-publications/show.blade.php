@@ -22,6 +22,7 @@
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('management.pkpa-publications.export', $publication) }}" class="rounded-xl border border-emerald-200 px-4 py-2 text-sm font-black text-emerald-700">Ekspor Excel Resmi</a>
                 @if($publication->status === 'published')
+                    <a href="{{ route('management.pkpa-internal-supervisor-replacements.create', $publication) }}" class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Ganti Pembimbing Dalam</a>
                     <a href="{{ route('management.pkpa-change-requests.create', $publication) }}" class="rounded-xl border border-cyan-200 px-4 py-2 text-sm font-black text-cyan-700">Ajukan Revisi</a>
                 @endif
             </div>

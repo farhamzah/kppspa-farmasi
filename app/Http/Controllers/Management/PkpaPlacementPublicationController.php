@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Management;
 
 use App\Exports\PkpaOfficialScheduleExport;
 use App\Http\Controllers\Controller;
+use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaNotificationDelivery;
 use App\Models\PkpaPlacementChangeRequest;
 use App\Models\PkpaPlacementPlan;
@@ -30,8 +31,7 @@ class PkpaPlacementPublicationController extends Controller
         private readonly PkpaPlacementPublicationService $publicationService,
         private readonly PkpaPlacementNotificationService $notificationService,
         private readonly PkpaPlacementChangeRequestService $changeService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -147,6 +147,53 @@ class PkpaPlacementPublicationController extends Controller
         ]);
     }
 
+    public function createInternalSupervisorReplacement(Request $request, PkpaPlacementPublication $publication): View
+    {
+        if (! $request->user()->hasAnyRole(['admin', 'koordinator_kp'])) {
+            abort(403);
+        }
+        abort_unless($publication->is_current && $publication->status === 'published', 404);
+
+        $publication->load(['assignments.supervisors', 'assignments.practiceDomain']);
+        $internalSupervisors = PkpaInternalSupervisorEligibility::query()
+            ->with('practiceDomain')
+            ->where('pkpa_program_id', $publication->pkpa_program_id)
+            ->where('status', 'active')
+            ->orderBy('name_snapshot')
+            ->get()
+            ->groupBy('core_user_id')
+            ->map(fn ($items) => [
+                'core_user_id' => (string) $items->first()->core_user_id,
+                'name' => $items->first()->display_name,
+                'domains' => $items->pluck('practiceDomain.name')->filter()->unique()->values()->all(),
+            ])
+            ->values();
+
+        return view('management.pkpa-publications.internal-supervisor-replacement', compact('publication', 'internalSupervisors'));
+    }
+
+    public function storeInternalSupervisorReplacement(Request $request, PkpaPlacementPublication $publication): RedirectResponse
+    {
+        $data = $request->validate([
+            'assignment_ids' => ['required', 'array', 'min:1'],
+            'assignment_ids.*' => ['integer', 'distinct', 'exists:pkpa_published_assignments,id'],
+            'replacement_core_user_id' => ['required', 'string', 'max:80'],
+            'effective_date' => ['required', 'date'],
+            'reason' => ['required', 'string', 'min:10'],
+            'confirmation' => ['accepted'],
+        ]);
+        $change = $this->changeService->createInternalSupervisorReplacement(
+            $publication,
+            $data['assignment_ids'],
+            $data['replacement_core_user_id'],
+            $data['effective_date'],
+            $data['reason'],
+            $request->user(),
+        );
+
+        return redirect()->route('management.pkpa-change-requests.show', $change)->with('status', 'Rancangan penggantian dibuat. Periksa ringkasan sebelum diterapkan.');
+    }
+
     public function storeChange(Request $request, PkpaPlacementPublication $publication): RedirectResponse
     {
         $data = $request->validate([
@@ -206,5 +253,22 @@ class PkpaPlacementPublicationController extends Controller
         $this->notificationService->sendPending($request->user());
 
         return redirect()->route('management.pkpa-publications.show', $publication)->with('status', 'Revisi publikasi diterapkan.');
+    }
+
+    public function confirmInternalSupervisorReplacement(Request $request, PkpaPlacementChangeRequest $changeRequest): RedirectResponse
+    {
+        if (! $request->user()->hasRole('koordinator_kp') || $changeRequest->request_type !== 'internal_supervisor_replacement') {
+            abort(403);
+        }
+        if ($changeRequest->status === 'draft') {
+            $this->changeService->submit($changeRequest, $request->user());
+        }
+        if (in_array($changeRequest->fresh()->status, ['submitted', 'under_review'], true)) {
+            $this->changeService->approve($changeRequest->fresh(), $request->user());
+        }
+        $publication = $this->changeService->apply($changeRequest->fresh(), $request->user());
+        $this->notificationService->sendPending($request->user());
+
+        return redirect()->route('management.pkpa-publications.show', $publication)->with('status', 'Pembimbing Dalam berhasil diganti. Riwayat lama tetap tersimpan dan portal telah disinkronkan.');
     }
 }

@@ -5,7 +5,8 @@
 @section('content')
 @php
     $changeStatusLabels = ['draft' => 'Draf', 'submitted' => 'Diajukan', 'under_review' => 'Diperiksa', 'approved' => 'Disetujui', 'rejected' => 'Ditolak', 'applied' => 'Diterapkan', 'failed' => 'Gagal'];
-    $changeTypeLabels = ['date_change' => 'Ubah tanggal', 'site_change' => 'Ubah tempat', 'supervisor_change' => 'Ubah pembimbing', 'administrative_correction' => 'Koreksi administrasi', 'student_assignment_change' => 'Ubah penempatan mahasiswa'];
+    $changeTypeLabels = ['date_change' => 'Ubah tanggal', 'site_change' => 'Ubah tempat', 'supervisor_change' => 'Ubah preseptor', 'field_supervisor_change' => 'Ubah preseptor', 'internal_supervisor_change' => 'Ganti Pembimbing Dalam', 'internal_supervisor_replacement' => 'Ganti Pembimbing Dalam', 'administrative_correction' => 'Koreksi administrasi', 'student_assignment_change' => 'Ubah penempatan mahasiswa'];
+    $isInternalReplacement = $change->request_type === 'internal_supervisor_replacement';
 @endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
@@ -36,19 +37,34 @@
             </p>
         </div>
         <div class="mt-5 flex flex-wrap gap-2">
-            @if($change->status === 'draft')
+            @if($isInternalReplacement && in_array($change->status, ['draft', 'submitted', 'approved'], true) && auth()->user()->hasRole('koordinator_kp'))
+                <form method="POST" action="{{ route('management.pkpa-internal-supervisor-replacements.confirm', $change) }}" onsubmit="return confirm('Terapkan penggantian Pembimbing Dalam untuk seluruh mahasiswa yang tercantum?')">
+                    @csrf
+                    <button class="rounded-xl bg-cyan-700 px-5 py-2 text-sm font-black text-white">Konfirmasi dan Terapkan</button>
+                </form>
+            @endif
+            @if($change->status === 'draft' && ! $isInternalReplacement)
                 <form method="POST" action="{{ route('management.pkpa-change-requests.submit', $change) }}">@csrf<button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Ajukan Pemeriksaan</button></form>
             @endif
-            @if($change->status === 'submitted' && auth()->user()->hasRole('koordinator_kp'))
+            @if($change->status === 'submitted' && ! $isInternalReplacement && auth()->user()->hasRole('koordinator_kp'))
                 <form method="POST" action="{{ route('management.pkpa-change-requests.approve', $change) }}">@csrf<button class="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-black text-white">Setujui</button></form>
                 <form method="POST" action="{{ route('management.pkpa-change-requests.reject', $change) }}" class="flex gap-2">@csrf<input name="rejection_reason" class="rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Alasan tolak"><button class="rounded-xl border border-rose-200 px-4 py-2 text-sm font-black text-rose-700">Tolak</button></form>
             @endif
-            @if($change->status === 'approved' && auth()->user()->hasRole('koordinator_kp'))
+            @if($change->status === 'approved' && ! $isInternalReplacement && auth()->user()->hasRole('koordinator_kp'))
                 <form method="POST" action="{{ route('management.pkpa-change-requests.apply', $change) }}">@csrf<button class="rounded-xl bg-slate-950 px-4 py-2 text-sm font-black text-white">Terapkan Revisi</button></form>
             @endif
             <a href="{{ route('management.pkpa-publications.show', $change->publication) }}" class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-black text-slate-700">Kembali</a>
         </div>
     </section>
+
+    @if($isInternalReplacement)
+        <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase text-slate-500">Mahasiswa</p><p class="mt-2 text-2xl font-black">{{ data_get($change->impact_summary, 'affected_students', $change->items->count()) }}</p></div>
+            <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase text-slate-500">Wahana</p><p class="mt-2 font-black">{{ implode(', ', data_get($change->impact_summary, 'domains', [])) ?: '-' }}</p></div>
+            <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase text-slate-500">Dosen pengganti</p><p class="mt-2 font-black">{{ data_get($change->impact_summary, 'replacement_name', '-') }}</p></div>
+            <div class="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><p class="text-xs font-black uppercase text-slate-500">Serah terima</p><p class="mt-2 font-black">{{ \Illuminate\Support\Carbon::parse(data_get($change->impact_summary, 'requested_effective_date'))->format('d M Y') }}</p></div>
+        </section>
+    @endif
 
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
         <h3 class="text-lg font-black text-slate-950">Item Perubahan</h3>
@@ -68,10 +84,19 @@
                             <p class="mt-1"><span class="font-black text-slate-900">Catatan:</span> {{ $item->notes }}</p>
                         @endif
                     </div>
-                    <div class="mt-3 grid gap-3 md:grid-cols-2">
-                        <div class="rounded-xl bg-slate-50 p-3 text-sm"><p class="font-black text-slate-700">Sebelum</p><pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ json_encode($item->before_snapshot, JSON_PRETTY_PRINT) }}</pre></div>
-                        <div class="rounded-xl bg-cyan-50 p-3 text-sm"><p class="font-black text-cyan-800">Usulan</p><pre class="mt-2 whitespace-pre-wrap text-xs text-cyan-900">{{ json_encode($item->proposed_snapshot, JSON_PRETTY_PRINT) }}</pre></div>
-                    </div>
+                    @if($item->change_type === 'internal_supervisor_change')
+                        @php($oldInternal = collect(data_get($item->before_snapshot, 'supervisors', []))->firstWhere('supervisor_type', 'internal'))
+                        <div class="mt-3 grid gap-3 md:grid-cols-3">
+                            <div class="rounded-xl bg-slate-50 p-3 text-sm"><p class="text-xs font-black uppercase text-slate-500">Pembimbing lama</p><p class="mt-2 font-bold text-slate-900">{{ data_get($oldInternal, 'name_snapshot', '-') }}</p></div>
+                            <div class="rounded-xl bg-cyan-50 p-3 text-sm"><p class="text-xs font-black uppercase text-cyan-700">Pembimbing baru</p><p class="mt-2 font-bold text-cyan-950">{{ data_get($item->proposed_snapshot, 'internal_supervisor_name', '-') }}</p></div>
+                            <div class="rounded-xl bg-amber-50 p-3 text-sm"><p class="text-xs font-black uppercase text-amber-700">Efektif</p><p class="mt-2 font-bold text-amber-950">{{ \Illuminate\Support\Carbon::parse(data_get($item->proposed_snapshot, 'effective_date'))->format('d M Y') }}</p></div>
+                        </div>
+                    @else
+                        <div class="mt-3 grid gap-3 md:grid-cols-2">
+                            <div class="rounded-xl bg-slate-50 p-3 text-sm"><p class="font-black text-slate-700">Sebelum</p><pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ json_encode($item->before_snapshot, JSON_PRETTY_PRINT) }}</pre></div>
+                            <div class="rounded-xl bg-cyan-50 p-3 text-sm"><p class="font-black text-cyan-800">Usulan</p><pre class="mt-2 whitespace-pre-wrap text-xs text-cyan-900">{{ json_encode($item->proposed_snapshot, JSON_PRETTY_PRINT) }}</pre></div>
+                        </div>
+                    @endif
                 </div>
             @endforeach
         </div>

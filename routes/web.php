@@ -229,11 +229,14 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('pkpa-notification-deliveries/retry', [PkpaPlacementPublicationController::class, 'retryNotifications'])->name('pkpa-notifications.retry');
             Route::get('pkpa-publications/{publication}/change-requests/create', [PkpaPlacementPublicationController::class, 'createChange'])->name('pkpa-change-requests.create');
             Route::post('pkpa-publications/{publication}/change-requests', [PkpaPlacementPublicationController::class, 'storeChange'])->name('pkpa-change-requests.store');
+            Route::get('pkpa-publications/{publication}/internal-supervisor-replacement', [PkpaPlacementPublicationController::class, 'createInternalSupervisorReplacement'])->name('pkpa-internal-supervisor-replacements.create');
+            Route::post('pkpa-publications/{publication}/internal-supervisor-replacement', [PkpaPlacementPublicationController::class, 'storeInternalSupervisorReplacement'])->name('pkpa-internal-supervisor-replacements.store');
             Route::get('pkpa-change-requests/{changeRequest}', [PkpaPlacementPublicationController::class, 'showChange'])->name('pkpa-change-requests.show');
             Route::post('pkpa-change-requests/{changeRequest}/submit', [PkpaPlacementPublicationController::class, 'submitChange'])->name('pkpa-change-requests.submit');
             Route::post('pkpa-change-requests/{changeRequest}/approve', [PkpaPlacementPublicationController::class, 'approveChange'])->name('pkpa-change-requests.approve');
             Route::post('pkpa-change-requests/{changeRequest}/reject', [PkpaPlacementPublicationController::class, 'rejectChange'])->name('pkpa-change-requests.reject');
             Route::post('pkpa-change-requests/{changeRequest}/apply', [PkpaPlacementPublicationController::class, 'applyChange'])->name('pkpa-change-requests.apply');
+            Route::post('pkpa-change-requests/{changeRequest}/confirm-internal-supervisor-replacement', [PkpaPlacementPublicationController::class, 'confirmInternalSupervisorReplacement'])->name('pkpa-internal-supervisor-replacements.confirm');
             Route::get('pkpa-placement-planner', [PkpaPlacementPlannerController::class, 'index'])->name('pkpa-placement-planner.index');
             Route::post('pkpa-placement-planner/plans', [PkpaPlacementPlannerController::class, 'storePlan'])->name('pkpa-placement-planner.plans.store');
             Route::post('pkpa-placement-plans/{plan}/clone', [PkpaPlacementPlannerController::class, 'clonePlan'])->name('pkpa-placement-plans.clone');

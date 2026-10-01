@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPublishedAssignment;
@@ -19,8 +20,7 @@ class PkpaPlacementPublicationService
         private readonly PkpaPlacementReviewService $reviewService,
         private readonly PkpaPlacementNotificationService $notificationService,
         private readonly PkpaAuditService $audit,
-    ) {
-    }
+    ) {}
 
     public function publish(PkpaPlacementPlan $plan, array $data, ?User $actor): PkpaPlacementPublication
     {
@@ -219,8 +219,8 @@ class PkpaPlacementPublicationService
                 $copy = PkpaPublishedAssignment::create(array_merge(
                     collect($snapshot)->only((new PkpaPublishedAssignment)->getFillable())->except(['id', 'created_at', 'updated_at'])->all(),
                     [
-                    'pkpa_placement_publication_id' => $new->id,
-                    'status' => isset($replacementSnapshots[$assignment->id]) ? 'revised' : $assignment->status,
+                        'pkpa_placement_publication_id' => $new->id,
+                        'status' => isset($replacementSnapshots[$assignment->id]) ? 'revised' : $assignment->status,
                     ]
                 ));
                 foreach ($assignment->supervisors as $supervisor) {
@@ -232,6 +232,10 @@ class PkpaPlacementPublicationService
                 if (filled($snapshot['site_field_supervisor_id'] ?? null)) {
                     $copy->supervisors()->where('supervisor_type', 'field')->delete();
                     $this->addFieldSupervisorToPublishedAssignment($copy, (int) $snapshot['site_field_supervisor_id']);
+                }
+                if (filled($snapshot['internal_supervisor_eligibility_id'] ?? null)) {
+                    $copy->supervisors()->where('supervisor_type', 'internal')->delete();
+                    $this->addInternalSupervisorToPublishedAssignment($copy, (int) $snapshot['internal_supervisor_eligibility_id']);
                 }
             }
             $this->carryForwardUnchangedAcknowledgements($source, $new);
@@ -387,5 +391,33 @@ class PkpaPlacementPublicationService
     private function code(PkpaPlacementPlan $plan, int $number, int $revision): string
     {
         return $plan->program?->code.'-PUB-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT).'-R'.$revision;
+    }
+
+    private function addInternalSupervisorToPublishedAssignment(PkpaPublishedAssignment $assignment, int $eligibilityId): void
+    {
+        $eligibility = PkpaInternalSupervisorEligibility::query()
+            ->with('user.lecturer')
+            ->whereKey($eligibilityId)
+            ->where('pkpa_program_id', $assignment->publication->pkpa_program_id)
+            ->where('practice_domain_id', $assignment->practice_domain_id)
+            ->where('status', 'active')
+            ->first();
+
+        if (! $eligibility) {
+            throw ValidationException::withMessages(['internal_supervisor' => 'Pembimbing Dalam pengganti tidak aktif untuk penempatan ini.']);
+        }
+
+        PkpaPublishedAssignmentSupervisor::create([
+            'pkpa_published_assignment_id' => $assignment->id,
+            'supervisor_type' => 'internal',
+            'core_user_id' => $eligibility->core_user_id,
+            'name_snapshot' => $eligibility->user
+                ? user_display_name($eligibility->user, 'pembimbing_dalam')
+                : $eligibility->name_snapshot,
+            'email_snapshot' => $eligibility->email_snapshot,
+            'role_snapshot' => $eligibility->role_snapshot,
+            'is_primary' => true,
+            'status' => 'assigned',
+        ]);
     }
 }

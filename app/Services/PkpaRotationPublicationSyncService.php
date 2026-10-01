@@ -8,16 +8,15 @@ use App\Models\PkpaRotationPublicationSyncLog;
 use App\Models\PkpaRotationRun;
 use App\Models\PkpaRotationSupervisorHistory;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PkpaRotationPublicationSyncService
 {
-    public function __construct(private readonly PkpaAuditService $audit)
-    {
-    }
+    public function __construct(private readonly PkpaAuditService $audit) {}
 
-    public function sync(PkpaPlacementPublication $publication, ?User $actor): array
+    public function sync(PkpaPlacementPublication $publication, ?User $actor, array $supervisorContexts = []): array
     {
         if (! $actor?->hasAnyRole(['admin', 'koordinator_kp'])) {
             throw ValidationException::withMessages(['authorization' => 'Hanya Admin atau Koordinator PKPA yang dapat sinkronisasi publikasi.']);
@@ -27,15 +26,16 @@ class PkpaRotationPublicationSyncService
         }
 
         $stats = ['applied' => 0, 'review_required' => 0, 'ignored' => 0];
-        DB::transaction(function () use ($publication, $actor, &$stats) {
+        DB::transaction(function () use ($publication, $actor, $supervisorContexts, &$stats) {
             $publication->loadMissing('assignments.supervisors');
             $assignments = $publication->assignments->keyBy('pkpa_enrollment_requirement_id');
-            PkpaRotationRun::where('pkpa_program_id', $publication->pkpa_program_id)->get()->each(function (PkpaRotationRun $run) use ($assignments, $publication, $actor, &$stats) {
+            PkpaRotationRun::where('pkpa_program_id', $publication->pkpa_program_id)->get()->each(function (PkpaRotationRun $run) use ($assignments, $publication, $actor, $supervisorContexts, &$stats) {
                 $new = $assignments->get($run->pkpa_enrollment_requirement_id);
                 if (! $new) {
                     $this->log($run, null, 'withdrawn', 'review_required', 'high', 'Assignment tidak lagi ada pada publikasi current.', $actor);
                     $run->update(['publication_sync_status' => 'review_required']);
                     $stats['review_required']++;
+
                     return;
                 }
 
@@ -43,12 +43,14 @@ class PkpaRotationPublicationSyncService
                 if ($changeType === 'none') {
                     $this->log($run, $new, 'none', 'ignored', 'low', 'Tidak ada perubahan operasional.', $actor);
                     $stats['ignored']++;
+
                     return;
                 }
 
                 if (in_array($run->status, ['scheduled', 'ready'], true) || $changeType === 'supervisor') {
-                    $this->apply($run, $publication, $new, $actor, $changeType);
+                    $this->apply($run, $publication, $new, $actor, $changeType, $supervisorContexts[$run->pkpa_enrollment_requirement_id] ?? []);
                     $stats['applied']++;
+
                     return;
                 }
 
@@ -61,7 +63,7 @@ class PkpaRotationPublicationSyncService
         return $stats;
     }
 
-    private function apply(PkpaRotationRun $run, PkpaPlacementPublication $publication, PkpaPublishedAssignment $assignment, ?User $actor, string $changeType): void
+    private function apply(PkpaRotationRun $run, PkpaPlacementPublication $publication, PkpaPublishedAssignment $assignment, ?User $actor, string $changeType, array $supervisorContext = []): void
     {
         $before = $run->only(['current_published_assignment_id', 'practice_site_id', 'scheduled_start_date', 'scheduled_end_date']);
         $run->update([
@@ -75,16 +77,40 @@ class PkpaRotationPublicationSyncService
             'row_version' => $run->row_version + 1,
         ]);
         if (in_array($changeType, ['supervisor', 'site_or_date'], true)) {
-            $this->replaceSupervisors($run->refresh(), $assignment, $actor);
+            $this->replaceSupervisors($run->refresh(), $assignment, $actor, $supervisorContext);
         }
         $this->log($run, $assignment, $changeType, 'applied', 'medium', 'Perubahan publikasi diterapkan ke runtime.', $actor, $before, $run->refresh()->only(array_keys($before)));
         $this->audit->record($actor, 'pkpa_rotation_publication_synced', $run, $before, ['change_type' => $changeType]);
     }
 
-    private function replaceSupervisors(PkpaRotationRun $run, PkpaPublishedAssignment $assignment, ?User $actor): void
+    private function replaceSupervisors(PkpaRotationRun $run, PkpaPublishedAssignment $assignment, ?User $actor, array $context = []): void
     {
-        $run->supervisorHistories()->where('status', 'active')->update(['status' => 'ended', 'active_key' => null, 'updated_by_core_user_id' => $actor?->core_user_id]);
-        foreach ($assignment->supervisors as $supervisor) {
+        $currentByType = $run->supervisorHistories()->where('status', 'active')->get()->keyBy('supervisor_type');
+        $nextByType = $assignment->supervisors->keyBy('supervisor_type');
+
+        foreach ($currentByType->keys()->merge($nextByType->keys())->unique() as $type) {
+            $current = $currentByType->get($type);
+            $supervisor = $nextByType->get($type);
+            if ($current && $supervisor && (string) $current->core_user_id === (string) $supervisor->core_user_id) {
+                continue;
+            }
+
+            $effectiveStart = $type === 'internal' && filled($context['effective_date'] ?? null)
+                ? Carbon::parse($context['effective_date'])
+                : ($run->scheduled_start_date ?: now()->startOfDay());
+            if ($current) {
+                $current->update([
+                    'status' => 'ended',
+                    'active_key' => null,
+                    'effective_end_date' => $effectiveStart->copy()->subDay()->toDateString(),
+                    'change_reason' => $context['reason'] ?? 'Sinkronisasi publikasi current.',
+                    'updated_by_core_user_id' => $actor?->core_user_id,
+                ]);
+            }
+            if (! $supervisor) {
+                continue;
+            }
+
             PkpaRotationSupervisorHistory::create([
                 'pkpa_rotation_run_id' => $run->id,
                 'supervisor_type' => $supervisor->supervisor_type,
@@ -92,11 +118,52 @@ class PkpaRotationPublicationSyncService
                 'name_snapshot' => $supervisor->name_snapshot,
                 'role_snapshot' => $supervisor->role_snapshot,
                 'source_published_assignment_supervisor_id' => $supervisor->id,
-                'effective_start_date' => $run->scheduled_start_date,
+                'effective_start_date' => $effectiveStart->toDateString(),
                 'effective_end_date' => $run->scheduled_end_date,
                 'status' => 'active',
                 'active_key' => 'RUN:'.$run->id.':'.$supervisor->supervisor_type,
-                'change_reason' => 'Sinkronisasi publikasi current.',
+                'change_reason' => $context['reason'] ?? 'Sinkronisasi publikasi current.',
+                'created_by_core_user_id' => $actor?->core_user_id,
+                'updated_by_core_user_id' => $actor?->core_user_id,
+            ]);
+        }
+
+        $this->refreshDependentSupervisorSnapshots($run->refresh(['supervisorHistories']), $actor);
+    }
+
+    private function refreshDependentSupervisorSnapshots(PkpaRotationRun $run, ?User $actor): void
+    {
+        $internal = $run->supervisorHistories->first(fn ($history) => $history->supervisor_type === 'internal' && $history->status === 'active');
+        if (! $internal) {
+            return;
+        }
+
+        $portfolio = $run->currentPortfolio()->first();
+        if ($portfolio && ! in_array($portfolio->status, ['locked', 'published', 'superseded', 'cancelled'], true)) {
+            $snapshot = $portfolio->placement_snapshot ?? [];
+            $snapshot['internal_supervisor'] = $internal->display_name;
+            $snapshot['internal_supervisor_core_user_id'] = $internal->core_user_id;
+            $portfolio->update(['placement_snapshot' => $snapshot]);
+        }
+
+        $assessment = $run->rotationAssessment()->with('assessors.scores')->first();
+        if (! $assessment || in_array($assessment->status, ['submitted', 'finalized', 'locked'], true)) {
+            return;
+        }
+        foreach ($assessment->assessors->where('assessor_type', 'internal_supervisor') as $assessor) {
+            if ((string) $assessor->core_user_id === (string) $internal->core_user_id || $assessor->submitted_at || $assessor->scores->isNotEmpty()) {
+                continue;
+            }
+            $assessor->update(['status' => 'replaced', 'updated_by_core_user_id' => $actor?->core_user_id]);
+            $assessment->assessors()->create([
+                'pkpa_assessment_component_id' => $assessor->pkpa_assessment_component_id,
+                'assessor_type' => 'internal_supervisor',
+                'core_user_id' => $internal->core_user_id,
+                'name_snapshot' => $internal->display_name,
+                'role_snapshot' => $internal->role_snapshot,
+                'source_rotation_supervisor_history_id' => $internal->id,
+                'status' => 'assigned',
+                'assigned_at' => now(),
                 'created_by_core_user_id' => $actor?->core_user_id,
                 'updated_by_core_user_id' => $actor?->core_user_id,
             ]);
