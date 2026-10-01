@@ -6,6 +6,8 @@ use App\Models\KpAssignment;
 use App\Models\KpPeriod;
 use App\Models\KpPlace;
 use App\Models\KpPlaceQuota;
+use App\Models\PkpaAssessmentComponent;
+use App\Models\PkpaAssessmentScheme;
 use App\Models\PkpaEnrollment;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaNotificationDelivery;
@@ -18,7 +20,10 @@ use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
+use App\Models\PkpaRotationAssessment;
+use App\Models\PkpaRotationAssessmentAssessor;
 use App\Models\PkpaRotationAssignment;
+use App\Models\PkpaRotationComponentScore;
 use App\Models\PkpaRotationRun;
 use App\Models\PkpaScheduleAcknowledgement;
 use App\Models\PkpaSiteAvailabilityPeriod;
@@ -506,12 +511,70 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $fieldHistoryIds = $runs->mapWithKeys(fn ($run) => [
             $run->id => $run->supervisorHistories()->where('supervisor_type', 'field')->where('status', 'active')->value('id'),
         ]);
+        $aptAssignment = $assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
+        $aptRun = $runs->firstWhere('pkpa_enrollment_requirement_id', $aptAssignment->pkpa_enrollment_requirement_id);
+        $programDomain = $publication->program->domains()->where('practice_domain_id', $aptAssignment->practice_domain_id)->firstOrFail();
+        $scheme = PkpaAssessmentScheme::create([
+            'pkpa_program_domain_id' => $programDomain->id,
+            'code' => 'APT-TRANSFER-05',
+            'name' => 'Skema Transfer Draf',
+            'status' => 'active',
+            'is_current' => true,
+            'current_key' => 'PROGRAM-DOMAIN:'.$programDomain->id,
+            'require_academic_readiness' => false,
+        ]);
+        $component = PkpaAssessmentComponent::create([
+            'pkpa_assessment_scheme_id' => $scheme->id,
+            'code' => 'PD-TRANSFER',
+            'name' => 'Nilai Pembimbing Dalam',
+            'component_type' => 'internal_supervisor_assessment',
+            'assessor_type' => 'internal_supervisor',
+            'weight_percentage' => 50,
+            'maximum_raw_score' => 100,
+            'status' => 'active',
+        ]);
+        $assessment = PkpaRotationAssessment::create([
+            'pkpa_rotation_run_id' => $aptRun->id,
+            'source_assessment_scheme_id' => $scheme->id,
+            'scheme_code_snapshot' => $scheme->code,
+            'scheme_name_snapshot' => $scheme->name,
+            'scheme_version_snapshot' => 1,
+            'status' => 'in_progress',
+            'completion_status' => 'partially_complete',
+        ]);
+        $oldInternalHistory = $aptRun->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'active')->firstOrFail();
+        $oldAssessor = PkpaRotationAssessmentAssessor::create([
+            'pkpa_rotation_assessment_id' => $assessment->id,
+            'pkpa_assessment_component_id' => $component->id,
+            'assessor_type' => 'internal_supervisor',
+            'core_user_id' => $oldInternalHistory->core_user_id,
+            'name_snapshot' => $oldInternalHistory->name_snapshot,
+            'source_rotation_supervisor_history_id' => $oldInternalHistory->id,
+            'status' => 'in_progress',
+            'assigned_at' => now(),
+        ]);
+        $draftScore = PkpaRotationComponentScore::create([
+            'pkpa_rotation_assessment_id' => $assessment->id,
+            'pkpa_assessment_component_id' => $component->id,
+            'assessor_assignment_id' => $oldAssessor->id,
+            'component_code_snapshot' => $component->code,
+            'component_name_snapshot' => $component->name,
+            'component_type_snapshot' => $component->component_type,
+            'weight_percentage_snapshot' => 50,
+            'calculation_method_snapshot' => 'direct_score',
+            'raw_score' => 75,
+            'normalized_score' => 75,
+            'weighted_score' => 37.5,
+            'status' => 'draft',
+            'comments' => 'Draf dari pembimbing lama.',
+        ]);
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
             ->get("/management/pkpa-publications/{$publication->id}/internal-supervisor-replacement")
             ->assertOk()
             ->assertSee('Alihkan mahasiswa ke dosen pengganti')
             ->assertSee('Pembimbing saat ini')
+            ->assertSee('Nilai draf dialihkan')
             ->assertSee('Pilih semua bimbingan');
 
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
@@ -546,6 +609,20 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertCount(2, $revised);
         $this->assertTrue($revised->every(fn ($assignment) => $assignment->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'internal' && $supervisor->core_user_id === $this->otherSupervisor->core_user_id)));
         $this->assertTrue($assignments->every(fn ($assignment) => $assignment->fresh('supervisors')->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'internal' && $supervisor->core_user_id !== $this->otherSupervisor->core_user_id)), 'Snapshot publikasi lama harus tetap utuh.');
+        $this->assertSame('replaced', $oldAssessor->fresh()->status);
+        $replacementAssessor = $assessment->assessors()->where('assessor_type', 'internal_supervisor')->where('core_user_id', $this->otherSupervisor->core_user_id)->firstOrFail();
+        $this->assertSame('in_progress', $replacementAssessor->status);
+        $this->assertSame($replacementAssessor->id, $draftScore->fresh()->assessor_assignment_id);
+        $this->assertTrue((bool) data_get($draftScore->fresh()->source_summary, 'requires_replacement_supervisor_review'));
+        $this->assertSame($oldAssessor->core_user_id, data_get($draftScore->fresh()->source_summary, 'supervisor_transfer_history.0.from_core_user_id'));
+        $this->actingAs($this->otherSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/penilaian-pkpa')
+            ->assertOk()
+            ->assertSee('Draf dialihkan dari pembimbing sebelumnya');
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get('/pembimbing-dalam/penilaian-pkpa')
+            ->assertOk()
+            ->assertDontSee('Draf dialihkan dari pembimbing sebelumnya');
 
         foreach ($runs as $run) {
             $run->refresh();

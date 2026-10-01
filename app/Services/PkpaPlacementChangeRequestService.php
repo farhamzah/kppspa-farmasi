@@ -57,6 +57,7 @@ class PkpaPlacementChangeRequestService
             $domains = [];
             $oldSupervisors = [];
             $replacementNames = [];
+            $transferredDraftAssessments = 0;
             foreach ($assignments as $assignment) {
                 $oldSupervisor = $assignment->supervisors->firstWhere('supervisor_type', 'internal');
                 if (! $oldSupervisor) {
@@ -73,12 +74,16 @@ class PkpaPlacementChangeRequestService
                         ->where('assessor_type', 'internal_supervisor')
                         ->where('core_user_id', $oldSupervisor->core_user_id)
                         ->whereNull('submitted_at')
-                        ->whereHas('scores'))
+                        ->whereHas('scores', fn ($score) => $score
+                            ->where(function ($draft) {
+                                $draft->where('status', 'draft')
+                                    ->orWhereNotNull('raw_score')
+                                    ->orWhereNotNull('comments')
+                                    ->orWhereNotNull('source_summary');
+                            })))
                     ->exists();
                 if ($partialAssessment) {
-                    throw ValidationException::withMessages([
-                        'assignment_ids' => "Penilaian {$assignment->student_name_snapshot} sedang diisi pembimbing lama. Selesaikan atau batalkan penilaian tersebut sebelum penggantian.",
-                    ]);
+                    $transferredDraftAssessments++;
                 }
 
                 $eligibility = PkpaInternalSupervisorEligibility::query()
@@ -105,6 +110,7 @@ class PkpaPlacementChangeRequestService
                     'internal_supervisor_name' => $eligibility->display_name,
                     'effective_date' => $effectiveDate,
                     'requested_effective_date' => $requestedEffectiveDate,
+                    'transfer_partial_assessment' => $partialAssessment,
                     'notes' => $reason,
                 ], $actor);
                 if ($item->validation_status !== 'valid') {
@@ -124,6 +130,7 @@ class PkpaPlacementChangeRequestService
                 'replacement_core_user_id' => $replacementCoreUserId,
                 'replacement_name' => array_values($replacementNames)[0] ?? null,
                 'requested_effective_date' => $requestedEffectiveDate,
+                'transferred_draft_assessments' => $transferredDraftAssessments,
             ]]);
 
             return $change->fresh(['items.oldAssignment.supervisors']);
@@ -264,6 +271,7 @@ class PkpaPlacementChangeRequestService
                 $supervisorContexts[$item->pkpa_enrollment_requirement_id] = [
                     'effective_date' => $item->proposed_snapshot['effective_date'],
                     'reason' => $request->reason,
+                    'transfer_partial_assessment' => (bool) ($item->proposed_snapshot['transfer_partial_assessment'] ?? false),
                 ];
             }
         }

@@ -31,6 +31,12 @@
             <p class="mt-1">Selesaikan validasi presensi, logbook, portofolio, dan pemeriksaan kesiapan akademik. Form akan terbuka otomatis setelah status menjadi siap dinilai.</p>
         </div>
     @endif
+    @if(data_get($summary, 'requires_replacement_supervisor_review'))
+        <div class="border-b border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:px-5">
+            <p class="font-black">Draf dialihkan dari pembimbing sebelumnya</p>
+            <p class="mt-1">Periksa kembali seluruh skor, komentar, dan rekomendasi. Anda dapat memperbaikinya sebelum menekan Kirim &amp; Kunci.</p>
+        </div>
+    @endif
     <div class="border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>

@@ -17,8 +17,7 @@ class PkpaAssessmentController extends Controller
     public function __construct(
         private readonly PkpaRotationAssessmentService $assessments,
         private readonly PkpaApotekAssessmentService $apotekAssessments
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -26,6 +25,7 @@ class PkpaAssessmentController extends Controller
             'assignments' => PkpaRotationAssessmentAssessor::with(['assessment.scheme', 'assessment.rotationRun.academicReadinessReviews', 'assessment.rotationRun.enrollment', 'assessment.rotationRun.practiceDomain', 'assessment.rotationRun.practiceSite', 'component', 'scores.component'])
                 ->where('assessor_type', 'internal_supervisor')
                 ->where('core_user_id', $request->user()->core_user_id)
+                ->where('status', '!=', 'replaced')
                 ->latest()
                 ->paginate(20),
         ]);

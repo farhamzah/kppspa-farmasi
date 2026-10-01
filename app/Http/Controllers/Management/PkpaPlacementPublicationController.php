@@ -11,6 +11,7 @@ use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaProgram;
 use App\Models\PkpaPublishedAssignment;
+use App\Models\PkpaRotationAssessmentAssessor;
 use App\Models\PkpaSiteFieldSupervisor;
 use App\Services\PkpaPlacementChangeRequestService;
 use App\Services\PkpaPlacementNotificationService;
@@ -155,6 +156,24 @@ class PkpaPlacementPublicationController extends Controller
         abort_unless($publication->is_current && $publication->status === 'published', 404);
 
         $publication->load(['assignments.supervisors', 'assignments.practiceDomain']);
+        $partialAssessmentRequirementIds = PkpaRotationAssessmentAssessor::query()
+            ->where('assessor_type', 'internal_supervisor')
+            ->whereNull('submitted_at')
+            ->whereHas('scores', fn ($query) => $query
+                ->where(function ($score) {
+                    $score->where('status', 'draft')
+                        ->orWhereNotNull('raw_score')
+                        ->orWhereNotNull('comments')
+                        ->orWhereNotNull('source_summary');
+                }))
+            ->whereHas('assessment.rotationRun', fn ($query) => $query
+                ->whereIn('pkpa_enrollment_requirement_id', $publication->assignments->pluck('pkpa_enrollment_requirement_id')))
+            ->with('assessment.rotationRun:id,pkpa_enrollment_requirement_id')
+            ->get()
+            ->pluck('assessment.rotationRun.pkpa_enrollment_requirement_id')
+            ->filter()
+            ->unique()
+            ->values();
         $internalSupervisors = PkpaInternalSupervisorEligibility::query()
             ->with('practiceDomain')
             ->where('pkpa_program_id', $publication->pkpa_program_id)
@@ -169,7 +188,7 @@ class PkpaPlacementPublicationController extends Controller
             ])
             ->values();
 
-        return view('management.pkpa-publications.internal-supervisor-replacement', compact('publication', 'internalSupervisors'));
+        return view('management.pkpa-publications.internal-supervisor-replacement', compact('publication', 'internalSupervisors', 'partialAssessmentRequirementIds'));
     }
 
     public function storeInternalSupervisorReplacement(Request $request, PkpaPlacementPublication $publication): RedirectResponse

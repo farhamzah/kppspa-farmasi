@@ -19,7 +19,7 @@
         <div class="mt-2 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <h2 class="text-2xl font-black text-slate-950">Alihkan mahasiswa ke dosen pengganti</h2>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Persetujuan, komentar, dan penilaian yang sudah dibuat dosen lama tidak dihapus. Sistem hanya mengalihkan tanggung jawab aktif mulai tanggal efektif dan menyimpan revisi publikasi untuk audit.</p>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Persetujuan, komentar, dan penilaian yang sudah dibuat dosen lama tidak dihapus. Form nilai yang masih kosong langsung dialihkan; nilai draf yang sudah berisi diteruskan kepada dosen baru untuk ditinjau sebelum dikirim.</p>
             </div>
             <a href="{{ route('management.pkpa-publications.show', $publication) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Kembali</a>
         </div>
@@ -76,6 +76,7 @@
                             $ongoing = $assignment->start_date?->lte(today()) && $assignment->end_date?->gte(today());
                             $upcoming = $assignment->start_date?->gt(today());
                             $finished = $assignment->end_date?->lt(today());
+                            $hasPartialAssessment = $partialAssessmentRequirementIds->contains($assignment->pkpa_enrollment_requirement_id);
                         @endphp
                         <label class="grid cursor-pointer gap-3 px-5 py-4 hover:bg-slate-50 md:grid-cols-[32px_1.3fr_1fr_1fr_auto] md:items-center">
                             <input type="checkbox" name="assignment_ids[]" value="{{ $assignment->id }}" data-domain="{{ $domainKey }}" class="h-5 w-5 rounded border-slate-300 text-cyan-700" @checked(in_array($assignment->id, old('assignment_ids', []))) @disabled($finished)>
@@ -93,6 +94,7 @@
                             </span>
                             <span class="justify-self-start rounded-full px-3 py-1 text-xs font-bold {{ $ongoing ? 'bg-amber-50 text-amber-700' : ($upcoming ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-600') }}">
                                 {{ $ongoing ? 'Sedang berjalan' : ($upcoming ? 'Belum mulai' : 'Selesai') }}
+                                @if($hasPartialAssessment)<span class="mt-1 block">Nilai draf dialihkan</span>@endif
                             </span>
                         </label>
                     @endforeach
@@ -104,7 +106,7 @@
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <label class="flex items-start gap-3 text-sm text-slate-700">
                     <input type="checkbox" name="confirmation" value="1" class="mt-0.5 h-5 w-5 rounded border-slate-300 text-cyan-700" required>
-                    <span>Saya sudah memeriksa mahasiswa, dosen pengganti, dan tanggal serah terima.</span>
+                    <span>Saya sudah memeriksa mahasiswa, dosen pengganti, dan tanggal serah terima. Saya memahami nilai draf akan diteruskan kepada dosen baru untuk ditinjau, bukan dianggap sebagai nilai final.</span>
                 </label>
                 <button class="min-h-12 rounded-xl bg-cyan-700 px-6 py-3 text-sm font-black text-white">Tinjau Penggantian</button>
             </div>

@@ -128,10 +128,10 @@ class PkpaRotationPublicationSyncService
             ]);
         }
 
-        $this->refreshDependentSupervisorSnapshots($run->refresh(['supervisorHistories']), $actor);
+        $this->refreshDependentSupervisorSnapshots($run->refresh(['supervisorHistories']), $actor, $context);
     }
 
-    private function refreshDependentSupervisorSnapshots(PkpaRotationRun $run, ?User $actor): void
+    private function refreshDependentSupervisorSnapshots(PkpaRotationRun $run, ?User $actor, array $context = []): void
     {
         $internal = $run->supervisorHistories->first(fn ($history) => $history->supervisor_type === 'internal' && $history->status === 'active');
         if (! $internal) {
@@ -151,22 +151,63 @@ class PkpaRotationPublicationSyncService
             return;
         }
         foreach ($assessment->assessors->where('assessor_type', 'internal_supervisor') as $assessor) {
-            if ((string) $assessor->core_user_id === (string) $internal->core_user_id || $assessor->submitted_at || $assessor->scores->isNotEmpty()) {
+            if ((string) $assessor->core_user_id === (string) $internal->core_user_id || $assessor->submitted_at) {
                 continue;
             }
-            $assessor->update(['status' => 'replaced', 'updated_by_core_user_id' => $actor?->core_user_id]);
-            $assessment->assessors()->create([
+
+            $scores = $assessor->scores->filter(fn ($score) => ! in_array($score->status, ['submitted', 'approved', 'locked'], true));
+            $hasDraftContent = $scores->contains(fn ($score) => $score->status === 'draft'
+                || filled($score->raw_score)
+                || filled($score->comments)
+                || filled($score->source_summary));
+            if ($hasDraftContent && ! ($context['transfer_partial_assessment'] ?? false)) {
+                continue;
+            }
+
+            $newAssessor = $assessment->assessors()->firstOrCreate([
                 'pkpa_assessment_component_id' => $assessor->pkpa_assessment_component_id,
                 'assessor_type' => 'internal_supervisor',
                 'core_user_id' => $internal->core_user_id,
+            ], [
+                'pkpa_assessment_component_id' => $assessor->pkpa_assessment_component_id,
                 'name_snapshot' => $internal->display_name,
                 'role_snapshot' => $internal->role_snapshot,
                 'source_rotation_supervisor_history_id' => $internal->id,
-                'status' => 'assigned',
+                'status' => $hasDraftContent ? 'in_progress' : 'assigned',
                 'assigned_at' => now(),
                 'created_by_core_user_id' => $actor?->core_user_id,
                 'updated_by_core_user_id' => $actor?->core_user_id,
             ]);
+            $assessor->update(['status' => 'replaced', 'updated_by_core_user_id' => $actor?->core_user_id]);
+
+            foreach ($scores as $score) {
+                $before = $score->only(['assessor_assignment_id', 'status', 'raw_score', 'source_summary']);
+                $summary = $score->source_summary ?? [];
+                if ($hasDraftContent) {
+                    $history = $summary['supervisor_transfer_history'] ?? [];
+                    $history[] = [
+                        'from_core_user_id' => $assessor->core_user_id,
+                        'from_name' => $assessor->name_snapshot,
+                        'to_core_user_id' => $internal->core_user_id,
+                        'to_name' => $internal->display_name,
+                        'transferred_at' => now()->toIso8601String(),
+                        'transferred_by_core_user_id' => $actor?->core_user_id,
+                        'reason' => $context['reason'] ?? 'Penggantian Pembimbing Dalam.',
+                    ];
+                    $summary['supervisor_transfer_history'] = $history;
+                    $summary['requires_replacement_supervisor_review'] = true;
+                }
+                $score->update([
+                    'assessor_assignment_id' => $newAssessor->id,
+                    'source_summary' => $summary ?: null,
+                    'updated_by_core_user_id' => $actor?->core_user_id,
+                ]);
+                $this->audit->record($actor, 'pkpa_assessment_draft_transferred', $score, $before, [
+                    'assessor_assignment_id' => $newAssessor->id,
+                    'from_core_user_id' => $assessor->core_user_id,
+                    'to_core_user_id' => $internal->core_user_id,
+                ]);
+            }
         }
     }
 

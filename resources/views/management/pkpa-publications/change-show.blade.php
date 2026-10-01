@@ -91,6 +91,12 @@
                             <div class="rounded-xl bg-cyan-50 p-3 text-sm"><p class="text-xs font-black uppercase text-cyan-700">Pembimbing baru</p><p class="mt-2 font-bold text-cyan-950">{{ data_get($item->proposed_snapshot, 'internal_supervisor_name', '-') }}</p></div>
                             <div class="rounded-xl bg-amber-50 p-3 text-sm"><p class="text-xs font-black uppercase text-amber-700">Efektif</p><p class="mt-2 font-bold text-amber-950">{{ \Illuminate\Support\Carbon::parse(data_get($item->proposed_snapshot, 'effective_date'))->format('d M Y') }}</p></div>
                         </div>
+                        @if(data_get($item->proposed_snapshot, 'transfer_partial_assessment'))
+                            <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <p class="font-black">Nilai draf ikut dialihkan</p>
+                                <p class="mt-1">Isi draf dari pembimbing lama tetap tersimpan beserta riwayat pembuatnya. Pembimbing baru harus meninjau sebelum mengirim dan mengunci nilai.</p>
+                            </div>
+                        @endif
                     @else
                         <div class="mt-3 grid gap-3 md:grid-cols-2">
                             <div class="rounded-xl bg-slate-50 p-3 text-sm"><p class="font-black text-slate-700">Sebelum</p><pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ json_encode($item->before_snapshot, JSON_PRETTY_PRINT) }}</pre></div>
