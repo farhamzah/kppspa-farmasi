@@ -199,14 +199,61 @@
     </section>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">Kemajuan</h2>
-        <ul class="mt-3 space-y-2 text-sm text-slate-700">
-            @forelse(data_get($portfolio->progress_snapshot, 'blocking', []) as $item)
-                <li class="rounded-2xl bg-amber-50 px-4 py-3 font-semibold text-amber-800">{{ $item }}</li>
-            @empty
-                <li class="rounded-2xl bg-emerald-50 px-4 py-3 font-semibold text-emerald-800">Siap dikirim.</li>
-            @endforelse
-        </ul>
+        @php
+            $readinessChecks = collect(data_get($portfolio->progress_snapshot, 'checks', []));
+            $pendingChecks = $readinessChecks->where('status', '!=', 'complete');
+        @endphp
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h2 class="text-lg font-black text-slate-950">Pemeriksaan Kelengkapan</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-600">Bagian ini menunjukkan apa yang masih kurang dan siapa yang perlu menindaklanjuti.</p>
+            </div>
+            <span class="w-fit rounded-full px-3 py-1 text-xs font-black {{ $pendingChecks->isEmpty() ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">
+                {{ $pendingChecks->isEmpty() ? 'Siap dikirim' : $pendingChecks->count().' perlu ditindaklanjuti' }}
+            </span>
+        </div>
+
+        @if($pendingChecks->isNotEmpty())
+            <div class="mt-4 space-y-3">
+                @foreach($pendingChecks as $check)
+                    @php
+                        $isSetupIssue = data_get($check, 'status') === 'setup_required';
+                    @endphp
+                    <article class="rounded-2xl border px-4 py-4 {{ $isSetupIssue ? 'border-sky-200 bg-sky-50' : 'border-amber-200 bg-amber-50' }}">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="font-black {{ $isSetupIssue ? 'text-sky-950' : 'text-amber-950' }}">{{ data_get($check, 'title') }}</h3>
+                                <p class="mt-1 text-sm leading-6 {{ $isSetupIssue ? 'text-sky-800' : 'text-amber-800' }}">{{ data_get($check, 'summary') }}</p>
+                            </div>
+                            <span class="w-fit rounded-full bg-white px-3 py-1 text-xs font-black {{ $isSetupIssue ? 'text-sky-700' : 'text-amber-700' }}">Tindak lanjut: {{ data_get($check, 'owner') }}</span>
+                        </div>
+                        <p class="mt-3 border-t pt-3 text-sm font-semibold {{ $isSetupIssue ? 'border-sky-200 text-sky-900' : 'border-amber-200 text-amber-900' }}">{{ data_get($check, 'action') }}</p>
+                    </article>
+                @endforeach
+            </div>
+        @elseif(data_get($portfolio->progress_snapshot, 'ready_to_submit'))
+            <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+                <p class="font-black">Portofolio siap dikirim</p>
+                <p class="mt-1">Seluruh persyaratan utama telah terpenuhi. Periksa preview isian sebelum mengirim.</p>
+            </div>
+        @endif
+
+        @php
+            $otherBlockingItems = collect(data_get($portfolio->progress_snapshot, 'blocking', []))
+                ->reject(function ($item) {
+                    return str($item)->contains(['Logbook', 'kompetensi', 'Refleksi']);
+                });
+        @endphp
+        @if($otherBlockingItems->isNotEmpty())
+            <div class="mt-4 border-t border-slate-200 pt-4">
+                <p class="text-xs font-black uppercase tracking-wide text-slate-500">Bagian portofolio lainnya</p>
+                <ul class="mt-2 space-y-2 text-sm text-slate-700">
+                    @foreach($otherBlockingItems as $item)
+                        <li class="rounded-xl bg-slate-50 px-4 py-3 font-semibold">{{ $item }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </section>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">

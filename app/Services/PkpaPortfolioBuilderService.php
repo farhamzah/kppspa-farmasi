@@ -614,24 +614,69 @@ class PkpaPortfolioBuilderService
     {
         $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems', 'rotationRun.logbookEntries', 'rotationRun.attendanceRecords', 'rotationRun.competencyRecords', 'rotationRun.specialTasks', 'rotationRun.rotationReport', 'rotationRun.gradeResults', 'reviews']);
         $blocking = [];
+        $checks = [];
         if (! $portfolio->integrity_acknowledged_at) {
             $blocking[] = 'Pakta integritas belum disetujui.';
         }
-        if ($portfolio->rotationRun->logbookEntries->where('status', 'internal_approved')->isEmpty()) {
-            $blocking[] = 'Logbook rotasi belum tersedia.';
+        $logbookTotal = $portfolio->rotationRun->logbookEntries->count();
+        $logbookApproved = $portfolio->rotationRun->logbookEntries->where('status', 'internal_approved')->count();
+        if ($logbookApproved === 0) {
+            $blocking[] = $logbookTotal > 0
+                ? "Logbook belum mendapat validasi akhir Pembimbing Dalam ({$logbookApproved} dari {$logbookTotal} disetujui)."
+                : 'Belum ada logbook yang dikirim.';
         }
+        $checks[] = [
+            'key' => 'logbook',
+            'title' => 'Logbook',
+            'status' => $logbookApproved > 0 ? 'complete' : 'action_required',
+            'summary' => $logbookTotal === 0
+                ? 'Belum ada logbook yang dikirim.'
+                : ($logbookApproved > 0
+                    ? "{$logbookApproved} dari {$logbookTotal} logbook telah disetujui Pembimbing Dalam."
+                    : "{$logbookTotal} logbook sudah tercatat, tetapi belum ada yang disetujui Pembimbing Dalam."),
+            'owner' => $logbookTotal === 0 ? 'Mahasiswa' : 'Pembimbing Dalam',
+            'action' => $logbookTotal === 0
+                ? 'Buat dan kirim logbook kegiatan.'
+                : ($logbookApproved > 0 ? 'Tidak ada tindakan.' : 'Pembimbing Dalam perlu membuka antrean logbook dan memberikan validasi akhir.'),
+        ];
         if ($portfolio->rotationRun->attendanceRecords->isEmpty()) {
             $blocking[] = 'Presensi rotasi belum tersedia.';
         }
         if ($portfolio->rotationRun->competencyRecords->isEmpty()) {
-            $blocking[] = 'Kompetensi wajib belum tersedia.';
+            $blocking[] = 'Daftar kompetensi belum disiapkan oleh pengelola.';
         }
+        $competencyTotal = $portfolio->rotationRun->competencyRecords->count();
+        $competencyVerified = $portfolio->rotationRun->competencyRecords->where('status', 'verified')->count();
+        $checks[] = [
+            'key' => 'competency',
+            'title' => 'Kompetensi',
+            'status' => $competencyTotal > 0 ? 'complete' : 'setup_required',
+            'summary' => $competencyTotal > 0
+                ? "{$competencyVerified} dari {$competencyTotal} kompetensi telah terverifikasi."
+                : 'Data kompetensi belum disiapkan untuk rotasi ini.',
+            'owner' => $competencyTotal > 0 ? 'Tidak ada' : 'Koordinator PKPA',
+            'action' => $competencyTotal > 0
+                ? 'Tidak ada tindakan.'
+                : 'Koordinator perlu menyiapkan daftar kompetensi. Mahasiswa tidak perlu mengulang isian portofolio.',
+        ];
         if ($portfolio->caseReports->where('status', 'completed')->count() < 1) {
             $blocking[] = 'Minimal satu studi kasus wajib lengkap.';
         }
-        if ($portfolio->weeklyReflections->where('status', 'completed')->count() < $this->requiredReflectionCount($portfolio->rotationRun)) {
-            $blocking[] = 'Refleksi mingguan belum memenuhi durasi rotasi.';
+        $reflectionCompleted = $portfolio->weeklyReflections->where('status', 'completed')->count();
+        $reflectionRequired = $this->requiredReflectionCount($portfolio->rotationRun);
+        if ($reflectionCompleted < $reflectionRequired) {
+            $blocking[] = "Refleksi mingguan belum lengkap ({$reflectionCompleted} dari {$reflectionRequired} selesai).";
         }
+        $checks[] = [
+            'key' => 'reflection',
+            'title' => 'Refleksi mingguan',
+            'status' => $reflectionCompleted >= $reflectionRequired ? 'complete' : 'action_required',
+            'summary' => "{$reflectionCompleted} dari {$reflectionRequired} refleksi telah selesai.",
+            'owner' => $reflectionCompleted >= $reflectionRequired ? 'Tidak ada' : 'Mahasiswa',
+            'action' => $reflectionCompleted >= $reflectionRequired
+                ? 'Tidak ada tindakan.'
+                : 'Tambahkan refleksi untuk minggu yang belum terisi.',
+        ];
         if ($portfolio->selfAssessments->where('status', 'completed')->isEmpty()) {
             $blocking[] = 'Penilaian Diri belum diisi.';
         }
@@ -678,6 +723,7 @@ class PkpaPortfolioBuilderService
         return [
             'ready_to_submit' => $blocking === [],
             'blocking' => $blocking,
+            'checks' => $checks,
             'counts' => [
                 'sections' => $completedManualSections,
                 'cases' => $portfolio->caseReports->where('status', 'completed')->count(),

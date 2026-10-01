@@ -118,6 +118,43 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $service->submit($portfolio->fresh(), $this->student);
     }
 
+    public function test_student_completeness_explains_counts_and_the_responsible_person(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('APT', '14UX');
+        $run->update([
+            'scheduled_start_date' => '2026-09-01',
+            'scheduled_end_date' => '2026-10-02',
+        ]);
+        $run->logbookEntries()->update(['status' => 'field_approved']);
+        $run->competencyRecords()->delete();
+        $portfolio = $service->ensureForRun($run->fresh(), $this->admin);
+        foreach (range(1, 4) as $week) {
+            $service->saveReflection($portfolio->fresh(), [
+                'week_number' => $week,
+                'achievement' => 'Refleksi minggu '.$week,
+            ], $this->student);
+        }
+
+        $progress = $service->completeness($portfolio->fresh());
+        $this->assertSame('Pembimbing Dalam', collect($progress['checks'])->firstWhere('key', 'logbook')['owner']);
+        $this->assertSame('Koordinator PKPA', collect($progress['checks'])->firstWhere('key', 'competency')['owner']);
+        $this->assertSame('Mahasiswa', collect($progress['checks'])->firstWhere('key', 'reflection')['owner']);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Pemeriksaan Kelengkapan')
+            ->assertSee('1 logbook sudah tercatat, tetapi belum ada yang disetujui Pembimbing Dalam.')
+            ->assertSee('Tindak lanjut: Pembimbing Dalam')
+            ->assertSee('Data kompetensi belum disiapkan untuk rotasi ini.')
+            ->assertSee('Tindak lanjut: Koordinator PKPA')
+            ->assertSee('4 dari 5 refleksi telah selesai.')
+            ->assertSee('Tindak lanjut: Mahasiswa')
+            ->assertDontSee('Logbook rotasi belum tersedia.')
+            ->assertDontSee('Kompetensi wajib belum tersedia.');
+    }
+
     public function test_privacy_authorization_review_publication_and_exports_work(): void
     {
         $service = app(PkpaPortfolioBuilderService::class);
