@@ -60,4 +60,31 @@ class PkpaCoreResolverNormalizationTest extends TestCase
         $this->assertSame('andi@ubpkarawang.ac.id', $normalized['email']);
         $this->assertSame('231001', $normalized['student_number']);
     }
+
+    public function test_field_supervisor_normalize_prefers_titled_external_person_profile(): void
+    {
+        $resolver = app(PkpaSupervisorCoreResolver::class);
+
+        $normalized = $resolver->normalize([
+            'user' => [
+                'id' => 88,
+                'name' => 'Chindy Dwi Martinah',
+                'email' => 'chindy@preseptor.safaubp.com',
+                'active' => true,
+                'roles' => [['slug' => 'pembimbing-lapangan']],
+            ],
+            'profiles' => [
+                'external_person' => [
+                    'name' => 'Chindy Dwi Martinah',
+                    'front_title' => 'apt.',
+                    'back_title' => 'S.Farm.',
+                    'display_name_with_title' => 'apt. Chindy Dwi Martinah, S.Farm.',
+                ],
+            ],
+        ]);
+
+        $this->assertSame('88', $normalized['core_user_id']);
+        $this->assertSame('apt. Chindy Dwi Martinah, S.Farm.', $normalized['name']);
+        $this->assertSame('chindy@preseptor.safaubp.com', $normalized['email']);
+    }
 }

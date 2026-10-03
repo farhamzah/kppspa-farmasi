@@ -25,6 +25,7 @@ use App\Console\Commands\ReleaseCandidateGateCommand;
 use App\Console\Commands\ReleaseSensitiveScanCommand;
 use App\Console\Commands\ReopenPkpaPortfolioCommand;
 use App\Console\Commands\RepairPkpaRotationDatesCommand;
+use App\Console\Commands\RevisePkpaPbfPlacement2026Command;
 use App\Console\Commands\SafaPublicInfoPreviewCommand;
 use App\Console\Commands\SetupPkpaApotekAssessmentCommand;
 use App\Console\Commands\StagingRehearsalCheckCommand;
@@ -72,6 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
         PkpaIntegrityAuditCommand::class,
         PkpaQueueHealthCommand::class,
         RepairPkpaRotationDatesCommand::class,
+        RevisePkpaPbfPlacement2026Command::class,
         ReopenPkpaPortfolioCommand::class,
         SetupPkpaApotekAssessmentCommand::class,
         ProvisionCoreBridgeUserCommand::class,

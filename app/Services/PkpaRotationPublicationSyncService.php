@@ -134,6 +134,7 @@ class PkpaRotationPublicationSyncService
     private function refreshDependentSupervisorSnapshots(PkpaRotationRun $run, ?User $actor, array $context = []): void
     {
         $internal = $run->supervisorHistories->first(fn ($history) => $history->supervisor_type === 'internal' && $history->status === 'active');
+        $field = $run->supervisorHistories->first(fn ($history) => $history->supervisor_type === 'field' && $history->status === 'active');
         if (! $internal) {
             return;
         }
@@ -141,8 +142,12 @@ class PkpaRotationPublicationSyncService
         $portfolio = $run->currentPortfolio()->first();
         if ($portfolio && ! in_array($portfolio->status, ['locked', 'published', 'superseded', 'cancelled'], true)) {
             $snapshot = $portfolio->placement_snapshot ?? [];
+            $snapshot['practice_site'] = $run->practiceSite?->name;
+            $snapshot['address'] = $run->practiceSite?->address;
             $snapshot['internal_supervisor'] = $internal->display_name;
             $snapshot['internal_supervisor_core_user_id'] = $internal->core_user_id;
+            $snapshot['field_supervisor'] = $field?->display_name;
+            $snapshot['field_supervisor_core_user_id'] = $field?->core_user_id;
             $portfolio->update(['placement_snapshot' => $snapshot]);
         }
 

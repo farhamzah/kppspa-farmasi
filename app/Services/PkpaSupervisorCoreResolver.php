@@ -2,14 +2,15 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Collection;
+
 class PkpaSupervisorCoreResolver
 {
     private const INTERNAL_ROLES = ['pembimbing_dalam', 'dosen', 'lecturer', 'academic', 'faculty'];
+
     private const FIELD_ROLES = ['pembimbing_lapangan', 'field_supervisor', 'preseptor', 'preceptor'];
 
-    public function __construct(private readonly CoreFarmasiClient $coreClient)
-    {
-    }
+    public function __construct(private readonly CoreFarmasiClient $coreClient) {}
 
     public function resolveInternal(array $criteria): array
     {
@@ -77,14 +78,15 @@ class PkpaSupervisorCoreResolver
         $profiles = is_array($person['profiles'] ?? null) ? $person['profiles'] : [];
         $lecturerProfile = is_array($profiles['lecturer'] ?? null) ? $profiles['lecturer'] : [];
         $employeeProfile = is_array($profiles['employee'] ?? null) ? $profiles['employee'] : [];
+        $externalProfile = is_array($profiles['external_person'] ?? null) ? $profiles['external_person'] : [];
         $roles = $this->collectRoles($person, $user);
 
         return [
             'core_user_id' => $this->extractCoreUserId($person, $user),
-            'name' => $this->extractDisplayName($person, $user, $lecturerProfile, $employeeProfile),
+            'name' => $this->extractDisplayName($person, $user, $lecturerProfile, $employeeProfile, $externalProfile),
             'email' => $user['email'] ?? $person['email'] ?? null,
             'lecturer_id' => $lecturerProfile['nidn'] ?? $lecturerProfile['nidn_nidk'] ?? $lecturerProfile['nidk'] ?? $lecturerProfile['lecturer_number'] ?? $employeeProfile['employee_number'] ?? $person['nidn'] ?? $person['nidn_nidk'] ?? $person['nidk'] ?? $person['lecturer_id'] ?? $person['employee_number'] ?? null,
-            'professional_id' => $employeeProfile['professional_id'] ?? $employeeProfile['license_number'] ?? $employeeProfile['str_number'] ?? $employeeProfile['employee_number'] ?? $person['professional_id'] ?? $person['license_number'] ?? $person['str_number'] ?? $person['employee_number'] ?? null,
+            'professional_id' => $externalProfile['professional_id'] ?? $externalProfile['identity_number'] ?? $employeeProfile['professional_id'] ?? $employeeProfile['license_number'] ?? $employeeProfile['str_number'] ?? $employeeProfile['employee_number'] ?? $person['professional_id'] ?? $person['license_number'] ?? $person['str_number'] ?? $person['employee_number'] ?? null,
             'account_status' => (($person['active'] ?? $user['active'] ?? true) === true) ? 'active' : 'inactive',
             'roles' => $roles,
             'role_snapshot' => $this->roleSnapshot($roles),
@@ -121,7 +123,7 @@ class PkpaSupervisorCoreResolver
             ->contains(fn ($role) => in_array($role, $this->normalizeRoles($allowed)->all(), true));
     }
 
-    private function normalizeRoles(array $roles): \Illuminate\Support\Collection
+    private function normalizeRoles(array $roles): Collection
     {
         return collect($roles)
             ->map(fn ($role) => is_array($role) ? ($role['slug'] ?? $role['name'] ?? $role['code'] ?? null) : $role)
@@ -138,8 +140,8 @@ class PkpaSupervisorCoreResolver
                 $accessRoles = data_get($source, 'app_access.roles', []);
 
                 return array_values(array_filter([
-                    ... (is_array($roles) ? $roles : []),
-                    ... (is_array($accessRoles) ? $accessRoles : []),
+                    ...(is_array($roles) ? $roles : []),
+                    ...(is_array($accessRoles) ? $accessRoles : []),
                 ]));
             })
             ->values()
@@ -154,7 +156,7 @@ class PkpaSupervisorCoreResolver
             ->implode(',');
     }
 
-    private function extractDisplayName(array $person, array $user, array $lecturerProfile = [], array $employeeProfile = []): ?string
+    private function extractDisplayName(array $person, array $user, array $lecturerProfile = [], array $employeeProfile = [], array $externalProfile = []): ?string
     {
         foreach ([
             $lecturerProfile['display_name_with_title'] ?? null,
@@ -163,6 +165,9 @@ class PkpaSupervisorCoreResolver
             $employeeProfile['display_name_with_title'] ?? null,
             $employeeProfile['formal_name'] ?? null,
             $this->composeTitledName($employeeProfile['front_title'] ?? null, $employeeProfile['name'] ?? $employeeProfile['employee_name'] ?? null, $employeeProfile['back_title'] ?? null),
+            $externalProfile['display_name_with_title'] ?? null,
+            $externalProfile['formal_name'] ?? null,
+            $this->composeTitledName($externalProfile['front_title'] ?? null, $externalProfile['name'] ?? null, $externalProfile['back_title'] ?? null),
             $user['display_name_with_title'] ?? null,
             $user['formal_name'] ?? null,
             $this->composeTitledName($user['front_title'] ?? null, $user['name'] ?? null, $user['back_title'] ?? null),
@@ -190,7 +195,7 @@ class PkpaSupervisorCoreResolver
             return null;
         }
 
-        $front = filled($frontTitle) ? rtrim(trim((string) $frontTitle), '., ') . '.' : null;
+        $front = filled($frontTitle) ? rtrim(trim((string) $frontTitle), '., ').'.' : null;
         $back = filled($backTitle) ? trim((string) $backTitle) : null;
 
         return collect([$front, $name, $back])->filter(fn ($value) => filled($value))->implode(' ');
