@@ -868,13 +868,18 @@ class PkpaPortfolioBuilderService
             if ($unit === 'weeks' && is_numeric($value) && (float) $value > 0) {
                 return max(1, (int) ceil((float) $value));
             }
+            if ($unit === 'calendar_days' && is_numeric($value) && (float) $value > 0) {
+                return max(1, (int) floor((float) $value / 7));
+            }
         }
 
         if (! $run->scheduled_start_date || ! $run->scheduled_end_date) {
             return 1;
         }
 
-        return max(1, (int) ceil($run->scheduled_start_date->diffInDays($run->scheduled_end_date) / 7));
+        $inclusiveDays = $run->scheduled_start_date->diffInDays($run->scheduled_end_date) + 1;
+
+        return max(1, (int) floor($inclusiveDays / 7));
     }
 
     private function publicationSnapshot(PkpaRotationPortfolio $portfolio): array

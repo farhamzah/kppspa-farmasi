@@ -127,8 +127,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             'scheduled_end_date' => '2026-10-02',
         ]);
         $run->currentAssignment()->update([
-            'duration_value_snapshot' => 4,
-            'duration_unit_snapshot' => 'weeks',
+            'duration_value_snapshot' => 32,
+            'duration_unit_snapshot' => 'calendar_days',
         ]);
         $run->logbookEntries()->update(['status' => 'field_approved']);
         $run->competencyRecords()->delete();
