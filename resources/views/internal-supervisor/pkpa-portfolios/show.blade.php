@@ -23,6 +23,9 @@
                     : ($isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections()
                         : ($isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : []))))));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
+    $canReview = $portfolio->status === 'submitted_to_internal_supervisor';
+    $isComplete = (bool) data_get($portfolio->progress_snapshot, 'ready_to_submit', false);
+    $blockingNotes = data_get($portfolio->progress_snapshot, 'blocking', []);
 @endphp
 <div class="space-y-6">
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -41,17 +44,31 @@
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-black text-slate-950">Refleksi dan Penilaian Diri</h2>
         <p class="mt-2 text-sm text-slate-600">Refleksi: {{ $portfolio->weeklyReflections->count() }}. Penilaian diri: {{ $portfolio->selfAssessments->count() }}. Gunakan catatan revisi bila mahasiswa masih perlu melengkapi isi portofolio.</p>
-        <div class="mt-4 flex flex-wrap gap-3">
-            <form method="POST" action="{{ route('internal-supervisor.pkpa-portfolios.approve', $portfolio) }}">
-                @csrf
-                <button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Setujui</button>
-            </form>
+        @if($canReview)
+            @unless($isComplete)
+                <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    <p class="font-black">Belum dapat disetujui</p>
+                    <p class="mt-1">Masih ada {{ count($blockingNotes) }} bagian yang perlu diselesaikan. Gunakan <strong>Minta Revisi</strong> agar mahasiswa dapat memperbaiki isian.</p>
+                </div>
+            @endunless
+            <div class="mt-4 flex flex-wrap gap-3">
+            @if($isComplete)
+                <form method="POST" action="{{ route('internal-supervisor.pkpa-portfolios.approve', $portfolio) }}">
+                    @csrf
+                    <button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Setujui Portofolio</button>
+                </form>
+            @endif
             <form method="POST" action="{{ route('internal-supervisor.pkpa-portfolios.revision', $portfolio) }}" class="flex flex-wrap gap-3">
                 @csrf
                 <input name="comments" placeholder="Catatan revisi" class="rounded-2xl border-slate-200 text-sm" required>
                 <button class="rounded-2xl bg-amber-600 px-4 py-3 text-sm font-bold text-white">Minta Revisi</button>
             </form>
-        </div>
+            </div>
+        @else
+            <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                Portofolio ini tidak sedang menunggu pemeriksaan Pembimbing Dalam. Isinya tetap dapat dibaca, tetapi tindakan pemeriksaan tidak tersedia pada status <strong>{{ $portfolio->statusLabel() }}</strong>.
+            </div>
+        @endif
     </section>
 
     @if($isApotek || $isPbf || $isHospital || $isIndustry || $isPuskesmas || $isHealthOffice || $isLokaPom)

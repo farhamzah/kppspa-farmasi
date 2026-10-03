@@ -188,6 +188,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertSame('submitted_to_field_supervisor', $submitted->status);
         $service->review($submitted->fresh(), 'field', 'revision_requested', 'Perbaiki narasi kasus.', $this->fieldSupervisor);
         $this->assertSame('field_revision_requested', $submitted->fresh()->status);
+        $service->submit($submitted->fresh(), $this->student);
         $service->review($submitted->fresh(), 'field', 'verify', 'Sudah sesuai.', $this->fieldSupervisor);
         $this->assertSame('field_verified', $submitted->fresh()->status);
         $service->submitToInternal($submitted->fresh(), $this->student);
@@ -195,6 +196,49 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertSame('approved', $submitted->fresh()->status);
         $this->expectException(ValidationException::class);
         $service->reopen($submitted->fresh(), '', $this->koordinator);
+    }
+
+    public function test_incomplete_portfolio_cannot_be_verified_and_coordinator_can_reopen_it(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->run, $this->admin);
+        $portfolio->update(['status' => 'submitted_to_field_supervisor']);
+
+        try {
+            $service->review($portfolio->fresh(), 'field', 'verify', 'Terlihat cukup.', $this->fieldSupervisor);
+            $this->fail('Incomplete portfolio must not be verified.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('belum lengkap', strtolower($exception->getMessage()));
+        }
+
+        $portfolio->update([
+            'status' => 'field_verified',
+            'field_verified_at' => now(),
+            'field_verified_by_core_user_id' => $this->fieldSupervisor->core_user_id,
+        ]);
+
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()
+            ->assertSee('Isian sedang dikunci')
+            ->assertSee('[data-portfolio-edit-form]{display:none!important}', false);
+
+        $service->reopen($portfolio->fresh(), 'Terverifikasi sebelum lengkap.', $this->koordinator);
+        $portfolio->refresh();
+
+        $this->assertSame('in_progress', $portfolio->status);
+        $this->assertNull($portfolio->field_verified_at);
+        $this->assertDatabaseHas('pkpa_portfolio_reviews', [
+            'pkpa_rotation_portfolio_id' => $portfolio->id,
+            'reviewer_type' => 'coordinator',
+            'action' => 'reopen',
+        ]);
+
+        $service->saveReflection($portfolio, [
+            'week_number' => 1,
+            'achievement' => 'Mahasiswa dapat melanjutkan pengisian.',
+        ], $this->student);
+        $this->assertSame(1, $portfolio->weeklyReflections()->count());
     }
 
     public function test_student_can_save_more_than_five_drugs_in_case_report(): void

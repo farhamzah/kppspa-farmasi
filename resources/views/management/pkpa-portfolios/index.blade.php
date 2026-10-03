@@ -42,7 +42,22 @@
                             <td class="p-3">{{ data_get($portfolio->placement_snapshot, 'practice_site', '-') }}</td>
                             <td class="p-3">{{ $portfolio->statusLabel() }}</td>
                             <td class="p-3">{{ count(data_get($portfolio->progress_snapshot, 'blocking', [])) }} catatan</td>
-                            <td class="p-3"><div class="flex flex-wrap gap-2"><form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'docx']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh DOCX</button></form><form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'pdf']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh PDF</button></form><form method="POST" action="{{ route('management.pkpa-portfolios.publish', $portfolio) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Terbitkan</button></form></div></td>
+                            <td class="p-3">
+                                <div class="flex flex-wrap gap-2">
+                                    <form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'docx']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh DOCX</button></form>
+                                    <form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'pdf']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh PDF</button></form>
+                                    @if($portfolio->status === 'approved')
+                                        <form method="POST" action="{{ route('management.pkpa-portfolios.publish', $portfolio) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Terbitkan</button></form>
+                                    @endif
+                                </div>
+                                @if(! in_array($portfolio->status, ['draft', 'in_progress', 'field_revision_requested', 'internal_revision_requested', 'published', 'superseded', 'cancelled'], true))
+                                    <form method="POST" action="{{ route('management.pkpa-portfolios.reopen', $portfolio) }}" class="mt-2 flex min-w-72 gap-2">
+                                        @csrf
+                                        <input name="reason" required maxlength="1000" placeholder="Alasan dibuka ulang" class="min-w-0 flex-1 rounded-xl border-slate-200 text-xs">
+                                        <button class="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">Buka Ulang</button>
+                                    </form>
+                                @endif
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

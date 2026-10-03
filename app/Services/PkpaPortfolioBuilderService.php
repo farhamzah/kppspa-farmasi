@@ -125,6 +125,7 @@ class PkpaPortfolioBuilderService
     public function acknowledgeIntegrity(PkpaRotationPortfolio $portfolio, User $actor): PkpaRotationPortfolio
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
         $portfolio->update([
             'integrity_acknowledged_at' => now(),
             'integrity_acknowledged_by_core_user_id' => $actor->core_user_id,
@@ -199,6 +200,7 @@ class PkpaPortfolioBuilderService
     public function saveSectionRecord(PkpaRotationPortfolio $portfolio, string $sectionCode, array $payload, User $actor)
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
 
         $record = $portfolio->sectionRecords()
             ->with('templateSection')
@@ -343,6 +345,7 @@ class PkpaPortfolioBuilderService
     public function saveCase(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioCaseReport
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
         $data = $this->textFormatter->normalize($data);
         $data['drug_data'] = collect($data['drug_data'] ?? [])
             ->filter(fn (mixed $drug): bool => is_array($drug) && collect($drug)->contains(fn (mixed $value): bool => filled($value)))
@@ -373,6 +376,7 @@ class PkpaPortfolioBuilderService
     public function saveReflection(PkpaRotationPortfolio $portfolio, array $data, User $actor)
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
         $data = $this->textFormatter->normalize($data);
         $record = $portfolio->weeklyReflections()->updateOrCreate([
             'week_number' => $data['week_number'],
@@ -385,6 +389,7 @@ class PkpaPortfolioBuilderService
     public function saveSelfAssessment(PkpaRotationPortfolio $portfolio, array $data, User $actor): PkpaPortfolioSelfAssessment
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
         $data = $this->textFormatter->normalize($data);
         if (($data['score'] ?? 0) < 1 || ($data['score'] ?? 0) > 5) {
             throw ValidationException::withMessages(['score' => 'Skor penilaian diri wajib 1 sampai 5.']);
@@ -398,6 +403,7 @@ class PkpaPortfolioBuilderService
     public function saveDocumentation(PkpaRotationPortfolio $portfolio, array $data, ?UploadedFile $file, User $actor): PkpaPortfolioDocumentationItem
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
         $data = $this->textFormatter->normalize($data);
         if (empty($data['anonymization_confirmed']) || empty($data['consent_confirmed'])) {
             throw ValidationException::withMessages(['documentation' => 'Konfirmasi izin dan anonimisasi dokumentasi wajib.']);
@@ -424,6 +430,7 @@ class PkpaPortfolioBuilderService
     public function submit(PkpaRotationPortfolio $portfolio, User $actor): PkpaRotationPortfolio
     {
         $this->ensureStudentOwns($portfolio, $actor);
+        $this->ensurePortfolioEditable($portfolio);
         $progress = $this->completeness($portfolio->fresh());
         if (! $progress['ready_to_submit']) {
             throw ValidationException::withMessages(['portfolio' => implode(' ', $progress['blocking'])]);
@@ -443,17 +450,34 @@ class PkpaPortfolioBuilderService
         if ($reviewerType === 'field') {
             $this->ensureFieldSupervisorOwns($portfolio, $actor);
             $allowed = ['verify', 'revision_requested'];
+            $expectedStatus = 'submitted_to_field_supervisor';
         } elseif ($reviewerType === 'internal') {
             $this->ensureInternalSupervisorOwns($portfolio, $actor);
             $allowed = ['approve', 'revision_requested'];
+            $expectedStatus = 'submitted_to_internal_supervisor';
         } else {
             throw ValidationException::withMessages(['reviewer_type' => 'Pemeriksa tidak valid.']);
+        }
+        if ($portfolio->status !== $expectedStatus) {
+            throw ValidationException::withMessages([
+                'status' => $reviewerType === 'field'
+                    ? 'Portofolio belum dikirim ke Preseptor atau sudah selesai diperiksa.'
+                    : 'Portofolio belum dikirim ke Pembimbing Dalam atau sudah selesai diperiksa.',
+            ]);
         }
         if (! in_array($action, $allowed, true)) {
             throw ValidationException::withMessages(['action' => 'Aksi pemeriksaan tidak valid.']);
         }
         if ($action === 'revision_requested' && blank($comments)) {
             throw ValidationException::withMessages(['comments' => 'Catatan revisi wajib diisi.']);
+        }
+        if (in_array($action, ['verify', 'approve'], true)) {
+            $progress = $this->completeness($portfolio->fresh());
+            if (! $progress['ready_to_submit']) {
+                throw ValidationException::withMessages([
+                    'portfolio' => 'Portofolio belum lengkap dan belum dapat disetujui. Minta revisi kepada mahasiswa. '.implode(' ', $progress['blocking']),
+                ]);
+            }
         }
 
         $review = PkpaPortfolioReview::create([
@@ -512,7 +536,16 @@ class PkpaPortfolioBuilderService
         ]);
         $portfolio->update(['status' => 'in_progress', 'locked_at' => null, 'locked_by_core_user_id' => null]);
 
-        return $portfolio->fresh();
+        $portfolio->update([
+            'submitted_at' => null,
+            'submitted_by_core_user_id' => null,
+            'field_verified_at' => null,
+            'field_verified_by_core_user_id' => null,
+            'internal_approved_at' => null,
+            'internal_approved_by_core_user_id' => null,
+        ]);
+
+        return $this->syncProgress($portfolio->fresh());
     }
 
     public function publish(PkpaRotationPortfolio $portfolio, User $actor): PkpaPortfolioPublication

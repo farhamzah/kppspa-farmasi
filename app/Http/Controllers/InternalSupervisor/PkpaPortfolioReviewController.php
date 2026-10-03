@@ -10,9 +10,7 @@ use Illuminate\Http\Request;
 
 class PkpaPortfolioReviewController extends Controller
 {
-    public function __construct(private readonly PkpaPortfolioBuilderService $portfolios)
-    {
-    }
+    public function __construct(private readonly PkpaPortfolioBuilderService $portfolios) {}
 
     public function index(Request $request)
     {
@@ -29,6 +27,8 @@ class PkpaPortfolioReviewController extends Controller
     public function show(Request $request, PkpaRotationPortfolio $portfolio)
     {
         abort_unless($this->portfolios->canAccess($portfolio, $request->user()), 403);
+
+        $portfolio = $this->portfolios->syncProgress($portfolio->fresh());
 
         return view('internal-supervisor.pkpa-portfolios.show', ['portfolio' => $portfolio->load(['sectionRecords.templateSection', 'weeklyReflections', 'selfAssessments', 'reviews'])]);
     }

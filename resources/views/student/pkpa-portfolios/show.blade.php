@@ -11,6 +11,7 @@
     $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
     $isHealthOffice = $portfolio->template?->code === \App\Support\PkpaHealthOfficePortfolio::TEMPLATE_CODE;
     $isLokaPom = $portfolio->template?->code === \App\Support\PkpaLokaPomPortfolio::TEMPLATE_CODE;
+    $canEdit = in_array($portfolio->status, ['draft', 'in_progress', 'field_revision_requested', 'internal_revision_requested'], true);
     $editableSections = $isApotek ? \App\Support\PkpaApotekPortfolio::editableSections() : [];
     $hospitalSections = $isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : [];
     $industrySections = $isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : [];
@@ -160,6 +161,9 @@
 @endphp
 
 @section('content')
+@if(! $canEdit)
+    <style>[data-portfolio-edit-form]{display:none!important}</style>
+@endif
 <div class="space-y-6" data-portfolio-writing-assistant>
     <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -177,6 +181,23 @@
     @endif
     @if($errors->any())
         <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800">{{ $errors->first() }}</div>
+    @endif
+
+    @if(! $canEdit)
+        <section class="rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+            <p class="font-black">Isian sedang dikunci sesuai tahap pemeriksaan</p>
+            <p class="mt-1 leading-6">
+                {{ match($portfolio->status) {
+                    'submitted_to_field_supervisor' => 'Portofolio sedang menunggu pemeriksaan Preseptor. Preseptor dapat memverifikasi atau mengembalikan untuk revisi.',
+                    'field_verified' => 'Portofolio sudah diverifikasi Preseptor. Kirimkan ke Pembimbing Dalam untuk melanjutkan pemeriksaan.',
+                    'submitted_to_internal_supervisor' => 'Portofolio sedang menunggu pemeriksaan Pembimbing Dalam.',
+                    'approved' => 'Portofolio sudah disetujui Pembimbing Dalam dan menunggu proses akhir Koordinator.',
+                    'locked', 'published' => 'Portofolio sudah selesai dan tidak dapat diubah.',
+                    default => 'Portofolio tidak dapat diubah pada status saat ini.',
+                } }}
+            </p>
+            <p class="mt-2 font-semibold">Apabila masih ada bagian yang kurang, pemeriksa harus memilih Minta Revisi atau Koordinator membuka ulang portofolio.</p>
+        </section>
     @endif
 
     <section class="grid gap-4 md:grid-cols-4">
@@ -427,7 +448,7 @@
                                 {{ $record?->status === 'completed' ? 'Lengkap' : 'Perlu diisi' }}
                             </span>
                         </div>
-                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="mt-4 grid gap-3">
+                        <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="mt-4 grid gap-3">
                             @csrf
                             @foreach($definition['fields'] as $field)
                                 <label class="grid gap-2">
@@ -542,7 +563,7 @@
                                 @endif
                             </section>
 
-                            <form method="POST" action="{{ $editingEntry ? route('student.pkpa-portfolios.report-activities.update', [$portfolio, $selectedReportCode, $editingEntry['id']]) : route('student.pkpa-portfolios.report-activities.store', [$portfolio, $selectedReportCode]) }}" class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+                            <form method="POST" data-portfolio-edit-form action="{{ $editingEntry ? route('student.pkpa-portfolios.report-activities.update', [$portfolio, $selectedReportCode, $editingEntry['id']]) : route('student.pkpa-portfolios.report-activities.store', [$portfolio, $selectedReportCode]) }}" class="grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
                                 @csrf
                                 @if($editingEntry) @method('PATCH') @endif
                                 <div>
@@ -556,7 +577,7 @@
                                 <div class="flex flex-wrap gap-3"><button class="inline-flex min-h-12 items-center justify-center rounded-xl bg-cyan-700 px-5 py-3 text-sm font-black text-white">{{ $editingEntry ? 'Simpan Perubahan' : 'Simpan Kegiatan' }}</button>@if($editingEntry)<a href="{{ route('student.pkpa-portfolios.show', ['portfolio' => $portfolio, 'report' => $selectedReportCode]) }}#laporan-{{ $selectedReportCode }}" class="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700">Batal</a>@endif</div>
                             </form>
                             @if($editingEntry)
-                                <form method="POST" action="{{ route('student.pkpa-portfolios.report-activities.destroy', [$portfolio, $selectedReportCode, $editingEntry['id']]) }}" class="-mt-3">
+                                <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.report-activities.destroy', [$portfolio, $selectedReportCode, $editingEntry['id']]) }}" class="-mt-3">
                                     @csrf
                                     @method('DELETE')
                                     <button class="text-sm font-bold text-rose-700 hover:text-rose-800">Hapus kegiatan ini</button>
@@ -600,7 +621,7 @@
                             <span class="min-w-0"><span class="block text-base font-black text-slate-950">{{ $definition['title'] }}</span><span class="mt-1 block text-sm text-slate-600">{{ $definition['description'] }}</span></span>
                             <span class="shrink-0 rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $record?->status === 'completed' ? 'Tersimpan' : 'Belum diisi' }}</span>
                         </summary>
-                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
+                        <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
                             @csrf
                             @foreach($fields as $field)
                                 <label class="grid gap-2">
@@ -662,7 +683,7 @@
                             <span class="min-w-0"><span class="block text-base font-black text-slate-950">{{ $definition['title'] }}</span><span class="mt-1 block text-sm text-slate-600">{{ $definition['description'] }}</span></span>
                             <span class="shrink-0 rounded-full px-3 py-1 text-xs font-bold {{ $record?->status === 'completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $record?->status === 'completed' ? 'Tersimpan' : ($definition['is_required'] ? 'Wajib' : 'Opsional') }}</span>
                         </summary>
-                        <form method="POST" action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
+                        <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
                             @csrf
                             @foreach($definition['fields'] as $field)
                                 <label class="grid gap-2">
@@ -682,7 +703,7 @@
         <h2 class="text-lg font-black text-slate-950">{{ $isLokaPom ? 'Studi Kasus Loka POM' : ($isHealthOffice ? 'Studi Kasus Dinas Kesehatan' : ($isIndustry ? 'Studi Kasus Industri Farmasi' : ($isPbf ? 'Studi Kasus PBF' : 'Studi Kasus'))) }}</h2>
         <p class="mt-2 text-sm text-slate-600">{{ $isLokaPom ? 'Analisis satu temuan pengawasan obat atau makanan berdasarkan regulasi yang berlaku.' : ($isHealthOffice ? 'Analisis satu permasalahan nyata dalam pengelolaan obat, BMHP, distribusi, pelaporan, atau program kesehatan.' : ($isIndustry ? 'Dokumentasikan satu masalah mutu atau proses, misalnya deviasi, OOS, OOT, CAPA, change control, validasi, keluhan, atau penarikan produk.' : ($isPbf ? 'Dokumentasikan satu kasus operasional PBF, misalnya suhu CCP, retur, recall, selisih stok, atau penyimpangan dokumen. Jangan menulis identitas personal yang tidak diperlukan.' : 'Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.'))) }}</p>
         @if($isIndustry)
-            <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+            <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Nomor Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
@@ -702,7 +723,7 @@
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus Industri</button>
             </form>
         @elseif($isHealthOffice)
-            <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+            <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Judul Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
@@ -718,7 +739,7 @@
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus Dinas Kesehatan</button>
             </form>
         @elseif($isLokaPom)
-            <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+            <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Judul Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
@@ -733,7 +754,7 @@
                 <button class="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white md:col-span-2">Simpan Studi Kasus Loka POM</button>
             </form>
         @elseif($isPbf)
-            <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
+            <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 grid gap-4 md:grid-cols-2">
                 @csrf
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Judul atau Nomor Kasus</span><input name="case_code" value="{{ old('case_code') }}" class="rounded-2xl border-slate-200 text-sm" required></label>
                 <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Tanggal</span><input type="date" name="case_date" value="{{ old('case_date') }}" class="rounded-2xl border-slate-200 text-sm"></label>
@@ -763,7 +784,7 @@
                 'Interaksi obat', 'Efek samping obat', 'Ketidakpatuhan pasien', 'Duplikasi terapi', 'Lainnya',
             ];
         @endphp
-        <form method="POST" action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 space-y-7">
+        <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.cases.store', $portfolio) }}" class="mt-5 space-y-7">
             @csrf
             <fieldset class="grid gap-4 border-t border-slate-200 pt-5 md:grid-cols-2">
                 <legend class="pr-3 text-base font-black text-slate-950">A. Identitas Pasien</legend>
@@ -870,7 +891,7 @@
     </section>
 
     <section class="grid gap-6 xl:grid-cols-3">
-        <form method="POST" action="{{ route('student.pkpa-portfolios.reflections.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.reflections.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             @csrf
             <h2 class="text-lg font-black text-slate-950">Refleksi Mingguan</h2>
             <div class="mt-4 grid gap-3">
@@ -887,7 +908,7 @@
             </div>
         </form>
 
-        <form method="POST" action="{{ route('student.pkpa-portfolios.self-assessments.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.self-assessments.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             @csrf
             <h2 class="text-lg font-black text-slate-950">Self Assessment</h2>
             <div class="mt-4 grid gap-3">
@@ -907,7 +928,7 @@
             </div>
         </form>
 
-        <form method="POST" enctype="multipart/form-data" action="{{ route('student.pkpa-portfolios.documentation.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <form method="POST" data-portfolio-edit-form enctype="multipart/form-data" action="{{ route('student.pkpa-portfolios.documentation.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             @csrf
             <h2 class="text-lg font-black text-slate-950">Dokumentasi Kegiatan</h2>
             <div class="mt-4 grid gap-3">
@@ -932,8 +953,15 @@
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-black text-slate-950">Pemeriksaan</h2>
         <div class="mt-4 flex flex-wrap gap-3">
-            <form method="POST" action="{{ route('student.pkpa-portfolios.submit', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Preseptor</button></form>
-            <form method="POST" action="{{ route('student.pkpa-portfolios.submit-internal', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Pembimbing Dalam</button></form>
+            @if($canEdit && data_get($portfolio->progress_snapshot, 'ready_to_submit'))
+                <form method="POST" action="{{ route('student.pkpa-portfolios.submit', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Preseptor</button></form>
+            @elseif($canEdit)
+                <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Lengkapi bagian yang masih tercantum pada Pemeriksaan Kelengkapan sebelum mengirim.</p>
+            @elseif($portfolio->status === 'field_verified')
+                <form method="POST" action="{{ route('student.pkpa-portfolios.submit-internal', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Pembimbing Dalam</button></form>
+            @else
+                <p class="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">Tidak ada tindakan pengiriman yang diperlukan dari mahasiswa pada tahap ini.</p>
+            @endif
         </div>
     </section>
 </div>

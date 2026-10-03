@@ -1,41 +1,42 @@
 <?php
 
-use App\Http\Middleware\CheckRole;
-use App\Http\Middleware\CheckUserActive;
-use App\Http\Middleware\EnsureLocalAccountManagementEnabled;
-use App\Http\Middleware\EnsureRoleSelected;
-use App\Http\Middleware\EnsureStudentPlaceSelectionEnabled;
-use App\Http\Middleware\AddSecurityHeaders;
 use App\Console\Commands\AcademicUnitCleanupCommand;
 use App\Console\Commands\AssignmentCancelReconcileCommand;
-use App\Console\Commands\CoreHealthCheckCommand;
-use App\Console\Commands\CoreAcademicUnitCheckCommand;
-use App\Console\Commands\CoreMappingCoverageCommand;
-use App\Console\Commands\CoreModePreflightCommand;
-use App\Console\Commands\ExternalDocumentReferencePreviewCommand;
-use App\Console\Commands\SyncCoreMappingCommand;
 use App\Console\Commands\AuthBridgeCheckCommand;
 use App\Console\Commands\AuthBridgeSmokeTestCommand;
 use App\Console\Commands\AuthModeCommand;
+use App\Console\Commands\CoreAcademicUnitCheckCommand;
+use App\Console\Commands\CoreHealthCheckCommand;
+use App\Console\Commands\CoreMappingCoverageCommand;
+use App\Console\Commands\CoreModePreflightCommand;
 use App\Console\Commands\DisplayAdapterCheckCommand;
+use App\Console\Commands\ExternalDocumentReferencePreviewCommand;
 use App\Console\Commands\IntegrationGapCheckCommand;
 use App\Console\Commands\MasterDataReadCheckCommand;
-use App\Console\Commands\ProductionReadinessGateCommand;
 use App\Console\Commands\PkpaDocumentOrphanAuditCommand;
 use App\Console\Commands\PkpaE2ePrepareCommand;
 use App\Console\Commands\PkpaHypercareStatusCommand;
 use App\Console\Commands\PkpaIntegrityAuditCommand;
 use App\Console\Commands\PkpaQueueHealthCommand;
-use App\Console\Commands\SetupPkpaApotekAssessmentCommand;
+use App\Console\Commands\ProductionReadinessGateCommand;
 use App\Console\Commands\ProvisionCoreBridgeUserCommand;
 use App\Console\Commands\ProvisionCoreBridgeUsersCommand;
 use App\Console\Commands\ReleaseCandidateGateCommand;
 use App\Console\Commands\ReleaseSensitiveScanCommand;
+use App\Console\Commands\ReopenPkpaPortfolioCommand;
+use App\Console\Commands\RepairPkpaRotationDatesCommand;
 use App\Console\Commands\SafaPublicInfoPreviewCommand;
+use App\Console\Commands\SetupPkpaApotekAssessmentCommand;
 use App\Console\Commands\StagingRehearsalCheckCommand;
+use App\Console\Commands\SyncCoreMappingCommand;
 use App\Console\Commands\TuDocumentPayloadPreviewCommand;
 use App\Console\Commands\UiReadinessCheckCommand;
-use App\Console\Commands\RepairPkpaRotationDatesCommand;
+use App\Http\Middleware\AddSecurityHeaders;
+use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\CheckUserActive;
+use App\Http\Middleware\EnsureLocalAccountManagementEnabled;
+use App\Http\Middleware\EnsureRoleSelected;
+use App\Http\Middleware\EnsureStudentPlaceSelectionEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -71,6 +72,7 @@ return Application::configure(basePath: dirname(__DIR__))
         PkpaIntegrityAuditCommand::class,
         PkpaQueueHealthCommand::class,
         RepairPkpaRotationDatesCommand::class,
+        ReopenPkpaPortfolioCommand::class,
         SetupPkpaApotekAssessmentCommand::class,
         ProvisionCoreBridgeUserCommand::class,
         ProvisionCoreBridgeUsersCommand::class,
