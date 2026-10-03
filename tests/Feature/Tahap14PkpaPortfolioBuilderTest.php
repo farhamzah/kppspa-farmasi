@@ -126,6 +126,10 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             'scheduled_start_date' => '2026-09-01',
             'scheduled_end_date' => '2026-10-02',
         ]);
+        $run->currentAssignment()->update([
+            'duration_value_snapshot' => 4,
+            'duration_unit_snapshot' => 'weeks',
+        ]);
         $run->logbookEntries()->update(['status' => 'field_approved']);
         $run->competencyRecords()->delete();
         $portfolio = $service->ensureForRun($run->fresh(), $this->admin);
@@ -139,7 +143,10 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $progress = $service->completeness($portfolio->fresh());
         $this->assertSame('Pembimbing Dalam', collect($progress['checks'])->firstWhere('key', 'logbook')['owner']);
         $this->assertSame('Koordinator PKPA', collect($progress['checks'])->firstWhere('key', 'competency')['owner']);
-        $this->assertSame('Mahasiswa', collect($progress['checks'])->firstWhere('key', 'reflection')['owner']);
+        $reflectionCheck = collect($progress['checks'])->firstWhere('key', 'reflection');
+        $this->assertSame('complete', $reflectionCheck['status']);
+        $this->assertSame('Tidak ada', $reflectionCheck['owner']);
+        $this->assertSame('4 dari 4 refleksi telah selesai.', $reflectionCheck['summary']);
 
         $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
             ->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
@@ -149,8 +156,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Tindak lanjut: Pembimbing Dalam')
             ->assertSee('Data kompetensi belum disiapkan untuk rotasi ini.')
             ->assertSee('Tindak lanjut: Koordinator PKPA')
-            ->assertSee('4 dari 5 refleksi telah selesai.')
-            ->assertSee('Tindak lanjut: Mahasiswa')
+            ->assertDontSee('4 dari 5 refleksi telah selesai.')
+            ->assertDontSee('Tambahkan refleksi untuk minggu yang belum terisi.')
             ->assertDontSee('Logbook rotasi belum tersedia.')
             ->assertDontSee('Kompetensi wajib belum tersedia.');
     }

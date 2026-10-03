@@ -645,7 +645,7 @@ class PkpaPortfolioBuilderService
 
     public function completeness(PkpaRotationPortfolio $portfolio): array
     {
-        $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems', 'rotationRun.logbookEntries', 'rotationRun.attendanceRecords', 'rotationRun.competencyRecords', 'rotationRun.specialTasks', 'rotationRun.rotationReport', 'rotationRun.gradeResults', 'reviews']);
+        $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems', 'rotationRun.logbookEntries', 'rotationRun.attendanceRecords', 'rotationRun.competencyRecords', 'rotationRun.specialTasks', 'rotationRun.rotationReport', 'rotationRun.gradeResults', 'rotationRun.currentAssignment', 'rotationRun.originAssignment', 'rotationRun.requirement.programDomain', 'reviews']);
         $blocking = [];
         $checks = [];
         if (! $portfolio->integrity_acknowledged_at) {
@@ -858,6 +858,18 @@ class PkpaPortfolioBuilderService
 
     private function requiredReflectionCount(PkpaRotationRun $run): int
     {
+        $configuredDurations = [
+            [$run->currentAssignment?->duration_value_snapshot, $run->currentAssignment?->duration_unit_snapshot],
+            [$run->originAssignment?->duration_value_snapshot, $run->originAssignment?->duration_unit_snapshot],
+            [$run->requirement?->programDomain?->duration_value, $run->requirement?->programDomain?->duration_unit],
+        ];
+
+        foreach ($configuredDurations as [$value, $unit]) {
+            if ($unit === 'weeks' && is_numeric($value) && (float) $value > 0) {
+                return max(1, (int) ceil((float) $value));
+            }
+        }
+
         if (! $run->scheduled_start_date || ! $run->scheduled_end_date) {
             return 1;
         }
