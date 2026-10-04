@@ -33,7 +33,7 @@
 
     @if($selectedLogbook)
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => $canValidate ? 'ready' : 'logbooks']) }}" class="inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">Kembali ke Antrean</a>
+            <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'ready']) }}" class="inline-flex min-h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">Kembali ke Antrean Validasi</a>
             <p class="text-sm text-slate-500">{{ $run->studentDisplayName() }} · {{ $run->practiceSite?->name }}</p>
         </div>
 
@@ -109,7 +109,7 @@
                             @if($nextReadyLogbook)
                                 <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'ready', 'logbook' => $nextReadyLogbook]) }}" class="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-center text-sm font-bold text-white">Validasi Logbook Berikutnya</a>
                             @else
-                                <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'logbooks']) }}" class="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-bold text-slate-700">Kembali ke Semua Logbook</a>
+                                <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'ready']) }}" class="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-bold text-slate-700">Kembali ke Antrean Validasi</a>
                             @endif
                         @else
                             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Status Logbook</p>

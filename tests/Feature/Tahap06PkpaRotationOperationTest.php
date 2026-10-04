@@ -416,14 +416,14 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ])
             ->assertRedirect(route('internal-supervisor.pkpa-operations.show', [
                 'run' => $run->id,
-                'view' => 'logbooks',
+                'view' => 'ready',
                 'logbook' => $entries[0]->id,
             ]));
 
         $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
             ->get(route('internal-supervisor.pkpa-operations.show', [
                 'run' => $run->id,
-                'view' => 'logbooks',
+                'view' => 'ready',
                 'logbook' => $entries[0]->id,
             ]))
             ->assertOk()
@@ -431,6 +431,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee('Logbook sudah dikunci')
             ->assertSee('Sesuai.')
             ->assertSee('Validasi Logbook Berikutnya')
+            ->assertSee(route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'ready']), false)
             ->assertDontSee('name="comments"', false)
             ->assertDontSee('value="approved"', false);
     }

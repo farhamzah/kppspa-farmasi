@@ -142,7 +142,7 @@ class PkpaRotationOperationController extends Controller
 
         return redirect()->route('internal-supervisor.pkpa-operations.show', [
             'run' => $entry->pkpa_rotation_run_id,
-            'view' => 'logbooks',
+            'view' => 'ready',
             'logbook' => $entry->id,
         ])->with('status', 'Validasi final tersimpan. Logbook ini sudah dikunci dan tidak dapat divalidasi ulang.');
     }
