@@ -675,23 +675,18 @@ class PkpaPortfolioBuilderService
         if ($portfolio->rotationRun->attendanceRecords->isEmpty()) {
             $blocking[] = 'Presensi rotasi belum tersedia.';
         }
-        if ($portfolio->rotationRun->competencyRecords->isEmpty()) {
-            $blocking[] = 'Daftar kompetensi belum disiapkan oleh pengelola.';
-        }
         $competencyTotal = $portfolio->rotationRun->competencyRecords->count();
         $competencyVerified = $portfolio->rotationRun->competencyRecords->where('status', 'verified')->count();
-        $checks[] = [
-            'key' => 'competency',
-            'title' => 'Kompetensi',
-            'status' => $competencyTotal > 0 ? 'complete' : 'setup_required',
-            'summary' => $competencyTotal > 0
-                ? "{$competencyVerified} dari {$competencyTotal} kompetensi telah terverifikasi."
-                : 'Data kompetensi belum disiapkan untuk rotasi ini.',
-            'owner' => $competencyTotal > 0 ? 'Tidak ada' : 'Koordinator PKPA',
-            'action' => $competencyTotal > 0
-                ? 'Tidak ada tindakan.'
-                : 'Koordinator perlu menyiapkan daftar kompetensi. Mahasiswa tidak perlu mengulang isian portofolio.',
-        ];
+        if ($competencyTotal > 0) {
+            $checks[] = [
+                'key' => 'competency',
+                'title' => 'Kompetensi',
+                'status' => 'complete',
+                'summary' => "{$competencyVerified} dari {$competencyTotal} kompetensi telah terverifikasi.",
+                'owner' => 'Tidak ada',
+                'action' => 'Tidak ada tindakan.',
+            ];
+        }
         if ($portfolio->caseReports->where('status', 'completed')->count() < 1) {
             $blocking[] = 'Minimal satu studi kasus wajib lengkap.';
         }

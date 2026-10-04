@@ -142,7 +142,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
 
         $progress = $service->completeness($portfolio->fresh());
         $this->assertSame('Pembimbing Dalam', collect($progress['checks'])->firstWhere('key', 'logbook')['owner']);
-        $this->assertSame('Koordinator PKPA', collect($progress['checks'])->firstWhere('key', 'competency')['owner']);
+        $this->assertNull(collect($progress['checks'])->firstWhere('key', 'competency'));
         $reflectionCheck = collect($progress['checks'])->firstWhere('key', 'reflection');
         $this->assertSame('complete', $reflectionCheck['status']);
         $this->assertSame('Tidak ada', $reflectionCheck['owner']);
@@ -154,8 +154,8 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertSee('Pemeriksaan Kelengkapan')
             ->assertSee('1 logbook sudah tercatat, tetapi belum ada yang disetujui Pembimbing Dalam.')
             ->assertSee('Tindak lanjut: Pembimbing Dalam')
-            ->assertSee('Data kompetensi belum disiapkan untuk rotasi ini.')
-            ->assertSee('Tindak lanjut: Koordinator PKPA')
+            ->assertDontSee('Data kompetensi belum disiapkan untuk rotasi ini.')
+            ->assertDontSee('Tindak lanjut: Koordinator PKPA')
             ->assertDontSee('4 dari 5 refleksi telah selesai.')
             ->assertDontSee('Tambahkan refleksi untuk minggu yang belum terisi.')
             ->assertDontSee('Logbook rotasi belum tersedia.')
