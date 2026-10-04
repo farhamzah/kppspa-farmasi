@@ -376,6 +376,51 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee('Pelayanan resep');
     }
 
+    public function test_internal_supervisor_workspace_prioritizes_ready_logbooks_and_continues_to_next_item(): void
+    {
+        $run = $this->activatedRun();
+        $service = app(PkpaLogbookService::class);
+        $entries = collect([
+            ['2026-07-16', 'Konseling pasien'],
+            ['2026-07-17', 'Pelayanan resep'],
+        ])->map(function (array $data) use ($run, $service) {
+            $entry = $service->save($run, [
+                'entry_date' => $data[0],
+                'title' => $data[1],
+                'activity_summary' => 'Kegiatan praktik mahasiswa.',
+                'learning_outcomes' => 'Memahami pelayanan kefarmasian.',
+                'reflection' => 'Perlu menjaga ketelitian.',
+                'practice_minutes' => 420,
+            ], $this->student);
+            $service->submit($entry, $this->student);
+            $service->fieldReview($entry->fresh(), 'approved', 'Baik.', $this->fieldSupervisor);
+
+            return $entry->fresh();
+        });
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get(route('internal-supervisor.pkpa-operations.show', $run))
+            ->assertOk()
+            ->assertSee('Siap Divalidasi')
+            ->assertSee('Semua Logbook')
+            ->assertSee('Presensi')
+            ->assertSee('Cari Logbook')
+            ->assertSee('Lihat &amp; Validasi', false)
+            ->assertSee('Konseling pasien')
+            ->assertSee('Pelayanan resep');
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->post(route('internal-supervisor.pkpa-logbooks.monitoring', $entries[0]), [
+                'action' => 'approved',
+                'comments' => 'Sesuai.',
+            ])
+            ->assertRedirect(route('internal-supervisor.pkpa-operations.show', [
+                'run' => $run->id,
+                'view' => 'ready',
+                'logbook' => $entries[1]->id,
+            ]));
+    }
+
     public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void
     {
         $run = $this->activatedRun();

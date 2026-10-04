@@ -65,15 +65,62 @@ class PkpaRotationOperationController extends Controller
         $selectedLogbook = $request->integer('logbook')
             ? $run->logbookEntries()->with(['attachments', 'reviews'])->whereKey($request->integer('logbook'))->where('status', '!=', 'draft')->firstOrFail()
             : null;
+        $attendanceCount = $run->attendanceRecords()->where('submission_status', '!=', 'draft')->count();
+        $logbookCount = $run->logbookEntries()->where('status', '!=', 'draft')->count();
+        $waitingFieldCount = $run->logbookEntries()->where('status', 'submitted')->count();
+        $readyCount = $run->logbookEntries()->whereIn('status', ['field_approved', 'approved'])->count();
+        $completedCount = $run->logbookEntries()->where('status', 'internal_approved')->count();
+        $view = in_array($request->query('view'), ['ready', 'logbooks', 'attendance'], true)
+            ? $request->query('view')
+            : ($readyCount > 0 ? 'ready' : 'logbooks');
+        $status = in_array($request->query('status'), ['all', 'waiting', 'ready', 'completed', 'revision'], true)
+            ? $request->query('status')
+            : 'all';
+        $search = trim((string) $request->query('q'));
+        $dateFrom = $request->date('date_from')?->toDateString();
+        $dateTo = $request->date('date_to')?->toDateString();
+
+        $logbooks = $run->logbookEntries()
+            ->where('status', '!=', 'draft')
+            ->when($view === 'ready', fn ($query) => $query->whereIn('status', ['field_approved', 'approved']))
+            ->when($view === 'logbooks' && $status === 'waiting', fn ($query) => $query->where('status', 'submitted'))
+            ->when($view === 'logbooks' && $status === 'ready', fn ($query) => $query->whereIn('status', ['field_approved', 'approved']))
+            ->when($view === 'logbooks' && $status === 'completed', fn ($query) => $query->where('status', 'internal_approved'))
+            ->when($view === 'logbooks' && $status === 'revision', fn ($query) => $query->whereIn('status', ['revision_requested', 'rejected']))
+            ->when($search !== '', fn ($query) => $query->where(function ($nested) use ($search) {
+                $nested->where('title', 'like', "%{$search}%")
+                    ->orWhere('activity_summary', 'like', "%{$search}%")
+                    ->orWhere('learning_outcomes', 'like', "%{$search}%");
+            }))
+            ->when($dateFrom, fn ($query) => $query->whereDate('entry_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('entry_date', '<=', $dateTo))
+            ->latest('entry_date')
+            ->paginate(12, ['*'], 'logbook_page')
+            ->withQueryString();
+
+        $attendances = $run->attendanceRecords()
+            ->where('submission_status', '!=', 'draft')
+            ->when($dateFrom, fn ($query) => $query->whereDate('attendance_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($query) => $query->whereDate('attendance_date', '<=', $dateTo))
+            ->latest('attendance_date')
+            ->paginate(12, ['*'], 'attendance_page')
+            ->withQueryString();
 
         return view('internal-supervisor.pkpa-operations.show', [
             'run' => $run,
             'selectedLogbook' => $selectedLogbook,
-            'attendances' => $run->attendanceRecords()->where('submission_status', '!=', 'draft')->latest('attendance_date')->paginate(15, ['*'], 'attendance_page')->withQueryString(),
-            'logbooks' => $run->logbookEntries()->where('status', '!=', 'draft')->latest('entry_date')->paginate(15, ['*'], 'logbook_page')->withQueryString(),
-            'attendanceCount' => $run->attendanceRecords()->where('submission_status', '!=', 'draft')->count(),
-            'waitingFieldCount' => $run->logbookEntries()->where('status', 'submitted')->count(),
-            'readyCount' => $run->logbookEntries()->whereIn('status', ['field_approved', 'approved'])->count(),
+            'attendances' => $attendances,
+            'logbooks' => $logbooks,
+            'attendanceCount' => $attendanceCount,
+            'logbookCount' => $logbookCount,
+            'waitingFieldCount' => $waitingFieldCount,
+            'readyCount' => $readyCount,
+            'completedCount' => $completedCount,
+            'view' => $view,
+            'status' => $status,
+            'search' => $search,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ]);
     }
 
@@ -85,7 +132,19 @@ class PkpaRotationOperationController extends Controller
         ]);
         $this->logbooks->internalReview($entry, $data['action'], $data['comments'] ?? null, $request->user());
 
-        return back()->with('status', 'Validasi pembimbing dalam tersimpan.');
+        $next = PkpaLogbookEntry::query()
+            ->where('pkpa_rotation_run_id', $entry->pkpa_rotation_run_id)
+            ->whereIn('status', ['field_approved', 'approved'])
+            ->oldest('entry_date')
+            ->first();
+
+        return redirect()->route('internal-supervisor.pkpa-operations.show', array_filter([
+            'run' => $entry->pkpa_rotation_run_id,
+            'view' => 'ready',
+            'logbook' => $next?->id,
+        ]))->with('status', $next
+            ? 'Validasi tersimpan. Berikutnya, periksa logbook yang masih menunggu.'
+            : 'Validasi tersimpan. Tidak ada logbook lain yang menunggu untuk mahasiswa ini.');
     }
 
     public function downloadAttachment(Request $request, PkpaLogbookAttachment $attachment)
