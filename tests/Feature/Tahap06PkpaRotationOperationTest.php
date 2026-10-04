@@ -376,7 +376,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee('Pelayanan resep');
     }
 
-    public function test_internal_supervisor_workspace_prioritizes_ready_logbooks_and_continues_to_next_item(): void
+    public function test_internal_supervisor_workspace_prioritizes_ready_logbooks_and_locks_completed_item(): void
     {
         $run = $this->activatedRun();
         $service = app(PkpaLogbookService::class);
@@ -416,9 +416,23 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ])
             ->assertRedirect(route('internal-supervisor.pkpa-operations.show', [
                 'run' => $run->id,
-                'view' => 'ready',
-                'logbook' => $entries[1]->id,
+                'view' => 'logbooks',
+                'logbook' => $entries[0]->id,
             ]));
+
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get(route('internal-supervisor.pkpa-operations.show', [
+                'run' => $run->id,
+                'view' => 'logbooks',
+                'logbook' => $entries[0]->id,
+            ]))
+            ->assertOk()
+            ->assertSee('Tervalidasi Final')
+            ->assertSee('Logbook sudah dikunci')
+            ->assertSee('Sesuai.')
+            ->assertSee('Validasi Logbook Berikutnya')
+            ->assertDontSee('name="comments"', false)
+            ->assertDontSee('value="approved"', false);
     }
 
     public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void

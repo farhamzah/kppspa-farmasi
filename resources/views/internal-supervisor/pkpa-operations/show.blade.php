@@ -20,12 +20,13 @@
         'rejected' => 'bg-rose-50 text-rose-700',
     ];
     $canValidate = $selectedLogbook && in_array($selectedLogbook->status, ['field_approved', 'approved'], true);
+    $internalReview = $selectedLogbook?->reviews
+        ?->where('reviewer_type', 'internal')
+        ->sortByDesc('reviewed_at')
+        ->first();
 @endphp
 
 <div class="space-y-5">
-    @if(session('status'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>
-    @endif
     @if($errors->any())
         <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{{ $errors->first() }}</div>
     @endif
@@ -94,6 +95,22 @@
                                     <button name="action" value="rejected" class="min-h-11 rounded-xl border border-rose-300 bg-white px-3 py-2 text-sm font-bold text-rose-700">Tolak</button>
                                 </div>
                             </form>
+                        @elseif($selectedLogbook->status === 'internal_approved')
+                            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                <p class="text-xs font-black uppercase tracking-widest text-emerald-700">Validasi Selesai</p>
+                                <h3 class="mt-2 text-lg font-black text-emerald-950">Logbook sudah dikunci</h3>
+                                <p class="mt-2 text-sm leading-6 text-emerald-800">Keputusan final sudah tersimpan. Formulir validasi dinonaktifkan agar keputusan tidak terisi dua kali.</p>
+                            </div>
+                            <dl class="mt-5 space-y-4 text-sm">
+                                <div><dt class="font-bold text-slate-500">Waktu validasi</dt><dd class="mt-1 font-semibold text-slate-900">{{ $selectedLogbook->internal_reviewed_at?->translatedFormat('d M Y, H:i') ?? $internalReview?->reviewed_at?->translatedFormat('d M Y, H:i') ?? '-' }}</dd></div>
+                                <div><dt class="font-bold text-slate-500">Keputusan</dt><dd class="mt-1 font-semibold text-emerald-700">Tervalidasi Final</dd></div>
+                                <div><dt class="font-bold text-slate-500">Catatan</dt><dd class="mt-1 whitespace-pre-line leading-6 text-slate-800">{{ filled($internalReview?->comments) ? $internalReview->comments : 'Tidak ada catatan tambahan.' }}</dd></div>
+                            </dl>
+                            @if($nextReadyLogbook)
+                                <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'ready', 'logbook' => $nextReadyLogbook]) }}" class="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-center text-sm font-bold text-white">Validasi Logbook Berikutnya</a>
+                            @else
+                                <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'logbooks']) }}" class="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-center text-sm font-bold text-slate-700">Kembali ke Semua Logbook</a>
+                            @endif
                         @else
                             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Status Logbook</p>
                             <h3 class="mt-2 text-lg font-black text-slate-950">Belum dapat divalidasi</h3>

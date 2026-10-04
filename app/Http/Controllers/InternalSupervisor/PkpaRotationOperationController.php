@@ -65,6 +65,13 @@ class PkpaRotationOperationController extends Controller
         $selectedLogbook = $request->integer('logbook')
             ? $run->logbookEntries()->with(['attachments', 'reviews'])->whereKey($request->integer('logbook'))->where('status', '!=', 'draft')->firstOrFail()
             : null;
+        $nextReadyLogbook = $selectedLogbook
+            ? $run->logbookEntries()
+                ->whereKeyNot($selectedLogbook->id)
+                ->whereIn('status', ['field_approved', 'approved'])
+                ->oldest('entry_date')
+                ->first()
+            : null;
         $attendanceCount = $run->attendanceRecords()->where('submission_status', '!=', 'draft')->count();
         $logbookCount = $run->logbookEntries()->where('status', '!=', 'draft')->count();
         $waitingFieldCount = $run->logbookEntries()->where('status', 'submitted')->count();
@@ -109,6 +116,7 @@ class PkpaRotationOperationController extends Controller
         return view('internal-supervisor.pkpa-operations.show', [
             'run' => $run,
             'selectedLogbook' => $selectedLogbook,
+            'nextReadyLogbook' => $nextReadyLogbook,
             'attendances' => $attendances,
             'logbooks' => $logbooks,
             'attendanceCount' => $attendanceCount,
@@ -132,19 +140,11 @@ class PkpaRotationOperationController extends Controller
         ]);
         $this->logbooks->internalReview($entry, $data['action'], $data['comments'] ?? null, $request->user());
 
-        $next = PkpaLogbookEntry::query()
-            ->where('pkpa_rotation_run_id', $entry->pkpa_rotation_run_id)
-            ->whereIn('status', ['field_approved', 'approved'])
-            ->oldest('entry_date')
-            ->first();
-
-        return redirect()->route('internal-supervisor.pkpa-operations.show', array_filter([
+        return redirect()->route('internal-supervisor.pkpa-operations.show', [
             'run' => $entry->pkpa_rotation_run_id,
-            'view' => 'ready',
-            'logbook' => $next?->id,
-        ]))->with('status', $next
-            ? 'Validasi tersimpan. Berikutnya, periksa logbook yang masih menunggu.'
-            : 'Validasi tersimpan. Tidak ada logbook lain yang menunggu untuk mahasiswa ini.');
+            'view' => 'logbooks',
+            'logbook' => $entry->id,
+        ])->with('status', 'Validasi final tersimpan. Logbook ini sudah dikunci dan tidak dapat divalidasi ulang.');
     }
 
     public function downloadAttachment(Request $request, PkpaLogbookAttachment $attachment)
