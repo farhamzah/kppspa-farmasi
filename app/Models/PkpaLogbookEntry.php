@@ -11,6 +11,13 @@ class PkpaLogbookEntry extends Model
 {
     use SoftDeletes;
 
+    public static function internalReviewStatuses(): array
+    {
+        return config('my_pkpa.preceptor_document_validation_enabled')
+            ? ['field_approved', 'approved']
+            : ['submitted', 'field_approved', 'approved'];
+    }
+
     protected $fillable = [
         'pkpa_rotation_run_id',
         'entry_date',

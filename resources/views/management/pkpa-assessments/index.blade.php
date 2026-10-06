@@ -50,10 +50,10 @@
                                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">Aktif</span>
                             @endif
                         </div>
-                        @if ($domain->activeAssessmentScheme && $domain->practiceDomain?->code === 'APT')
-                            <form method="POST" action="{{ route('management.pkpa-rotation-assessments.prepare', $domain) }}" class="mt-4" onsubmit="return confirm('Siapkan formulir penilaian untuk semua mahasiswa Apotek yang sudah siap dinilai?')">
+                        @if ($domain->activeAssessmentScheme)
+                            <form method="POST" action="{{ route('management.pkpa-rotation-assessments.prepare', $domain) }}" class="mt-4" onsubmit="return confirm('Siapkan formulir penilaian untuk semua mahasiswa di wahana ini?')">
                                 @csrf
-                                <button class="w-full rounded-xl bg-cyan-700 px-4 py-3 text-sm font-black text-white hover:bg-cyan-800">Siapkan Semua Penilaian Apotek</button>
+                                <button class="w-full rounded-xl bg-cyan-700 px-4 py-3 text-sm font-black text-white hover:bg-cyan-800">Siapkan Semua Penilaian {{ $domain->practiceDomain?->name }}</button>
                             </form>
                         @endif
                         <form method="POST" action="{{ route('management.pkpa-assessment-schemes.store', $domain) }}" class="mt-4 grid gap-3">
@@ -149,6 +149,19 @@
                             <td class="px-3 py-3">{{ $assessment->gradeResult?->final_score ?? '-' }}</td>
                             <td class="px-3 py-3">
                                 <div class="flex flex-wrap gap-2">
+                                    @if(!config('my_pkpa.preceptor_document_validation_enabled'))
+                                        @foreach($assessment->componentScores->filter(fn ($score) => $score->assessor?->assessor_type === 'field_supervisor' && !in_array($score->status, ['submitted', 'approved', 'locked'])) as $manualScore)
+                                            <details class="w-full">
+                                                <summary class="cursor-pointer rounded-lg border border-cyan-200 p-2 text-xs font-bold text-cyan-800">Catat Nilai Preseptor: {{ $manualScore->component_name_snapshot }}</summary>
+                                                <form method="POST" action="{{ route('management.pkpa-preceptor-scores.store', $manualScore) }}" class="mt-3 grid gap-2">
+                                                    @csrf
+                                                    <label class="grid gap-1 text-xs">Nilai (maks. {{ $manualScore->component?->maximum_raw_score }})<input type="number" step="0.01" min="0" max="{{ $manualScore->component?->maximum_raw_score }}" name="raw_score" required class="rounded-lg border-slate-200" value="{{ $manualScore->raw_score }}"></label>
+                                                    <label class="grid gap-1 text-xs">Dasar pencatatan<input name="comments" required maxlength="1500" placeholder="Sumber nilai atau catatan koordinator" class="rounded-lg border-slate-200"></label>
+                                                    <button class="rounded-lg bg-cyan-700 p-2 text-xs font-bold text-white">Simpan dan Kunci Nilai</button>
+                                                </form>
+                                            </details>
+                                        @endforeach
+                                    @endif
                                     <form method="POST" action="{{ route('management.pkpa-rotation-assessments.finalize', $assessment) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Finalisasi</button></form>
                                     @if ($assessment->gradeResult && $assessment->gradeResult->result_status !== 'released')
                                         <form method="POST" action="{{ route('management.pkpa-grade-results.release', $assessment->gradeResult) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Rilis</button></form>

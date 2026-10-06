@@ -3,7 +3,7 @@
         fn ($entry) => $entry->rotationRun?->practice_domain_id ?: 'lainnya'
     );
     $statusLabels = [
-        'submitted' => 'Menunggu Preseptor',
+        'submitted' => config('my_pkpa.preceptor_document_validation_enabled') ? 'Menunggu Preseptor' : 'Siap Divalidasi',
         'field_approved' => 'Disetujui Preseptor',
         'approved' => 'Siap Validasi Akhir',
         'internal_approved' => 'Validasi Selesai',
@@ -43,6 +43,9 @@
                         <div class="divide-y divide-slate-100">
                             @foreach($studentEntries as $entry)
                                 <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                                    @if($bulkSelection ?? false)
+                                        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" form="bulk-validation" aria-label="Pilih {{ $entry->title }}"> Pilih</label>
+                                    @endif
                                     <div class="min-w-0">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <p class="font-bold text-slate-950">{{ $entry->title }}</p>

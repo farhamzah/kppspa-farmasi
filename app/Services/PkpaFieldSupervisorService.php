@@ -17,6 +17,30 @@ class PkpaFieldSupervisorService
 
     public function create(PkpaPracticeSite $site, array $data, ?User $actor): PkpaSiteFieldSupervisor
     {
+        if (blank($data['core_user_id'] ?? null)) {
+            if (blank($data['name_snapshot'] ?? null)) {
+                throw ValidationException::withMessages(['name_snapshot' => 'Nama preseptor wajib diisi.']);
+            }
+            $this->validatePayload($data);
+
+            return DB::transaction(function () use ($site, $data, $actor) {
+                $person = [
+                    'core_user_id' => null,
+                    'name' => trim($data['name_snapshot']),
+                    'email' => $data['email_snapshot'] ?? null,
+                    'professional_id' => null,
+                    'account_status' => null,
+                    'role_snapshot' => null,
+                ];
+                $supervisor = $site->fieldSupervisors()->create(array_merge($this->payload($person, $data, $actor), [
+                    'last_core_synced_at' => null,
+                    'last_core_sync_status' => null,
+                ]));
+                $this->audit->record($actor, 'field_supervisor_recorded_without_account', $supervisor);
+
+                return $supervisor;
+            });
+        }
         $resolved = $this->resolver->resolveField($data);
         if (! ($resolved['ok'] ?? false)) {
             throw ValidationException::withMessages(['core_user_id' => $resolved['message'] ?? 'Preseptor tidak valid.']);
@@ -38,6 +62,9 @@ class PkpaFieldSupervisorService
 
     public function sync(PkpaSiteFieldSupervisor $supervisor, ?User $actor): PkpaSiteFieldSupervisor
     {
+        if (blank($supervisor->core_user_id)) {
+            return $supervisor;
+        }
         $resolved = $this->resolver->resolveField(['core_user_id' => $supervisor->core_user_id]);
         if (! ($resolved['ok'] ?? false) && ! isset($resolved['person'])) {
             $supervisor->update(['last_core_sync_status' => 'failed', 'last_core_sync_message' => $resolved['message'] ?? 'Core tidak tersedia.']);

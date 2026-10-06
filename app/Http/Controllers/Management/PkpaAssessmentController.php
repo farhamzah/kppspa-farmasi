@@ -10,12 +10,14 @@ use App\Models\PkpaAssessmentScheme;
 use App\Models\PkpaGradeRelease;
 use App\Models\PkpaProgramDomain;
 use App\Models\PkpaRotationAssessment;
+use App\Models\PkpaRotationComponentScore;
 use App\Models\PkpaRotationGradeResult;
 use App\Models\PkpaRotationRun;
 use App\Services\PkpaAssessmentSchemeService;
 use App\Services\PkpaRotationAssessmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -24,8 +26,7 @@ class PkpaAssessmentController extends Controller
     public function __construct(
         private readonly PkpaAssessmentSchemeService $schemes,
         private readonly PkpaRotationAssessmentService $assessments
-    ) {
-    }
+    ) {}
 
     public function index(): View
     {
@@ -42,6 +43,28 @@ class PkpaAssessmentController extends Controller
                 'released' => PkpaRotationGradeResult::where('result_status', 'released')->count(),
             ],
         ]);
+    }
+
+    public function recordPreceptorScore(Request $request, PkpaRotationComponentScore $score): RedirectResponse
+    {
+        abort_unless($score->assessor?->assessor_type === 'field_supervisor', 403);
+        $data = $request->validate([
+            'raw_score' => ['required', 'numeric', 'min:0'],
+            'comments' => ['required', 'string', 'max:1500'],
+        ]);
+        DB::transaction(function () use ($score, $data, $request) {
+            $locked = PkpaRotationComponentScore::whereKey($score->id)->lockForUpdate()->firstOrFail();
+            $this->assessments->saveDirectScore($locked, $data['raw_score'], $data['comments'], $request->user());
+            $locked->update(['source_summary' => [
+                'method' => 'manual_coordinator',
+                'recorded_by_core_user_id' => $request->user()->core_user_id,
+                'recorded_at' => now()->toIso8601String(),
+                'basis' => $data['comments'],
+            ]]);
+            $this->assessments->submitScore($locked->fresh(), $request->user());
+        });
+
+        return back()->with('status', 'Nilai preseptor dicatat oleh koordinator dan dikunci.');
     }
 
     public function storeScheme(Request $request, PkpaProgramDomain $programDomain): RedirectResponse
@@ -141,11 +164,8 @@ class PkpaAssessmentController extends Controller
     public function prepareAssessments(Request $request, PkpaProgramDomain $programDomain): RedirectResponse
     {
         $programDomain->loadMissing(['practiceDomain', 'activeAssessmentScheme']);
-        if ($programDomain->practiceDomain?->code !== 'APT') {
-            throw ValidationException::withMessages(['domain' => 'Persiapan massal saat ini hanya tersedia untuk PKPA Apotek.']);
-        }
         if (! $programDomain->activeAssessmentScheme) {
-            throw ValidationException::withMessages(['scheme' => 'Aktifkan skema penilaian Apotek terlebih dahulu.']);
+            throw ValidationException::withMessages(['scheme' => 'Aktifkan skema penilaian wahana ini terlebih dahulu.']);
         }
 
         $created = 0;
@@ -153,6 +173,7 @@ class PkpaAssessmentController extends Controller
         $runs = PkpaRotationRun::query()
             ->where('pkpa_program_id', $programDomain->pkpa_program_id)
             ->where('practice_domain_id', $programDomain->practice_domain_id)
+            ->whereNull('cancelled_at')
             ->whereDoesntHave('rotationAssessment')
             ->get();
 
@@ -165,7 +186,7 @@ class PkpaAssessmentController extends Controller
             }
         }
 
-        return back()->with('status', "Penilaian Apotek disiapkan untuk {$created} mahasiswa. {$skipped} mahasiswa belum siap dan dilewati.");
+        return back()->with('status', "Penilaian {$programDomain->practiceDomain?->name} disiapkan untuk {$created} mahasiswa. {$skipped} mahasiswa belum siap dan dilewati.");
     }
 
     public function moderate(Request $request, PkpaRotationAssessment $assessment): RedirectResponse

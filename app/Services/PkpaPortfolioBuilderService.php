@@ -436,7 +436,7 @@ class PkpaPortfolioBuilderService
             throw ValidationException::withMessages(['portfolio' => implode(' ', $progress['blocking'])]);
         }
         $portfolio->update([
-            'status' => 'submitted_to_field_supervisor',
+            'status' => config('my_pkpa.preceptor_document_validation_enabled') ? 'submitted_to_field_supervisor' : 'submitted_to_internal_supervisor',
             'submitted_at' => now(),
             'submitted_by_core_user_id' => $actor->core_user_id,
             'progress_snapshot' => $progress,
@@ -447,67 +447,78 @@ class PkpaPortfolioBuilderService
 
     public function review(PkpaRotationPortfolio $portfolio, string $reviewerType, string $action, string $comments, User $actor): PkpaPortfolioReview
     {
-        if ($reviewerType === 'field') {
-            $this->ensureFieldSupervisorOwns($portfolio, $actor);
-            $allowed = ['verify', 'revision_requested'];
-            $expectedStatus = 'submitted_to_field_supervisor';
-        } elseif ($reviewerType === 'internal') {
-            $this->ensureInternalSupervisorOwns($portfolio, $actor);
-            $allowed = ['approve', 'revision_requested'];
-            $expectedStatus = 'submitted_to_internal_supervisor';
-        } else {
-            throw ValidationException::withMessages(['reviewer_type' => 'Pemeriksa tidak valid.']);
-        }
-        if ($portfolio->status !== $expectedStatus) {
-            throw ValidationException::withMessages([
-                'status' => $reviewerType === 'field'
-                    ? 'Portofolio belum dikirim ke Preseptor atau sudah selesai diperiksa.'
-                    : 'Portofolio belum dikirim ke Pembimbing Dalam atau sudah selesai diperiksa.',
-            ]);
-        }
-        if (! in_array($action, $allowed, true)) {
-            throw ValidationException::withMessages(['action' => 'Aksi pemeriksaan tidak valid.']);
-        }
-        if ($action === 'revision_requested' && blank($comments)) {
-            throw ValidationException::withMessages(['comments' => 'Catatan revisi wajib diisi.']);
-        }
-        if (in_array($action, ['verify', 'approve'], true)) {
-            $progress = $this->completeness($portfolio->fresh());
-            if (! $progress['ready_to_submit']) {
+        return DB::transaction(function () use ($portfolio, $reviewerType, $action, $comments, $actor) {
+            $portfolio = PkpaRotationPortfolio::whereKey($portfolio->id)->lockForUpdate()->firstOrFail();
+            if ($reviewerType === 'field') {
+                if (! config('my_pkpa.preceptor_document_validation_enabled')) {
+                    throw ValidationException::withMessages(['portfolio' => 'Pemeriksaan portofolio dilakukan oleh Pembimbing Dalam.']);
+                }
+                $this->ensureFieldSupervisorOwns($portfolio, $actor);
+                $allowed = ['verify', 'revision_requested'];
+                $expectedStatus = 'submitted_to_field_supervisor';
+            } elseif ($reviewerType === 'internal') {
+                $this->ensureInternalSupervisorOwns($portfolio, $actor);
+                $allowed = ['approve', 'revision_requested'];
+                $expectedStatus = 'submitted_to_internal_supervisor';
+            } else {
+                throw ValidationException::withMessages(['reviewer_type' => 'Pemeriksa tidak valid.']);
+            }
+            if ($portfolio->status !== $expectedStatus && ! ($reviewerType === 'internal'
+                && ! config('my_pkpa.preceptor_document_validation_enabled')
+                && in_array($portfolio->status, ['submitted_to_field_supervisor', 'field_verified'], true))) {
                 throw ValidationException::withMessages([
-                    'portfolio' => 'Portofolio belum lengkap dan belum dapat disetujui. Minta revisi kepada mahasiswa. '.implode(' ', $progress['blocking']),
+                    'status' => $reviewerType === 'field'
+                        ? 'Portofolio belum dikirim ke Preseptor atau sudah selesai diperiksa.'
+                        : 'Portofolio belum dikirim ke Pembimbing Dalam atau sudah selesai diperiksa.',
                 ]);
             }
-        }
-
-        $review = PkpaPortfolioReview::create([
-            'pkpa_rotation_portfolio_id' => $portfolio->id,
-            'reviewer_type' => $reviewerType,
-            'reviewer_core_user_id' => $actor->core_user_id,
-            'action' => $action,
-            'comments' => $comments,
-            'privacy_findings' => $reviewerType === 'field' ? $this->portfolioPrivacyFindings($portfolio) : [],
-            'reviewed_at' => now(),
-        ]);
-
-        $updates = [];
-        if ($reviewerType === 'field' && $action === 'verify') {
-            if ($review->privacy_findings !== []) {
-                throw ValidationException::withMessages(['privacy' => 'Masih ada temuan privasi pasien.']);
+            if (! in_array($action, $allowed, true)) {
+                throw ValidationException::withMessages(['action' => 'Aksi pemeriksaan tidak valid.']);
             }
-            $updates = ['status' => 'field_verified', 'field_verified_at' => now(), 'field_verified_by_core_user_id' => $actor->core_user_id];
-        } elseif ($reviewerType === 'field') {
-            $updates = ['status' => 'field_revision_requested'];
-        } elseif ($reviewerType === 'internal' && $action === 'approve') {
-            $updates = ['status' => 'approved', 'internal_approved_at' => now(), 'internal_approved_by_core_user_id' => $actor->core_user_id];
-        } else {
-            $updates = ['status' => 'internal_revision_requested'];
-        }
+            if ($action === 'revision_requested' && blank($comments)) {
+                throw ValidationException::withMessages(['comments' => 'Catatan revisi wajib diisi.']);
+            }
+            if (in_array($action, ['verify', 'approve'], true)) {
+                if ($this->portfolioPrivacyFindings($portfolio) !== []) {
+                    throw ValidationException::withMessages(['privacy' => 'Masih ada temuan privasi pasien. Minta mahasiswa memperbaiki portofolio.']);
+                }
+                $progress = $this->completeness($portfolio->fresh());
+                if (! $progress['ready_to_submit']) {
+                    throw ValidationException::withMessages([
+                        'portfolio' => 'Portofolio belum lengkap dan belum dapat disetujui. Minta revisi kepada mahasiswa. '.implode(' ', $progress['blocking']),
+                    ]);
+                }
+            }
 
-        $portfolio->update($updates);
-        $this->syncProgress($portfolio->fresh());
+            $review = PkpaPortfolioReview::create([
+                'pkpa_rotation_portfolio_id' => $portfolio->id,
+                'reviewer_type' => $reviewerType,
+                'reviewer_core_user_id' => $actor->core_user_id,
+                'action' => $action,
+                'comments' => $comments,
+                'privacy_findings' => $reviewerType === 'field' ? $this->portfolioPrivacyFindings($portfolio) : [],
+                'reviewed_at' => now(),
+            ]);
 
-        return $review;
+            $updates = [];
+            if ($reviewerType === 'field' && $action === 'verify') {
+                if ($review->privacy_findings !== []) {
+                    throw ValidationException::withMessages(['privacy' => 'Masih ada temuan privasi pasien.']);
+                }
+                $updates = ['status' => 'field_verified', 'field_verified_at' => now(), 'field_verified_by_core_user_id' => $actor->core_user_id];
+            } elseif ($reviewerType === 'field') {
+                $updates = ['status' => 'field_revision_requested'];
+            } elseif ($reviewerType === 'internal' && $action === 'approve') {
+                $updates = ['status' => 'approved', 'internal_approved_at' => now(), 'internal_approved_by_core_user_id' => $actor->core_user_id];
+            } else {
+                $updates = ['status' => 'internal_revision_requested'];
+            }
+
+            $portfolio->update($updates);
+            $this->syncProgress($portfolio->fresh());
+
+            return $review;
+        });
     }
 
     public function submitToInternal(PkpaRotationPortfolio $portfolio, User $actor): PkpaRotationPortfolio

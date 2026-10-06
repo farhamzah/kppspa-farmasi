@@ -26,7 +26,7 @@
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-cyan-100">
             <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Logbook Menunggu</p>
             <p class="mt-3 text-3xl font-black text-cyan-700">{{ $readyLogbookCount }}</p>
-            <p class="mt-1 text-sm text-slate-500">Kiriman mahasiswa yang perlu divalidasi.</p>
+            <p class="mt-1 text-sm text-slate-500">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Kiriman mahasiswa yang perlu divalidasi.' : 'Menunggu pemeriksaan Pembimbing Dalam.' }}</p>
         </article>
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-emerald-100">
             <p class="text-xs font-black uppercase tracking-widest text-emerald-700">Sudah Diteruskan</p>
@@ -80,15 +80,15 @@
             <section>
                 <div class="mb-4 flex items-end justify-between gap-3">
                     <div>
-                        <h2 class="text-xl font-black text-slate-950">Logbook Perlu Validasi</h2>
-                        <p class="mt-1 text-sm text-slate-500">Periksa kegiatan harian yang baru dikirim mahasiswa.</p>
+                        <h2 class="text-xl font-black text-slate-950">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Logbook Perlu Validasi' : 'Logbook Terkirim' }}</h2>
+                        <p class="mt-1 text-sm text-slate-500">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Periksa kegiatan harian yang baru dikirim mahasiswa.' : 'Logbook hanya ditampilkan; keputusan diberikan Pembimbing Dalam.' }}</p>
                     </div>
                     <span class="text-sm font-bold text-cyan-700">{{ $readyLogbookCount }} data</span>
                 </div>
                 @include('shared.pkpa-logbook-workspace-list', [
                     'logbookEntries' => $logbookEntries,
                     'routePrefix' => 'field-supervisor',
-                    'actionLabel' => 'Periksa & Validasi',
+                    'actionLabel' => config('my_pkpa.preceptor_document_validation_enabled') ? 'Periksa & Validasi' : 'Lihat Logbook',
                     'emptyTitle' => 'Belum ada logbook yang perlu divalidasi.',
                     'emptyDescription' => 'Logbook akan muncul setelah dikirim oleh mahasiswa.',
                 ])

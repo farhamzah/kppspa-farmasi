@@ -23,8 +23,7 @@ class PkpaRotationAssessmentService
         private readonly PkpaAuditService $audit,
         private readonly PkpaAssessmentCalculationService $calculator,
         private readonly PkpaAssessmentNotificationService $notifications
-    ) {
-    }
+    ) {}
 
     public function createFromRun(PkpaRotationRun $run, ?User $actor): PkpaRotationAssessment
     {
@@ -346,6 +345,13 @@ class PkpaRotationAssessmentService
 
     private function ensureCanScore(PkpaRotationComponentScore $score, ?User $actor): void
     {
+        if (! config('my_pkpa.preceptor_document_validation_enabled') && $score->assessor?->assessor_type === 'field_supervisor') {
+            if (! $this->isCoordinator($actor) || $score->assessor?->status === 'replaced') {
+                throw ValidationException::withMessages(['authorization' => 'Nilai preseptor dicatat secara manual oleh Koordinator PKPA.']);
+            }
+
+            return;
+        }
         if (! $actor || $score->assessor?->core_user_id !== $actor->core_user_id || $score->assessor?->status === 'replaced') {
             throw ValidationException::withMessages(['authorization' => 'Anda tidak berwenang mengisi nilai komponen ini.']);
         }
@@ -368,7 +374,7 @@ class PkpaRotationAssessmentService
             if ($type === 'coordinator') {
                 return [['assessor_type' => 'coordinator', 'core_user_id' => null, 'name_snapshot' => 'Koordinator PKPA', 'role_snapshot' => 'koordinator_kp']];
             }
-            return $run->supervisorHistories
+            $supervisors = $run->supervisorHistories
                 ->where('supervisor_type', $type)
                 ->where('status', 'active')
                 ->map(fn ($supervisor) => [
@@ -378,6 +384,12 @@ class PkpaRotationAssessmentService
                     'role_snapshot' => $supervisor->role_snapshot,
                     'source_rotation_supervisor_history_id' => $supervisor->id,
                 ]);
+            if ($type === 'field' && $supervisors->isEmpty() && ! config('my_pkpa.preceptor_document_validation_enabled')) {
+                return [['assessor_type' => 'field_supervisor', 'core_user_id' => null,
+                    'name_snapshot' => 'Nilai lapangan (dicatat Koordinator)', 'role_snapshot' => 'pembimbing_lapangan']];
+            }
+
+            return $supervisors;
         })->values()->all();
     }
 }

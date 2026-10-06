@@ -16,7 +16,9 @@ class StorePkpaFieldSupervisorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'core_user_id' => ['required', 'string', 'max:80'],
+            'core_user_id' => ['nullable', 'string', 'max:80'],
+            'name_snapshot' => ['required_without:core_user_id', 'nullable', 'string', 'max:255'],
+            'email_snapshot' => ['nullable', 'email', 'max:255'],
             'position_title' => ['nullable', 'string', 'max:255'],
             'is_primary_contact' => ['nullable', 'boolean'],
             'maximum_active_students' => ['nullable', 'integer', 'min:0'],

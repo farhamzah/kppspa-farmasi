@@ -82,13 +82,14 @@
             <h3 class="text-lg font-black text-slate-950">Tambah Preseptor</h3>
             <form method="POST" action="{{ route('management.pkpa-program-sites.field-supervisors.store', $programSite) }}" class="mt-4 space-y-3">
                 @csrf
+                <label class="grid gap-1 text-sm font-bold">Nama Preseptor<input name="name_snapshot" value="{{ old('name_snapshot') }}" class="rounded-lg border-slate-300"></label>
                 <x-management.core-directory-picker
                     field-name="core_user_id"
-                    field-label="Preseptor Dari Core"
+                    field-label="Akun Core (opsional)"
                     :search-url="route('management.core-directory.field-supervisors')"
                     placeholder="Ketik nama, email, jabatan, atau Core ID"
                     helper="Daftar ini hanya menampilkan pengguna Core yang aktif dan sudah memiliki akses MY PKPA."
-                    :required="true"
+                    :required="false"
                     :value="old('core_user_id')"
                 />
                 <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Jabatan</label><input name="position_title" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>

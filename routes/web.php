@@ -175,6 +175,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('pkpa-analytics', [PkpaAnalyticsController::class, 'index'])->name('pkpa-analytics.index');
             Route::get('pkpa-analytics/export', [PkpaAnalyticsController::class, 'export'])->middleware('throttle:pkpa-exports')->name('pkpa-analytics.export');
             Route::get('pkpa-portfolios', [PkpaPortfolioBuilderController::class, 'index'])->name('pkpa-portfolios.index');
+            Route::post('pkpa-preceptor-scores/{score}', [ManagementPkpaAssessmentController::class, 'recordPreceptorScore'])->name('pkpa-preceptor-scores.store');
             Route::post('pkpa-rotation-runs/{run}/portfolio', [PkpaPortfolioBuilderController::class, 'ensure'])->name('pkpa-rotation-runs.portfolio.ensure');
             Route::post('pkpa-portfolios/{portfolio}/reopen', [PkpaPortfolioBuilderController::class, 'reopen'])->name('pkpa-portfolios.reopen');
             Route::post('pkpa-portfolios/{portfolio}/publish', [PkpaPortfolioBuilderController::class, 'publish'])->name('pkpa-portfolios.publish');
@@ -540,6 +541,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('penilaian-pkpa', [InternalPkpaAssessmentController::class, 'index'])->name('pkpa-assessments.index');
             Route::get('review-portofolio', [InternalPkpaPortfolioReviewController::class, 'index'])->name('pkpa-portfolios.index');
             Route::get('review-portofolio/{portfolio}', [InternalPkpaPortfolioReviewController::class, 'show'])->name('pkpa-portfolios.show');
+            Route::post('review-portofolio-validasi-massal', [InternalPkpaPortfolioReviewController::class, 'bulkApprove'])->name('pkpa-portfolios.bulk-approve');
             Route::post('review-portofolio/{portfolio}/approve', [InternalPkpaPortfolioReviewController::class, 'approve'])->name('pkpa-portfolios.approve');
             Route::post('review-portofolio/{portfolio}/revision', [InternalPkpaPortfolioReviewController::class, 'revision'])->name('pkpa-portfolios.revision');
             Route::post('penilaian-pkpa/scores/{score}/save', [InternalPkpaAssessmentController::class, 'save'])->name('pkpa-assessments.scores.save');
@@ -549,6 +551,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('laporan-rotasi/{report}/review', [InternalPkpaAcademicRotationController::class, 'reviewReport'])->name('pkpa-rotation-reports.review');
             Route::post('akademik-pkpa/{run}/guidance', [InternalPkpaAcademicRotationController::class, 'guidance'])->name('pkpa-guidance.store');
             Route::get('monitoring-pkpa/{run}', [InternalPkpaRotationOperationController::class, 'show'])->name('pkpa-operations.show');
+            Route::post('logbook-validasi-massal', [InternalPkpaRotationOperationController::class, 'bulkApprove'])->name('pkpa-logbooks.bulk-approve');
             Route::post('logbook-operasional/{entry}/monitoring', [InternalPkpaRotationOperationController::class, 'reviewLogbook'])->name('pkpa-logbooks.monitoring');
             Route::get('logbook-operasional/attachments/{attachment}/download', [InternalPkpaRotationOperationController::class, 'downloadAttachment'])->name('pkpa-logbooks.attachments.download');
             Route::get('mahasiswa-pkpa', [SupervisedStudentController::class, 'index'])->name('pkpa-students.index');

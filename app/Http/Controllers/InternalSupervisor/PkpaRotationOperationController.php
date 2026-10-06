@@ -9,20 +9,20 @@ use App\Models\PkpaRotationRun;
 use App\Services\PkpaLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PkpaRotationOperationController extends Controller
 {
-    public function __construct(private readonly PkpaLogbookService $logbooks)
-    {
-    }
+    public function __construct(private readonly PkpaLogbookService $logbooks) {}
 
     public function index(Request $request): View
     {
         $coreUserId = $request->user()->core_user_id;
         $tab = in_array($request->query('tab'), ['overview', 'validation', 'history'], true)
             ? $request->query('tab')
-            : 'overview';
+            : (config('my_pkpa.preceptor_document_validation_enabled') ? 'overview' : 'validation');
         $runs = PkpaRotationRun::forSupervisor('internal', $coreUserId)
             ->whereNull('cancelled_at')
             ->with(['practiceDomain', 'practiceSite', 'enrollment', 'logbookEntries'])
@@ -32,19 +32,31 @@ class PkpaRotationOperationController extends Controller
             ->whereHas('rotationRun', fn ($query) => $query
                 ->forSupervisor('internal', $coreUserId)
                 ->whereNull('cancelled_at'));
+        $filteredRuns = $runs;
+        if ($request->filled('q')) {
+            $search = mb_strtolower(trim($request->string('q')->toString()));
+            $filteredRuns = $filteredRuns->filter(fn ($run) => str_contains(mb_strtolower($run->studentDisplayName().' '.$run->studentDisplaySecondary().' '.$run->practiceSite?->name), $search));
+        }
+        if ($request->filled('domain')) {
+            $filteredRuns = $filteredRuns->where('practice_domain_id', $request->integer('domain'));
+        }
+        $request->validate(['date_from' => ['nullable', 'date'], 'date_to' => array_merge(['nullable', 'date'], $request->filled('date_from') ? ['after_or_equal:date_from'] : [])]);
+        $filteredQuery = (clone $logbookQuery)->whereIn('pkpa_rotation_run_id', $filteredRuns->pluck('id'))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('entry_date', '>=', $request->input('date_from')))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('entry_date', '<=', $request->input('date_to')));
 
         return view('internal-supervisor.pkpa-operations.index', [
             'runs' => $runs,
             'tab' => $tab,
-            'readyLogbookCount' => (clone $logbookQuery)->whereIn('status', ['field_approved', 'approved'])->count(),
+            'readyLogbookCount' => (clone $logbookQuery)->whereIn('status', PkpaLogbookEntry::internalReviewStatuses())->count(),
             'completedLogbookCount' => (clone $logbookQuery)->where('status', 'internal_approved')->count(),
             'historyLogbookCount' => (clone $logbookQuery)->where('status', '!=', 'draft')->count(),
             'logbookEntries' => $tab === 'overview'
                 ? null
-                : (clone $logbookQuery)
+                : (clone $filteredQuery)
                     ->when(
                         $tab === 'validation',
-                        fn ($query) => $query->whereIn('status', ['field_approved', 'approved']),
+                        fn ($query) => $query->whereIn('status', PkpaLogbookEntry::internalReviewStatuses()),
                         fn ($query) => $query->where('status', '!=', 'draft')
                     )
                     ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment'])
@@ -68,14 +80,14 @@ class PkpaRotationOperationController extends Controller
         $nextReadyLogbook = $selectedLogbook
             ? $run->logbookEntries()
                 ->whereKeyNot($selectedLogbook->id)
-                ->whereIn('status', ['field_approved', 'approved'])
+                ->whereIn('status', PkpaLogbookEntry::internalReviewStatuses())
                 ->oldest('entry_date')
                 ->first()
             : null;
         $attendanceCount = $run->attendanceRecords()->where('submission_status', '!=', 'draft')->count();
         $logbookCount = $run->logbookEntries()->where('status', '!=', 'draft')->count();
-        $waitingFieldCount = $run->logbookEntries()->where('status', 'submitted')->count();
-        $readyCount = $run->logbookEntries()->whereIn('status', ['field_approved', 'approved'])->count();
+        $waitingFieldCount = config('my_pkpa.preceptor_document_validation_enabled') ? $run->logbookEntries()->where('status', 'submitted')->count() : 0;
+        $readyCount = $run->logbookEntries()->whereIn('status', PkpaLogbookEntry::internalReviewStatuses())->count();
         $completedCount = $run->logbookEntries()->where('status', 'internal_approved')->count();
         $view = in_array($request->query('view'), ['ready', 'logbooks', 'attendance'], true)
             ? $request->query('view')
@@ -84,14 +96,15 @@ class PkpaRotationOperationController extends Controller
             ? $request->query('status')
             : 'all';
         $search = trim((string) $request->query('q'));
+        $request->validate(['date_from' => ['nullable', 'date'], 'date_to' => array_merge(['nullable', 'date'], $request->filled('date_from') ? ['after_or_equal:date_from'] : [])]);
         $dateFrom = $request->date('date_from')?->toDateString();
         $dateTo = $request->date('date_to')?->toDateString();
 
         $logbooks = $run->logbookEntries()
             ->where('status', '!=', 'draft')
-            ->when($view === 'ready', fn ($query) => $query->whereIn('status', ['field_approved', 'approved']))
+            ->when($view === 'ready', fn ($query) => $query->whereIn('status', PkpaLogbookEntry::internalReviewStatuses()))
             ->when($view === 'logbooks' && $status === 'waiting', fn ($query) => $query->where('status', 'submitted'))
-            ->when($view === 'logbooks' && $status === 'ready', fn ($query) => $query->whereIn('status', ['field_approved', 'approved']))
+            ->when($view === 'logbooks' && $status === 'ready', fn ($query) => $query->whereIn('status', PkpaLogbookEntry::internalReviewStatuses()))
             ->when($view === 'logbooks' && $status === 'completed', fn ($query) => $query->where('status', 'internal_approved'))
             ->when($view === 'logbooks' && $status === 'revision', fn ($query) => $query->whereIn('status', ['revision_requested', 'rejected']))
             ->when($search !== '', fn ($query) => $query->where(function ($nested) use ($search) {
@@ -144,7 +157,29 @@ class PkpaRotationOperationController extends Controller
             'run' => $entry->pkpa_rotation_run_id,
             'view' => 'ready',
             'logbook' => $entry->id,
-        ])->with('status', 'Validasi final tersimpan. Logbook ini sudah dikunci dan tidak dapat divalidasi ulang.');
+        ])->with('status', $data['action'] === 'approved'
+            ? 'Validasi final tersimpan. Logbook ini sudah dikunci dan tidak dapat divalidasi ulang.'
+            : 'Keputusan tersimpan. Mahasiswa dapat melihat catatan tindak lanjut.');
+    }
+
+    public function bulkApprove(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['required', 'integer', 'distinct'],
+            'comments' => ['nullable', 'string', 'max:1500'],
+        ]);
+        DB::transaction(function () use ($request, $data) {
+            $entries = PkpaLogbookEntry::whereIn('id', $data['ids'])->orderBy('id')->lockForUpdate()->get();
+            if ($entries->count() !== count($data['ids'])) {
+                throw ValidationException::withMessages(['ids' => 'Sebagian logbook tidak tersedia. Muat ulang antrean.']);
+            }
+            foreach ($entries as $entry) {
+                $this->logbooks->internalReview($entry, 'approved', $data['comments'] ?? null, $request->user());
+            }
+        });
+
+        return back()->with('status', count($data['ids']).' logbook berhasil divalidasi dan dikunci.');
     }
 
     public function downloadAttachment(Request $request, PkpaLogbookAttachment $attachment)

@@ -12,7 +12,7 @@
     ];
     $logbookStatuses = [
         'draft' => 'Draf',
-        'submitted' => 'Menunggu Validasi Preseptor',
+        'submitted' => config('my_pkpa.preceptor_document_validation_enabled') ? 'Menunggu Validasi Preseptor' : 'Menunggu Pembimbing Dalam',
         'field_approved' => 'Tervalidasi Preseptor',
         'internal_approved' => 'Tervalidasi Pembimbing Dalam',
         'revision_requested' => 'Perlu Revisi',
@@ -54,7 +54,7 @@
         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $run->practiceSite?->name }}</h2>
         <p class="mt-2 text-sm text-slate-500">{{ $run->scheduled_start_date?->format('d M Y') }} - {{ $run->scheduled_end_date?->format('d M Y') }} / status {{ str($run->status)->replace('_', ' ')->headline() }}</p>
         <div class="mt-4 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
-            Draf hanya terlihat oleh Anda. Tombol <span class="font-black">Kirim ke Preseptor</span> mengubah draf menjadi kiriman yang dapat divalidasi. Logbook baru selesai setelah Preseptor dan Pembimbing Dalam menyetujui.
+            Draf hanya terlihat oleh Anda. Logbook dikirim ke Pembimbing Dalam untuk diperiksa dan disetujui. Presensi memiliki proses pemeriksaan tersendiri.
         </div>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -66,7 +66,7 @@
                 <p class="mt-1 font-black text-slate-950">{{ $attendanceDraftCount }}</p>
             </div>
             <div class="rounded-xl bg-cyan-50 px-4 py-3 ring-1 ring-cyan-100">
-                <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Menunggu Preseptor</p>
+                <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Kiriman Menunggu Pemeriksaan</p>
                 <p class="mt-1 font-black text-slate-950">{{ $attendanceSubmittedCount + $logbookSubmittedCount }}</p>
             </div>
             <div class="rounded-xl bg-emerald-50 px-4 py-3 ring-1 ring-emerald-100">
@@ -306,7 +306,7 @@
             </div>
 
             <div class="flex flex-wrap gap-3">
-                <button id="logbook-submit-button" name="submission_action" value="submit" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Kirim ke Preseptor</button>
+                <button id="logbook-submit-button" name="submission_action" value="submit" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Kirim ke Pembimbing Dalam</button>
                 <button id="logbook-draft-button" name="submission_action" value="draft" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700">Simpan sebagai Draf</button>
                 <button type="button" id="logbook-reset-button" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-base font-black text-slate-700">Form Baru</button>
             </div>
@@ -355,7 +355,7 @@
                         </summary>
                         <div class="mt-4 grid gap-4 border-t border-dashed border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_320px]">
                             <div class="rounded-xl {{ $entry->status === 'draft' ? 'bg-amber-50 text-amber-900' : ($entry->status === 'submitted' ? 'bg-cyan-50 text-cyan-900' : ($entry->status === 'field_approved' ? 'bg-sky-50 text-sky-900' : 'bg-emerald-50 text-emerald-900')) }} px-4 py-3 xl:col-span-2">
-                                <p class="font-black">{{ $entry->status === 'draft' ? 'Draf belum dikirim' : ($entry->status === 'submitted' ? 'Sudah terkirim ke Preseptor' : ($entry->status === 'field_approved' ? 'Sudah disetujui Preseptor, menunggu Pembimbing Dalam' : ($entry->status === 'internal_approved' ? 'Tervalidasi final oleh Pembimbing Dalam' : 'Memerlukan tindak lanjut mahasiswa'))) }}</p>
+                                <p class="font-black">{{ $entry->status === 'draft' ? 'Draf belum dikirim' : ($entry->status === 'submitted' ? 'Sudah terkirim ke Pembimbing Dalam' : ($entry->status === 'field_approved' ? 'Sudah disetujui Preseptor, menunggu Pembimbing Dalam' : ($entry->status === 'internal_approved' ? 'Tervalidasi final oleh Pembimbing Dalam' : 'Memerlukan tindak lanjut mahasiswa'))) }}</p>
                                 <p class="mt-1 text-sm">{{ $entry->status === 'draft' ? 'Edit atau tambahkan bukti, lalu kirim ketika isi sudah lengkap.' : ($entry->submitted_at ? 'Dikirim pada '.$entry->submitted_at->format('d M Y H:i') : 'Status dicatat oleh sistem.') }}</p>
                             </div>
                             <div class="space-y-4">
@@ -427,7 +427,7 @@
                                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
                                         Draft ini masih bisa diubah, disimpan ulang, atau dihapus sebelum dikirim ke preseptor dan pembimbing dalam.
                                     </div>
-                                    <form method="POST" action="{{ route('student.pkpa-logbooks.submit', $entry) }}">@csrf<button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-black text-white">Kirim ke Preseptor</button></form>
+                                    <form method="POST" action="{{ route('student.pkpa-logbooks.submit', $entry) }}">@csrf<button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-black text-white">Kirim ke Pembimbing Dalam</button></form>
                                 @elseif($entry->status === 'submitted')
                                     <form method="POST" action="{{ route('student.pkpa-logbooks.attachment-links.store', $entry) }}" class="space-y-3 rounded-2xl border border-cyan-200 bg-cyan-50/60 p-4">
                                         @csrf
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logbookLearningOutcomes.value = button.dataset.learningOutcomes || '';
             logbookReflection.value = button.dataset.reflection || '';
             logbookPracticeMinutes.value = button.dataset.practiceMinutes || '';
-            logbookSubmitButton.textContent = 'Perbarui dan Kirim ke Preseptor';
+            logbookSubmitButton.textContent = 'Perbarui dan Kirim ke Pembimbing Dalam';
             logbookDraftButton.textContent = 'Simpan Perubahan Draf';
             logbookForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -561,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (evidenceLinkList && evidenceLinkList.children.length === 0) {
             addEvidenceLinkRow();
         }
-        logbookSubmitButton.textContent = 'Kirim ke Preseptor';
+        logbookSubmitButton.textContent = 'Kirim ke Pembimbing Dalam';
         logbookDraftButton.textContent = 'Simpan sebagai Draf';
     });
 });

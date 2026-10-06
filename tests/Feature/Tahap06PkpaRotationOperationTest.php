@@ -4,17 +4,15 @@ namespace Tests\Feature;
 
 use App\Models\KpAssignment;
 use App\Models\PkpaEnrollment;
+use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
-use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
-use App\Models\PkpaProgram;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
 use App\Models\PkpaRotationOperationRule;
-use App\Models\PkpaRotationProgressSnapshot;
 use App\Models\PkpaRotationRun;
 use App\Models\Role;
 use App\Models\User;
@@ -41,16 +39,23 @@ class Tahap06PkpaRotationOperationTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $student;
+
     private User $otherStudent;
+
     private User $fieldSupervisor;
+
     private User $internalSupervisor;
+
     private User $otherSupervisor;
 
     protected function setUp(): void
     {
         parent::setUp();
+        config()->set('my_pkpa.preceptor_document_validation_enabled', true);
 
         config()->set('my_pkpa.rotation_operations_enabled', true);
         config()->set('my_pkpa.logbook_attachment_disk', 'local');
@@ -434,6 +439,36 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertSee(route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'ready']), false)
             ->assertDontSee('name="comments"', false)
             ->assertDontSee('value="approved"', false);
+    }
+
+    public function test_direct_internal_validation_supports_bulk_approval_and_rejects_duplicate_or_unauthorized_batches(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $run = $this->activatedRun();
+        $service = app(PkpaLogbookService::class);
+        $ids = [];
+        foreach (['2026-07-16', '2026-07-17'] as $date) {
+            $entry = $service->save($run, [
+                'entry_date' => $date, 'title' => 'Kiriman langsung '.$date,
+                'activity_summary' => 'Pelayanan obat.', 'learning_outcomes' => 'Komunikasi pasien.',
+                'reflection' => 'Menjaga ketelitian.',
+            ], $this->student);
+            $service->submit($entry, $this->student);
+            $ids[] = $entry->id;
+        }
+        $url = route('internal-supervisor.pkpa-logbooks.bulk-approve');
+        $this->actingAs($this->otherSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->post($url, ['ids' => $ids])->assertSessionHasErrors('authorization');
+        $this->assertSame(2, $run->logbookEntries()->where('status', 'submitted')->count());
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get(route('internal-supervisor.pkpa-operations.show', $run))
+            ->assertOk()->assertSee('Validasi Terpilih')->assertSee('Kiriman langsung');
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->post($url, ['ids' => $ids, 'comments' => 'Kegiatan sudah sesuai.'])->assertSessionHasNoErrors();
+        $this->assertSame(2, $run->logbookEntries()->where('status', 'internal_approved')->whereNotNull('locked_at')->count());
+        $this->assertDatabaseCount('pkpa_logbook_reviews', 2);
+        $this->post($url, ['ids' => $ids])->assertSessionHasErrors('logbook');
+        $this->assertDatabaseCount('pkpa_logbook_reviews', 2);
     }
 
     public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void

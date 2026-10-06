@@ -4,7 +4,7 @@
 @section('content')
 @php
     $statusLabel = [
-        'submitted' => 'Menunggu Preseptor',
+        'submitted' => config('my_pkpa.preceptor_document_validation_enabled') ? 'Menunggu Preseptor' : 'Siap Divalidasi',
         'field_approved' => 'Siap Validasi Akhir',
         'approved' => 'Siap Validasi Akhir',
         'internal_approved' => 'Tervalidasi Final',
@@ -19,7 +19,7 @@
         'revision_requested' => 'bg-orange-50 text-orange-700',
         'rejected' => 'bg-rose-50 text-rose-700',
     ];
-    $canValidate = $selectedLogbook && in_array($selectedLogbook->status, ['field_approved', 'approved'], true);
+    $canValidate = $selectedLogbook && in_array($selectedLogbook->status, \App\Models\PkpaLogbookEntry::internalReviewStatuses(), true);
     $internalReview = $selectedLogbook?->reviews
         ?->where('reviewer_type', 'internal')
         ->sortByDesc('reviewed_at')
@@ -168,6 +168,9 @@
             </form>
 
             <div class="p-4 sm:p-5">
+                @if($view === 'ready')
+                    <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-logbooks.bulk-approve')" />
+                @endif
                 @if($view === 'attendance')
                     <div class="divide-y divide-slate-100">
                         @forelse($attendances as $record)
@@ -184,14 +187,17 @@
                     <div class="divide-y divide-slate-100">
                         @forelse($logbooks as $entry)
                             <article class="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                @if($view === 'ready')
+                                    <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" form="bulk-validation" aria-label="Pilih {{ $entry->title }}"> Pilih</label>
+                                @endif
                                 <div class="min-w-0">
                                     <div class="flex flex-wrap items-center gap-2"><p class="font-bold text-slate-950">{{ $entry->entry_date?->translatedFormat('d M Y') }} · {{ $entry->title }}</p><span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $statusClass[$entry->status] ?? 'bg-slate-100 text-slate-600' }}">{{ $statusLabel[$entry->status] ?? str($entry->status)->replace('_', ' ')->headline() }}</span></div>
                                     <p class="mt-1 truncate text-sm text-slate-500">{{ str($entry->activity_summary)->limit(110) }}</p>
                                 </div>
-                                <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => $view, 'logbook' => $entry->id]) }}" class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg {{ in_array($entry->status, ['field_approved', 'approved'], true) ? 'bg-cyan-700 text-white' : 'border border-cyan-200 text-cyan-800' }} px-4 py-2 text-sm font-bold">{{ in_array($entry->status, ['field_approved', 'approved'], true) ? 'Lihat & Validasi' : 'Lihat Detail' }}</a>
+                                <a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => $view, 'logbook' => $entry->id]) }}" class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg {{ in_array($entry->status, \App\Models\PkpaLogbookEntry::internalReviewStatuses(), true) ? 'bg-cyan-700 text-white' : 'border border-cyan-200 text-cyan-800' }} px-4 py-2 text-sm font-bold">{{ in_array($entry->status, \App\Models\PkpaLogbookEntry::internalReviewStatuses(), true) ? 'Lihat & Validasi' : 'Lihat Detail' }}</a>
                             </article>
                         @empty
-                            <div class="py-12 text-center"><p class="font-bold text-slate-700">{{ $view === 'ready' ? 'Tidak ada logbook yang menunggu validasi.' : 'Tidak ada logbook pada filter ini.' }}</p><p class="mt-1 text-sm text-slate-500">{{ $view === 'ready' ? 'Logbook akan masuk setelah disetujui Preseptor.' : 'Ubah atau reset filter untuk melihat data lainnya.' }}</p></div>
+                            <div class="py-12 text-center"><p class="font-bold text-slate-700">{{ $view === 'ready' ? 'Tidak ada logbook yang menunggu validasi.' : 'Tidak ada logbook pada filter ini.' }}</p><p class="mt-1 text-sm text-slate-500">{{ $view === 'ready' ? 'Logbook yang dikirim mahasiswa akan masuk ke antrean ini.' : 'Ubah atau reset filter untuk melihat data lainnya.' }}</p></div>
                         @endforelse
                     </div>
                     @if($logbooks->hasPages())<div class="border-t border-slate-100 pt-4">{{ $logbooks->links() }}</div>@endif

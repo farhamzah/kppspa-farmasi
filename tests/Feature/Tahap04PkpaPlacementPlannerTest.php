@@ -118,6 +118,20 @@ class Tahap04PkpaPlacementPlannerTest extends TestCase
         $this->assertSame('pending', $requirement->fresh()->status);
     }
 
+    public function test_assignment_preserves_preceptor_name_without_a_core_account(): void
+    {
+        [$program, $plan, $programSite, $availability, $internal, $field] = $this->placementFixture('PKPA-04-NO-ACCOUNT', capacity: 2);
+        $field->update(['core_user_id' => null, 'name_snapshot' => 'apt. Nama Preseptor Tanpa Akun']);
+        $enrollment = $this->enroll($program, 'CORE-STUDENT-NO-ACCOUNT', '240088');
+        $requirement = $enrollment->requirements()->where('practice_domain_id', $programSite->practice_domain_id)->firstOrFail();
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->post("/management/pkpa-placement-plans/{$plan->id}/assignments", $this->assignmentPayload($requirement, $programSite, $availability, $internal, $field))
+            ->assertSessionHasNoErrors();
+        $record = PkpaRotationAssignment::firstOrFail()->supervisors()->where('supervisor_type', 'field')->firstOrFail();
+        $this->assertNull($record->core_user_id);
+        $this->assertSame('apt. Nama Preseptor Tanpa Akun', $record->name_snapshot);
+    }
+
     public function test_draft_assignment_can_wait_for_preceptor_and_plan_can_be_locked_with_warning(): void
     {
         [$program, $plan, $programSite, $availability, $internal] = $this->placementFixture('PKPA-04-PRESEPTOR', capacity: 2);

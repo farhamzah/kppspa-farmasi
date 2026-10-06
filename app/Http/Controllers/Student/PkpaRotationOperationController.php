@@ -16,9 +16,7 @@ use Illuminate\View\View;
 
 class PkpaRotationOperationController extends Controller
 {
-    public function __construct(private readonly PkpaAttendanceService $attendance, private readonly PkpaLogbookService $logbooks)
-    {
-    }
+    public function __construct(private readonly PkpaAttendanceService $attendance, private readonly PkpaLogbookService $logbooks) {}
 
     public function index(Request $request): View
     {
@@ -146,7 +144,7 @@ class PkpaRotationOperationController extends Controller
         });
 
         if ($submissionAction === 'submit') {
-            return back()->with('status', 'Logbook berhasil dikirim ke preseptor.');
+            return back()->with('status', 'Logbook berhasil dikirim ke Pembimbing Dalam.');
         }
 
         return back()->with('status', 'Logbook disimpan sebagai draft.')->with('logbook_id', $entry->id);
@@ -156,7 +154,7 @@ class PkpaRotationOperationController extends Controller
     {
         $this->logbooks->submit($entry, $request->user());
 
-        return back()->with('status', 'Logbook dikirim ke preseptor.');
+        return back()->with('status', 'Logbook dikirim ke Pembimbing Dalam.');
     }
 
     public function deleteLogbook(Request $request, PkpaLogbookEntry $entry): RedirectResponse

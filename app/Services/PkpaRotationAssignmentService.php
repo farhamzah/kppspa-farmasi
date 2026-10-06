@@ -259,7 +259,9 @@ class PkpaRotationAssignmentService
 
         $field = PkpaSiteFieldSupervisor::find($data['site_field_supervisor_id'] ?? null);
         if ($field) {
-            $fieldUser = User::query()->with(['lecturer', 'fieldSupervisor'])->where('core_user_id', $field->core_user_id)->first();
+            $fieldUser = filled($field->core_user_id)
+                ? User::query()->with(['lecturer', 'fieldSupervisor'])->where('core_user_id', $field->core_user_id)->first()
+                : null;
             PkpaRotationAssignmentSupervisor::create([
                 'pkpa_rotation_assignment_id' => $assignment->id,
                 'supervisor_type' => 'field',

@@ -1,22 +1,36 @@
 @extends('layouts.app')
-@section('title', 'Pemeriksaan Portofolio Pembimbing Dalam')
+@section('title', 'Pemeriksaan Portofolio')
 @section('page_title', 'Pemeriksaan Portofolio')
 @section('content')
-@php($runsByDomain = $runs->groupBy(fn ($run) => $run->practiceDomain?->name ?: 'Wahana belum ditentukan'))
-<div class="space-y-6">
-    <section class="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"><p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Pemeriksaan Portofolio</p><h1 class="mt-2 text-3xl font-black text-slate-950">Antrean Pembimbing Dalam</h1><p class="mt-2 text-sm text-slate-600">Portofolio dikelompokkan berdasarkan wahana agar mahasiswa dari Apotek, Rumah Sakit, dan wahana lain tidak tercampur.</p></section>
-    @forelse($runsByDomain as $domainName => $domainRuns)
-        <section class="overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><p class="text-xs font-black uppercase tracking-widest text-cyan-700">Wahana PKPA</p><h2 class="mt-1 text-xl font-black text-slate-950">{{ $domainName }}</h2></div><span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700">{{ $domainRuns->count() }} mahasiswa</span></div>
+<div class="space-y-5">
+    <h2 class="text-sm font-semibold text-cyan-800">Wahana PKPA</h2>
+    @if($errors->any())<p class="rounded-lg bg-rose-50 p-4 text-sm text-rose-800">{{ $errors->first() }}</p>@endif
+    <form method="GET" class="grid gap-3 rounded-lg bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label class="grid gap-1 text-sm font-semibold">Cari mahasiswa atau tempat<input name="q" value="{{ request('q') }}" class="rounded-lg border-slate-200"></label>
+        <label class="grid gap-1 text-sm font-semibold">Wahana<select name="domain" class="rounded-lg border-slate-200"><option value="">Semua wahana</option>@foreach(\App\Models\PkpaPracticeDomain::orderBy('name')->get() as $domain)<option value="{{ $domain->id }}" @selected(request('domain') == $domain->id)>{{ $domain->name }}</option>@endforeach</select></label>
+        <label class="grid gap-1 text-sm font-semibold">Status<select name="status" class="rounded-lg border-slate-200"><option value="ready" @selected(request('status', 'ready') === 'ready')>Siap Divalidasi</option><option value="all" @selected(request('status') === 'all')>Semua Portofolio</option></select></label>
+        <div class="flex items-end gap-2"><button class="min-h-11 rounded-lg bg-cyan-700 px-4 text-sm font-bold text-white">Terapkan</button><a href="{{ route('internal-supervisor.pkpa-portfolios.index') }}" class="p-3 text-sm font-semibold">Reset</a></div>
+    </form>
+    <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-portfolios.bulk-approve')" label="Setujui Terpilih" />
+    @forelse($runs->groupBy(fn ($run) => $run->practiceDomain?->name ?: 'Wahana lainnya') as $domainName => $domainRuns)
+        <section class="overflow-hidden rounded-lg bg-white ring-1 ring-slate-200">
+            <h2 class="border-b border-slate-100 px-5 py-4 text-lg font-bold">{{ $domainName }}</h2>
             <div class="divide-y divide-slate-100">
                 @foreach($domainRuns as $run)
                     @php($portfolio = $run->currentPortfolio)
-                    <article class="flex flex-col gap-4 px-5 py-5 md:flex-row md:items-center md:justify-between"><div><p class="font-black text-slate-950">{{ $run->studentDisplayName() }}</p><p class="mt-1 text-sm text-slate-500">{{ $run->practiceSite?->name }}</p><p class="mt-2 text-sm font-semibold {{ $portfolio ? 'text-cyan-700' : 'text-slate-500' }}">{{ $portfolio ? $portfolio->statusLabel() : 'Belum ada portofolio yang diisi mahasiswa' }}</p></div>@if($portfolio)<a href="{{ route('internal-supervisor.pkpa-portfolios.show', $portfolio) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl {{ $portfolio->status === 'submitted_to_internal_supervisor' ? 'bg-cyan-700 text-white' : 'border border-slate-200 bg-white text-slate-700' }} px-5 py-2 text-sm font-bold">{{ $portfolio->status === 'submitted_to_internal_supervisor' ? 'Periksa Sekarang' : 'Lihat' }}</a>@else<span class="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-5 py-2 text-sm font-bold text-slate-500">Belum dapat diperiksa</span>@endif</article>
+                    <article class="flex flex-wrap items-center gap-4 p-5">
+                        @if($portfolio && in_array($portfolio->status, \App\Models\PkpaRotationPortfolio::internalReviewStatuses(), true))
+                            <input type="checkbox" name="ids[]" value="{{ $portfolio->id }}" form="bulk-validation" aria-label="Pilih portofolio {{ $run->studentDisplayName() }}">
+                        @endif
+                        <div class="min-w-0 flex-1"><p class="font-bold">{{ $run->studentDisplayName() }}</p><p class="mt-1 text-sm text-slate-500">{{ $run->studentDisplaySecondary() }} · {{ $run->practiceSite?->name }}</p><p class="mt-2 text-sm font-semibold text-cyan-700">{{ $portfolio?->statusLabel() ?? 'Belum diisi' }}</p></div>
+                        @if($portfolio)<a href="{{ route('internal-supervisor.pkpa-portfolios.show', $portfolio) }}" class="rounded-lg border border-cyan-200 px-4 py-3 text-sm font-bold text-cyan-800">Lihat Detail</a>@endif
+                    </article>
                 @endforeach
             </div>
         </section>
     @empty
-        <div class="rounded-2xl border border-slate-100 bg-white p-6 text-sm text-slate-500">Belum ada mahasiswa PKPA yang menjadi bimbingan Anda.</div>
+        <p class="rounded-lg bg-white p-6 text-sm text-slate-500">Tidak ada portofolio pada filter ini.</p>
     @endforelse
+    {{ $pagination->links() }}
 </div>
 @endsection

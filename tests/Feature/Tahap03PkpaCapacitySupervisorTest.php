@@ -15,6 +15,7 @@ use App\Models\PkpaSiteFieldSupervisor;
 use App\Models\PkpaSupervisorUnavailabilityPeriod;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\PkpaFieldSupervisorService;
 use App\Services\PkpaProgramService;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
@@ -94,6 +95,19 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
             ->post("/management/pkpa-program-sites/{$programSite->id}/deactivate")
             ->assertRedirect();
         $this->assertFalse($programSite->fresh()->is_active);
+    }
+
+    public function test_preceptor_can_be_recorded_without_a_core_account(): void
+    {
+        $site = $this->createSite('APT-NO-ACCOUNT', 'APT');
+        $usersBefore = User::count();
+        $supervisor = app(PkpaFieldSupervisorService::class)->create($site, [
+            'name_snapshot' => 'apt. Preseptor Tanpa Akun, S.Farm.',
+            'status' => 'active',
+        ], $this->koordinator);
+        $this->assertNull($supervisor->core_user_id);
+        $this->assertSame('apt. Preseptor Tanpa Akun, S.Farm.', $supervisor->name_snapshot);
+        $this->assertSame($usersBefore, User::count());
     }
 
     public function test_site_availability_validations_and_cancellation(): void

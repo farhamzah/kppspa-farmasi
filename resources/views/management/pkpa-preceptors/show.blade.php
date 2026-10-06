@@ -20,18 +20,20 @@
     <div class="grid gap-5 xl:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)]">
         <section class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <h3 class="text-lg font-black text-slate-950">Tambahkan Preseptor</h3>
-            <p class="mt-1 text-sm text-slate-600">Pilih akun dari Core. Preseptor akan tetap aktif sampai statusnya diubah manual.</p>
+            <p class="mt-1 text-sm text-slate-600">Catat nama preseptor. Status dapat diubah secara manual.</p>
 
             <form method="POST" action="{{ route('management.pkpa-program-sites.field-supervisors.store', $programSite) }}" class="mt-5 space-y-4">
                 @csrf
                 <input type="hidden" name="status" value="active">
+                <label class="grid gap-1 text-sm font-bold">Nama Preseptor<input name="name_snapshot" value="{{ old('name_snapshot') }}" class="rounded-lg border-slate-300" placeholder="Nama lengkap dan gelar"></label>
+                <label class="grid gap-1 text-sm font-bold">Email (opsional)<input type="email" name="email_snapshot" value="{{ old('email_snapshot') }}" class="rounded-lg border-slate-300"></label>
                 <x-management.core-directory-picker
                     field-name="core_user_id"
                     field-label="Pilih Preseptor dari Core"
                     :search-url="route('management.core-directory.field-supervisors')"
                     placeholder="Ketik nama, email, jabatan, atau Core ID"
                     helper="Hanya akun Core aktif yang memiliki akses Preseptor MY PKPA yang ditampilkan."
-                    :required="true"
+                    :required="false"
                     :value="old('core_user_id')"
                 />
 
@@ -89,7 +91,7 @@
                         @endif
                     </article>
                 @empty
-                    <div class="rounded-lg border border-dashed border-slate-300 p-8 text-center"><p class="font-bold text-slate-700">Belum ada preseptor</p><p class="mt-1 text-sm text-slate-500">Pilih akun Core melalui formulir untuk menambahkan penanggung jawab tempat ini.</p></div>
+                    <div class="rounded-lg border border-dashed border-slate-300 p-8 text-center"><p class="font-bold text-slate-700">Belum ada preseptor</p><p class="mt-1 text-sm text-slate-500">Catat nama penanggung jawab tempat ini. Akun Core bersifat opsional.</p></div>
                 @endforelse
             </div>
         </section>

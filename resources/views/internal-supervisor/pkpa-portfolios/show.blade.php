@@ -23,7 +23,7 @@
                     : ($isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections()
                         : ($isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : []))))));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
-    $canReview = $portfolio->status === 'submitted_to_internal_supervisor';
+    $canReview = $portfolio->status === 'submitted_to_internal_supervisor' || (! config('my_pkpa.preceptor_document_validation_enabled') && in_array($portfolio->status, ['submitted_to_field_supervisor', 'field_verified'], true));
     $isComplete = (bool) data_get($portfolio->progress_snapshot, 'ready_to_submit', false);
     $blockingNotes = data_get($portfolio->progress_snapshot, 'blocking', []);
 @endphp

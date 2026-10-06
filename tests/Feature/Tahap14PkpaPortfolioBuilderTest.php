@@ -65,6 +65,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config()->set('my_pkpa.preceptor_document_validation_enabled', true);
         Storage::fake('local');
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class, PkpaPortfolioTemplateSeeder::class]);
         $this->admin = $this->makeUser('admin14@test.local', ['admin'], 'CORE-ADMIN-14');
@@ -203,6 +204,51 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->assertSame('approved', $submitted->fresh()->status);
         $this->expectException(ValidationException::class);
         $service->reopen($submitted->fresh(), '', $this->koordinator);
+    }
+
+    public function test_portfolio_can_be_sent_directly_to_internal_supervisor_and_approved_in_bulk(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->run, $this->admin);
+        $service->acknowledgeIntegrity($portfolio, $this->student);
+        $this->fillApotekSections($service, $portfolio);
+        $service->saveCase($portfolio->fresh(), ['case_code' => 'DIRECT', 'complaint' => 'Batuk', 'anonymization_confirmed' => true], $this->student);
+        $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'achievement' => 'Memahami pelayanan obat.'], $this->student);
+        $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Komunikasi', 'score' => 4, 'evidence_experience' => 'Konseling'], $this->student);
+        $service->saveDocumentation($portfolio->fresh(), ['activity' => 'Konseling', 'anonymization_confirmed' => true, 'consent_confirmed' => true], null, $this->student);
+        $service->submit($portfolio->fresh(), $this->student);
+        $this->assertSame('submitted_to_internal_supervisor', $portfolio->fresh()->status);
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post(route('field-supervisor.pkpa-portfolios.verify', $portfolio), ['comments' => 'Tidak boleh memvalidasi.'])
+            ->assertSessionHasErrors('portfolio');
+        $this->assertSame('submitted_to_internal_supervisor', $portfolio->fresh()->status);
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->post(route('internal-supervisor.pkpa-portfolios.bulk-approve'), ['ids' => [$portfolio->id]])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('approved', $portfolio->fresh()->status);
+        $this->post(route('internal-supervisor.pkpa-portfolios.bulk-approve'), ['ids' => [$portfolio->id]])
+            ->assertSessionHasErrors('status');
+        $this->assertDatabaseHas('pkpa_portfolio_reviews', [
+            'pkpa_rotation_portfolio_id' => $portfolio->id,
+            'reviewer_type' => 'internal',
+            'reviewer_core_user_id' => $this->internalSupervisor->core_user_id,
+        ]);
+    }
+
+    public function test_internal_validation_switch_is_previewable_idempotent_and_preserves_final_decisions(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $portfolio = app(PkpaPortfolioBuilderService::class)->ensureForRun($this->run, $this->admin);
+        $portfolio->update(['status' => 'submitted_to_field_supervisor']);
+        $this->artisan('pkpa:enable-internal-validation')->assertSuccessful();
+        $this->assertSame('submitted_to_field_supervisor', $portfolio->fresh()->status);
+        $this->artisan('pkpa:enable-internal-validation', ['--apply' => true])->assertSuccessful();
+        $this->assertSame('submitted_to_internal_supervisor', $portfolio->fresh()->status);
+        $portfolio->update(['status' => 'approved', 'internal_approved_at' => now()]);
+        $this->artisan('pkpa:enable-internal-validation', ['--apply' => true])->assertSuccessful();
+        $this->assertSame('approved', $portfolio->fresh()->status);
+        $this->assertNotNull($portfolio->fresh()->internal_approved_at);
     }
 
     public function test_incomplete_portfolio_cannot_be_verified_and_coordinator_can_reopen_it(): void

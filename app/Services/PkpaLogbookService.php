@@ -19,9 +19,7 @@ class PkpaLogbookService
 {
     use AuthorizesPkpaRotationActors;
 
-    public function __construct(private readonly PkpaAuditService $audit, private readonly PkpaRotationProgressService $progress)
-    {
-    }
+    public function __construct(private readonly PkpaAuditService $audit, private readonly PkpaRotationProgressService $progress) {}
 
     public function restoreHiddenSubmittedEntries(PkpaRotationRun $run, ?User $actor): int
     {
@@ -127,7 +125,7 @@ class PkpaLogbookService
         $run->loadMissing('supervisorHistories', 'currentAssignment.supervisors');
         $hasFieldSupervisor = $run->activeSupervisor('field') !== null
             || $run->currentAssignment?->supervisors->contains(fn ($supervisor) => $supervisor->supervisor_type === 'field' && $supervisor->status === 'assigned');
-        if (! $hasFieldSupervisor) {
+        if (config('my_pkpa.preceptor_document_validation_enabled') && ! $hasFieldSupervisor) {
             throw ValidationException::withMessages(['preseptor' => 'Preseptor belum ditetapkan. Logbook dapat disimpan sebagai draf dan dikirim setelah preseptor tersedia.']);
         }
         $entry->update(['status' => 'submitted', 'submitted_at' => now(), 'submitted_by_core_user_id' => $actor?->core_user_id, 'row_version' => $entry->row_version + 1]);
@@ -139,6 +137,9 @@ class PkpaLogbookService
 
     public function fieldReview(PkpaLogbookEntry $entry, string $action, ?string $comments, ?User $actor): PkpaLogbookEntry
     {
+        if (! config('my_pkpa.preceptor_document_validation_enabled')) {
+            throw ValidationException::withMessages(['logbook' => 'Validasi logbook dilakukan oleh Pembimbing Dalam.']);
+        }
         $run = $entry->rotationRun()->with('supervisorHistories')->firstOrFail();
         $this->ensureFieldSupervisor($run, $actor);
         if (! in_array($action, ['approved', 'revision_requested', 'rejected'], true)) {
@@ -165,28 +166,31 @@ class PkpaLogbookService
 
     public function internalReview(PkpaLogbookEntry $entry, string $action, ?string $comments, ?User $actor): PkpaLogbookEntry
     {
-        $run = $entry->rotationRun()->with('supervisorHistories')->firstOrFail();
-        $this->ensureInternalSupervisor($run, $actor);
-        if (! in_array($action, ['approved', 'revision_requested', 'rejected'], true)) {
-            throw ValidationException::withMessages(['action' => 'Aksi validasi pembimbing dalam tidak valid.']);
-        }
-        if (in_array($action, ['revision_requested', 'rejected'], true) && blank($comments)) {
-            throw ValidationException::withMessages(['comments' => 'Catatan wajib diisi untuk revisi atau penolakan.']);
-        }
-        if (! in_array($entry->status, ['field_approved', 'approved'], true)) {
-            throw ValidationException::withMessages(['logbook' => 'Pembimbing dalam hanya dapat memvalidasi logbook yang sudah disetujui preseptor.']);
-        }
+        return DB::transaction(function () use ($entry, $action, $comments, $actor) {
+            $entry = PkpaLogbookEntry::whereKey($entry->id)->lockForUpdate()->firstOrFail();
+            $run = $entry->rotationRun()->with('supervisorHistories')->firstOrFail();
+            $this->ensureInternalSupervisor($run, $actor);
+            if (! in_array($action, ['approved', 'revision_requested', 'rejected'], true)) {
+                throw ValidationException::withMessages(['action' => 'Aksi validasi pembimbing dalam tidak valid.']);
+            }
+            if (in_array($action, ['revision_requested', 'rejected'], true) && blank($comments)) {
+                throw ValidationException::withMessages(['comments' => 'Catatan wajib diisi untuk revisi atau penolakan.']);
+            }
+            if (! in_array($entry->status, PkpaLogbookEntry::internalReviewStatuses(), true)) {
+                throw ValidationException::withMessages(['logbook' => 'Hanya logbook dalam antrean pemeriksaan yang dapat divalidasi.']);
+            }
 
-        $entry->update([
-            'status' => $action === 'approved' ? 'internal_approved' : $action,
-            'internal_reviewed_at' => now(),
-            'locked_at' => $action === 'approved' ? now() : null,
-            'row_version' => $entry->row_version + 1,
-        ]);
-        $this->review($entry, 'internal', $action, $comments, $actor);
-        $this->progress->snapshot($run, 'logbook_internal_review');
+            $entry->update([
+                'status' => $action === 'approved' ? 'internal_approved' : $action,
+                'internal_reviewed_at' => now(),
+                'locked_at' => $action === 'approved' ? now() : null,
+                'row_version' => $entry->row_version + 1,
+            ]);
+            $this->review($entry, 'internal', $action, $comments, $actor);
+            $this->progress->snapshot($run, 'logbook_internal_review');
 
-        return $entry->refresh();
+            return $entry->refresh();
+        });
     }
 
     public function storeAttachment(PkpaLogbookEntry $entry, UploadedFile $file, ?User $actor): PkpaLogbookAttachment

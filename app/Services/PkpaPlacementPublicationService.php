@@ -293,10 +293,10 @@ class PkpaPlacementPublicationService
             ]);
 
             foreach ($assignment->supervisors as $supervisor) {
-                $user = User::query()
+                $user = filled($supervisor->core_user_id) ? User::query()
                     ->with(['lecturer', 'fieldSupervisor'])
                     ->where('core_user_id', $supervisor->core_user_id)
-                    ->first();
+                    ->first() : null;
 
                 PkpaPublishedAssignmentSupervisor::create([
                     'pkpa_published_assignment_id' => $published->id,
@@ -378,7 +378,7 @@ class PkpaPlacementPublicationService
     {
         $supervisors = $assignment->supervisors
             ->sortBy(fn (PkpaPublishedAssignmentSupervisor $supervisor) => $supervisor->supervisor_type.':'.$supervisor->core_user_id)
-            ->map(fn (PkpaPublishedAssignmentSupervisor $supervisor) => $supervisor->supervisor_type.':'.$supervisor->core_user_id)
+            ->map(fn (PkpaPublishedAssignmentSupervisor $supervisor) => $supervisor->supervisor_type.':'.(filled($supervisor->core_user_id) ? $supervisor->core_user_id : 'name:'.$supervisor->name_snapshot))
             ->values()
             ->implode(',');
 

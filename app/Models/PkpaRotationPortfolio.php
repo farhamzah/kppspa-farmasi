@@ -11,6 +11,13 @@ class PkpaRotationPortfolio extends Model
 {
     use SoftDeletes;
 
+    public static function internalReviewStatuses(): array
+    {
+        return config('my_pkpa.preceptor_document_validation_enabled')
+            ? ['submitted_to_internal_supervisor']
+            : ['submitted_to_internal_supervisor', 'submitted_to_field_supervisor', 'field_verified'];
+    }
+
     public const STATUSES = [
         'draft', 'in_progress', 'submitted_to_field_supervisor', 'field_revision_requested',
         'field_verified', 'submitted_to_internal_supervisor', 'internal_revision_requested',
@@ -65,7 +72,7 @@ class PkpaRotationPortfolio extends Model
         return match ($this->status) {
             'draft' => 'Draf',
             'in_progress' => 'Sedang Diisi',
-            'submitted_to_field_supervisor' => 'Dikirim ke Preseptor',
+            'submitted_to_field_supervisor' => config('my_pkpa.preceptor_document_validation_enabled') ? 'Dikirim ke Preseptor' : 'Menunggu Pembimbing Dalam',
             'field_revision_requested' => 'Revisi dari Preseptor',
             'field_verified' => 'Terverifikasi Preseptor',
             'submitted_to_internal_supervisor' => 'Dikirim ke Pembimbing Dalam',

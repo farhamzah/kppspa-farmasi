@@ -12,7 +12,6 @@ use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
 use App\Models\PkpaPublishedAssignmentSupervisor;
 use App\Models\PkpaRotationRun;
-use App\Models\PkpaSpecialTaskSubmission;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\PkpaAcademicReadinessService;
@@ -40,16 +39,23 @@ class Tahap07PkpaAcademicRotationTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $student;
+
     private User $otherStudent;
+
     private User $fieldSupervisor;
+
     private User $internalSupervisor;
+
     private User $otherSupervisor;
 
     protected function setUp(): void
     {
         parent::setUp();
+        config()->set('my_pkpa.preceptor_document_validation_enabled', true);
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
         $this->admin = $this->makeUser('admin07@test.local', ['admin'], 'CORE-ADMIN-07');
         $this->koordinator = $this->makeUser('koor07@test.local', ['koordinator_kp'], 'CORE-KOOR-07');

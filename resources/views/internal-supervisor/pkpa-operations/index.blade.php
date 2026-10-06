@@ -21,7 +21,7 @@
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-amber-100">
             <p class="text-xs font-black uppercase tracking-widest text-amber-700">Siap Validasi Akhir</p>
             <p class="mt-3 text-3xl font-black text-amber-700">{{ $readyLogbookCount }}</p>
-            <p class="mt-1 text-sm text-slate-500">Sudah disetujui Preseptor dan menunggu keputusan Anda.</p>
+            <p class="mt-1 text-sm text-slate-500">Kiriman mahasiswa yang menunggu keputusan Anda.</p>
         </article>
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-emerald-100">
             <p class="text-xs font-black uppercase tracking-widest text-emerald-700">Validasi Selesai</p>
@@ -39,6 +39,17 @@
         @endforeach
     </nav>
 
+    @if($tab !== 'overview')
+        <form method="GET" class="grid gap-3 rounded-lg bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
+            <input type="hidden" name="tab" value="{{ $tab }}">
+            <label class="grid gap-1 text-sm font-semibold">Mahasiswa atau tempat<input name="q" value="{{ request('q') }}" class="rounded-lg border-slate-200"></label>
+            <label class="grid gap-1 text-sm font-semibold">Wahana<select name="domain" class="rounded-lg border-slate-200"><option value="">Semua wahana</option>@foreach($runs->pluck('practiceDomain')->filter()->unique('id') as $domain)<option value="{{ $domain->id }}" @selected(request('domain') == $domain->id)>{{ $domain->name }}</option>@endforeach</select></label>
+            <label class="grid gap-1 text-sm font-semibold">Dari Tanggal<input type="date" name="date_from" value="{{ request('date_from') }}" class="rounded-lg border-slate-200"></label>
+            <label class="grid gap-1 text-sm font-semibold">Sampai Tanggal<input type="date" name="date_to" value="{{ request('date_to') }}" class="rounded-lg border-slate-200"></label>
+            <div class="flex items-end gap-2"><button class="min-h-11 rounded-lg bg-cyan-700 px-4 text-sm font-bold text-white">Terapkan</button><a href="{{ route('internal-supervisor.pkpa-operations.index', ['tab' => $tab]) }}" class="p-3 text-sm font-semibold">Reset</a></div>
+        </form>
+    @endif
+
     @if($tab === 'overview')
         @forelse($runGroups as $domainId => $domainRuns)
             @php
@@ -51,7 +62,7 @@
                             <h2 class="text-xl font-black text-slate-950">{{ $run->studentDisplayName() }}</h2>
                             <p class="mt-1 text-sm text-slate-500">{{ $run->studentDisplaySecondary() }}</p>
                             <p class="mt-3 text-sm font-semibold text-slate-700">{{ $run->practiceSite?->name }}</p>
-                            <p class="mt-2 text-sm text-slate-500">{{ $run->logbookEntries->whereIn('status', ['field_approved', 'approved'])->count() }} siap divalidasi · {{ $run->logbookEntries->where('status', 'internal_approved')->count() }} selesai</p>
+                            <p class="mt-2 text-sm text-slate-500">{{ $run->logbookEntries->whereIn('status', \App\Models\PkpaLogbookEntry::internalReviewStatuses())->count() }} siap divalidasi · {{ $run->logbookEntries->where('status', 'internal_approved')->count() }} selesai</p>
                             <a href="{{ route('internal-supervisor.pkpa-operations.show', $run) }}" class="mt-4 inline-flex min-h-10 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Buka Detail</a>
                         </article>
                     @endforeach
@@ -61,12 +72,15 @@
             <div class="rounded-lg bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-sky-100">Belum ada mahasiswa yang dapat dipantau.</div>
         @endforelse
     @elseif($tab === 'validation')
+        @if($errors->any())<p class="rounded-lg bg-rose-50 p-4 text-sm text-rose-800">{{ $errors->first() }}</p>@endif
+        <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-logbooks.bulk-approve')" />
         @include('shared.pkpa-logbook-workspace-list', [
             'logbookEntries' => $logbookEntries,
             'routePrefix' => 'internal-supervisor',
             'actionLabel' => 'Lihat & Validasi',
+            'bulkSelection' => true,
             'emptyTitle' => 'Belum ada logbook siap validasi akhir.',
-            'emptyDescription' => 'Logbook akan muncul setelah disetujui oleh Preseptor.',
+            'emptyDescription' => 'Logbook yang dikirim mahasiswa akan tampil di sini.',
         ])
     @else
         @include('shared.pkpa-logbook-workspace-list', [

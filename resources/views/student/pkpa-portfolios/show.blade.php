@@ -188,7 +188,7 @@
             <p class="font-black">Isian sedang dikunci sesuai tahap pemeriksaan</p>
             <p class="mt-1 leading-6">
                 {{ match($portfolio->status) {
-                    'submitted_to_field_supervisor' => 'Portofolio sedang menunggu pemeriksaan Preseptor. Preseptor dapat memverifikasi atau mengembalikan untuk revisi.',
+                    'submitted_to_field_supervisor' => 'Portofolio menunggu pemeriksaan Pembimbing Dalam.',
                     'field_verified' => 'Portofolio sudah diverifikasi Preseptor. Kirimkan ke Pembimbing Dalam untuk melanjutkan pemeriksaan.',
                     'submitted_to_internal_supervisor' => 'Portofolio sedang menunggu pemeriksaan Pembimbing Dalam.',
                     'approved' => 'Portofolio sudah disetujui Pembimbing Dalam dan menunggu proses akhir Koordinator.',
@@ -954,7 +954,7 @@
         <h2 class="text-lg font-black text-slate-950">Pemeriksaan</h2>
         <div class="mt-4 flex flex-wrap gap-3">
             @if($canEdit && data_get($portfolio->progress_snapshot, 'ready_to_submit'))
-                <form method="POST" action="{{ route('student.pkpa-portfolios.submit', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Preseptor</button></form>
+                <form method="POST" action="{{ route('student.pkpa-portfolios.submit', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Pembimbing Dalam</button></form>
             @elseif($canEdit)
                 <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Lengkapi bagian yang masih tercantum pada Pemeriksaan Kelengkapan sebelum mengirim.</p>
             @elseif($portfolio->status === 'field_verified')

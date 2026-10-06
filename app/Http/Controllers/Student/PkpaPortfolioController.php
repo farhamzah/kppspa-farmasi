@@ -3,26 +3,24 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaPortfolioExportVersion;
+use App\Models\PkpaPortfolioTemplate;
 use App\Models\PkpaRotationPortfolio;
 use App\Models\PkpaRotationRun;
 use App\Services\PkpaPortfolioBuilderService;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
-use App\Support\PkpaPuskesmasPortfolio;
-use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaLokaPomPortfolio;
+use App\Support\PkpaPuskesmasPortfolio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class PkpaPortfolioController extends Controller
 {
-    public function __construct(private readonly PkpaPortfolioBuilderService $portfolios)
-    {
-    }
+    public function __construct(private readonly PkpaPortfolioBuilderService $portfolios) {}
 
     public function index(Request $request)
     {
@@ -120,6 +118,7 @@ class PkpaPortfolioController extends Controller
             if (($field['type'] ?? null) === 'multiselect') {
                 $rules[$field['name']] = ['nullable', 'array'];
                 $rules[$field['name'].'.*'] = ['string', Rule::in($field['options'] ?? [])];
+
                 continue;
             }
 
@@ -172,6 +171,7 @@ class PkpaPortfolioController extends Controller
             'result' => ['required', 'string'],
         ];
         $rules['activity'] = ['required', 'string', 'max:255'];
+
         return $rules;
     }
 
@@ -278,7 +278,7 @@ class PkpaPortfolioController extends Controller
     {
         $this->portfolios->submit($portfolio, $request->user());
 
-        return back()->with('status', 'Portofolio dikirim ke Preseptor.');
+        return back()->with('status', config('my_pkpa.preceptor_document_validation_enabled') ? 'Portofolio dikirim ke Preseptor.' : 'Portofolio dikirim ke Pembimbing Dalam.');
     }
 
     public function submitToInternal(Request $request, PkpaRotationPortfolio $portfolio)

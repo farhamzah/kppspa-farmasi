@@ -29,6 +29,7 @@ use App\Console\Commands\RevisePkpaPbfPlacement2026Command;
 use App\Console\Commands\SafaPublicInfoPreviewCommand;
 use App\Console\Commands\SetupPkpaApotekAssessmentCommand;
 use App\Console\Commands\StagingRehearsalCheckCommand;
+use App\Console\Commands\SwitchPkpaInternalValidationCommand;
 use App\Console\Commands\SyncCoreMappingCommand;
 use App\Console\Commands\TuDocumentPayloadPreviewCommand;
 use App\Console\Commands\UiReadinessCheckCommand;
@@ -53,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
+        SwitchPkpaInternalValidationCommand::class,
         AcademicUnitCleanupCommand::class,
         AssignmentCancelReconcileCommand::class,
         AuthBridgeCheckCommand::class,

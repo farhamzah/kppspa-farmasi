@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\PkpaAssessmentComponent;
 use App\Models\PkpaAssessmentScheme;
 use App\Models\PkpaAttendanceRecord;
 use App\Models\PkpaEnrollment;
@@ -18,8 +17,8 @@ use App\Models\PkpaRotationRun;
 use App\Models\PkpaSiteAvailabilityPeriod;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\PkpaAssessmentSchemeService;
 use App\Services\PkpaApotekAssessmentService;
+use App\Services\PkpaAssessmentSchemeService;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaProgramService;
 use App\Services\PkpaRotationAssessmentService;
@@ -39,16 +38,23 @@ class Tahap08PkpaAssessmentTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $koordinator;
+
     private User $student;
+
     private User $otherStudent;
+
     private User $fieldSupervisor;
+
     private User $internalSupervisor;
+
     private User $otherSupervisor;
 
     protected function setUp(): void
     {
         parent::setUp();
+        config()->set('my_pkpa.preceptor_document_validation_enabled', true);
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class]);
         $this->admin = $this->makeUser('admin08@test.local', ['admin'], 'CORE-ADMIN-08');
         $this->koordinator = $this->makeUser('koor08@test.local', ['koordinator_kp'], 'CORE-KOOR-08');
@@ -126,6 +132,28 @@ class Tahap08PkpaAssessmentTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $assessmentService->saveDirectScore($plScore, '80', null, $this->otherSupervisor);
+    }
+
+    public function test_coordinator_records_preceptor_score_manually_while_preceptor_cannot_score(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $fixture = $this->runtimeFixture();
+        $fixture['run']->supervisorHistories()->where('supervisor_type', 'field')->update(['core_user_id' => null, 'name_snapshot' => 'apt. Preseptor tercatat']);
+        $this->activeScheme($fixture['programDomain']);
+        $service = app(PkpaRotationAssessmentService::class);
+        $assessment = $service->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'field_supervisor'))->firstOrFail();
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post(route('field-supervisor.pkpa-assessments.scores.save', $score), ['raw_score' => 80])
+            ->assertSessionHasErrors();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post(route('management.pkpa-preceptor-scores.store', $score), ['raw_score' => 80, 'comments' => 'Dicatat berdasarkan evaluasi koordinator.'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('submitted', $score->fresh()->status);
+        $this->assertSame('80.0000', $score->fresh()->raw_score);
+        $this->assertSame($this->koordinator->core_user_id, $score->fresh()->updated_by_core_user_id);
+        $this->assertNull($score->assessor->core_user_id);
+        $this->assertSame('manual_coordinator', $score->fresh()->source_summary['method']);
     }
 
     public function test_apotek_rubric_uses_approved_attendance_and_stores_official_breakdown(): void

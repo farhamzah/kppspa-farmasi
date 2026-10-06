@@ -91,7 +91,8 @@ class PkpaRotationPublicationSyncService
         foreach ($currentByType->keys()->merge($nextByType->keys())->unique() as $type) {
             $current = $currentByType->get($type);
             $supervisor = $nextByType->get($type);
-            if ($current && $supervisor && (string) $current->core_user_id === (string) $supervisor->core_user_id) {
+            if ($current && $supervisor && (string) $current->core_user_id === (string) $supervisor->core_user_id
+                && (filled($supervisor->core_user_id) || $current->name_snapshot === $supervisor->name_snapshot)) {
                 continue;
             }
 
@@ -224,8 +225,10 @@ class PkpaRotationPublicationSyncService
             return 'site_or_date';
         }
 
-        $current = $run->supervisorHistories()->where('status', 'active')->orderBy('supervisor_type')->pluck('core_user_id', 'supervisor_type')->all();
-        $next = $assignment->supervisors()->orderBy('supervisor_type')->pluck('core_user_id', 'supervisor_type')->all();
+        $identity = fn ($supervisor) => filled($supervisor->core_user_id)
+            ? 'core:'.$supervisor->core_user_id : 'name:'.$supervisor->name_snapshot;
+        $current = $run->supervisorHistories()->where('status', 'active')->orderBy('supervisor_type')->get()->mapWithKeys(fn ($s) => [$s->supervisor_type => $identity($s)])->all();
+        $next = $assignment->supervisors()->orderBy('supervisor_type')->get()->mapWithKeys(fn ($s) => [$s->supervisor_type => $identity($s)])->all();
 
         return $current === $next ? 'none' : 'supervisor';
     }
