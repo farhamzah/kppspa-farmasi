@@ -38,17 +38,22 @@
                                 <h3 class="text-lg font-black text-slate-950">{{ $run?->studentDisplayName() }}</h3>
                                 <p class="mt-1 text-sm text-slate-500">{{ $run?->studentDisplaySecondary() }} · {{ $run?->practiceSite?->name }}</p>
                             </div>
-                            <span class="w-fit text-xs font-bold text-slate-500">{{ $studentEntries->count() }} logbook</span>
+                            <div class="flex shrink-0 flex-wrap items-center gap-3">
+                                <span class="text-xs font-bold text-slate-500">{{ $studentEntries->count() }} logbook di halaman ini</span>
+                                @if($bulkSelection ?? false)
+                                    <label class="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold text-cyan-800"><input type="checkbox" data-bulk-group-select="{{ $run->id }}" aria-label="Pilih semua logbook {{ $run->studentDisplayName() }} di halaman ini" class="h-5 w-5 accent-cyan-700">Pilih mahasiswa ini</label>
+                                @endif
+                            </div>
                         </header>
                         <div class="divide-y divide-slate-100">
                             @foreach($studentEntries as $entry)
-                                <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                                <div class="flex flex-wrap items-start gap-3 px-4 py-3 transition-colors hover:bg-slate-50 has-[:checked]:bg-cyan-50/60 sm:items-center sm:px-5">
                                     @if($bulkSelection ?? false)
-                                        <label class="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" form="bulk-validation" aria-label="Pilih {{ $entry->title }}"> Pilih</label>
+                                        <label class="flex h-11 w-8 shrink-0 cursor-pointer items-center"><input type="checkbox" name="ids[]" value="{{ $entry->id }}" form="bulk-validation" data-bulk-group="{{ $run->id }}" aria-label="Pilih {{ $entry->title }}" class="h-5 w-5 accent-cyan-700"></label>
                                     @endif
-                                    <div class="min-w-0">
+                                    <div class="min-w-0 flex-1 basis-[180px]">
                                         <div class="flex flex-wrap items-center gap-2">
-                                            <p class="font-bold text-slate-950">{{ $entry->title }}</p>
+                                            <p class="break-words font-bold text-slate-950">{{ $entry->title }}</p>
                                             <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $statusClasses[$entry->status] ?? 'bg-slate-100 text-slate-600' }}">{{ $statusLabels[$entry->status] ?? str($entry->status)->replace('_', ' ')->headline() }}</span>
                                         </div>
                                         <p class="mt-1 text-sm text-slate-500">{{ optional($entry->entry_date)->translatedFormat('d M Y') }}</p>

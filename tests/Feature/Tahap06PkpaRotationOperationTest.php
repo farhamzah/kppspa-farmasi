@@ -457,6 +457,12 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             $ids[] = $entry->id;
         }
         $url = route('internal-supervisor.pkpa-logbooks.bulk-approve');
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get(route('internal-supervisor.pkpa-operations.index', ['tab' => 'validation']))
+            ->assertOk()->assertSee('Pilih mahasiswa ini')
+            ->assertSee('data-bulk-group-select="'.$run->id.'"', false)
+            ->assertSee('data-bulk-group="'.$run->id.'"', false)
+            ->assertSee('2 logbook di halaman ini');
         $this->actingAs($this->otherSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
             ->post($url, ['ids' => $ids])->assertSessionHasErrors('authorization');
         $this->assertSame(2, $run->logbookEntries()->where('status', 'submitted')->count());

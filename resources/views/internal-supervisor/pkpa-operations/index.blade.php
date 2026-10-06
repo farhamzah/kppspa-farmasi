@@ -12,21 +12,18 @@
     ];
 @endphp
 <div class="space-y-5">
-    <section class="grid gap-4 md:grid-cols-3">
-        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p class="text-xs font-black uppercase tracking-widest text-slate-500">Mahasiswa Bimbingan</p>
-            <p class="mt-3 text-3xl font-black text-slate-950">{{ $totalRuns }}</p>
-            <p class="mt-1 text-sm text-slate-500">Penempatan aktif yang menjadi tanggung jawab Anda.</p>
+    <section class="grid grid-cols-3 gap-2 sm:gap-4" aria-label="Ringkasan pemantauan">
+        <article class="min-w-0 border-l-4 border-slate-300 bg-white p-3 sm:p-4">
+            <p class="min-h-8 text-xs font-bold text-slate-600">Penempatan Bimbingan</p>
+            <p class="mt-1 text-2xl font-black tabular-nums text-slate-950">{{ $totalRuns }}</p>
         </article>
-        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-amber-100">
-            <p class="text-xs font-black uppercase tracking-widest text-amber-700">Siap Validasi Akhir</p>
-            <p class="mt-3 text-3xl font-black text-amber-700">{{ $readyLogbookCount }}</p>
-            <p class="mt-1 text-sm text-slate-500">Kiriman mahasiswa yang menunggu keputusan Anda.</p>
+        <article class="min-w-0 border-l-4 border-amber-300 bg-white p-3 sm:p-4">
+            <p class="min-h-8 text-xs font-bold text-amber-800">Siap Validasi Akhir</p>
+            <p class="mt-1 text-2xl font-black tabular-nums text-amber-800">{{ $readyLogbookCount }}</p>
         </article>
-        <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-emerald-100">
-            <p class="text-xs font-black uppercase tracking-widest text-emerald-700">Validasi Selesai</p>
-            <p class="mt-3 text-3xl font-black text-emerald-700">{{ $completedLogbookCount }}</p>
-            <p class="mt-1 text-sm text-slate-500">Logbook yang telah Anda setujui.</p>
+        <article class="min-w-0 border-l-4 border-emerald-300 bg-white p-3 sm:p-4">
+            <p class="min-h-8 text-xs font-bold text-emerald-700">Validasi Selesai</p>
+            <p class="mt-1 text-2xl font-black tabular-nums text-emerald-700">{{ $completedLogbookCount }}</p>
         </article>
     </section>
 
@@ -40,13 +37,13 @@
     </nav>
 
     @if($tab !== 'overview')
-        <form method="GET" class="grid gap-3 rounded-lg bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
+        <form method="GET" class="grid gap-3 border-y border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1.5fr)_minmax(160px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)_auto]">
             <input type="hidden" name="tab" value="{{ $tab }}">
-            <label class="grid gap-1 text-sm font-semibold">Mahasiswa atau tempat<input name="q" value="{{ request('q') }}" class="rounded-lg border-slate-200"></label>
-            <label class="grid gap-1 text-sm font-semibold">Wahana<select name="domain" class="rounded-lg border-slate-200"><option value="">Semua wahana</option>@foreach($runs->pluck('practiceDomain')->filter()->unique('id') as $domain)<option value="{{ $domain->id }}" @selected(request('domain') == $domain->id)>{{ $domain->name }}</option>@endforeach</select></label>
-            <label class="grid gap-1 text-sm font-semibold">Dari Tanggal<input type="date" name="date_from" value="{{ request('date_from') }}" class="rounded-lg border-slate-200"></label>
-            <label class="grid gap-1 text-sm font-semibold">Sampai Tanggal<input type="date" name="date_to" value="{{ request('date_to') }}" class="rounded-lg border-slate-200"></label>
-            <div class="flex items-end gap-2"><button class="min-h-11 rounded-lg bg-cyan-700 px-4 text-sm font-bold text-white">Terapkan</button><a href="{{ route('internal-supervisor.pkpa-operations.index', ['tab' => $tab]) }}" class="p-3 text-sm font-semibold">Reset</a></div>
+            <label class="grid min-w-0 gap-2 text-sm font-semibold">Mahasiswa atau tempat<input name="q" value="{{ request('q') }}" placeholder="Cari nama atau tempat praktik" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
+            <label class="grid min-w-0 gap-2 text-sm font-semibold">Wahana<select name="domain" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"><option value="">Semua wahana</option>@foreach($runs->pluck('practiceDomain')->filter()->unique('id') as $domain)<option value="{{ $domain->id }}" @selected(request('domain') == $domain->id)>{{ $domain->name }}</option>@endforeach</select></label>
+            <label class="grid min-w-0 gap-2 text-sm font-semibold">Dari tanggal<input type="date" name="date_from" value="{{ request('date_from') }}" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
+            <label class="grid min-w-0 gap-2 text-sm font-semibold">Sampai tanggal<input type="date" name="date_to" value="{{ request('date_to') }}" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
+            <div class="flex items-end gap-2"><button class="h-11 rounded-lg bg-cyan-700 px-4 text-sm font-bold text-white hover:bg-cyan-800">Terapkan</button><a href="{{ route('internal-supervisor.pkpa-operations.index', ['tab' => $tab]) }}" class="inline-flex h-11 items-center rounded-lg border border-slate-300 px-3 text-sm font-semibold hover:bg-slate-50">Reset</a></div>
         </form>
     @endif
 
