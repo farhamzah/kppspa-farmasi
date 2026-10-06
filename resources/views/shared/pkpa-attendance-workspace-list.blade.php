@@ -31,7 +31,7 @@
                                         <p class="font-bold text-slate-950">Presensi {{ optional($record->attendance_date)->translatedFormat('d M Y') }}</p>
                                         <p class="mt-1 text-sm text-slate-500">{{ str($record->attendance_type)->replace('_', ' ')->headline() }} · {{ $record->check_in_time ?: '-' }} - {{ $record->check_out_time ?: '-' }}</p>
                                     </div>
-                                    <a href="{{ route('field-supervisor.pkpa-operations.show', ['run' => $run, 'attendance' => $record->id]) }}" class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Periksa & Validasi</a>
+                                    <a href="{{ route('field-supervisor.pkpa-operations.show', ['run' => $run, 'attendance' => $record->id]) }}" class="inline-flex min-h-10 shrink-0 items-center justify-center rounded-lg border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-800">Lihat Detail</a>
                                 </div>
                             @endforeach
                         </div>

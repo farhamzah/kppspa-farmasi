@@ -135,7 +135,7 @@
             </div>
             <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="border-l-4 border-slate-300 bg-slate-50 px-4 py-3"><p class="text-xs font-black uppercase text-slate-500">Presensi</p><p class="mt-1 text-2xl font-black">{{ $attendanceCount }}</p></div>
-                <div class="border-l-4 border-amber-300 bg-amber-50 px-4 py-3"><p class="text-xs font-black uppercase text-amber-700">Menunggu Preseptor</p><p class="mt-1 text-2xl font-black">{{ $waitingFieldCount }}</p></div>
+                <div class="border-l-4 border-amber-300 bg-amber-50 px-4 py-3"><p class="text-xs font-black uppercase text-amber-700">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Menunggu Preseptor' : 'Presensi Perlu Diperiksa' }}</p><p class="mt-1 text-2xl font-black">{{ config('my_pkpa.preceptor_document_validation_enabled') ? $waitingFieldCount : $readyAttendanceCount }}</p></div>
                 <div class="border-l-4 border-cyan-400 bg-cyan-50 px-4 py-3"><p class="text-xs font-black uppercase text-cyan-700">Siap Divalidasi</p><p class="mt-1 text-2xl font-black">{{ $readyCount }}</p></div>
                 <div class="border-l-4 border-emerald-300 bg-emerald-50 px-4 py-3"><p class="text-xs font-black uppercase text-emerald-700">Selesai</p><p class="mt-1 text-2xl font-black">{{ $completedCount }}</p></div>
             </div>
@@ -159,10 +159,13 @@
                 @if($view !== 'attendance')
                     <label class="grid gap-1"><span class="text-xs font-bold uppercase text-slate-500">Cari Logbook</span><input name="q" value="{{ $search }}" placeholder="Judul atau kegiatan" class="rounded-xl border-slate-200 text-sm"></label>
                 @endif
-                <label class="grid gap-1"><span class="text-xs font-bold uppercase text-slate-500">Dari Tanggal</span><input type="date" name="date_from" value="{{ $dateFrom }}" class="rounded-xl border-slate-200 text-sm"></label>
-                <label class="grid gap-1"><span class="text-xs font-bold uppercase text-slate-500">Sampai Tanggal</span><input type="date" name="date_to" value="{{ $dateTo }}" class="rounded-xl border-slate-200 text-sm"></label>
+                <label class="grid min-w-0 gap-2"><span class="text-xs font-bold text-slate-500">Dari tanggal</span><input type="date" name="date_from" value="{{ $dateFrom }}" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
+                <label class="grid min-w-0 gap-2"><span class="text-xs font-bold text-slate-500">Sampai tanggal</span><input type="date" name="date_to" value="{{ $dateTo }}" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
                 @if($view === 'logbooks')
                     <label class="grid gap-1"><span class="text-xs font-bold uppercase text-slate-500">Status</span><select name="status" class="rounded-xl border-slate-200 text-sm"><option value="all" @selected($status === 'all')>Semua</option><option value="waiting" @selected($status === 'waiting')>Menunggu Preseptor</option><option value="ready" @selected($status === 'ready')>Siap Divalidasi</option><option value="completed" @selected($status === 'completed')>Tervalidasi Final</option><option value="revision" @selected($status === 'revision')>Revisi atau Ditolak</option></select></label>
+                @endif
+                @if($view === 'attendance')
+                    <label class="grid gap-2 text-sm font-semibold">Status presensi<select name="status" class="h-11 w-full border border-slate-300 bg-white px-3 text-sm"><option value="ready" @selected($status === 'ready')>Perlu Diperiksa</option><option value="completed" @selected($status === 'completed')>Disetujui</option><option value="revision" @selected($status === 'revision')>Revisi / Ditolak</option><option value="all" @selected($status === 'all')>Semua Presensi</option></select></label>
                 @endif
                 <div class="flex items-end gap-2"><button class="min-h-11 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white">Terapkan</button><a href="{{ route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => $view]) }}" class="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600">Reset</a></div>
             </form>
@@ -172,17 +175,9 @@
                     <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-logbooks.bulk-approve')" />
                 @endif
                 @if($view === 'attendance')
-                    <div class="divide-y divide-slate-100">
-                        @forelse($attendances as $record)
-                            <article class="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div><p class="font-bold text-slate-950">{{ $record->attendance_date?->translatedFormat('d M Y') }}</p><p class="mt-1 text-sm text-slate-500">{{ $record->check_in_time ?: '-' }} - {{ $record->check_out_time ?: '-' }}</p></div>
-                                <span class="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ $record->submission_status === 'approved' ? 'Disetujui Preseptor' : ($record->submission_status === 'submitted' ? 'Menunggu Preseptor' : 'Perlu tindak lanjut') }}</span>
-                            </article>
-                        @empty
-                            <p class="py-10 text-center text-sm text-slate-500">Tidak ada presensi pada filter ini.</p>
-                        @endforelse
-                    </div>
-                    @if($attendances->hasPages())<div class="border-t border-slate-100 pt-4">{{ $attendances->links() }}</div>@endif
+                    @if($errors->any())<p class="mb-3 text-sm text-rose-800">{{ $errors->first() }}</p>@endif
+                    <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-attendance.bulk-approve')" label="Setujui Presensi Terpilih" />
+                    @include('shared.pkpa-internal-attendance-workspace-list')
                 @else
                     <div class="divide-y divide-slate-100">
                         @forelse($logbooks as $entry)

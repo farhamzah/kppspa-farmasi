@@ -16,9 +16,7 @@ use Illuminate\View\View;
 
 class PkpaRotationOperationController extends Controller
 {
-    public function __construct(private readonly PkpaAttendanceService $attendance, private readonly PkpaLogbookService $logbooks)
-    {
-    }
+    public function __construct(private readonly PkpaAttendanceService $attendance, private readonly PkpaLogbookService $logbooks) {}
 
     public function index(Request $request): View
     {
@@ -99,18 +97,12 @@ class PkpaRotationOperationController extends Controller
 
     public function reviewAttendance(Request $request, PkpaAttendanceRecord $record): RedirectResponse
     {
-        $data = $request->validate(['action' => ['required', 'in:approved,revision_requested,rejected'], 'notes' => ['nullable', 'string', 'max:1000']]);
-        $this->attendance->review($record, $data['action'], $data['notes'] ?? null, $request->user());
-
-        return back()->with('status', 'Validasi presensi tersimpan.');
+        abort(403, 'Presensi diperiksa oleh Pembimbing Dalam.');
     }
 
     public function reviewCorrection(Request $request, PkpaAttendanceCorrectionRequest $correction): RedirectResponse
     {
-        $data = $request->validate(['action' => ['required', 'in:approved,rejected'], 'notes' => ['nullable', 'string', 'max:1000']]);
-        $this->attendance->reviewCorrection($correction, $data['action'], $data['notes'] ?? null, $request->user());
-
-        return back()->with('status', 'Review koreksi presensi tersimpan.');
+        abort(403, 'Koreksi presensi diperiksa oleh Pembimbing Dalam.');
     }
 
     public function reviewLogbook(Request $request, PkpaLogbookEntry $entry): RedirectResponse

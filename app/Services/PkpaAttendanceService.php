@@ -15,9 +15,7 @@ class PkpaAttendanceService
 {
     use AuthorizesPkpaRotationActors;
 
-    public function __construct(private readonly PkpaAuditService $audit, private readonly PkpaRotationProgressService $progress)
-    {
-    }
+    public function __construct(private readonly PkpaAuditService $audit, private readonly PkpaRotationProgressService $progress) {}
 
     public function save(PkpaRotationRun $run, array $data, ?User $actor): PkpaAttendanceRecord
     {
@@ -114,31 +112,37 @@ class PkpaAttendanceService
 
     public function review(PkpaAttendanceRecord $record, string $action, ?string $notes, ?User $actor): PkpaAttendanceRecord
     {
-        $run = $record->rotationRun()->with('supervisorHistories')->firstOrFail();
-        $this->ensureFieldSupervisor($run, $actor);
-        if (! in_array($action, ['approved', 'revision_requested', 'rejected'], true)) {
-            throw ValidationException::withMessages(['action' => 'Aksi validasi presensi tidak valid.']);
-        }
-        if (in_array($action, ['revision_requested', 'rejected'], true) && blank($notes)) {
-            throw ValidationException::withMessages(['notes' => 'Catatan wajib diisi untuk revisi atau penolakan.']);
-        }
-        if ($record->submission_status !== 'submitted') {
-            throw ValidationException::withMessages(['attendance' => 'Hanya presensi terkirim yang dapat divalidasi.']);
-        }
+        return DB::transaction(function () use ($record, $action, $notes, $actor) {
+            $record = PkpaAttendanceRecord::whereKey($record->id)->lockForUpdate()->firstOrFail();
+            $run = $record->rotationRun()->with('supervisorHistories')->firstOrFail();
+            $this->ensureInternalSupervisor($run, $actor);
+            if ($run->cancelled_at) {
+                throw ValidationException::withMessages(['attendance' => 'Penempatan ini sudah dibatalkan.']);
+            }
+            if (! in_array($action, ['approved', 'revision_requested', 'rejected'], true)) {
+                throw ValidationException::withMessages(['action' => 'Aksi validasi presensi tidak valid.']);
+            }
+            if (in_array($action, ['revision_requested', 'rejected'], true) && blank($notes)) {
+                throw ValidationException::withMessages(['notes' => 'Catatan wajib diisi untuk revisi atau penolakan.']);
+            }
+            if ($record->submission_status !== 'submitted') {
+                throw ValidationException::withMessages(['attendance' => 'Hanya presensi terkirim yang dapat divalidasi.']);
+            }
 
-        $record->update([
-            'submission_status' => $action,
-            'field_supervisor_notes' => $notes,
-            'reviewed_at' => now(),
-            'approved_at' => $action === 'approved' ? now() : null,
-            'rejected_at' => $action === 'rejected' ? now() : null,
-            'reviewed_by_core_user_id' => $actor?->core_user_id,
-            'row_version' => $record->row_version + 1,
-        ]);
-        $this->audit->record($actor, 'pkpa_attendance_reviewed', $record, null, ['action' => $action]);
-        $this->progress->snapshot($run, 'attendance_review');
+            $record->update([
+                'submission_status' => $action,
+                'field_supervisor_notes' => $notes,
+                'reviewed_at' => now(),
+                'approved_at' => $action === 'approved' ? now() : null,
+                'rejected_at' => $action === 'rejected' ? now() : null,
+                'reviewed_by_core_user_id' => $actor?->core_user_id,
+                'row_version' => $record->row_version + 1,
+            ]);
+            $this->audit->record($actor, 'pkpa_attendance_reviewed', $record, null, ['action' => $action]);
+            $this->progress->snapshot($run, 'attendance_review');
 
-        return $record->refresh();
+            return $record->refresh();
+        });
     }
 
     public function requestCorrection(PkpaAttendanceRecord $record, array $proposed, string $reason, ?User $actor): PkpaAttendanceCorrectionRequest
@@ -177,27 +181,37 @@ class PkpaAttendanceService
 
     public function reviewCorrection(PkpaAttendanceCorrectionRequest $request, string $action, ?string $notes, ?User $actor): PkpaAttendanceCorrectionRequest
     {
-        $record = $request->attendanceRecord()->with('rotationRun.supervisorHistories')->firstOrFail();
-        $this->ensureFieldSupervisor($record->rotationRun, $actor);
-        if (! in_array($action, ['approved', 'rejected'], true)) {
-            throw ValidationException::withMessages(['action' => 'Aksi koreksi tidak valid.']);
-        }
+        return DB::transaction(function () use ($request, $action, $notes, $actor) {
+            $request = PkpaAttendanceCorrectionRequest::whereKey($request->id)->lockForUpdate()->firstOrFail();
+            $record = $request->attendanceRecord()->with('rotationRun.supervisorHistories')->lockForUpdate()->firstOrFail();
+            $this->ensureInternalSupervisor($record->rotationRun, $actor);
+            if ($request->status !== 'submitted') {
+                throw ValidationException::withMessages(['attendance' => 'Koreksi presensi sudah diperiksa.']);
+            }
+            if (! in_array($action, ['approved', 'rejected'], true)) {
+                throw ValidationException::withMessages(['action' => 'Aksi koreksi tidak valid.']);
+            }
+            if ($action === 'rejected' && blank($notes)) {
+                throw ValidationException::withMessages(['notes' => 'Catatan wajib untuk penolakan koreksi.']);
+            }
 
-        $request->update([
-            'status' => $action,
-            'reviewed_by_core_user_id' => $actor?->core_user_id,
-            'approved_by_core_user_id' => $action === 'approved' ? $actor?->core_user_id : null,
-            'rejected_by_core_user_id' => $action === 'rejected' ? $actor?->core_user_id : null,
-            'reviewed_at' => now(),
-            'approved_at' => $action === 'approved' ? now() : null,
-            'rejected_at' => $action === 'rejected' ? now() : null,
-            'rejection_reason' => $action === 'rejected' ? $notes : null,
-        ]);
-        if ($action === 'approved') {
-            $this->applyCorrection($request->refresh(), $actor);
-        }
+            $request->update([
+                'status' => $action,
+                'reviewed_by_core_user_id' => $actor?->core_user_id,
+                'approved_by_core_user_id' => $action === 'approved' ? $actor?->core_user_id : null,
+                'rejected_by_core_user_id' => $action === 'rejected' ? $actor?->core_user_id : null,
+                'reviewed_at' => now(),
+                'approved_at' => $action === 'approved' ? now() : null,
+                'rejected_at' => $action === 'rejected' ? now() : null,
+                'rejection_reason' => $action === 'rejected' ? $notes : null,
+            ]);
+            if ($action === 'approved') {
+                $this->applyCorrection($request->refresh(), $actor);
+            }
+            $this->audit->record($actor, 'pkpa_attendance_correction_reviewed', $request, null, ['action' => $action]);
 
-        return $request->refresh();
+            return $request->refresh();
+        });
     }
 
     private function applyCorrection(PkpaAttendanceCorrectionRequest $request, ?User $actor): void

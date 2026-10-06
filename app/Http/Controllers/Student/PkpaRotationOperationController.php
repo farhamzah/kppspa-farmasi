@@ -71,7 +71,7 @@ class PkpaRotationOperationController extends Controller
         if ($submissionAction === 'submit') {
             $this->attendance->submit($record, $request->user());
 
-            return back()->with('status', 'Presensi berhasil dikirim ke preseptor.');
+            return back()->with('status', 'Presensi berhasil dikirim ke Pembimbing Dalam.');
         }
 
         return back()->with('status', 'Presensi disimpan sebagai draft.')->with('attendance_id', $record->id);
@@ -81,7 +81,7 @@ class PkpaRotationOperationController extends Controller
     {
         $this->attendance->submit($record, $request->user());
 
-        return back()->with('status', 'Presensi dikirim ke preseptor.');
+        return back()->with('status', 'Presensi dikirim ke Pembimbing Dalam.');
     }
 
     public function deleteAttendance(Request $request, PkpaAttendanceRecord $record): RedirectResponse

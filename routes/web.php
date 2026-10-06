@@ -554,6 +554,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('akademik-pkpa/{run}/guidance', [InternalPkpaAcademicRotationController::class, 'guidance'])->name('pkpa-guidance.store');
             Route::get('monitoring-pkpa/{run}', [InternalPkpaRotationOperationController::class, 'show'])->name('pkpa-operations.show');
             Route::post('logbook-validasi-massal', [InternalPkpaRotationOperationController::class, 'bulkApprove'])->name('pkpa-logbooks.bulk-approve');
+            Route::post('presensi-validasi-massal', [InternalPkpaRotationOperationController::class, 'bulkApproveAttendance'])->name('pkpa-attendance.bulk-approve');
+            Route::post('presensi-operasional/{record}/review', [InternalPkpaRotationOperationController::class, 'reviewAttendance'])->name('pkpa-attendance.review');
+            Route::post('koreksi-presensi/{correction}/review', [InternalPkpaRotationOperationController::class, 'reviewAttendanceCorrection'])->name('pkpa-attendance.corrections.review');
             Route::post('logbook-operasional/{entry}/monitoring', [InternalPkpaRotationOperationController::class, 'reviewLogbook'])->name('pkpa-logbooks.monitoring');
             Route::get('logbook-operasional/attachments/{attachment}/download', [InternalPkpaRotationOperationController::class, 'downloadAttachment'])->name('pkpa-logbooks.attachments.download');
             Route::get('mahasiswa-pkpa', [SupervisedStudentController::class, 'index'])->name('pkpa-students.index');

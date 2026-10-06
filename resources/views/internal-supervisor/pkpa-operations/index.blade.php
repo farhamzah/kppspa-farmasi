@@ -9,6 +9,7 @@
         'overview' => ['label' => 'Ringkasan', 'count' => null],
         'validation' => ['label' => 'Perlu Validasi', 'count' => $readyLogbookCount],
         'history' => ['label' => 'Riwayat Logbook', 'count' => $historyLogbookCount],
+        'attendance' => ['label' => 'Presensi', 'count' => $readyAttendanceCount],
     ];
 @endphp
 <div class="space-y-5">
@@ -18,12 +19,12 @@
             <p class="mt-1 text-2xl font-black tabular-nums text-slate-950">{{ $totalRuns }}</p>
         </article>
         <article class="min-w-0 border-l-4 border-amber-300 bg-white p-3 sm:p-4">
-            <p class="min-h-8 text-xs font-bold text-amber-800">Siap Validasi Akhir</p>
-            <p class="mt-1 text-2xl font-black tabular-nums text-amber-800">{{ $readyLogbookCount }}</p>
+            <p class="min-h-8 text-xs font-bold text-amber-800">{{ $tab === 'attendance' ? 'Presensi Perlu Diperiksa' : 'Siap Validasi Akhir' }}</p>
+            <p class="mt-1 text-2xl font-black tabular-nums text-amber-800">{{ $tab === 'attendance' ? $readyAttendanceCount : $readyLogbookCount }}</p>
         </article>
         <article class="min-w-0 border-l-4 border-emerald-300 bg-white p-3 sm:p-4">
-            <p class="min-h-8 text-xs font-bold text-emerald-700">Validasi Selesai</p>
-            <p class="mt-1 text-2xl font-black tabular-nums text-emerald-700">{{ $completedLogbookCount }}</p>
+            <p class="min-h-8 text-xs font-bold text-emerald-700">{{ $tab === 'attendance' ? 'Presensi Disetujui' : 'Validasi Selesai' }}</p>
+            <p class="mt-1 text-2xl font-black tabular-nums text-emerald-700">{{ $tab === 'attendance' ? $approvedAttendanceCount : $completedLogbookCount }}</p>
         </article>
     </section>
 
@@ -37,8 +38,11 @@
     </nav>
 
     @if($tab !== 'overview')
-        <form method="GET" class="grid gap-3 border-y border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1.5fr)_minmax(160px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)_auto]">
+        <form method="GET" class="grid gap-3 border-y border-slate-200 bg-white p-4 sm:grid-cols-2 {{ $tab === 'attendance' ? 'xl:grid-cols-3' : 'xl:grid-cols-[minmax(180px,1.5fr)_minmax(160px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)_auto]' }}">
             <input type="hidden" name="tab" value="{{ $tab }}">
+            @if($tab === 'attendance')
+                <label class="grid min-w-0 gap-2 text-sm font-semibold">Status presensi<select name="attendance_status" class="h-11 w-full border border-slate-300 bg-white px-3 text-sm"><option value="ready" @selected($attendanceStatus === 'ready')>Perlu Diperiksa</option><option value="completed" @selected($attendanceStatus === 'completed')>Disetujui</option><option value="revision" @selected($attendanceStatus === 'revision')>Revisi / Ditolak</option><option value="all" @selected($attendanceStatus === 'all')>Semua Presensi</option></select></label>
+            @endif
             <label class="grid min-w-0 gap-2 text-sm font-semibold">Mahasiswa atau tempat<input name="q" value="{{ request('q') }}" placeholder="Cari nama atau tempat praktik" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
             <label class="grid min-w-0 gap-2 text-sm font-semibold">Wahana<select name="domain" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"><option value="">Semua wahana</option>@foreach($runs->pluck('practiceDomain')->filter()->unique('id') as $domain)<option value="{{ $domain->id }}" @selected(request('domain') == $domain->id)>{{ $domain->name }}</option>@endforeach</select></label>
             <label class="grid min-w-0 gap-2 text-sm font-semibold">Dari tanggal<input type="date" name="date_from" value="{{ request('date_from') }}" class="h-11 w-full min-w-0 border border-slate-300 bg-white px-3 text-sm"></label>
@@ -68,6 +72,10 @@
         @empty
             <div class="rounded-lg bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-sky-100">Belum ada mahasiswa yang dapat dipantau.</div>
         @endforelse
+    @elseif($tab === 'attendance')
+        @if($errors->any())<p class="rounded-lg bg-rose-50 p-4 text-sm text-rose-800">{{ $errors->first() }}</p>@endif
+        <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-attendance.bulk-approve')" label="Setujui Presensi Terpilih" />
+        @include('shared.pkpa-internal-attendance-workspace-list')
     @elseif($tab === 'validation')
         @if($errors->any())<p class="rounded-lg bg-rose-50 p-4 text-sm text-rose-800">{{ $errors->first() }}</p>@endif
         <x-pkpa.bulk-validation :action="route('internal-supervisor.pkpa-logbooks.bulk-approve')" />

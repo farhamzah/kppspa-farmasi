@@ -21,7 +21,7 @@
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-amber-100">
             <p class="text-xs font-black uppercase tracking-widest text-amber-700">Presensi Menunggu</p>
             <p class="mt-3 text-3xl font-black text-amber-700">{{ $pendingAttendanceCount }}</p>
-            <p class="mt-1 text-sm text-slate-500">Presensi yang perlu diperiksa.</p>
+            <p class="mt-1 text-sm text-slate-500">Menunggu pemeriksaan Pembimbing Dalam.</p>
         </article>
         <article class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-cyan-100">
             <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Logbook Menunggu</p>
@@ -70,8 +70,8 @@
             <section>
                 <div class="mb-4 flex items-end justify-between gap-3">
                     <div>
-                        <h2 class="text-xl font-black text-slate-950">Presensi Perlu Validasi</h2>
-                        <p class="mt-1 text-sm text-slate-500">Periksa presensi yang baru dikirim mahasiswa.</p>
+                        <h2 class="text-xl font-black text-slate-950">Presensi Terkirim</h2>
+                        <p class="mt-1 text-sm text-slate-500">Pemeriksaan presensi dilakukan Pembimbing Dalam.</p>
                     </div>
                     <span class="text-sm font-bold text-amber-700">{{ $pendingAttendanceCount }} data</span>
                 </div>

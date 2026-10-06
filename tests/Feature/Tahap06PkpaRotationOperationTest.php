@@ -131,7 +131,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $attendanceService->submit($attendance, $this->student);
 
         $this->expectException(ValidationException::class);
-        $attendanceService->review($attendance->fresh(), 'approved', null, $this->internalSupervisor);
+        $attendanceService->review($attendance->fresh(), 'approved', null, $this->fieldSupervisor);
     }
 
     public function test_full_operational_flow_review_sync_and_private_attachment_authorization(): void
@@ -148,7 +148,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             'check_out_time' => '16:00',
         ], $this->student);
         $attendanceService->submit($attendance, $this->student);
-        $attendanceService->review($attendance->fresh(), 'approved', null, $this->fieldSupervisor);
+        $attendanceService->review($attendance->fresh(), 'approved', null, $this->internalSupervisor);
 
         $logbook = $logbookService->save($run, [
             'entry_date' => '2026-07-17',
@@ -372,7 +372,7 @@ class Tahap06PkpaRotationOperationTest extends TestCase
             ->assertOk()
             ->assertSee('Pemantauan Mahasiswa')
             ->assertSee('Perlu Validasi')
-            ->assertSee('Presensi Perlu Validasi')
+            ->assertSee('Presensi Terkirim')
             ->assertSee('1 presensi')
             ->assertSee('Logbook Perlu Validasi')
             ->assertSee('Mahasiswa Tahap 06')
@@ -475,6 +475,53 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $this->assertDatabaseCount('pkpa_logbook_reviews', 2);
         $this->post($url, ['ids' => $ids])->assertSessionHasErrors('logbook');
         $this->assertDatabaseCount('pkpa_logbook_reviews', 2);
+    }
+
+    public function test_attendance_goes_directly_to_internal_supervisor_and_bulk_review_is_atomic(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $run = $this->activatedRun();
+        $service = app(PkpaAttendanceService::class);
+        $records = collect(['2026-07-16', '2026-07-17'])->map(function ($date) use ($run, $service) {
+            $record = $service->save($run, ['attendance_date' => $date, 'attendance_type' => 'present', 'check_in_time' => '08:00', 'check_out_time' => '16:00'], $this->student);
+
+            return $service->submit($record, $this->student);
+        });
+        $ids = $records->pluck('id')->all();
+        $queue = route('internal-supervisor.pkpa-operations.index', ['tab' => 'attendance']);
+        $bulk = route('internal-supervisor.pkpa-attendance.bulk-approve');
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('student.pkpa-operations.show', $run))->assertOk()
+            ->assertSee('Menunggu Pembimbing Dalam')->assertDontSee('Kirim ke Preseptor');
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->post(route('field-supervisor.pkpa-attendance.review', $records->first()), ['action' => 'approved'])->assertForbidden();
+        $this->actingAs($this->otherSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->post($bulk, ['ids' => $ids])->assertSessionHasErrors('authorization');
+        $this->assertSame(2, $run->attendanceRecords()->where('submission_status', 'submitted')->count());
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get($queue)->assertOk()->assertSee('Pilih presensi mahasiswa ini')->assertSee('Setujui Presensi Terpilih');
+        $this->get(route('internal-supervisor.pkpa-operations.show', ['run' => $run, 'view' => 'attendance']))
+            ->assertOk()->assertSee('Perlu Diperiksa');
+        $this->post($bulk, ['ids' => [$ids[0], 99999999]])->assertSessionHasErrors('ids');
+        $this->post($bulk, ['ids' => [$ids[0], $ids[0]]])->assertSessionHasErrors('ids.0');
+        $this->assertSame(2, $run->attendanceRecords()->where('submission_status', 'submitted')->count());
+        $review = route('internal-supervisor.pkpa-attendance.review', $records->last());
+        $this->post($review, ['action' => 'revision_requested'])->assertSessionHasErrors('notes');
+        $this->post($review, ['action' => 'revision_requested', 'notes' => 'Perbaiki jam.'])->assertSessionHasNoErrors();
+        $this->post($bulk, ['ids' => $ids])->assertSessionHasErrors('attendance');
+        $this->assertSame('submitted', $records->first()->fresh()->submission_status);
+        $service->submit($records->last()->fresh(), $this->student);
+        $this->post($bulk, ['ids' => $ids, 'comments' => 'Sesuai bukti.'])->assertSessionHasNoErrors();
+        $this->assertSame(2, $run->attendanceRecords()->where('submission_status', 'approved')->where('reviewed_by_core_user_id', $this->internalSupervisor->core_user_id)->count());
+        $version = $records->first()->fresh()->row_version;
+        $this->post($bulk, ['ids' => $ids])->assertSessionHasErrors('attendance');
+        $this->assertSame($version, $records->first()->fresh()->row_version);
+        $this->get($queue)->assertDontSee('Pilih presensi mahasiswa ini');
+        $this->get($queue.'&attendance_status=completed')->assertSee('Disetujui')->assertDontSee('Periksa & Beri Keputusan');
+        $correction = $service->requestCorrection($records->first()->fresh(), ['attendance_date' => '2026-07-16', 'attendance_type' => 'present', 'check_in_time' => '09:00', 'check_out_time' => '16:00'], 'Koreksi jam masuk.', $this->student);
+        $this->post(route('internal-supervisor.pkpa-attendance.corrections.review', $correction), ['action' => 'approved'])->assertSessionHasNoErrors();
+        $this->assertSame('09:00', substr($records->first()->fresh()->check_in_time, 0, 5));
+        $this->post(route('internal-supervisor.pkpa-attendance.corrections.review', $correction), ['action' => 'approved'])->assertSessionHasErrors('attendance');
     }
 
     public function test_student_rotation_detail_falls_back_to_assignment_supervisors_when_runtime_history_is_missing(): void

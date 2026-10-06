@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\InternalSupervisor;
 
 use App\Http\Controllers\Controller;
+use App\Models\PkpaAttendanceCorrectionRequest;
+use App\Models\PkpaAttendanceRecord;
 use App\Models\PkpaLogbookAttachment;
 use App\Models\PkpaLogbookEntry;
 use App\Models\PkpaRotationRun;
+use App\Services\PkpaAttendanceService;
 use App\Services\PkpaLogbookService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +23,7 @@ class PkpaRotationOperationController extends Controller
     public function index(Request $request): View
     {
         $coreUserId = $request->user()->core_user_id;
-        $tab = in_array($request->query('tab'), ['overview', 'validation', 'history'], true)
+        $tab = in_array($request->query('tab'), ['overview', 'validation', 'history', 'attendance'], true)
             ? $request->query('tab')
             : (config('my_pkpa.preceptor_document_validation_enabled') ? 'overview' : 'validation');
         $runs = PkpaRotationRun::forSupervisor('internal', $coreUserId)
@@ -44,10 +47,25 @@ class PkpaRotationOperationController extends Controller
         $filteredQuery = (clone $logbookQuery)->whereIn('pkpa_rotation_run_id', $filteredRuns->pluck('id'))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('entry_date', '>=', $request->input('date_from')))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('entry_date', '<=', $request->input('date_to')));
+        $attendanceStatus = in_array($request->query('attendance_status'), ['ready', 'all', 'completed', 'revision'], true) ? $request->query('attendance_status') : 'ready';
+        $attendanceQuery = PkpaAttendanceRecord::whereIn('pkpa_rotation_run_id', $runs->pluck('id'));
 
         return view('internal-supervisor.pkpa-operations.index', [
             'runs' => $runs,
             'tab' => $tab,
+            'attendanceStatus' => $attendanceStatus,
+            'readyAttendanceCount' => (clone $attendanceQuery)->where('submission_status', 'submitted')->count(),
+            'approvedAttendanceCount' => (clone $attendanceQuery)->where('submission_status', 'approved')->count(),
+            'attendances' => $tab === 'attendance' ? (clone $attendanceQuery)
+                ->whereIn('pkpa_rotation_run_id', $filteredRuns->pluck('id'))
+                ->where('submission_status', '!=', 'draft')
+                ->when($attendanceStatus === 'ready', fn ($q) => $q->where('submission_status', 'submitted'))
+                ->when($attendanceStatus === 'completed', fn ($q) => $q->where('submission_status', 'approved'))
+                ->when($attendanceStatus === 'revision', fn ($q) => $q->whereIn('submission_status', ['revision_requested', 'rejected']))
+                ->when($request->filled('date_from'), fn ($q) => $q->whereDate('attendance_date', '>=', $request->input('date_from')))
+                ->when($request->filled('date_to'), fn ($q) => $q->whereDate('attendance_date', '<=', $request->input('date_to')))
+                ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment', 'correctionRequests'])
+                ->latest('attendance_date')->paginate(20, ['*'], 'attendance_page')->withQueryString() : null,
             'readyLogbookCount' => (clone $logbookQuery)->whereIn('status', PkpaLogbookEntry::internalReviewStatuses())->count(),
             'completedLogbookCount' => (clone $logbookQuery)->where('status', 'internal_approved')->count(),
             'historyLogbookCount' => (clone $logbookQuery)->where('status', '!=', 'draft')->count(),
@@ -94,7 +112,7 @@ class PkpaRotationOperationController extends Controller
             : ($readyCount > 0 ? 'ready' : 'logbooks');
         $status = in_array($request->query('status'), ['all', 'waiting', 'ready', 'completed', 'revision'], true)
             ? $request->query('status')
-            : 'all';
+            : ($view === 'attendance' ? 'ready' : 'all');
         $search = trim((string) $request->query('q'));
         $request->validate(['date_from' => ['nullable', 'date'], 'date_to' => array_merge(['nullable', 'date'], $request->filled('date_from') ? ['after_or_equal:date_from'] : [])]);
         $dateFrom = $request->date('date_from')?->toDateString();
@@ -120,6 +138,10 @@ class PkpaRotationOperationController extends Controller
 
         $attendances = $run->attendanceRecords()
             ->where('submission_status', '!=', 'draft')
+            ->when($view === 'attendance' && $status === 'ready', fn ($q) => $q->where('submission_status', 'submitted'))
+            ->when($view === 'attendance' && $status === 'completed', fn ($q) => $q->where('submission_status', 'approved'))
+            ->when($view === 'attendance' && $status === 'revision', fn ($q) => $q->whereIn('submission_status', ['revision_requested', 'rejected']))
+            ->with(['rotationRun.practiceDomain', 'rotationRun.practiceSite', 'rotationRun.enrollment', 'correctionRequests'])
             ->when($dateFrom, fn ($query) => $query->whereDate('attendance_date', '>=', $dateFrom))
             ->when($dateTo, fn ($query) => $query->whereDate('attendance_date', '<=', $dateTo))
             ->latest('attendance_date')
@@ -133,6 +155,7 @@ class PkpaRotationOperationController extends Controller
             'attendances' => $attendances,
             'logbooks' => $logbooks,
             'attendanceCount' => $attendanceCount,
+            'readyAttendanceCount' => $run->attendanceRecords()->where('submission_status', 'submitted')->count(),
             'logbookCount' => $logbookCount,
             'waitingFieldCount' => $waitingFieldCount,
             'readyCount' => $readyCount,
@@ -185,5 +208,37 @@ class PkpaRotationOperationController extends Controller
     public function downloadAttachment(Request $request, PkpaLogbookAttachment $attachment)
     {
         return $this->logbooks->downloadResponse($attachment, $request->user());
+    }
+
+    public function reviewAttendance(Request $request, PkpaAttendanceRecord $record, PkpaAttendanceService $attendance): RedirectResponse
+    {
+        $data = $request->validate(['action' => ['required', 'in:approved,revision_requested,rejected'], 'notes' => ['nullable', 'string', 'max:1000']]);
+        $attendance->review($record, $data['action'], $data['notes'] ?? null, $request->user());
+
+        return back()->with('status', 'Keputusan presensi tersimpan.');
+    }
+
+    public function bulkApproveAttendance(Request $request, PkpaAttendanceService $attendance): RedirectResponse
+    {
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1', 'max:100'], 'ids.*' => ['required', 'integer', 'distinct'], 'comments' => ['nullable', 'string', 'max:1000']]);
+        DB::transaction(function () use ($request, $data, $attendance) {
+            $records = PkpaAttendanceRecord::whereIn('id', $data['ids'])->orderBy('id')->lockForUpdate()->get();
+            if ($records->count() !== count($data['ids'])) {
+                throw ValidationException::withMessages(['ids' => 'Sebagian presensi tidak tersedia. Muat ulang antrean.']);
+            }
+            foreach ($records as $record) {
+                $attendance->review($record, 'approved', $data['comments'] ?? null, $request->user());
+            }
+        });
+
+        return back()->with('status', count($data['ids']).' presensi berhasil disetujui.');
+    }
+
+    public function reviewAttendanceCorrection(Request $request, PkpaAttendanceCorrectionRequest $correction, PkpaAttendanceService $attendance): RedirectResponse
+    {
+        $data = $request->validate(['action' => ['required', 'in:approved,rejected'], 'notes' => ['nullable', 'string', 'max:1000']]);
+        $attendance->reviewCorrection($correction, $data['action'], $data['notes'] ?? null, $request->user());
+
+        return back()->with('status', 'Keputusan koreksi presensi tersimpan.');
     }
 }

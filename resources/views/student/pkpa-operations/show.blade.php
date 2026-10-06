@@ -5,7 +5,7 @@
 @php
     $attendanceStatuses = [
         'draft' => 'Draf',
-        'submitted' => 'Terkirim - Menunggu Preseptor',
+        'submitted' => 'Menunggu Pembimbing Dalam',
         'approved' => 'Disetujui',
         'revision_requested' => 'Perlu Revisi',
         'rejected' => 'Ditolak',
@@ -101,7 +101,7 @@
 
     <section class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-100">
         <h3 class="text-2xl font-black text-slate-950">Presensi Harian</h3>
-        <p class="mt-2 max-w-3xl text-sm text-slate-500">Jika data sudah lengkap, langsung tekan <span class="font-bold text-cyan-700">Kirim ke Preseptor</span>. Pilih simpan draf hanya bila Anda memang ingin melanjutkan pengisian nanti.</p>
+        <p class="mt-2 max-w-3xl text-sm text-slate-500">{{ $attendanceDraftCount }} draf · {{ $attendanceSubmittedCount }} presensi menunggu Pembimbing Dalam.</p>
         <form method="POST" action="{{ route('student.pkpa-operations.attendance.store', $run) }}" class="mt-6 grid gap-5 lg:grid-cols-2" id="attendance-form">
             @csrf
             <input type="hidden" name="attendance_record_id" id="attendance_record_id">
@@ -131,7 +131,7 @@
                 <textarea name="student_notes" id="student_notes" rows="4" class="rounded-2xl border-slate-200 px-4 py-3 text-base" placeholder="Tuliskan keterangan singkat bila diperlukan, misalnya kegiatan utama hari ini atau alasan jika jam tidak lengkap."></textarea>
             </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
-                <button id="attendance-submit-button" name="submission_action" value="submit" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Kirim ke Preseptor</button>
+                <button id="attendance-submit-button" name="submission_action" value="submit" class="inline-flex min-h-14 flex-1 items-center justify-center rounded-2xl bg-cyan-700 px-5 py-3 text-base font-black text-white">Kirim ke Pembimbing Dalam</button>
                 <button id="attendance-draft-button" name="submission_action" value="draft" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700">Simpan sebagai Draf</button>
                 <button type="button" id="attendance-reset-button" class="inline-flex min-h-14 items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-base font-black text-slate-700">Form Baru</button>
             </div>
@@ -174,7 +174,7 @@
                                     </form>
                                     <form method="POST" action="{{ route('student.pkpa-attendance.submit', $record) }}">
                                         @csrf
-                                        <button class="inline-flex min-h-10 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Kirim ke Preseptor</button>
+                                        <button class="inline-flex min-h-10 items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Kirim ke Pembimbing Dalam</button>
                                     </form>
                                 @endif
                                 <span class="inline-flex min-h-10 items-center justify-center rounded-xl border border-cyan-200 px-4 py-2 text-sm font-bold text-cyan-700 group-open:hidden">Lihat Detail</span>
@@ -182,7 +182,7 @@
                         </summary>
                         <div class="mt-4 grid gap-3 border-t border-dashed border-slate-200 pt-4 lg:grid-cols-2">
                             <div class="rounded-xl {{ $record->submission_status === 'draft' ? 'bg-amber-50 text-amber-900' : ($record->submission_status === 'submitted' ? 'bg-cyan-50 text-cyan-900' : 'bg-emerald-50 text-emerald-900') }} px-4 py-3 lg:col-span-2">
-                                <p class="font-black">{{ $record->submission_status === 'draft' ? 'Belum dikirim ke Preseptor' : ($record->submission_status === 'submitted' ? 'Sudah terkirim ke Preseptor dan menunggu validasi' : 'Presensi sudah diputuskan Preseptor') }}</p>
+                                <p class="font-black">{{ $record->submission_status === 'draft' ? 'Draf belum dikirim' : ($record->submission_status === 'submitted' ? 'Sudah terkirim ke Pembimbing Dalam dan menunggu pemeriksaan' : 'Presensi sudah diperiksa') }}</p>
                                 <p class="mt-1 text-sm">{{ $record->submission_status === 'draft' ? 'Anda masih dapat mengedit atau menghapus draf ini.' : ($record->submitted_at ? 'Dikirim pada '.$record->submitted_at->format('d M Y H:i') : 'Status kiriman tercatat pada sistem.') }}</p>
                             </div>
                             <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -219,11 +219,11 @@
             <div>
                 <p class="text-xs font-black uppercase tracking-widest text-cyan-700">Logbook Harian</p>
                 <h3 class="mt-2 text-2xl font-black text-slate-950">Isi Aktivitas Harian PKPA</h3>
-        <p class="mt-2 max-w-4xl text-sm text-slate-500">Agar seragam dengan format logbook harian, isilah tanggal, unit atau kegiatan, uraian aktivitas, dan kompetensi yang dicapai. Setelah dikirim, logbook diverifikasi Preseptor lalu divalidasi final oleh Pembimbing Dalam.</p>
+        <p class="mt-2 max-w-4xl text-sm text-slate-500">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Logbook terkirim diperiksa Preseptor lalu Pembimbing Dalam.' : 'Logbook terkirim diperiksa langsung oleh Pembimbing Dalam.' }}</p>
             </div>
             <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
                 <p class="font-black">Petunjuk Pengisian</p>
-                <p class="mt-1">Logbook diisi setiap hari selama pelaksanaan PKPA sebagai bukti kegiatan yang telah dilakukan, diperiksa preseptor, dan dipantau pembimbing dalam.</p>
+                <p class="mt-1">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Logbook harian diperiksa Preseptor dan Pembimbing Dalam.' : 'Logbook harian diperiksa Pembimbing Dalam. Pengesahan Preseptor dilakukan pada hardcopy.' }}</p>
             </div>
         </div>
         <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" class="mt-6 grid gap-5" id="logbook-form">
@@ -295,11 +295,11 @@
                     <div class="grid gap-3 sm:grid-cols-2">
                         <div class="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
                             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Paraf Preseptor</p>
-                            <p class="mt-2 text-sm text-slate-600">Akan tercatat setelah logbook dikirim dan diperiksa preseptor.</p>
+                            <p class="mt-2 text-sm text-slate-600">{{ config('my_pkpa.preceptor_document_validation_enabled') ? 'Akan tercatat setelah diperiksa Preseptor.' : 'Dilengkapi pada hardcopy.' }}</p>
                         </div>
                         <div class="rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
                             <p class="text-xs font-black uppercase tracking-widest text-slate-500">Paraf Dosen Pembimbing</p>
-                            <p class="mt-2 text-sm text-slate-600">Akan tercatat setelah logbook yang lolos preseptor ditinjau pembimbing dalam.</p>
+                            <p class="mt-2 text-sm text-slate-600">Akan tercatat setelah divalidasi Pembimbing Dalam.</p>
                         </div>
                     </div>
                 </div>
@@ -425,7 +425,7 @@
                                         <button class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Simpan Link Drive</button>
                                     </form>
                                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
-                                        Draft ini masih bisa diubah, disimpan ulang, atau dihapus sebelum dikirim ke preseptor dan pembimbing dalam.
+                                        Draf masih bisa diubah, disimpan ulang, atau dihapus sebelum dikirim untuk pemeriksaan.
                                     </div>
                                     <form method="POST" action="{{ route('student.pkpa-logbooks.submit', $entry) }}">@csrf<button class="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-black text-white">Kirim ke Pembimbing Dalam</button></form>
                                 @elseif($entry->status === 'submitted')
@@ -433,14 +433,14 @@
                                         @csrf
                                         <div>
                                             <p class="text-sm font-black text-slate-900">Bukti Susulan</p>
-                                            <p class="mt-1 text-xs leading-5 text-slate-500">Tambahkan tautan bukti yang tertinggal. Bukti ini langsung terlihat oleh preseptor sebelum ia membuat keputusan.</p>
+                                            <p class="mt-1 text-xs leading-5 text-slate-500">Bukti tambahan langsung terlihat oleh pemeriksa.</p>
                                         </div>
                                         <input name="link_label" class="block w-full rounded-xl border-slate-200 px-4 py-3 text-sm" placeholder="Judul bukti, misalnya Foto kegiatan 01 Sep">
                                         <input name="external_url" type="url" class="block w-full rounded-xl border-slate-200 px-4 py-3 text-sm" placeholder="https://drive.google.com/file/d/.../view" required>
                                         <button class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Simpan Bukti Susulan</button>
                                     </form>
                                     <div class="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs leading-5 text-sky-900">
-                                        Isi logbook tidak dapat diubah setelah dikirim. Tautan bukti susulan dapat ditambahkan sampai preseptor memutuskan logbook ini.
+                                        Isi logbook tidak dapat diubah setelah dikirim. Tautan bukti susulan dapat ditambahkan selama masih menunggu pemeriksaan.
                                     </div>
                                 @else
                                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">
@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
             attendanceCheckIn.value = button.dataset.checkIn || '';
             attendanceCheckOut.value = button.dataset.checkOut || '';
             attendanceNotes.value = button.dataset.notes || '';
-            attendanceSubmitButton.textContent = 'Perbarui dan Kirim ke Preseptor';
+            attendanceSubmitButton.textContent = 'Perbarui dan Kirim ke Pembimbing Dalam';
             attendanceDraftButton.textContent = 'Simpan Perubahan Draf';
             attendanceForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
     attendanceResetButton?.addEventListener('click', () => {
         attendanceForm.reset();
         attendanceRecordId.value = '';
-        attendanceSubmitButton.textContent = 'Kirim ke Preseptor';
+        attendanceSubmitButton.textContent = 'Kirim ke Pembimbing Dalam';
         attendanceDraftButton.textContent = 'Simpan sebagai Draf';
     });
 
