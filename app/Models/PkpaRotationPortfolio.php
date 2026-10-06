@@ -66,6 +66,7 @@ class PkpaRotationPortfolio extends Model
     public function reviews(): HasMany { return $this->hasMany(PkpaPortfolioReview::class); }
     public function publications(): HasMany { return $this->hasMany(PkpaPortfolioPublication::class); }
     public function exportVersions(): HasMany { return $this->hasMany(PkpaPortfolioExportVersion::class); }
+    public function signedDocuments(): HasMany { return $this->hasMany(PkpaPortfolioSignedDocument::class); }
 
     public function statusLabel(): string
     {

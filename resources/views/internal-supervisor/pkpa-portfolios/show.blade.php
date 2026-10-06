@@ -42,7 +42,8 @@
     @endif
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">Refleksi dan Penilaian Diri</h2>
+        @include('shared.pkpa-signed-portfolio')
+        <h2 class="mt-5 text-lg font-black text-slate-950">Refleksi dan Penilaian Diri</h2>
         <p class="mt-2 text-sm text-slate-600">Refleksi: {{ $portfolio->weeklyReflections->count() }}. Penilaian diri: {{ $portfolio->selfAssessments->count() }}. Gunakan catatan revisi bila mahasiswa masih perlu melengkapi isi portofolio.</p>
         @if($canReview)
             @unless($isComplete)

@@ -119,6 +119,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('role.selected')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'redirect'])->name('dashboard');
+        Route::get('/portofolio-bertanda-tangan/{document}', [\App\Http\Controllers\PkpaPortfolioSignedDocumentController::class, 'show'])->middleware('throttle:pkpa-downloads')->name('pkpa-signed-documents.show');
+        Route::post('/mahasiswa/portofolio-pkpa/{portfolio}/signed-document', [\App\Http\Controllers\PkpaPortfolioSignedDocumentController::class, 'store'])->middleware('role:mahasiswa')->name('student.pkpa-portfolios.signed-document.store');
         Route::get('/profil-saya', [ProfileController::class, 'show'])->name('profile.show');
         Route::redirect('/profile', '/profil-saya')->name('profile.alias');
         Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');

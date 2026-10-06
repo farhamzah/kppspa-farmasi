@@ -24,6 +24,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaPortfolioBuilderService;
+use App\Services\PkpaPortfolioSignedDocumentService;
 use App\Services\PkpaProgramService;
 use App\Support\PkpaApotekPortfolio;
 use App\Support\PkpaHealthOfficePortfolio;
@@ -37,6 +38,7 @@ use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -66,6 +68,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
     {
         parent::setUp();
         config()->set('my_pkpa.preceptor_document_validation_enabled', true);
+        config()->set('my_pkpa.portfolio_signed_pdf_required', false);
         Storage::fake('local');
         $this->seed([RoleSeeder::class, PkpaMasterSeeder::class, PkpaPortfolioTemplateSeeder::class]);
         $this->admin = $this->makeUser('admin14@test.local', ['admin'], 'CORE-ADMIN-14');
@@ -209,6 +212,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
     public function test_portfolio_can_be_sent_directly_to_internal_supervisor_and_approved_in_bulk(): void
     {
         config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        config()->set('my_pkpa.portfolio_signed_pdf_required', true);
         $service = app(PkpaPortfolioBuilderService::class);
         $portfolio = $service->ensureForRun($this->run, $this->admin);
         $service->acknowledgeIntegrity($portfolio, $this->student);
@@ -217,6 +221,13 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'achievement' => 'Memahami pelayanan obat.'], $this->student);
         $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Komunikasi', 'score' => 4, 'evidence_experience' => 'Konseling'], $this->student);
         $service->saveDocumentation($portfolio->fresh(), ['activity' => 'Konseling', 'anonymization_confirmed' => true, 'consent_confirmed' => true], null, $this->student);
+        $this->assertFalse($service->completeness($portfolio->fresh())['ready_to_submit']);
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post(route('student.pkpa-portfolios.submit', $portfolio))->assertSessionHasErrors('portfolio');
+        $this->post(route('student.pkpa-portfolios.signed-document.store', $portfolio), [
+            'signed_file' => $this->signedPdfFixture(), 'signatures_confirmed' => 1,
+        ])->assertSessionHasNoErrors();
+        $this->assertTrue($service->completeness($portfolio->fresh())['ready_to_submit']);
         $service->submit($portfolio->fresh(), $this->student);
         $this->assertSame('submitted_to_internal_supervisor', $portfolio->fresh()->status);
         $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
@@ -249,6 +260,52 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $this->artisan('pkpa:enable-internal-validation', ['--apply' => true])->assertSuccessful();
         $this->assertSame('approved', $portfolio->fresh()->status);
         $this->assertNotNull($portfolio->fresh()->internal_approved_at);
+    }
+
+    public function test_signed_pdf_upload_is_private_versioned_and_requires_new_scan_after_content_changes(): void
+    {
+        config()->set('my_pkpa.portfolio_signed_pdf_required', true);
+        $service = app(PkpaPortfolioBuilderService::class);
+        $documents = app(PkpaPortfolioSignedDocumentService::class);
+        $portfolio = $service->ensureForRun($this->run, $this->admin);
+        $url = route('student.pkpa-portfolios.signed-document.store', $portfolio);
+        $this->actingAs($this->otherStudent)->withSession(['active_role' => 'mahasiswa'])
+            ->post($url, ['signed_file' => $this->signedPdfFixture(), 'signatures_confirmed' => 1])
+            ->assertSessionHasErrors('authorization');
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post($url, ['signed_file' => UploadedFile::fake()->image('bukan-pdf.jpg'), 'signatures_confirmed' => 1])
+            ->assertSessionHasErrors('signed_file');
+        $this->post($url, ['signed_file' => $this->signedPdfFixture()])->assertSessionHasErrors('signatures_confirmed');
+        $this->post($url, ['signed_file' => $this->signedPdfFixture(), 'signatures_confirmed' => 1])->assertSessionHasNoErrors();
+        $first = $portfolio->signedDocuments()->firstOrFail();
+        Storage::disk('local')->assertExists($first->path);
+        $this->assertStringStartsWith('Portofolio_PKPA_apotek_', $first->download_filename);
+        $this->assertStringEndsWith('_Bertanda_Tangan_v01.pdf', $first->download_filename);
+        $this->assertStringNotContainsString('nama-file-bebas', $first->download_filename);
+        $this->assertSame($first->id, $documents->currentDocument($portfolio)->id);
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])
+            ->get(route('pkpa-signed-documents.show', $first))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('pkpa-signed-documents.show', ['document' => $first, 'download' => 1]))
+            ->assertDownload($first->download_filename);
+        $this->actingAs($this->otherStudent)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('pkpa-signed-documents.show', $first))->assertForbidden();
+        $service->acknowledgeIntegrity($portfolio, $this->student);
+        $this->assertNull($documents->currentDocument($portfolio));
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post($url, ['signed_file' => $this->signedPdfFixture(), 'signatures_confirmed' => 1])->assertSessionHasNoErrors();
+        $second = $documents->currentDocument($portfolio);
+        $this->assertSame(2, $second->version_number);
+        $this->assertStringEndsWith('_Bertanda_Tangan_v02.pdf', $second->download_filename);
+        Storage::disk('local')->assertExists($first->path);
+        $portfolio->update(['status' => 'approved']);
+        $this->post($url, ['signed_file' => $this->signedPdfFixture(), 'signatures_confirmed' => 1])->assertSessionHasErrors('signed_file');
+        $this->assertSame(2, $portfolio->signedDocuments()->count());
+        $this->assertDatabaseHas('pkpa_master_audits', ['action' => 'portfolio_signed_document_uploaded']);
+    }
+
+    private function signedPdfFixture(): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent('nama-file-bebas.pdf', \App\Support\SimplePdfReport::table('Scan fixture', [], ['Tanda tangan'], [['Fixture mahasiswa dan Preseptor']]));
     }
 
     public function test_incomplete_portfolio_cannot_be_verified_and_coordinator_can_reopen_it(): void
@@ -380,7 +437,10 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $docx->update(['metadata' => ['generator_version' => 1]]);
         $regeneratedDocx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
         $this->assertNotSame($docx->id, $regeneratedDocx->id);
-        $this->assertSame(3, data_get($regeneratedDocx->metadata, 'generator_version'));
+        $this->assertSame(4, data_get($regeneratedDocx->metadata, 'generator_version'));
+        $regeneratedXml = $this->docxDocumentXml(Storage::disk($regeneratedDocx->disk)->path($regeneratedDocx->path));
+        $this->assertStringContainsString('Tanda Tangan Mahasiswa', $regeneratedXml);
+        $this->assertStringContainsString('Tanda Tangan Preseptor', $regeneratedXml);
         Storage::disk('local')->assertExists($regeneratedDocx->path);
     }
 

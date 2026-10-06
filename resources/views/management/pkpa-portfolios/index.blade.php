@@ -46,6 +46,10 @@
                                 <div class="flex flex-wrap gap-2">
                                     <form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'docx']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh DOCX</button></form>
                                     <form method="POST" action="{{ route('management.pkpa-portfolios.exports.store', [$portfolio, 'pdf']) }}">@csrf<button class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-bold text-white">Unduh PDF</button></form>
+                                    @foreach($portfolio->signedDocuments->sortByDesc('version_number') as $signedDocument)
+                                        <a href="{{ route('pkpa-signed-documents.show', $signedDocument) }}" target="_blank" rel="noopener" class="rounded-lg border border-cyan-200 px-3 py-2 text-xs font-semibold text-cyan-800">Scan Bertanda Tangan v{{ $signedDocument->version_number }}</a>
+                                        <a href="{{ route('pkpa-signed-documents.show', ['document' => $signedDocument, 'download' => 1]) }}" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold">Unduh Scan v{{ $signedDocument->version_number }}</a>
+                                    @endforeach
                                     @if($portfolio->status === 'approved')
                                         <form method="POST" action="{{ route('management.pkpa-portfolios.publish', $portfolio) }}">@csrf<button class="rounded-xl bg-cyan-700 px-3 py-2 text-xs font-bold text-white">Terbitkan</button></form>
                                     @endif

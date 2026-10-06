@@ -42,7 +42,8 @@
     @endif
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">Studi Kasus dan Bukti Kegiatan</h2>
+        @include('shared.pkpa-signed-portfolio')
+        <h2 class="mt-5 text-lg font-black text-slate-950">Studi Kasus dan Bukti Kegiatan</h2>
         <p class="mt-2 text-sm text-slate-600">Studi kasus: {{ $portfolio->caseReports->count() }}. Dokumentasi: {{ $portfolio->documentationItems->count() }}. Gunakan catatan revisi bila isi portofolio masih perlu diperjelas atau dilengkapi.</p>
         @if($canReview)
             @unless($isComplete)

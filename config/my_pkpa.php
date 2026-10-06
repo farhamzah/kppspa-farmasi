@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'portfolio_signed_pdf_required' => (bool) env('PKPA_PORTFOLIO_SIGNED_PDF_REQUIRED', true),
     'preceptor_document_validation_enabled' => (bool) env('PKPA_PRECEPTOR_DOCUMENT_VALIDATION_ENABLED', false),
     'local_account_management_enabled' => (bool) env('MY_PKPA_LOCAL_ACCOUNT_MANAGEMENT_ENABLED', env('MY_PKPA_LOCAL_ACCOUNT_MANAGEMENT_ENABLED', false)),
     'student_place_selection_enabled' => (bool) env('MY_PKPA_STUDENT_PLACE_SELECTION_ENABLED', env('MY_PKPA_STUDENT_PLACE_SELECTION_ENABLED', false)),

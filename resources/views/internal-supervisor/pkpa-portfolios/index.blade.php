@@ -18,8 +18,9 @@
             <div class="divide-y divide-slate-100">
                 @foreach($domainRuns as $run)
                     @php($portfolio = $run->currentPortfolio)
+                    @php($scanReady = ! config('my_pkpa.portfolio_signed_pdf_required') || ($portfolio && app(\App\Services\PkpaPortfolioSignedDocumentService::class)->currentDocument($portfolio)))
                     <article class="flex flex-wrap items-center gap-4 p-5">
-                        @if($portfolio && in_array($portfolio->status, \App\Models\PkpaRotationPortfolio::internalReviewStatuses(), true))
+                        @if($portfolio && $scanReady && in_array($portfolio->status, \App\Models\PkpaRotationPortfolio::internalReviewStatuses(), true))
                             <input type="checkbox" name="ids[]" value="{{ $portfolio->id }}" form="bulk-validation" aria-label="Pilih portofolio {{ $run->studentDisplayName() }}">
                         @endif
                         <div class="min-w-0 flex-1"><p class="font-bold">{{ $run->studentDisplayName() }}</p><p class="mt-1 text-sm text-slate-500">{{ $run->studentDisplaySecondary() }} · {{ $run->practiceSite?->name }}</p><p class="mt-2 text-sm font-semibold text-cyan-700">{{ $portfolio?->statusLabel() ?? 'Belum diisi' }}</p></div>

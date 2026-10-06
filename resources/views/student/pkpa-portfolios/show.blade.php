@@ -951,14 +951,17 @@
     </section>
 
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <h2 class="text-lg font-black text-slate-950">Pemeriksaan</h2>
+        @include('shared.pkpa-signed-portfolio', ['allowSignedUpload' => true])
+        <h2 class="mt-5 text-lg font-black text-slate-950">Pemeriksaan</h2>
         <div class="mt-4 flex flex-wrap gap-3">
             @if($canEdit && data_get($portfolio->progress_snapshot, 'ready_to_submit'))
                 <form method="POST" action="{{ route('student.pkpa-portfolios.submit', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Pembimbing Dalam</button></form>
             @elseif($canEdit)
                 <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Lengkapi bagian yang masih tercantum pada Pemeriksaan Kelengkapan sebelum mengirim.</p>
-            @elseif($portfolio->status === 'field_verified')
+            @elseif($portfolio->status === 'field_verified' && data_get($portfolio->progress_snapshot, 'ready_to_submit'))
                 <form method="POST" action="{{ route('student.pkpa-portfolios.submit-internal', $portfolio) }}">@csrf<button class="rounded-2xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Kirim ke Pembimbing Dalam</button></form>
+            @elseif($portfolio->status === 'field_verified')
+                <p class="rounded-lg bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Lengkapi pemeriksaan kelengkapan dan unggah PDF bertanda tangan sebelum mengirim.</p>
             @else
                 <p class="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">Tidak ada tindakan pengiriman yang diperlukan dari mahasiswa pada tahap ini.</p>
             @endif

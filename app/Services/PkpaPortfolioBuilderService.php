@@ -32,8 +32,8 @@ use ZipArchive;
 class PkpaPortfolioBuilderService
 {
     private const EXPORT_GENERATOR_VERSIONS = [
-        'docx' => 3,
-        'pdf' => 1,
+        'docx' => 4,
+        'pdf' => 2,
     ];
 
     public const PATIENT_IDENTIFIER_PATTERNS = [
@@ -500,6 +500,15 @@ class PkpaPortfolioBuilderService
                 'reviewed_at' => now(),
             ]);
 
+            if ($signedDocument = $portfolio->signedDocuments()->latest('version_number')->first()) {
+                app(PkpaAuditService::class)->record($actor, 'portfolio_signed_document_reviewed', $review, null, [
+                    'signed_document_id' => $signedDocument->id,
+                    'version_number' => $signedDocument->version_number,
+                    'checksum' => $signedDocument->checksum,
+                    'action' => $action,
+                ]);
+            }
+
             $updates = [];
             if ($reviewerType === 'field' && $action === 'verify') {
                 if ($review->privacy_findings !== []) {
@@ -526,6 +535,9 @@ class PkpaPortfolioBuilderService
         $this->ensureStudentOwns($portfolio, $actor);
         if ($portfolio->status !== 'field_verified') {
             throw ValidationException::withMessages(['status' => 'Portofolio harus diverifikasi Preseptor terlebih dahulu.']);
+        }
+        if (config('my_pkpa.portfolio_signed_pdf_required') && ! app(PkpaPortfolioSignedDocumentService::class)->currentDocument($portfolio)) {
+            throw ValidationException::withMessages(['portfolio' => 'Unggah scan PDF bertanda tangan terbaru sebelum mengirim ke Pembimbing Dalam.']);
         }
         $portfolio->update(['status' => 'submitted_to_internal_supervisor']);
 
@@ -659,6 +671,19 @@ class PkpaPortfolioBuilderService
         $portfolio->loadMissing(['template.sections', 'sectionRecords.templateSection', 'caseReports', 'weeklyReflections', 'selfAssessments', 'documentationItems', 'rotationRun.logbookEntries', 'rotationRun.attendanceRecords', 'rotationRun.competencyRecords', 'rotationRun.specialTasks', 'rotationRun.rotationReport', 'rotationRun.gradeResults', 'rotationRun.currentAssignment', 'rotationRun.originAssignment', 'rotationRun.requirement.programDomain', 'reviews']);
         $blocking = [];
         $checks = [];
+        if (config('my_pkpa.portfolio_signed_pdf_required') && ! in_array($portfolio->status, ['approved', 'locked', 'published', 'superseded', 'cancelled'], true)) {
+            $signed = app(PkpaPortfolioSignedDocumentService::class)->currentDocument($portfolio);
+            if (! $signed) {
+                $blocking[] = 'PDF portofolio bertanda tangan belum diunggah atau perlu diperbarui setelah perubahan isian.';
+            }
+            $checks[] = [
+                'key' => 'signed_document', 'title' => 'Portofolio Bertanda Tangan',
+                'status' => $signed ? 'complete' : 'action_required',
+                'summary' => $signed ? 'PDF bertanda tangan sudah diunggah.' : 'Unggah scan PDF final dengan tanda tangan mahasiswa dan Preseptor.',
+                'owner' => $signed ? 'Tidak ada' : 'Mahasiswa',
+                'action' => $signed ? 'Tidak ada tindakan.' : 'Cetak portofolio, lengkapi tanda tangan, lalu unggah scan PDF terbaru.',
+            ];
+        }
         if (! $portfolio->integrity_acknowledged_at) {
             $blocking[] = 'Pakta integritas belum disetujui.';
         }
@@ -1350,7 +1375,9 @@ class PkpaPortfolioBuilderService
             ]))),
             'Preseptor: '.(data_get($portfolio->placement_snapshot, 'field_supervisor') ?: '-'),
             'Dosen Pembimbing: '.(data_get($portfolio->placement_snapshot, 'internal_supervisor') ?: '-'),
-            'Petunjuk: Logbook diisi setiap hari selama pelaksanaan PKPA dan divalidasi oleh Preseptor serta Pembimbing Dalam.',
+            config('my_pkpa.preceptor_document_validation_enabled')
+                ? 'Petunjuk: Logbook diisi setiap hari selama pelaksanaan PKPA dan divalidasi oleh Preseptor serta Pembimbing Dalam.'
+                : 'Petunjuk: Logbook diisi setiap hari selama pelaksanaan PKPA dan divalidasi oleh Pembimbing Dalam.',
             '',
         ];
 
@@ -1654,15 +1681,17 @@ class PkpaPortfolioBuilderService
             '',
             'Pihak Yang Mengetahui',
             'Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name'),
-            'Paraf Mahasiswa: ____________________',
+            'Tanda Tangan Mahasiswa: ____________________',
             'Preseptor: '.(data_get($portfolio->placement_snapshot, 'field_supervisor') ?: '-'),
-            'Paraf Preseptor: ____________________',
-            'Status Preseptor: '.($portfolio->field_verified_at ? 'Terverifikasi pada '.$portfolio->field_verified_at->format('d M Y H:i') : 'Belum verifikasi'),
+            'Tanda Tangan Preseptor: ____________________',
+            config('my_pkpa.preceptor_document_validation_enabled')
+                ? 'Status Preseptor: '.($portfolio->field_verified_at ? 'Terverifikasi pada '.$portfolio->field_verified_at->format('d M Y H:i') : 'Belum verifikasi')
+                : 'Pengesahan Preseptor dilakukan pada hardcopy bertanda tangan.',
             'Pembimbing Dalam: '.(data_get($portfolio->placement_snapshot, 'internal_supervisor') ?: '-'),
             'Paraf Pembimbing Dalam: ____________________',
             'Status Pembimbing Dalam: '.($portfolio->internal_approved_at ? 'Disetujui pada '.$portfolio->internal_approved_at->format('d M Y H:i') : 'Belum menyetujui'),
             '',
-            'Catatan: pengesahan pada dokumen ini menggunakan persetujuan elektronik dalam sistem MY PKPA.',
+            'Catatan: tanda tangan mahasiswa dan Preseptor dilengkapi pada hardcopy. Scan PDF diunggah ke MY PKPA untuk diperiksa Pembimbing Dalam.',
         ];
     }
 
