@@ -13,8 +13,11 @@ use App\Models\PkpaRotationAssessment;
 use App\Models\PkpaRotationComponentScore;
 use App\Models\PkpaRotationGradeResult;
 use App\Models\PkpaRotationRun;
+use App\Services\PkpaApotekAssessmentService;
 use App\Services\PkpaAssessmentSchemeService;
+use App\Services\PkpaAuditService;
 use App\Services\PkpaRotationAssessmentService;
+use App\Support\PkpaPreceptorAssessment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +28,8 @@ class PkpaAssessmentController extends Controller
 {
     public function __construct(
         private readonly PkpaAssessmentSchemeService $schemes,
-        private readonly PkpaRotationAssessmentService $assessments
+        private readonly PkpaRotationAssessmentService $assessments,
+        private readonly PkpaApotekAssessmentService $guideAssessments
     ) {}
 
     public function index(): View
@@ -48,6 +52,9 @@ class PkpaAssessmentController extends Controller
     public function recordPreceptorScore(Request $request, PkpaRotationComponentScore $score): RedirectResponse
     {
         abort_unless($score->assessor?->assessor_type === 'field_supervisor', 403);
+        if (PkpaPreceptorAssessment::supports($score)) {
+            throw ValidationException::withMessages(['assessment' => 'Gunakan form rubrik preseptor agar setiap butir penilaian tercatat.']);
+        }
         $data = $request->validate([
             'raw_score' => ['required', 'numeric', 'min:0'],
             'comments' => ['required', 'string', 'max:1500'],
@@ -65,6 +72,80 @@ class PkpaAssessmentController extends Controller
         });
 
         return back()->with('status', 'Nilai preseptor dicatat oleh koordinator dan dikunci.');
+    }
+
+    public function showScore(PkpaRotationComponentScore $score): View
+    {
+        abort_unless(in_array($score->assessor?->assessor_type, ['field_supervisor', 'internal_supervisor'], true), 404);
+        $score->loadMissing(['assessment.scheme', 'assessment.rotationRun.enrollment', 'assessment.rotationRun.practiceDomain',
+            'assessment.rotationRun.practiceSite', 'assessment.rotationRun.academicReadinessReviews', 'component', 'assessor']);
+        $score->assessor->setRelation('assessment', $score->assessment);
+
+        return view('management.pkpa-assessments.score', [
+            'score' => $score,
+            'usesGuide' => PkpaPreceptorAssessment::supports($score),
+            'attendanceSummary' => PkpaPreceptorAssessment::keyFor($score->assessment->rotationRun) === 'APT'
+                && $score->assessor->assessor_type === 'field_supervisor' ? $this->guideAssessments->attendanceSummary($score) : null,
+        ]);
+    }
+
+    public function saveScore(Request $request, PkpaRotationComponentScore $score): RedirectResponse
+    {
+        return $this->recordScore($request, $score, false);
+    }
+
+    public function submitScore(Request $request, PkpaRotationComponentScore $score): RedirectResponse
+    {
+        return $this->recordScore($request, $score, true);
+    }
+
+    private function recordScore(Request $request, PkpaRotationComponentScore $score, bool $submit): RedirectResponse
+    {
+        abort_unless(in_array($score->assessor?->assessor_type, ['field_supervisor', 'internal_supervisor'], true), 403);
+        $data = $request->validate([
+            'criteria' => ['nullable', 'array'], 'criteria.*' => ['nullable', 'integer', 'between:1,5'],
+            'raw_score' => ['nullable', 'numeric', 'min:0'],
+            'overall_comments' => ['nullable', 'string', 'max:5000'],
+            'strengths' => ['nullable', 'string', 'max:5000'], 'improvements' => ['nullable', 'string', 'max:5000'],
+            'development_suggestions' => ['nullable', 'string', 'max:5000'],
+            'recommendations' => ['nullable', 'array'],
+            'recommendations.competency_met' => ['nullable', 'in:yes,no'],
+            'recommendations.portfolio_accepted' => ['nullable', 'in:yes,no'],
+            'recommendations.final_exam_recommended' => ['nullable', 'in:yes,no'],
+            'recording_basis' => ['required', 'string', 'max:1500'],
+        ]);
+        DB::transaction(function () use ($score, $data, $request, $submit) {
+            $locked = PkpaRotationComponentScore::whereKey($score->id)->lockForUpdate()->firstOrFail();
+            $usesGuide = PkpaPreceptorAssessment::supports($locked);
+            if ($usesGuide) {
+                $saved = $this->guideAssessments->save($locked, $data, $request->user());
+            } else {
+                if (! isset($data['raw_score'])) {
+                    throw ValidationException::withMessages(['raw_score' => 'Nilai wajib diisi.']);
+                }
+                $saved = $this->assessments->saveDirectScore($locked, (string) $data['raw_score'], $data['overall_comments'] ?? null, $request->user());
+            }
+            $saved->update(['source_summary' => array_merge($saved->source_summary ?? [], [
+                'method' => 'manual_coordinator', 'recorded_by_core_user_id' => $request->user()->core_user_id,
+                'recorded_at' => now()->toIso8601String(), 'basis' => $data['recording_basis'],
+                'assessor_name' => $saved->assessor->name_snapshot, 'assessor_core_user_id' => $saved->assessor->core_user_id,
+            ])]);
+            app(PkpaAuditService::class)->record($request->user(), 'pkpa_assessment_recorded_on_behalf', $saved, null, [
+                'assessor_type' => $saved->assessor->assessor_type, 'assessor_name' => $saved->assessor->name_snapshot,
+                'assessor_core_user_id' => $saved->assessor->core_user_id, 'recording_basis' => $data['recording_basis'],
+                'raw_score' => $saved->raw_score,
+            ]);
+            if ($submit) {
+                if ($usesGuide) {
+                    $this->guideAssessments->submit($saved, $request->user());
+                } else {
+                    $this->assessments->submitScore($saved, $request->user());
+                }
+            }
+        });
+
+        return redirect()->route('management.pkpa-assessments.scores.show', $score)
+            ->with('status', $submit ? 'Penilaian dicatat atas nama penilai dan dikunci.' : 'Draf penilaian disimpan.');
     }
 
     public function storeScheme(Request $request, PkpaProgramDomain $programDomain): RedirectResponse

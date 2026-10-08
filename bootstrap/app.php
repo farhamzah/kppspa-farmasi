@@ -78,6 +78,7 @@ return Application::configure(basePath: dirname(__DIR__))
         RevisePkpaPbfPlacement2026Command::class,
         ReopenPkpaPortfolioCommand::class,
         SetupPkpaApotekAssessmentCommand::class,
+        \App\Console\Commands\SetupPkpaPreceptorAssessmentCommand::class,
         ProvisionCoreBridgeUserCommand::class,
         ProvisionCoreBridgeUsersCommand::class,
         ReleaseCandidateGateCommand::class,

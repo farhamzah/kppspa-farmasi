@@ -33,6 +33,7 @@ class PkpaAssessmentController extends Controller
 
     public function save(Request $request, PkpaRotationComponentScore $score): RedirectResponse
     {
+        abort_unless($score->assessor?->assessor_type === 'internal_supervisor', 403);
         if ($this->isApotekScore($score)) {
             $this->apotekAssessments->save($score, $request->validate($this->apotekRules()), $request->user());
 
@@ -49,9 +50,9 @@ class PkpaAssessmentController extends Controller
 
     public function submit(Request $request, PkpaRotationComponentScore $score): RedirectResponse
     {
+        abort_unless($score->assessor?->assessor_type === 'internal_supervisor', 403);
         if ($this->isApotekScore($score)) {
-            $this->apotekAssessments->save($score, $request->validate($this->apotekRules()), $request->user());
-            $this->apotekAssessments->submit($score->fresh(), $request->user());
+            $this->apotekAssessments->saveAndSubmit($score, $request->validate($this->apotekRules()), $request->user());
 
             return back()->with('status', 'Penilaian Apotek dikirim dan dikunci.');
         }

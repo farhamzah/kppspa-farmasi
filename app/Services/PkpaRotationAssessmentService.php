@@ -190,6 +190,7 @@ class PkpaRotationAssessmentService
         if (! $actor?->hasRole('koordinator_kp') || blank($data['reason'] ?? null)) {
             throw ValidationException::withMessages(['reason' => 'Moderasi hanya oleh Koordinator dan alasan wajib.']);
         }
+        $this->ensureAggregationConfigured($assessment);
         $total = $this->calculator->total($assessment);
         $final = $data['final_total_score'] ?? $total['final_score'];
         if ((float) $final < 0 || (float) $final > (float) $assessment->maximum_score_snapshot) {
@@ -231,6 +232,7 @@ class PkpaRotationAssessmentService
         if ($assessment->gradeResult()->whereIn('result_status', ['finalized', 'released'])->exists()) {
             return $assessment->gradeResult()->whereIn('result_status', ['finalized', 'released'])->firstOrFail();
         }
+        $this->ensureAggregationConfigured($assessment);
 
         return DB::transaction(function () use ($assessment, $actor) {
             $assessment->loadMissing(['componentScores', 'rotationRun']);
@@ -345,15 +347,19 @@ class PkpaRotationAssessmentService
 
     private function ensureCanScore(PkpaRotationComponentScore $score, ?User $actor): void
     {
-        if (! config('my_pkpa.preceptor_document_validation_enabled') && $score->assessor?->assessor_type === 'field_supervisor') {
-            if (! $this->isCoordinator($actor) || $score->assessor?->status === 'replaced') {
-                throw ValidationException::withMessages(['authorization' => 'Nilai preseptor dicatat secara manual oleh Koordinator PKPA.']);
-            }
-
+        if ($this->isCoordinator($actor) && $score->assessor?->status !== 'replaced'
+            && in_array($score->assessor?->assessor_type, ['field_supervisor', 'internal_supervisor'], true)) {
             return;
         }
-        if (! $actor || $score->assessor?->core_user_id !== $actor->core_user_id || $score->assessor?->status === 'replaced') {
+        if (! $actor || blank($actor->core_user_id) || $score->assessor?->core_user_id !== $actor->core_user_id || $score->assessor?->status === 'replaced') {
             throw ValidationException::withMessages(['authorization' => 'Anda tidak berwenang mengisi nilai komponen ini.']);
+        }
+    }
+
+    private function ensureAggregationConfigured(PkpaRotationAssessment $assessment): void
+    {
+        if ($assessment->scheme?->usesSeparateAssessorResults()) {
+            throw ValidationException::withMessages(['scheme' => 'Nilai preseptor dan pembimbing disimpan terpisah. Penggabungan belum dapat dilakukan sebelum ada ketentuan resmi.']);
         }
     }
 

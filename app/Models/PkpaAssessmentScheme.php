@@ -11,6 +11,11 @@ class PkpaAssessmentScheme extends Model
 {
     use SoftDeletes;
 
+    public function usesSeparateAssessorResults(): bool
+    {
+        return $this->code === 'APT-PANDUAN-2026' || $this->instructions === 'SEPARATE_ASSESSOR_RESULTS';
+    }
+
     protected $fillable = [
         'pkpa_program_domain_id', 'code', 'name', 'description', 'version_number',
         'minimum_passing_score', 'maximum_score', 'rounding_precision', 'rounding_mode',

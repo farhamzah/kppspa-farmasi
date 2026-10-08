@@ -17,9 +17,7 @@ class PkpaAssessmentSchemeService
 {
     use AuthorizesPkpaRotationActors;
 
-    public function __construct(private readonly PkpaAuditService $audit)
-    {
-    }
+    public function __construct(private readonly PkpaAuditService $audit) {}
 
     public function createScheme(PkpaProgramDomain $programDomain, array $data, ?User $actor): PkpaAssessmentScheme
     {
@@ -140,7 +138,11 @@ class PkpaAssessmentSchemeService
             throw ValidationException::withMessages(['components' => 'Skema wajib memiliki komponen aktif.']);
         }
         $weight = $activeComponents->reduce(fn ($total, $component) => $total + (int) round(((float) $component->weight_percentage) * 10000), 0);
-        if ($weight !== 1000000) {
+        if ($scheme->usesSeparateAssessorResults() && $weight === 0) {
+            if ($activeComponents->pluck('assessor_type')->sort()->values()->all() !== ['field_supervisor', 'internal_supervisor']) {
+                throw ValidationException::withMessages(['components' => 'Penilaian terpisah wajib memiliki satu komponen preseptor dan satu pembimbing dalam.']);
+            }
+        } elseif ($weight !== 1000000) {
             throw ValidationException::withMessages(['weight_percentage' => 'Total bobot komponen aktif harus tepat 100%.']);
         }
         foreach ($activeComponents as $component) {

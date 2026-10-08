@@ -5,8 +5,9 @@ namespace App\Services;
 use App\Models\PkpaRotationComponentScore;
 use App\Models\User;
 use App\Support\PkpaApotekAssessment;
-use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaPreceptorAssessment;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class PkpaApotekAssessmentService
@@ -14,18 +15,27 @@ class PkpaApotekAssessmentService
     public function __construct(
         private readonly PkpaRotationAssessmentService $assessments,
         private readonly PkpaRotationProgressService $progress
-    ) {
-    }
+    ) {}
 
     public function save(PkpaRotationComponentScore $score, array $data, User $actor): PkpaRotationComponentScore
     {
+        return DB::transaction(function () use ($score, $data, $actor) {
+            $locked = PkpaRotationComponentScore::whereKey($score->id)->lockForUpdate()->firstOrFail();
+
+            return $this->saveRubric($locked, $data, $actor);
+        });
+    }
+
+    private function saveRubric(PkpaRotationComponentScore $score, array $data, User $actor): PkpaRotationComponentScore
+    {
         $score->loadMissing(['assessment.rotationRun.practiceDomain', 'assessment.rotationRun.requirement', 'component', 'assessor']);
-        $this->ensureApotek($score);
+        $this->ensureGuide($score);
 
         $assessorType = (string) $score->assessor?->assessor_type;
-        $definitions = collect(PkpaApotekAssessment::criteria($assessorType));
+        $sections = PkpaPreceptorAssessment::sectionsFor($score);
+        $definitions = collect($sections)->flatMap(fn ($section) => $section['criteria']);
         $submitted = collect($data['criteria'] ?? []);
-        $attendance = $assessorType === 'field_supervisor'
+        $attendance = $assessorType === 'field_supervisor' && PkpaPreceptorAssessment::keyFor($score->assessment->rotationRun) === 'APT'
             ? $this->attendanceSummary($score)
             : null;
 
@@ -34,7 +44,7 @@ class PkpaApotekAssessmentService
                 ? ($attendance['score'] ?? null)
                 : $submitted->get($criterion['code']);
 
-            if ($value !== null && (! is_numeric($value) || (int) $value < 1 || (int) $value > 5)) {
+            if ($value !== null && (! is_numeric($value) || (float) $value !== (float) (int) $value || (int) $value < 1 || (int) $value > 5)) {
                 throw ValidationException::withMessages([
                     'criteria.'.$criterion['code'] => 'Skor harus berada pada rentang 1 sampai 5.',
                 ]);
@@ -49,7 +59,7 @@ class PkpaApotekAssessmentService
             return $value === null ? 0 : ($criterion['weight'] * $value / 5);
         });
 
-        $sections = collect(PkpaApotekAssessment::sections($assessorType))->map(function (array $section) use ($criterionScores) {
+        $sections = collect($sections)->map(function (array $section) use ($criterionScores) {
             $earned = collect($section['criteria'])->sum(function (array $criterion) use ($criterionScores) {
                 $value = $criterionScores->get($criterion['code']);
 
@@ -72,8 +82,12 @@ class PkpaApotekAssessmentService
         );
 
         $saved->update(['source_summary' => [
-            'format' => 'apotek_assessment_rubric',
-            'version' => PkpaApotekAssessment::VERSION,
+            'format' => 'guide_assessment_rubric',
+            'version' => PkpaPreceptorAssessment::keyFor($score->assessment->rotationRun) === 'APT' ? PkpaApotekAssessment::VERSION : PkpaPreceptorAssessment::VERSION,
+            'rubric_key' => PkpaPreceptorAssessment::keyFor($score->assessment->rotationRun),
+            'reference' => $assessorType === 'field_supervisor'
+                ? PkpaPreceptorAssessment::reference(PkpaPreceptorAssessment::keyFor($score->assessment->rotationRun))
+                : 'Lembar Penilaian Pembimbing Dalam Apotek',
             'assessor_type' => $assessorType,
             'criteria' => $criterionScores->all(),
             'sections' => $sections,
@@ -111,6 +125,16 @@ class PkpaApotekAssessmentService
         }
 
         return $this->assessments->submitScore($score, $actor);
+    }
+
+    public function saveAndSubmit(PkpaRotationComponentScore $score, array $data, User $actor): PkpaRotationComponentScore
+    {
+        return DB::transaction(function () use ($score, $data, $actor) {
+            $locked = PkpaRotationComponentScore::whereKey($score->id)->lockForUpdate()->firstOrFail();
+            $saved = $this->saveRubric($locked, $data, $actor);
+
+            return $this->submit($saved, $actor);
+        });
     }
 
     public function attendanceSummary(PkpaRotationComponentScore $score): array
@@ -160,14 +184,10 @@ class PkpaApotekAssessmentService
         ];
     }
 
-    private function ensureApotek(PkpaRotationComponentScore $score): void
+    private function ensureGuide(PkpaRotationComponentScore $score): void
     {
-        if (! PkpaApotekPortfolio::isApotekCode($score->assessment?->rotationRun?->practiceDomain?->code)) {
-            throw ValidationException::withMessages(['assessment' => 'Rubrik ini hanya berlaku untuk penilaian PKPA Apotek.']);
-        }
-
-        if (! in_array($score->assessor?->assessor_type, ['field_supervisor', 'internal_supervisor'], true)) {
-            throw ValidationException::withMessages(['assessment' => 'Jenis penilai tidak sesuai dengan rubrik PKPA Apotek.']);
+        if (! PkpaPreceptorAssessment::supports($score)) {
+            throw ValidationException::withMessages(['assessment' => 'Rubrik panduan belum tersedia untuk wahana atau jenis penilai ini.']);
         }
     }
 

@@ -48,7 +48,8 @@ class SetupPkpaApotekAssessmentCommand extends Command
                 $scheme = $schemes->createScheme($domain, [
                     'code' => 'APT-PANDUAN-2026',
                     'name' => 'Penilaian PKPA Apotek - Panduan 2026',
-                    'description' => 'Form resmi Preseptor dan Pembimbing Dalam. Masing-masing menghasilkan nilai 0-100; rekap bawaan menggunakan rata-rata 50:50.',
+                    'description' => 'Form resmi Preseptor dan Pembimbing Dalam. Masing-masing menghasilkan nilai 0-100, disimpan terpisah tanpa asumsi penggabungan.',
+                    'instructions' => 'SEPARATE_ASSESSOR_RESULTS',
                     'maximum_score' => 100,
                     'rounding_precision' => 2,
                     'rounding_mode' => 'half_up',
@@ -60,7 +61,7 @@ class SetupPkpaApotekAssessmentCommand extends Command
                     'component_type' => 'field_supervisor_assessment',
                     'assessor_type' => 'field_supervisor',
                     'calculation_method' => 'direct_score',
-                    'weight_percentage' => 50,
+                    'weight_percentage' => 0,
                     'maximum_raw_score' => 100,
                     'sort_order' => 10,
                     'status' => 'active',
@@ -72,7 +73,7 @@ class SetupPkpaApotekAssessmentCommand extends Command
                     'component_type' => 'internal_supervisor_assessment',
                     'assessor_type' => 'internal_supervisor',
                     'calculation_method' => 'direct_score',
-                    'weight_percentage' => 50,
+                    'weight_percentage' => 0,
                     'maximum_raw_score' => 100,
                     'sort_order' => 20,
                     'status' => 'active',
@@ -85,6 +86,7 @@ class SetupPkpaApotekAssessmentCommand extends Command
             $runs = PkpaRotationRun::query()
                 ->where('pkpa_program_id', $domain->pkpa_program_id)
                 ->where('practice_domain_id', $domain->practice_domain_id)
+                ->whereNull('cancelled_at')
                 ->get();
             foreach ($runs as $run) {
                 if ($run->rotationAssessment()->exists()) {

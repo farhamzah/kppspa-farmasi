@@ -8,6 +8,7 @@ use App\Models\PkpaEnrollment;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPracticeDomain;
+use App\Models\PkpaPracticeDomainOption;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaPublishedAssignment;
@@ -25,12 +26,14 @@ use App\Services\PkpaRotationAssessmentService;
 use App\Services\PkpaRotationOperationRuleService;
 use App\Services\PkpaRotationRunService;
 use App\Support\PkpaApotekAssessment;
+use App\Support\PkpaPreceptorAssessment;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class Tahap08PkpaAssessmentTest extends TestCase
@@ -134,7 +137,7 @@ class Tahap08PkpaAssessmentTest extends TestCase
         $assessmentService->saveDirectScore($plScore, '80', null, $this->otherSupervisor);
     }
 
-    public function test_coordinator_records_preceptor_score_manually_while_preceptor_cannot_score(): void
+    public function test_coordinator_records_preceptor_rubric_without_a_preceptor_account(): void
     {
         config()->set('my_pkpa.preceptor_document_validation_enabled', false);
         $fixture = $this->runtimeFixture();
@@ -147,10 +150,10 @@ class Tahap08PkpaAssessmentTest extends TestCase
             ->post(route('field-supervisor.pkpa-assessments.scores.save', $score), ['raw_score' => 80])
             ->assertSessionHasErrors();
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
-            ->post(route('management.pkpa-preceptor-scores.store', $score), ['raw_score' => 80, 'comments' => 'Dicatat berdasarkan evaluasi koordinator.'])
+            ->post(route('management.pkpa-assessments.scores.submit', $score), $this->guidePayload($score))
             ->assertSessionHasNoErrors();
         $this->assertSame('submitted', $score->fresh()->status);
-        $this->assertSame('80.0000', $score->fresh()->raw_score);
+        $this->assertSame('100.0000', $score->fresh()->raw_score);
         $this->assertSame($this->koordinator->core_user_id, $score->fresh()->updated_by_core_user_id);
         $this->assertNull($score->assessor->core_user_id);
         $this->assertSame('manual_coordinator', $score->fresh()->source_summary['method']);
@@ -281,8 +284,8 @@ class Tahap08PkpaAssessmentTest extends TestCase
             'status' => 'active',
             'is_current' => true,
         ]);
-        $this->assertDatabaseHas('pkpa_assessment_components', ['code' => 'PRESEPTOR-APT', 'weight_percentage' => 50]);
-        $this->assertDatabaseHas('pkpa_assessment_components', ['code' => 'PEMBIMBING-APT', 'weight_percentage' => 50]);
+        $this->assertDatabaseHas('pkpa_assessment_components', ['code' => 'PRESEPTOR-APT', 'weight_percentage' => 0]);
+        $this->assertDatabaseHas('pkpa_assessment_components', ['code' => 'PEMBIMBING-APT', 'weight_percentage' => 0]);
         $this->assertDatabaseCount('pkpa_rotation_assessments', 1);
 
         $this->artisan('pkpa:setup-apotek-assessment')->assertSuccessful();
@@ -349,7 +352,7 @@ class Tahap08PkpaAssessmentTest extends TestCase
         return $service->activate($scheme, $this->koordinator);
     }
 
-    private function runtimeFixture(): array
+    private function runtimeFixture(string $domainCode = 'APT', ?string $optionCode = null): array
     {
         $program = app(PkpaProgramService::class)->create([
             'code' => 'PKPA-08-'.str()->random(4),
@@ -359,7 +362,7 @@ class Tahap08PkpaAssessmentTest extends TestCase
             'start_date' => '2026-07-13',
             'end_date' => '2026-07-31',
         ], $this->admin);
-        $domain = PkpaPracticeDomain::where('code', 'APT')->firstOrFail();
+        $domain = PkpaPracticeDomain::where('code', $domainCode)->firstOrFail();
         $programDomain = $program->domains()->where('practice_domain_id', $domain->id)->firstOrFail();
         $site = PkpaPracticeSite::create(['practice_domain_id' => $domain->id, 'code' => 'APT-08-'.str()->random(4), 'name' => 'Apotek Assessment Tahap 08', 'city' => 'Karawang', 'province' => 'Jawa Barat', 'cooperation_start_date' => '2026-01-01', 'cooperation_end_date' => '2026-12-31', 'status' => 'active', 'is_active' => true]);
         $programSite = PkpaProgramSite::create(['pkpa_program_id' => $program->id, 'practice_site_id' => $site->id, 'pkpa_program_domain_id' => $programDomain->id, 'practice_domain_id' => $domain->id, 'status' => 'active', 'is_active' => true]);
@@ -375,6 +378,11 @@ class Tahap08PkpaAssessmentTest extends TestCase
         app(PkpaRotationOperationRuleService::class)->save($requirement->programDomain, ['attendance_required' => false, 'logbook_required' => false], $this->admin);
         app(PkpaRotationRunService::class)->createFromPublication($publication, $this->admin);
         $run = PkpaRotationRun::firstOrFail();
+        if ($optionCode) {
+            $option = PkpaPracticeDomainOption::where('code', $optionCode)->firstOrFail();
+            $run->update(['practice_domain_option_id' => $option->id]);
+            $site->update(['practice_domain_option_id' => $option->id]);
+        }
         app(PkpaRotationRunService::class)->activate($run, $this->koordinator);
         $run->update(['status' => 'operational_complete', 'operational_completed_at' => now()]);
         PkpaAttendanceRecord::create(['pkpa_rotation_run_id' => $run->id, 'attendance_date' => '2026-07-17', 'attendance_type' => 'present', 'submission_status' => 'approved', 'active_key' => 'RUN:'.$run->id.':2026-07-17']);
@@ -389,5 +397,154 @@ class Tahap08PkpaAssessmentTest extends TestCase
         $user->roles()->sync(Role::whereIn('name', $roles)->pluck('id'));
 
         return $user->load('roles');
+    }
+
+    private function guidePayload($score, int $value = 5): array
+    {
+        return [
+            'criteria' => collect(PkpaPreceptorAssessment::sectionsFor($score))->flatMap(fn ($s) => $s['criteria'])
+                ->mapWithKeys(fn ($c) => [$c['code'] => $value])->all(),
+            'recommendations' => ['competency_met' => 'yes', 'portfolio_accepted' => 'yes', 'final_exam_recommended' => 'yes'],
+            'recording_basis' => 'Lembar penilaian hardcopy dari penilai.',
+        ];
+    }
+
+    public function test_all_preceptor_rubrics_have_official_section_weights_and_distinct_criteria(): void
+    {
+        foreach (['APT' => [30, 40, 20, 10], 'PBF' => [25, 40, 15, 10, 10], 'RS' => [40, 40, 20],
+            'PKM' => [40, 20, 20, 20], 'DINKES' => [30, 40, 30], 'LOKAPOM' => [25, 25, 30, 20], 'IND' => [40, 40, 20]] as $key => $weights) {
+            $sections = PkpaPreceptorAssessment::sections($key);
+            $this->assertSame($weights, array_column($sections, 'weight'), $key);
+            $criteria = collect($sections)->flatMap(fn ($s) => $s['criteria']);
+            $this->assertSame(100, $criteria->sum('weight'));
+            $this->assertSame($criteria->count(), $criteria->pluck('code')->unique()->count());
+        }
+        $pbf = collect(PkpaPreceptorAssessment::sections('PBF'))->flatMap(fn ($s) => $s['criteria']);
+        $this->assertSame(10, $pbf->firstWhere('code', 'cdob')['weight']);
+        $this->assertNull($pbf->firstWhere('code', 'clinical_screening'));
+    }
+
+    public function test_pbf_preceptor_can_grade_even_when_document_validation_is_disabled(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $fixture = $this->runtimeFixture('PBF');
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'field_supervisor'))->firstOrFail();
+        $this->actingAs($this->fieldSupervisor)->withSession(['active_role' => 'pembimbing_lapangan'])
+            ->get(route('field-supervisor.pkpa-assessments.index'))->assertOk()->assertSee('Memahami dan menerapkan CDOB')->assertDontSee('Skrining klinis resep');
+        $this->post(route('field-supervisor.pkpa-assessments.scores.submit', $score), $this->guidePayload($score, 4))
+            ->assertSessionHasNoErrors();
+        $this->assertSame('80.0000', $score->fresh()->raw_score);
+        $this->assertSame('submitted', $score->fresh()->status);
+        $this->assertSame('PBF', data_get($score->fresh()->source_summary, 'rubric_key'));
+        $this->post(route('field-supervisor.pkpa-assessments.scores.save', $score), $this->guidePayload($score))
+            ->assertSessionHasErrors('score');
+        $this->assertSame('80.0000', $score->fresh()->raw_score);
+    }
+
+    public function test_coordinator_can_record_internal_score_and_incomplete_submit_is_atomic(): void
+    {
+        $fixture = $this->runtimeFixture();
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'internal_supervisor'))->firstOrFail();
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('management.pkpa-assessments.scores.show', $score))->assertForbidden();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get(route('management.pkpa-assessments.scores.show', $score))->assertOk()->assertSee($this->internalSupervisor->name)->assertSee('Dasar pencatatan oleh koordinator');
+        $this->post(route('management.pkpa-assessments.scores.submit', $score), [
+            'criteria' => ['portfolio_completeness' => 4], 'recording_basis' => 'Hardcopy penilaian dosen.',
+        ])->assertSessionHasErrors('assessment');
+        $this->assertNull($score->fresh()->raw_score);
+        $this->post(route('management.pkpa-assessments.scores.submit', $score), $this->guidePayload($score, 4))->assertSessionHasNoErrors();
+        $this->assertSame('80.0000', $score->fresh()->raw_score);
+        $this->assertSame($this->internalSupervisor->core_user_id, $score->fresh()->assessor->core_user_id);
+        $this->assertSame($this->koordinator->core_user_id, data_get($score->fresh()->source_summary, 'recorded_by_core_user_id'));
+        $this->post(route('management.pkpa-assessments.scores.save', $score), $this->guidePayload($score))->assertSessionHasErrors('score');
+    }
+
+    public function test_government_rubric_uses_the_actual_option_not_apotek(): void
+    {
+        $fixture = $this->runtimeFixture('PEM', 'DINKES');
+        $this->assertSame('DINKES', PkpaPreceptorAssessment::keyFor($fixture['run']->fresh()));
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run']->fresh(), $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'field_supervisor'))->firstOrFail();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get(route('management.pkpa-assessments.scores.show', $score))->assertOk()->assertSee('Memahami struktur organisasi dan tugas Dinas Kesehatan')->assertDontSee('Skrining klinis resep');
+    }
+
+    public function test_setup_all_wahana_previews_then_preserves_existing_assessments_and_does_not_merge_grades(): void
+    {
+        $fixture = $this->runtimeFixture('PBF');
+        $this->artisan('pkpa:setup-preceptor-assessment', ['--program' => $fixture['program']->code])->assertSuccessful();
+        $this->assertDatabaseCount('pkpa_assessment_schemes', 0);
+        $this->artisan('pkpa:setup-preceptor-assessment', ['--program' => $fixture['program']->code, '--apply' => true])->assertSuccessful();
+        $assessment = $fixture['run']->fresh()->rotationAssessment;
+        $this->assertTrue($assessment->scheme->usesSeparateAssessorResults());
+        $this->assertSame(0.0, (float) $assessment->componentScores->sum('weight_percentage_snapshot'));
+        foreach ($assessment->componentScores as $score) {
+            app(PkpaRotationAssessmentService::class)->saveDirectScore($score, '80', null, $this->koordinator);
+            app(PkpaRotationAssessmentService::class)->submitScore($score->fresh(), $this->koordinator);
+        }
+        $this->artisan('pkpa:setup-preceptor-assessment', ['--program' => $fixture['program']->code, '--apply' => true])->assertSuccessful();
+        $this->assertDatabaseCount('pkpa_rotation_assessments', 1);
+        $this->assertSame('80.0000', $assessment->componentScores->first()->fresh()->raw_score);
+        $this->expectException(ValidationException::class);
+        app(PkpaRotationAssessmentService::class)->finalize($assessment->fresh(), $this->koordinator);
+    }
+
+    public function test_coordinator_still_needs_readiness_and_cannot_record_replaced_assessor(): void
+    {
+        $fixture = $this->runtimeFixture('PBF');
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'field_supervisor'))->firstOrFail();
+        $payload = $this->guidePayload($score);
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp']);
+        $this->post(route('management.pkpa-assessments.scores.save', $score), array_diff_key($payload, ['recording_basis' => true]))->assertSessionHasErrors('recording_basis');
+        $fixture['run']->academicReadinessReviews()->update(['status' => 'not_ready']);
+        $this->post(route('management.pkpa-assessments.scores.save', $score), $payload)->assertSessionHasErrors('academic_readiness');
+        $score->assessor->update(['status' => 'replaced']);
+        $this->post(route('management.pkpa-assessments.scores.save', $score), $payload)->assertSessionHasErrors('authorization');
+        $this->assertNull($score->fresh()->raw_score);
+    }
+
+    #[DataProvider('preceptorWahanaProvider')]
+    public function test_coordinator_uses_correct_wahana_rubric(string $domain, ?string $option, string $key): void
+    {
+        $fixture = $this->runtimeFixture($domain, $option);
+        $this->activeScheme($fixture['programDomain']);
+        $assessment = app(PkpaRotationAssessmentService::class)->createFromRun($fixture['run']->fresh(), $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'field_supervisor'))->firstOrFail();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp']);
+        $this->get(route('management.pkpa-assessments.scores.show', $score))->assertOk();
+        $this->post(route('management.pkpa-assessments.scores.submit', $score), $this->guidePayload($score, 4))->assertSessionHasNoErrors();
+        $this->assertSame('80.0000', $score->fresh()->raw_score);
+        $this->assertSame($key, data_get($score->fresh()->source_summary, 'rubric_key'));
+        $this->assertDatabaseHas('pkpa_master_audits', ['action' => 'pkpa_assessment_recorded_on_behalf', 'actor_core_user_id' => $this->koordinator->core_user_id, 'entity_id' => $score->id]);
+        $this->get(route('management.pkpa-assessments.scores.show', $score))->assertOk()->assertSee('Terkirim dan terkunci');
+    }
+
+    public static function preceptorWahanaProvider(): array
+    {
+        return [['PBF', null, 'PBF'], ['RS', null, 'RS'], ['IND', null, 'IND'],
+            ['PEM', 'PUSKESMAS', 'PKM'], ['PEM', 'DINKES', 'DINKES'], ['PEM', 'LOKAPOM', 'LOKAPOM']];
+    }
+
+    public function test_existing_total_only_assessment_remains_visible_and_locked_without_empty_rubric(): void
+    {
+        $fixture = $this->runtimeFixture('PBF');
+        $this->activeScheme($fixture['programDomain']);
+        $service = app(PkpaRotationAssessmentService::class);
+        $assessment = $service->createFromRun($fixture['run'], $this->admin);
+        $score = $assessment->componentScores()->whereHas('assessor', fn ($q) => $q->where('assessor_type', 'field_supervisor'))->firstOrFail();
+        $service->saveDirectScore($score, '87.5', 'Nilai hardcopy lama.', $this->koordinator);
+        $service->submitScore($score->fresh(), $this->koordinator);
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get(route('management.pkpa-assessments.scores.show', $score))->assertOk()
+            ->assertSee('87.50')->assertSee('Riwayat Penilaian PBF')->assertDontSee('name="criteria[', false);
+        $this->assertSame('87.5000', $score->fresh()->raw_score);
     }
 }

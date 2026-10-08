@@ -22,7 +22,7 @@
     <div class="rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
         <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Antrian Penilaian PKPA</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">{{ $title }}</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ $routePrefix === 'field-supervisor' && ! config('my_pkpa.preceptor_document_validation_enabled') ? 'Nilai Preseptor dicatat oleh Koordinator PKPA. Halaman ini hanya untuk melihat hasil.' : 'Isi draft nilai untuk komponen yang ditugaskan kepada Anda. Nilai yang sudah dikirim akan terkunci dan perubahan berikutnya harus melalui revisi.' }}</p>
+        <p class="mt-2 max-w-3xl text-sm text-slate-600">Penilaian yang sudah dikirim akan terkunci. Koordinator juga dapat mencatat nilai atas nama penilai.</p>
     </div>
     <section class="grid gap-4 md:grid-cols-3">
         <article class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -33,7 +33,7 @@
         <article class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <p class="text-xs font-black uppercase tracking-widest text-amber-700">Draf / Perlu Isi</p>
             <p class="mt-3 text-3xl font-black text-amber-700">{{ $draftScores }}</p>
-            <p class="mt-1 text-sm text-slate-500">{{ $routePrefix === 'field-supervisor' && ! config('my_pkpa.preceptor_document_validation_enabled') ? 'Menunggu pencatatan Koordinator PKPA.' : 'Skor yang masih bisa disunting sebelum dikirim.' }}</p>
+            <p class="mt-1 text-sm text-slate-500">Skor yang masih bisa disunting sebelum dikirim.</p>
         </article>
         <article class="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
             <p class="text-xs font-black uppercase tracking-widest text-emerald-700">Sudah Terkirim</p>
@@ -65,9 +65,8 @@
                     </div>
                 </div>
                 @foreach ($assignment->scores as $score)
-                    @if($routePrefix === 'field-supervisor' && !config('my_pkpa.preceptor_document_validation_enabled'))
-                        <p class="mt-3 text-sm text-slate-600">Nilai dicatat oleh Koordinator PKPA: {{ $score->raw_score ?? 'Belum diisi' }}</p>
-                    @elseif(\App\Support\PkpaApotekPortfolio::isApotekCode($assignment->assessment?->rotationRun?->practiceDomain?->code))
+                    @php $score->setRelation('assessment', $assignment->assessment); $score->setRelation('assessor', $assignment); @endphp
+                    @if(\App\Support\PkpaPreceptorAssessment::supports($score))
                         @include('shared.pkpa-apotek-assessment-form', [
                             'score' => $score,
                             'assignment' => $assignment,

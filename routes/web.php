@@ -160,6 +160,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('pkpa-academics/export', [ManagementPkpaAcademicRotationController::class, 'export'])->name('pkpa-academics.export');
             Route::get('pkpa-assessments', [ManagementPkpaAssessmentController::class, 'index'])->name('pkpa-assessments.index');
             Route::get('pkpa-assessments/export', [ManagementPkpaAssessmentController::class, 'export'])->name('pkpa-assessments.export');
+            Route::get('pkpa-assessments/scores/{score}', [ManagementPkpaAssessmentController::class, 'showScore'])->name('pkpa-assessments.scores.show');
+            Route::post('pkpa-assessments/scores/{score}/save', [ManagementPkpaAssessmentController::class, 'saveScore'])->name('pkpa-assessments.scores.save');
+            Route::post('pkpa-assessments/scores/{score}/submit', [ManagementPkpaAssessmentController::class, 'submitScore'])->name('pkpa-assessments.scores.submit');
             Route::get('pkpa-final-program', [PkpaFinalProgramController::class, 'index'])->name('pkpa-final-program.index');
             Route::get('pkpa-final-program/export', [PkpaFinalProgramController::class, 'export'])->name('pkpa-final-program.export');
             Route::get('pkpa-documents', [PkpaDocumentController::class, 'index'])->name('pkpa-documents.index');

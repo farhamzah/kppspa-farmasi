@@ -8,6 +8,7 @@ use App\Models\PkpaRotationComponentScore;
 use App\Services\PkpaApotekAssessmentService;
 use App\Services\PkpaRotationAssessmentService;
 use App\Support\PkpaApotekPortfolio;
+use App\Support\PkpaPreceptorAssessment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,8 +18,7 @@ class PkpaAssessmentController extends Controller
     public function __construct(
         private readonly PkpaRotationAssessmentService $assessments,
         private readonly PkpaApotekAssessmentService $apotekAssessments
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -46,10 +46,11 @@ class PkpaAssessmentController extends Controller
 
     public function save(Request $request, PkpaRotationComponentScore $score): RedirectResponse
     {
+        abort_unless($score->assessor?->assessor_type === 'field_supervisor', 403);
         if ($this->isApotekScore($score)) {
             $this->apotekAssessments->save($score, $request->validate($this->apotekRules()), $request->user());
 
-            return back()->with('status', 'Draf penilaian Apotek disimpan.');
+            return back()->with('status', 'Draf penilaian preseptor disimpan.');
         }
 
         $this->assessments->saveDirectScore($score, $request->validate([
@@ -62,11 +63,11 @@ class PkpaAssessmentController extends Controller
 
     public function submit(Request $request, PkpaRotationComponentScore $score): RedirectResponse
     {
+        abort_unless($score->assessor?->assessor_type === 'field_supervisor', 403);
         if ($this->isApotekScore($score)) {
-            $this->apotekAssessments->save($score, $request->validate($this->apotekRules()), $request->user());
-            $this->apotekAssessments->submit($score->fresh(), $request->user());
+            $this->apotekAssessments->saveAndSubmit($score, $request->validate($this->apotekRules()), $request->user());
 
-            return back()->with('status', 'Penilaian Apotek dikirim dan dikunci.');
+            return back()->with('status', 'Penilaian preseptor dikirim dan dikunci.');
         }
 
         $this->assessments->submitScore($score, $request->user());
@@ -78,7 +79,7 @@ class PkpaAssessmentController extends Controller
     {
         $score->loadMissing('assessment.rotationRun.practiceDomain');
 
-        return PkpaApotekPortfolio::isApotekCode($score->assessment?->rotationRun?->practiceDomain?->code);
+        return PkpaPreceptorAssessment::supports($score);
     }
 
     private function apotekRules(): array

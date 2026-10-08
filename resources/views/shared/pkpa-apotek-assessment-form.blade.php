@@ -1,6 +1,9 @@
 @php
     $assessorType = $assignment->assessor_type;
-    $sections = \App\Support\PkpaApotekAssessment::sections($assessorType);
+    $score->setRelation('assessment', $assignment->assessment);
+    $rubricKey = \App\Support\PkpaPreceptorAssessment::keyFor($assignment->assessment->rotationRun);
+    $rubricName = \App\Support\PkpaPreceptorAssessment::name($rubricKey);
+    $sections = \App\Support\PkpaPreceptorAssessment::sectionsFor($score);
     $levelLabels = \App\Support\PkpaApotekAssessment::levelLabels();
     $summary = $score->source_summary ?? [];
     $savedCriteria = data_get($summary, 'criteria', []);
@@ -9,20 +12,35 @@
     $attendance = $attendanceSummary ?? data_get($summary, 'attendance', []);
     $latestReadiness = $assignment->assessment?->rotationRun?->academicReadinessReviews?->sortByDesc('reviewed_at')->first();
     $waitingForCompletion = $assignment->assessment?->scheme?->require_academic_readiness && $latestReadiness?->status !== 'ready_for_assessment';
-    $locked = $waitingForCompletion || in_array($score->status, ['submitted', 'approved', 'locked'], true);
+    $locked = $waitingForCompletion || $assignment->status === 'replaced' || in_array($score->status, ['submitted', 'approved', 'locked'], true);
+    if (in_array($score->status, ['submitted', 'approved', 'locked'], true)) {
+        $attendance = data_get($summary, 'attendance', $attendance);
+    }
     $formId = 'assessment-form-'.$score->id;
     $isSubmittedForm = (string) old('assessment_score_id') === (string) $score->id;
 @endphp
 
-<details class="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white" @if($isSubmittedForm) open @endif>
+@if(in_array($score->status, ['submitted', 'approved', 'locked'], true) && empty($savedCriteria))
+    <section class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h3 class="text-base font-bold text-emerald-900">Riwayat Penilaian {{ $rubricName }}</h3>
+            <span class="text-sm font-bold text-emerald-800">Terkirim dan terkunci</span>
+        </div>
+        <p class="mt-3 text-2xl font-black text-emerald-900">{{ number_format((float) $score->raw_score, 2) }} / {{ $score->component?->maximum_raw_score }}</p>
+        <p class="mt-2 text-sm text-emerald-800">Nilai sebelumnya dicatat sebagai total, tanpa rincian butir rubrik.</p>
+        @if($score->comments)<p class="mt-3 whitespace-pre-line break-words text-sm text-slate-700">{{ $score->comments }}</p>@endif
+        @if(data_get($summary, 'basis'))<p class="mt-3 whitespace-pre-line break-words text-sm text-slate-700">Dasar pencatatan: {{ data_get($summary, 'basis') }}</p>@endif
+    </section>
+@else
+<details class="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-white" @if($isSubmittedForm || $routePrefix === 'management') open @endif>
     <summary class="flex cursor-pointer list-none items-center justify-between gap-3 bg-slate-50 px-4 py-4 marker:hidden sm:px-5">
         <span>
-            <span class="block text-sm font-black text-slate-950">{{ $waitingForCompletion ? 'Penilaian Apotek' : ($locked ? 'Lihat Penilaian Apotek' : 'Isi Penilaian Apotek') }}</span>
+            <span class="block text-sm font-black text-slate-950">{{ $locked ? 'Lihat Penilaian' : 'Isi Penilaian' }} {{ $rubricName }}</span>
             <span class="mt-1 block text-xs text-slate-500">{{ $waitingForCompletion ? 'Form tersedia dan akan terbuka setelah seluruh proses PKPA selesai.' : ($locked ? 'Nilai sudah dikirim dan terkunci.' : 'Rubrik resmi, nilai otomatis, dan umpan balik.') }}</span>
         </span>
         <span class="rounded-xl {{ $waitingForCompletion ? 'bg-amber-50 text-amber-700' : ($locked ? 'bg-emerald-50 text-emerald-700' : 'bg-cyan-700 text-white') }} px-4 py-2 text-xs font-black">{{ $waitingForCompletion ? 'Menunggu Selesai' : ($locked ? 'Terkirim' : (($score->status === 'draft') ? 'Lanjutkan Draf' : 'Mulai')) }}</span>
     </summary>
-<form id="{{ $formId }}" method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.save', $score) }}" class="border-t border-slate-200" data-assessment-form>
+<form id="{{ $formId }}" method="POST" action="{{ route($routePrefix.'.pkpa-assessments.scores.save', $score) }}" class="border-t border-slate-200" data-assessment-form data-assessment-locked="{{ $locked ? 'true' : 'false' }}">
     @csrf
     <input type="hidden" name="assessment_score_id" value="{{ $score->id }}">
     @if($waitingForCompletion)
@@ -40,7 +58,10 @@
     <div class="border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <p class="text-sm font-black text-slate-950">Rubrik Penilaian PKPA Apotek</p>
+                <p class="text-sm font-black text-slate-950">Rubrik Penilaian PKPA {{ $rubricName }}</p>
+                @if($assessorType === 'field_supervisor')
+                    <p class="mt-1 text-xs text-slate-500">{{ \App\Support\PkpaPreceptorAssessment::reference($rubricKey) }}</p>
+                @endif
                 <p class="mt-1 text-sm text-slate-600">Pilih skor 1–5 pada setiap butir. Buka panduan skor bila memerlukan rincian.</p>
             </div>
             <div class="flex items-center gap-3">
@@ -55,7 +76,7 @@
         </div>
     </div>
 
-    @if($assessorType === 'field_supervisor')
+    @if($assessorType === 'field_supervisor' && $rubricKey === 'APT')
         <div class="border-b border-cyan-100 bg-cyan-50 px-4 py-4 sm:px-5">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -124,11 +145,11 @@
     <section class="border-t border-slate-200 bg-slate-50 px-4 py-5 sm:px-5">
         <h3 class="text-base font-black text-slate-950">Catatan dan Umpan Balik</h3>
         <div class="mt-4 grid gap-4 lg:grid-cols-3">
-            <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Kelebihan Mahasiswa</span><textarea name="strengths" rows="4" class="rounded-xl border-slate-200 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('strengths', $feedback['strengths'] ?? '') : ($feedback['strengths'] ?? '') }}</textarea></label>
-            <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Hal yang Perlu Ditingkatkan</span><textarea name="improvements" rows="4" class="rounded-xl border-slate-200 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('improvements', $feedback['improvements'] ?? '') : ($feedback['improvements'] ?? '') }}</textarea></label>
-            <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Saran Pengembangan</span><textarea name="development_suggestions" rows="4" class="rounded-xl border-slate-200 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('development_suggestions', $feedback['development_suggestions'] ?? '') : ($feedback['development_suggestions'] ?? '') }}</textarea></label>
+            <label class="grid min-w-0 gap-2"><span class="text-sm font-bold text-slate-700">Kelebihan Mahasiswa</span><textarea name="strengths" rows="4" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('strengths', $feedback['strengths'] ?? '') : ($feedback['strengths'] ?? '') }}</textarea></label>
+            <label class="grid min-w-0 gap-2"><span class="text-sm font-bold text-slate-700">Hal yang Perlu Ditingkatkan</span><textarea name="improvements" rows="4" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('improvements', $feedback['improvements'] ?? '') : ($feedback['improvements'] ?? '') }}</textarea></label>
+            <label class="grid min-w-0 gap-2"><span class="text-sm font-bold text-slate-700">Saran Pengembangan</span><textarea name="development_suggestions" rows="4" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('development_suggestions', $feedback['development_suggestions'] ?? '') : ($feedback['development_suggestions'] ?? '') }}</textarea></label>
         </div>
-        <label class="mt-4 grid gap-2"><span class="text-sm font-bold text-slate-700">Komentar Tambahan</span><textarea name="overall_comments" rows="3" class="rounded-xl border-slate-200 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('overall_comments', $score->comments) : $score->comments }}</textarea></label>
+        <label class="mt-4 grid gap-2"><span class="text-sm font-bold text-slate-700">Komentar Tambahan</span><textarea name="overall_comments" rows="3" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" @disabled($locked)>{{ $isSubmittedForm ? old('overall_comments', $score->comments) : $score->comments }}</textarea></label>
     </section>
 
     <section class="border-t border-slate-200 px-4 py-5 sm:px-5">
@@ -136,7 +157,7 @@
         <p class="mt-1 text-sm text-slate-500">Wajib dilengkapi sebelum penilaian dikirim dan dikunci.</p>
         <div class="mt-4 grid gap-3 lg:grid-cols-3">
             @foreach([
-                'competency_met' => 'Kompetensi PKPA Apotek terpenuhi',
+                'competency_met' => 'Kompetensi PKPA '.$rubricName.' terpenuhi',
                 'portfolio_accepted' => 'Portofolio layak diterima',
                 'final_exam_recommended' => 'Layak mengikuti ujian/seminar akhir',
             ] as $key => $label)
@@ -153,6 +174,11 @@
         </div>
     </section>
 
+    @if($routePrefix === 'management')
+        <section class="border-t border-slate-200 px-4 py-5 sm:px-5">
+            <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">Dasar pencatatan oleh koordinator</span><textarea name="recording_basis" rows="2" maxlength="1500" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" @disabled($locked)>{{ old('recording_basis', data_get($summary, 'basis')) }}</textarea></label>
+        </section>
+    @endif
     <div class="sticky bottom-0 flex flex-col gap-3 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <p class="text-xs text-slate-500">Draf masih dapat diperbaiki. Setelah dikirim, nilai terkunci.</p>
         <div class="flex flex-wrap gap-2">
@@ -162,12 +188,14 @@
     </div>
 </form>
 </details>
+@endif
 
 @once
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('[data-assessment-form]').forEach((form) => {
                 const calculate = () => {
+                    if (form.dataset.assessmentLocked === 'true') return;
                     let total = 0;
                     form.querySelectorAll('[data-criterion]').forEach((row) => {
                         const weight = Number(row.dataset.weight || 0);
