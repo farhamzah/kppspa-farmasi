@@ -292,7 +292,7 @@ class PkpaPlacementPublicationService
                 'notes' => $assignment->notes,
             ]);
 
-            foreach ($assignment->supervisors as $supervisor) {
+            foreach ($assignment->supervisors->where('status', 'active') as $supervisor) {
                 $user = filled($supervisor->core_user_id) ? User::query()
                     ->with(['lecturer', 'fieldSupervisor'])
                     ->where('core_user_id', $supervisor->core_user_id)

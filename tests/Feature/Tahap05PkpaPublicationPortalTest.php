@@ -723,6 +723,8 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $service->apply($change->refresh(), $this->koordinator);
         $count = PkpaPlacementPublication::count();
         $options = ['--program' => 'PKPA-05-CARRY', '--old-core-id' => $this->internalSupervisor->core_user_id];
+        $this->artisan('pkpa:audit-supervisor-continuity', ['--program' => 'PKPA-05-CARRY'])
+            ->expectsOutputToContain('Berbeda dari wahana sumber')->assertFailed();
         $this->artisan('pkpa:carry-supervisor-replacement', $options)->assertSuccessful();
         $this->assertSame($count, PkpaPlacementPublication::count());
         $this->artisan('pkpa:carry-supervisor-replacement', $options + ['--apply' => true])->assertSuccessful();
@@ -735,6 +737,28 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $count = PkpaPlacementPublication::count();
         $this->artisan('pkpa:carry-supervisor-replacement', $options + ['--apply' => true])->assertSuccessful();
         $this->assertSame($count, PkpaPlacementPublication::count());
+        $this->artisan('pkpa:audit-supervisor-continuity', ['--program' => 'PKPA-05-CARRY'])->assertSuccessful();
+    }
+
+    public function test_republishing_plan_does_not_restore_ended_supervisor_in_recaps(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-ENDED-SNAPSHOT');
+        $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
+        $source = $apt->sourceAssignment;
+        $old = $source->supervisors()->where('supervisor_type', 'internal')->firstOrFail();
+        $newEligibility = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $publication->pkpa_program_id)
+            ->where('practice_domain_id', $apt->practice_domain_id)->where('core_user_id', $this->otherSupervisor->core_user_id)->firstOrFail();
+        $replacement = $old->replicate();
+        $replacement->fill(['core_user_id' => $newEligibility->core_user_id, 'name_snapshot' => $newEligibility->name_snapshot, 'internal_supervisor_eligibility_id' => $newEligibility->id])->save();
+        $old->update(['status' => 'ended']);
+        $publication->update(['status' => 'superseded', 'is_current' => false, 'current_key' => null]);
+        $current = app(\App\Services\PkpaPlacementPublicationService::class)->syncLockedPlanToPortal($publication->plan, $this->koordinator);
+        $published = $current->assignments()->with('supervisors')->where('pkpa_enrollment_requirement_id', $apt->pkpa_enrollment_requirement_id)->firstOrFail();
+        $this->assertCount(1, $published->supervisors->where('supervisor_type', 'internal'));
+        $this->assertSame($this->otherSupervisor->core_user_id, $published->supervisors->firstWhere('supervisor_type', 'internal')->core_user_id);
+        $rows = app(PkpaReportService::class)->rows('placements', Request::create('/', 'GET', ['program' => $publication->pkpa_program_id]));
+        $this->assertSame(user_display_name($this->otherSupervisor, 'pembimbing_dalam'), $rows->firstWhere('Wahana', 'Apotek')['Pembimbing Dalam']);
+        $this->assertSame('ended', $old->fresh()->status);
     }
 
     public function test_carry_replacement_blocks_missing_mapping_without_changes(): void

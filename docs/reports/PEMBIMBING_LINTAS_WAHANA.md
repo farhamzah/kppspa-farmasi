@@ -10,6 +10,16 @@
 
 ## Perbaikan Data VPS
 
+Audit seluruh mahasiswa dan seluruh wahana terlebih dahulu (bukan hanya tempat tertentu):
+
+```bash
+php artisan pkpa:audit-supervisor-continuity --program=PKPA-2026-G1
+```
+
+Audit menampilkan pembimbing resmi yang dibaca rekap, runtime aktif, dan panel penilaian. Perbedaan dari wahana sumber, penugasan kosong/ganda, atau panel draf yang masih milik dosen lama ditandai. Nilai yang sudah dikirim dosen lama tetap dipertahankan dan tidak otomatis dianggap salah. Audit tidak memperbaiki data dan tidak menebak dosen pengganti.
+
+Snapshot publikasi dari rancangan sekarang hanya menyalin penugasan berstatus `active`. Riwayat sumber berstatus `ended` tetap disimpan tetapi tidak diterbitkan kembali sebagai penugasan aktif.
+
 Setelah kode tersedia di VPS, jalankan preview:
 
 ```bash
