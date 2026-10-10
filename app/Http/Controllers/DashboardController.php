@@ -24,6 +24,7 @@ use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaPlacementValidationIssue;
+use App\Models\PkpaPlacementValidationRun;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaNotificationDelivery;
 use App\Models\PkpaPlacementChangeRequest;
@@ -135,8 +136,11 @@ class DashboardController extends Controller
             'availability_aktif' => PkpaSiteAvailabilityPeriod::whereIn('status', ['available', 'full'])->count(),
             'pembimbing_dalam_aktif' => PkpaInternalSupervisorEligibility::where('status', 'active')->distinct('core_user_id')->count('core_user_id'),
             'pembimbing_lapangan_aktif' => PkpaSiteFieldSupervisor::where('status', 'active')->count(),
-            'pembimbing_perlu_sync' => PkpaInternalSupervisorEligibility::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->distinct('core_user_id')->count('core_user_id')
-                + PkpaSiteFieldSupervisor::where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))->count(),
+            'pembimbing_perlu_sync' => PkpaInternalSupervisorEligibility::where('status', 'active')->whereNotNull('core_user_id')
+                ->where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))
+                ->pluck('core_user_id')->merge(PkpaSiteFieldSupervisor::where('status', 'active')->whereNotNull('core_user_id')
+                    ->where(fn ($query) => $query->whereNull('last_core_synced_at')->orWhere('last_core_synced_at', '<', now()->subDays(30)))
+                    ->pluck('core_user_id'))->filter()->unique()->count(),
             'akun_core_nonaktif_pembimbing' => PkpaInternalSupervisorEligibility::where('core_account_status_snapshot', 'inactive')->distinct('core_user_id')->count('core_user_id')
                 + PkpaSiteFieldSupervisor::where('core_account_status_snapshot', 'inactive')->count(),
         ];
@@ -144,32 +148,53 @@ class DashboardController extends Controller
 
     private function pkpaPlacementPlannerStats(): array
     {
-        $currentPlans = PkpaPlacementPlan::where('is_current', true)->count();
-        $currentPlanIds = PkpaPlacementPlan::where('is_current', true)->pluck('id');
+        $plans = PkpaPlacementPlan::where('is_current', true)->where('status', '!=', 'archived')
+            ->whereHas('program', fn ($query) => $query->whereIn('status', ['draft', 'ready', 'active']))
+            ->withExists(['validationRuns as has_completed_validation' => fn ($query) => $query->where('scope_type', 'full_plan')->whereIn('status', ['completed', 'completed_with_errors'])->whereNotNull('completed_at')])->get();
+        $currentPlanIds = $plans->pluck('id');
+        $latestRunIds = PkpaPlacementValidationRun::whereIn('pkpa_placement_plan_id', $plans->whereNotIn('validation_status', ['stale', 'not_validated', 'validating'])->pluck('id'))
+            ->where('scope_type', 'full_plan')->selectRaw('MAX(id)')->groupBy('pkpa_placement_plan_id');
+        $issues = PkpaPlacementValidationIssue::whereIn('placement_validation_run_id', $latestRunIds)
+            ->where('is_resolved', false)
+            ->whereHas('run', fn ($query) => $query->whereIn('status', ['completed', 'completed_with_errors'])->whereNotNull('completed_at'));
 
         return [
-            'rancangan_current' => $currentPlans,
+            'rancangan_current' => $plans->count(),
             'versi_rancangan' => PkpaPlacementPlan::count(),
             'assignment_terisi' => PkpaRotationAssignment::whereIn('pkpa_placement_plan_id', $currentPlanIds)->whereNotIn('status', ['cancelled', 'superseded'])->count(),
             'assignment_valid' => PkpaRotationAssignment::whereIn('pkpa_placement_plan_id', $currentPlanIds)->where('status', 'valid')->count(),
-            'warning' => PkpaPlacementValidationIssue::where('severity', 'warning')->where('is_resolved', false)->count(),
-            'error' => PkpaPlacementValidationIssue::where('severity', 'error')->where('is_resolved', false)->count(),
-            'kapasitas_kurang' => PkpaPlacementValidationIssue::where('category', 'capacity')->where('severity', 'error')->where('is_resolved', false)->count(),
-            'pembimbing_overload' => PkpaPlacementValidationIssue::where('category', 'supervisor')->where('issue_code', 'like', '%OVERLOAD%')->where('is_resolved', false)->count(),
-            'jadwal_overlap' => PkpaPlacementValidationIssue::where('issue_code', 'STUDENT_SCHEDULE_OVERLAP')->where('is_resolved', false)->count(),
+            'rancangan_perlu_validasi' => $plans->filter(fn ($plan) => in_array($plan->validation_status, ['stale', 'not_validated'], true)
+                || (! $plan->has_completed_validation && $plan->validation_status !== 'validating'))->count(),
+            'rancangan_sedang_divalidasi' => $plans->where('validation_status', 'validating')->count(),
+            'warning' => (clone $issues)->where('severity', 'warning')->count(),
+            'error' => (clone $issues)->where('severity', 'error')->count(),
+            'kapasitas_kurang' => (clone $issues)->where('category', 'capacity')->where('severity', 'error')->count(),
+            'pembimbing_overload' => (clone $issues)->where('category', 'supervisor')->where('issue_code', 'like', '%OVERLOAD%')->count(),
+            'jadwal_overlap' => (clone $issues)->where('issue_code', 'STUDENT_SCHEDULE_OVERLAP')->count(),
         ];
     }
 
     private function pkpaPublicationStats(): array
     {
-        $currentPublicationIds = PkpaPlacementPublication::current()->pluck('id');
+        $currentPublicationIds = PkpaPlacementPublication::current()->where('status', 'published')
+            ->whereHas('program', fn ($query) => $query->whereIn('status', ['draft', 'ready', 'active']))->pluck('id');
+        $channels = [];
+        if (config('my_pkpa.database_notifications_enabled')) {
+            $channels[] = 'database';
+        }
+        if (config('my_pkpa.email_notifications_enabled')) {
+            $channels[] = 'mail';
+        }
+        $notifications = PkpaNotificationDelivery::where('entity_type', PkpaPlacementPublication::class)
+            ->whereIn('entity_id', $currentPublicationIds)->whereIn('channel', $channels);
 
         return [
             'publikasi_current' => $currentPublicationIds->count(),
             'assignment_resmi' => PkpaPublishedAssignment::whereIn('pkpa_placement_publication_id', $currentPublicationIds)->count(),
             'sudah_acknowledge' => PkpaScheduleAcknowledgement::whereIn('pkpa_placement_publication_id', $currentPublicationIds)->where('acknowledgement_type', 'acknowledged')->count(),
-            'change_request_aktif' => PkpaPlacementChangeRequest::whereIn('status', ['draft', 'submitted', 'approved'])->count(),
-            'notifikasi_pending' => PkpaNotificationDelivery::whereIn('status', ['pending', 'failed'])->count(),
+            'change_request_aktif' => PkpaPlacementChangeRequest::whereIn('pkpa_placement_publication_id', $currentPublicationIds)->whereIn('status', ['draft', 'submitted', 'under_review', 'approved'])->count(),
+            'notifikasi_pending' => (clone $notifications)->where('status', 'pending')->count(),
+            'notifikasi_gagal' => (clone $notifications)->where('status', 'failed')->count(),
         ];
     }
 

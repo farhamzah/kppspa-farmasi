@@ -10,7 +10,15 @@
     $firstName = $displayName ?: $user->name;
     $activeRole = session('active_role');
 
-    $formatLabel = fn (string $label): string => str($label)->replace('_', ' ')->headline()->toString();
+    $formatLabel = fn (string $label): string => match ($label) {
+        'error' => 'Temuan wajib diperbaiki',
+        'warning' => 'Peringatan rancangan',
+        'kapasitas_rencana' => 'Total slot kapasitas terdaftar',
+        'peserta_belum_berkelompok' => 'Peserta tanpa kelompok (opsional)',
+        'notifikasi_pending' => 'Notifikasi menunggu pengiriman',
+        'notifikasi_gagal' => 'Notifikasi gagal dikirim',
+        default => str($label)->replace('_', ' ')->headline()->toString(),
+    };
     $formatValue = fn ($value): string => is_numeric($value) ? number_format((int) $value, 0, ',', '.') : (string) ($value ?: '-');
     $dashboardValue = function ($value) use ($formatValue): string {
         $formatted = $formatValue($value);
@@ -249,8 +257,8 @@
         ['title' => 'Ringkasan Master PKPA', 'description' => 'Program, wahana, dan tempat praktik berdasarkan data aktual.', 'stats' => $pkpaMasterStats ?? null, 'tone' => 'cyan'],
         ['title' => 'Ringkasan Peserta PKPA', 'description' => 'Peserta, sinkronisasi Core, kelengkapan persyaratan, dan kelompok opsional.', 'stats' => $pkpaEnrollmentStats ?? null, 'tone' => 'teal'],
         ['title' => 'Ringkasan Kesiapan PKPA', 'description' => 'Kapasitas tempat, ketersediaan, dan pembimbing dari Core.', 'stats' => $pkpaPlacementReadinessStats ?? null, 'tone' => 'emerald'],
-        ['title' => 'Ringkasan Penyusunan Penempatan', 'description' => 'Rencana aktif, draf penempatan, validasi, dan masalah aktif.', 'stats' => $pkpaPlacementPlannerStats ?? null, 'tone' => 'amber'],
-        ['title' => 'Ringkasan Publikasi PKPA', 'description' => 'Publikasi aktif, snapshot resmi, konfirmasi baca, dan pengiriman notifikasi.', 'stats' => $pkpaPublicationStats ?? null, 'tone' => 'emerald'],
+        ['title' => 'Ringkasan Penyusunan Penempatan', 'description' => 'Pemeriksaan terakhir rancangan aktif. Rancangan yang berubah perlu diperiksa ulang; riwayat pemeriksaan lama tidak dihitung.', 'stats' => $pkpaPlacementPlannerStats ?? null, 'tone' => 'amber'],
+        ['title' => 'Ringkasan Publikasi PKPA', 'description' => 'Publikasi resmi terkini dan pengiriman notifikasi melalui kanal yang aktif.', 'stats' => $pkpaPublicationStats ?? null, 'tone' => 'emerald'],
         ['title' => 'Ringkasan Jadwal PKPA Saya', 'description' => 'Jadwal resmi dan konfirmasi baca mahasiswa.', 'stats' => $studentPkpaScheduleStats ?? null, 'tone' => 'cyan'],
         ['title' => 'Ringkasan Jadwal Bimbingan PKPA', 'description' => 'Jadwal resmi yang terhubung ke akun pembimbing.', 'stats' => $supervisorPkpaScheduleStats ?? null, 'tone' => 'cyan'],
         ['title' => 'Ringkasan Administrasi PKPA', 'description' => 'Status pendaftaran, verifikasi berkas, dan kesiapan peserta.', 'stats' => $registrationStats, 'tone' => 'indigo'],
@@ -272,6 +280,20 @@
         ->sortByDesc(fn ($stat) => (int) $stat['value'])
         ->take(4)
         ->values();
+
+    if (in_array($activeRole, ['admin', 'koordinator_kp'], true)) {
+        $validationHighlight = ($pkpaPlacementPlannerStats['rancangan_perlu_validasi'] ?? 0) > 0
+            ? ['label' => 'Rancangan perlu diperiksa', 'value' => $pkpaPlacementPlannerStats['rancangan_perlu_validasi']]
+            : ((($pkpaPlacementPlannerStats['rancangan_sedang_divalidasi'] ?? 0) > 0)
+                ? ['label' => 'Rancangan sedang diperiksa', 'value' => $pkpaPlacementPlannerStats['rancangan_sedang_divalidasi']]
+                : ['label' => 'Temuan wajib diperbaiki', 'value' => $pkpaPlacementPlannerStats['error'] ?? 0]);
+        $primaryStats = collect([
+            ['label' => 'Peserta aktif', 'value' => $pkpaEnrollmentStats['peserta_aktif'] ?? 0, 'section' => 'Kepesertaan PKPA', 'tone' => 'teal'],
+            ['label' => 'Tempat praktik aktif', 'value' => $pkpaMasterStats['tempat_praktik_aktif'] ?? 0, 'section' => 'Master tempat praktik', 'tone' => 'cyan'],
+            ['label' => 'Penempatan resmi', 'value' => $pkpaPublicationStats['assignment_resmi'] ?? 0, 'section' => 'Publikasi terkini', 'tone' => 'emerald'],
+            $validationHighlight + ['section' => 'Pemeriksaan terakhir rancangan aktif', 'tone' => 'amber'],
+        ]);
+    }
 
     if ($activeRole === 'mahasiswa') {
         $primaryStats = collect([
@@ -312,8 +334,14 @@
 
     $priorityItems = collect([
         [
-            'label' => 'Masalah rancangan penempatan',
+            'label' => 'Temuan pemeriksaan rancangan terbaru',
             'value' => (int) (($pkpaPlacementPlannerStats['error'] ?? 0) + ($pkpaPlacementPlannerStats['warning'] ?? 0)),
+            'route' => 'management.pkpa-placement-planner.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Rancangan perlu diperiksa ulang',
+            'value' => (int) ($pkpaPlacementPlannerStats['rancangan_perlu_validasi'] ?? 0),
             'route' => 'management.pkpa-placement-planner.index',
             'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
         ],
@@ -324,8 +352,14 @@
             'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
         ],
         [
-            'label' => 'Notifikasi publikasi pending',
+            'label' => 'Notifikasi publikasi menunggu dikirim',
             'value' => (int) ($pkpaPublicationStats['notifikasi_pending'] ?? 0),
+            'route' => 'management.pkpa-publications.index',
+            'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
+        ],
+        [
+            'label' => 'Notifikasi publikasi gagal dikirim',
+            'value' => (int) ($pkpaPublicationStats['notifikasi_gagal'] ?? 0),
             'route' => 'management.pkpa-publications.index',
             'visible' => in_array($role, ['admin', 'koordinator_kp'], true),
         ],

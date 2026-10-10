@@ -822,6 +822,109 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         return $publication->fresh('assignments.supervisors');
     }
 
+    public function test_dashboard_counts_only_latest_completed_validation_of_current_plans(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-DASHBOARD-ISSUES');
+        $plan = $publication->plan;
+        $old = $this->dashboardValidationRun($plan);
+        for ($i = 0; $i < 5; $i++) {
+            $this->dashboardValidationIssue($old, 'error');
+        }
+        $latest = $this->dashboardValidationRun($plan);
+        $this->dashboardValidationIssue($latest, 'error');
+        $this->dashboardValidationIssue($latest, 'warning');
+        $this->dashboardValidationIssue($latest, 'error', true);
+        $archived = $plan->replicate();
+        $archived->fill(['code' => $plan->code.'-OLD', 'version_number' => 99, 'is_current' => false, 'current_key' => null, 'status' => 'archived'])->save();
+        $this->dashboardValidationIssue($this->dashboardValidationRun($archived), 'error');
+        $plan->update(['validation_status' => 'error']);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
+            ->assertOk()->assertViewHas('pkpaPlacementPlannerStats', fn ($stats) => $stats['error'] === 1 && $stats['warning'] === 1)
+            ->assertSee('Temuan wajib diperbaiki')->assertSee('Total slot kapasitas terdaftar')->assertSee('Peserta tanpa kelompok (opsional)');
+        $this->assertSame(8, \App\Models\PkpaPlacementValidationIssue::whereIn('placement_validation_run_id', [$old->id, $latest->id])->count(), 'Riwayat tidak boleh dihapus untuk menurunkan angka.');
+    }
+
+    public function test_dashboard_flags_stale_validation_without_counting_old_findings(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-DASHBOARD-STALE');
+        $plan = $publication->plan;
+        $this->dashboardValidationIssue($this->dashboardValidationRun($plan), 'error');
+        $plan->update(['validation_status' => 'stale']);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
+            ->assertOk()->assertViewHas('pkpaPlacementPlannerStats', fn ($stats) => $stats['error'] === 0 && $stats['rancangan_perlu_validasi'] === 1)
+            ->assertSee('Rancangan perlu diperiksa ulang');
+    }
+
+    public function test_dashboard_new_clean_validation_clears_historical_error_count(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-DASHBOARD-CLEAN');
+        $plan = $publication->plan;
+        $this->dashboardValidationIssue($this->dashboardValidationRun($plan), 'error');
+        $this->dashboardValidationRun($plan)->update(['status' => 'completed']);
+        $plan->update(['validation_status' => 'valid']);
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
+            ->assertOk()->assertViewHas('pkpaPlacementPlannerStats', fn ($stats) => $stats['error'] === 0 && $stats['rancangan_perlu_validasi'] === 0);
+    }
+
+    public function test_dashboard_shows_running_validation_instead_of_old_findings(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-DASHBOARD-RUNNING');
+        $plan = $publication->plan;
+        $this->dashboardValidationIssue($this->dashboardValidationRun($plan), 'error');
+        $this->dashboardValidationRun($plan)->update(['status' => 'running', 'completed_at' => null]);
+        $plan->update(['validation_status' => 'validating']);
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
+            ->assertOk()->assertViewHas('pkpaPlacementPlannerStats', fn ($stats) => $stats['error'] === 0 && $stats['rancangan_sedang_divalidasi'] === 1)
+            ->assertSee('Rancangan sedang diperiksa');
+    }
+
+    public function test_dashboard_separates_current_notification_backlog_and_failures(): void
+    {
+        $publication = $this->publishedFixture('PKPA-05-DASHBOARD-NOTIFY');
+        \App\Models\PkpaNotificationDelivery::query()->update(['status' => 'sent']);
+        config()->set('my_pkpa.database_notifications_enabled', true);
+        config()->set('my_pkpa.email_notifications_enabled', false);
+        $old = $publication->replicate();
+        $old->fill(['code' => $publication->code.'-OLD', 'publication_number' => 99, 'status' => 'superseded', 'is_current' => false, 'current_key' => null])->save();
+        $service = app(PkpaPlacementNotificationService::class);
+        foreach ([[$publication, 'database', 'pending'], [$publication, 'database', 'failed'], [$publication, 'mail', 'pending'], [$old, 'database', 'pending'], [$old, 'database', 'failed']] as $index => [$entity, $channel, $status]) {
+            $service->createDelivery('dashboard_test', $entity, ['core_user_id' => 'DASHBOARD-RECIPIENT-'.$index], $channel)->update(['status' => $status]);
+        }
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
+            ->assertOk()->assertViewHas('pkpaPublicationStats', fn ($stats) => $stats['notifikasi_pending'] === 1 && $stats['notifikasi_gagal'] === 1)
+            ->assertSee('Notifikasi publikasi menunggu dikirim')->assertSee('Notifikasi publikasi gagal dikirim');
+    }
+
+    public function test_dashboard_does_not_request_core_sync_for_inactive_or_manual_preceptors(): void
+    {
+        $this->publishedFixture('PKPA-05-DASHBOARD-SYNC');
+        PkpaInternalSupervisorEligibility::query()->update(['status' => 'inactive']);
+        PkpaSiteFieldSupervisor::query()->update(['status' => 'inactive']);
+        $manual = PkpaSiteFieldSupervisor::firstOrFail();
+        $manual->update(['status' => 'active', 'core_user_id' => null, 'last_core_synced_at' => null]);
+
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
+            ->assertOk()->assertViewHas('pkpaPlacementReadinessStats', fn ($stats) => $stats['pembimbing_perlu_sync'] === 0);
+    }
+
+    private function dashboardValidationRun(PkpaPlacementPlan $plan): \App\Models\PkpaPlacementValidationRun
+    {
+        return \App\Models\PkpaPlacementValidationRun::create([
+            'pkpa_placement_plan_id' => $plan->id, 'scope_type' => 'full_plan', 'status' => 'completed_with_errors',
+            'started_at' => now(), 'completed_at' => now(),
+        ]);
+    }
+
+    private function dashboardValidationIssue(\App\Models\PkpaPlacementValidationRun $run, string $severity, bool $resolved = false): void
+    {
+        \App\Models\PkpaPlacementValidationIssue::create([
+            'placement_validation_run_id' => $run->id, 'issue_code' => 'DASHBOARD_TEST', 'severity' => $severity,
+            'category' => 'completeness', 'message' => 'Temuan fixture dashboard.', 'is_resolved' => $resolved,
+        ]);
+    }
+
     private function publishedFixture(string $code): PkpaPlacementPublication
     {
         [$program, $plan] = $this->readyLockedPlan($code);
