@@ -30,6 +30,7 @@ class PkpaPlacementChangeRequestService
         string $requestedEffectiveDate,
         string $reason,
         ?User $actor,
+        bool $allStudentDomains = false,
     ): PkpaPlacementChangeRequest {
         if (! $actor?->hasAnyRole(['admin', 'koordinator_kp'])) {
             throw ValidationException::withMessages(['authorization' => 'Hanya Admin atau Koordinator PKPA yang dapat mengganti Pembimbing Dalam.']);
@@ -38,7 +39,7 @@ class PkpaPlacementChangeRequestService
             throw ValidationException::withMessages(['publication' => 'Penggantian hanya dapat dilakukan pada publikasi resmi terkini.']);
         }
 
-        return DB::transaction(function () use ($publication, $assignmentIds, $replacementCoreUserId, $requestedEffectiveDate, $reason, $actor) {
+        return DB::transaction(function () use ($publication, $assignmentIds, $replacementCoreUserId, $requestedEffectiveDate, $reason, $actor, $allStudentDomains) {
             $assignments = $publication->assignments()
                 ->with(['supervisors', 'practiceDomain'])
                 ->whereIn('id', array_values(array_unique($assignmentIds)))
@@ -47,6 +48,23 @@ class PkpaPlacementChangeRequestService
 
             if ($assignments->count() !== count(array_unique($assignmentIds))) {
                 throw ValidationException::withMessages(['assignment_ids' => 'Sebagian penempatan tidak berasal dari publikasi aktif.']);
+            }
+
+            if ($allStudentDomains) {
+                $oldByStudent = $assignments->groupBy('pkpa_enrollment_id')->map(function ($items) {
+                    $ids = $items->map(fn ($item) => $item->supervisors->firstWhere('supervisor_type', 'internal')?->core_user_id)->filter()->unique();
+                    if ($ids->count() !== 1) {
+                        throw ValidationException::withMessages(['assignment_ids' => 'Pilih satu pembimbing lama per mahasiswa sebelum menerapkan ke semua wahana.']);
+                    }
+
+                    return (string) $ids->first();
+                });
+                $related = $publication->assignments()->with(['supervisors', 'practiceDomain'])
+                    ->whereIn('pkpa_enrollment_id', $oldByStudent->keys())
+                    ->whereDate('end_date', '>=', $requestedEffectiveDate)
+                    ->lockForUpdate()->get()
+                    ->filter(fn ($item) => (string) $item->supervisors->firstWhere('supervisor_type', 'internal')?->core_user_id === $oldByStudent->get($item->pkpa_enrollment_id));
+                $assignments = $assignments->merge($related)->unique('id')->values();
             }
 
             $change = $this->create($publication, [
@@ -91,6 +109,7 @@ class PkpaPlacementChangeRequestService
                     ->where('practice_domain_id', $assignment->practice_domain_id)
                     ->where('core_user_id', $replacementCoreUserId)
                     ->where('status', 'active')
+                    ->where(fn ($query) => $query->whereNull('core_account_status_snapshot')->orWhere('core_account_status_snapshot', '!=', 'inactive'))
                     ->first();
                 if (! $eligibility) {
                     throw ValidationException::withMessages([
@@ -131,6 +150,7 @@ class PkpaPlacementChangeRequestService
                 'replacement_name' => array_values($replacementNames)[0] ?? null,
                 'requested_effective_date' => $requestedEffectiveDate,
                 'transferred_draft_assessments' => $transferredDraftAssessments,
+                'all_student_domains' => $allStudentDomains,
             ]]);
 
             return $change->fresh(['items.oldAssignment.supervisors']);

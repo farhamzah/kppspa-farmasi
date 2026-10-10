@@ -50,6 +50,11 @@
                     <span class="text-xs font-black uppercase tracking-widest text-slate-500">Alasan penggantian</span>
                     <textarea name="reason" rows="3" class="mt-2 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm" placeholder="Contoh: pembimbing lama mengundurkan diri dan dilakukan serah terima kepada dosen pengganti" required>{{ old('reason') }}</textarea>
                 </label>
+                <label class="flex items-start gap-3 lg:col-span-2">
+                    <input type="hidden" name="all_student_domains" value="0">
+                    <input type="checkbox" name="all_student_domains" value="1" @checked(old('all_student_domains', '1') == '1') class="mt-1 h-5 w-5 rounded border-slate-300 text-cyan-700">
+                    <span class="text-sm text-slate-700"><strong>Terapkan ke semua wahana mahasiswa yang dipilih</strong><span class="mt-1 block text-xs text-slate-500">Penempatan lain dengan pembimbing lama yang sama ikut dialihkan. Wahana yang berakhir sebelum tanggal serah terima dan penugasan dosen lain tidak diubah. Periksa seluruh penempatan pada ringkasan berikutnya.</span></span>
+                </label>
             </div>
         </section>
 

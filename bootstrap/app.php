@@ -54,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
+        \App\Console\Commands\CarryPkpaSupervisorReplacementCommand::class,
         SwitchPkpaInternalValidationCommand::class,
         AcademicUnitCleanupCommand::class,
         AssignmentCancelReconcileCommand::class,

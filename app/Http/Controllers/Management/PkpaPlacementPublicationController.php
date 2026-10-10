@@ -200,6 +200,7 @@ class PkpaPlacementPublicationController extends Controller
             'effective_date' => ['required', 'date'],
             'reason' => ['required', 'string', 'min:10'],
             'confirmation' => ['accepted'],
+            'all_student_domains' => ['sometimes', 'boolean'],
         ]);
         $change = $this->changeService->createInternalSupervisorReplacement(
             $publication,
@@ -208,6 +209,7 @@ class PkpaPlacementPublicationController extends Controller
             $data['effective_date'],
             $data['reason'],
             $request->user(),
+            $request->boolean('all_student_domains'),
         );
 
         return redirect()->route('management.pkpa-change-requests.show', $change)->with('status', 'Rancangan penggantian dibuat. Periksa ringkasan sebelum diterapkan.');

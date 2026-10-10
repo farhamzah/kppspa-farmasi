@@ -699,6 +699,105 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         }
     }
 
+    public function test_replacement_can_include_all_domains_of_the_same_student(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-CONTINUITY');
+        $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
+        $change = app(\App\Services\PkpaPlacementChangeRequestService::class)->createInternalSupervisorReplacement(
+            $publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02',
+            'Pembimbing lama mengundurkan diri untuk seluruh wahana.', $this->koordinator, true,
+        );
+        $this->assertSame(5, $change->items()->count());
+        $this->assertTrue($change->impact_summary['all_student_domains']);
+        $this->assertSame('published', $publication->fresh()->status, 'Membuat preview tidak boleh menerapkan revisi.');
+    }
+
+    public function test_carry_replacement_previews_applies_all_domains_and_is_idempotent(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-CARRY');
+        $service = app(\App\Services\PkpaPlacementChangeRequestService::class);
+        $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
+        $change = $service->createInternalSupervisorReplacement($publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02', 'Pergantian awal hanya diterapkan pada Apotek.', $this->koordinator);
+        $service->submit($change, $this->koordinator);
+        $service->approve($change->refresh(), $this->koordinator);
+        $service->apply($change->refresh(), $this->koordinator);
+        $count = PkpaPlacementPublication::count();
+        $options = ['--program' => 'PKPA-05-CARRY', '--old-core-id' => $this->internalSupervisor->core_user_id];
+        $this->artisan('pkpa:carry-supervisor-replacement', $options)->assertSuccessful();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+        $this->artisan('pkpa:carry-supervisor-replacement', $options + ['--apply' => true])->assertSuccessful();
+        $current = PkpaPlacementPublication::current()->where('pkpa_program_id', $publication->pkpa_program_id)->firstOrFail();
+        foreach ($current->assignments()->with('supervisors')->get() as $assignment) {
+            $this->assertSame($this->otherSupervisor->core_user_id, $assignment->supervisors->firstWhere('supervisor_type', 'internal')->core_user_id);
+            $run = PkpaRotationRun::where('pkpa_enrollment_requirement_id', $assignment->pkpa_enrollment_requirement_id)->firstOrFail();
+            $this->assertSame($this->otherSupervisor->core_user_id, $run->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'active')->value('core_user_id'));
+        }
+        $count = PkpaPlacementPublication::count();
+        $this->artisan('pkpa:carry-supervisor-replacement', $options + ['--apply' => true])->assertSuccessful();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+    }
+
+    public function test_carry_replacement_blocks_missing_mapping_without_changes(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-CARRY-BLOCK');
+        $count = PkpaPlacementPublication::count();
+        $this->artisan('pkpa:carry-supervisor-replacement', [
+            '--program' => 'PKPA-05-CARRY-BLOCK', '--old-core-id' => $this->internalSupervisor->core_user_id, '--apply' => true,
+        ])->assertFailed();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+        $this->assertSame('published', $publication->fresh()->status);
+    }
+
+    public function test_all_domain_replacement_preserves_other_supervisors(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-CARRY-OTHER');
+        $rs = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Rumah Sakit');
+        $rs->supervisors()->where('supervisor_type', 'internal')->update(['core_user_id' => 'CORE-ANOTHER-LECTURER']);
+        $publication->refresh()->load('assignments.supervisors');
+        $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
+        $change = app(\App\Services\PkpaPlacementChangeRequestService::class)->createInternalSupervisorReplacement(
+            $publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02',
+            'Pembimbing lama mengundurkan diri untuk seluruh wahana.', $this->koordinator, true,
+        );
+        $this->assertSame(4, $change->items()->count());
+        $this->assertFalse($change->items()->where('old_published_assignment_id', $rs->id)->exists());
+    }
+
+    public function test_carry_replacement_blocks_ineligible_target_without_partial_revision(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-CARRY-INACTIVE');
+        $service = app(\App\Services\PkpaPlacementChangeRequestService::class);
+        $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
+        $change = $service->createInternalSupervisorReplacement($publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02', 'Pergantian awal hanya diterapkan pada Apotek.', $this->koordinator);
+        $service->submit($change, $this->koordinator);
+        $service->approve($change->refresh(), $this->koordinator);
+        $service->apply($change->refresh(), $this->koordinator);
+        $pbf = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Pedagang Besar Farmasi');
+        PkpaInternalSupervisorEligibility::where('pkpa_program_id', $publication->pkpa_program_id)
+            ->where('practice_domain_id', $pbf->practice_domain_id)->where('core_user_id', $this->otherSupervisor->core_user_id)
+            ->update(['core_account_status_snapshot' => 'inactive']);
+        $count = PkpaPlacementPublication::count();
+        $this->artisan('pkpa:carry-supervisor-replacement', [
+            '--program' => 'PKPA-05-CARRY-INACTIVE', '--old-core-id' => $this->internalSupervisor->core_user_id, '--apply' => true,
+        ])->assertFailed();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+    }
+
+    private function continuityFixture(string $code): PkpaPlacementPublication
+    {
+        $publication = $this->publishedFixture($code);
+        foreach ($publication->assignments as $assignment) {
+            $eligibility = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $publication->pkpa_program_id)->where('practice_domain_id', $assignment->practice_domain_id)->firstOrFail();
+            $eligibility->update(['core_user_id' => $this->internalSupervisor->core_user_id]);
+            $assignment->supervisors()->where('supervisor_type', 'internal')->update(['core_user_id' => $this->internalSupervisor->core_user_id]);
+            $assignment->sourceAssignment->supervisors()->where('supervisor_type', 'internal')->update(['core_user_id' => $this->internalSupervisor->core_user_id]);
+            $this->internal($publication->program, $assignment->practice_domain_id, $this->otherSupervisor->core_user_id);
+        }
+        app(PkpaRotationRunService::class)->createFromPublication($publication->fresh(), $this->koordinator);
+
+        return $publication->fresh('assignments.supervisors');
+    }
+
     private function publishedFixture(string $code): PkpaPlacementPublication
     {
         [$program, $plan] = $this->readyLockedPlan($code);
