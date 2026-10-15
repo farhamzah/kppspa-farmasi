@@ -32,6 +32,14 @@ class PkpaCoreDirectoryController extends Controller
         ]);
     }
 
+    public function lecturerCandidates(Request $request): JsonResponse
+    {
+        $this->authorizeDirectoryAccess($request);
+        $data = $request->validate(['q' => ['required', 'string', 'min:2', 'max:100'], 'limit' => ['sometimes', 'integer', 'min:1', 'max:20']]);
+
+        return response()->json(['data' => $this->searchService->searchInternalSupervisorCandidates($data['q'], $data['limit'] ?? 10)]);
+    }
+
     public function students(Request $request): JsonResponse
     {
         $this->authorizeDirectoryAccess($request);

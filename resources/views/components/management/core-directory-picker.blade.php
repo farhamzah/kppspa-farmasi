@@ -10,6 +10,7 @@
     'extraFields' => [],
     'queryFields' => [],
     'requiredContextFields' => [],
+    'minSearchLength' => 0,
 ])
 
 @php
@@ -28,6 +29,7 @@
     data-hidden-name="{{ $fieldName }}"
     data-display-name="{{ $displayFieldName }}"
     data-required="{{ $required ? 'true' : 'false' }}"
+    data-min-search-length="{{ $minSearchLength }}"
     data-extra-fields='{{ $encodedExtraFields }}'
     data-query-fields='{{ $encodedQueryFields }}'
     data-required-context-fields='{{ $encodedRequiredContextFields }}'
@@ -86,6 +88,7 @@
                     const hiddenName = root.dataset.hiddenName;
                     const displayName = root.dataset.displayName;
                     const required = root.dataset.required === 'true';
+                    const minSearchLength = Number(root.dataset.minSearchLength || 0);
                     const hiddenInput = root.querySelector(`input[type="hidden"][name="${hiddenName}"]`);
                     const hiddenDisplayInput = root.querySelector(`input[type="hidden"][name="${displayName}"]`);
                     const searchInput = root.querySelector('input[type="text"]');
@@ -132,10 +135,11 @@
                             const meta = [item.role_snapshot, item.cohort].filter(Boolean).join(' • ');
 
                             return `
-                                <button type="button" class="block w-full rounded-xl px-3 py-3 text-left transition hover:bg-sky-50" data-core-item='${JSON.stringify(item).replace(/'/g, '&#39;')}'>
+                                <button type="button" ${item.selectable === false ? 'disabled' : ''} class="block w-full rounded-xl px-3 py-3 text-left transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:bg-slate-50" data-core-item='${JSON.stringify(item).replace(/'/g, '&#39;')}'>
                                     <span class="block font-black text-slate-900">${escapeHtml(item.name ?? item.label ?? item.core_user_id ?? '-')}</span>
                                     <span class="mt-1 block text-xs text-slate-500">${escapeHtml(secondary || item.core_user_id || '')}</span>
                                     ${meta ? `<span class="mt-1 block text-[11px] font-bold text-cyan-700">${escapeHtml(meta)}</span>` : ''}
+                                    ${item.unavailable_reason ? `<span class="mt-2 block text-xs font-bold text-amber-800">${escapeHtml(item.unavailable_reason)}</span>` : ''}
                                 </button>
                             `;
                         }).join('');
@@ -143,7 +147,8 @@
                         resultsBox.classList.remove('hidden');
                         resultsBox.querySelectorAll('[data-core-item]').forEach((button) => {
                             button.addEventListener('click', () => {
-                                selectItem(JSON.parse(button.dataset.coreItem));
+                                const item = JSON.parse(button.dataset.coreItem);
+                                if (item.selectable !== false) selectItem(item);
                             });
                         });
                     };
@@ -180,6 +185,12 @@
                     };
 
                     const fetchResults = debounce(async (query) => {
+                        if (query.trim().length < minSearchLength) {
+                            requestCounter += 1;
+                            resultsBox.innerHTML = `<div class="rounded-xl px-3 py-2 text-sm text-slate-500">Ketik minimal ${minSearchLength} karakter untuk mencari dosen di Core.</div>`;
+                            resultsBox.classList.remove('hidden');
+                            return;
+                        }
                         const missingLabels = missingContextLabels();
                         if (missingLabels.length) {
                             resultsBox.innerHTML = `<div class="rounded-xl px-3 py-2 text-sm text-slate-500">Pilih ${escapeHtml(missingLabels.join(', '))} terlebih dahulu.</div>`;

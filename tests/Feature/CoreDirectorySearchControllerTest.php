@@ -84,6 +84,60 @@ class CoreDirectorySearchControllerTest extends TestCase
             ->assertJsonFragment(['core_user_id' => 'CORE-DOSEN-APPROLE', 'name' => 'Dosen Dari Role App']);
     }
 
+    public function test_lecturer_candidates_show_existing_core_user_without_pkpa_access_as_blocked(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/internal/directory/lecturers')) {
+                return Http::response(['data' => [$this->lecturer('CORE-DEWI', 'Dewi Darwati Agustini', ['dosen'])]]);
+            }
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DEWI/access')) {
+                return Http::response(['has_access' => false, 'roles' => []]);
+            }
+
+            return Http::response(['data' => []]);
+        });
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->getJson('/management/core-directory/lecturer-candidates?q=dewi')->assertOk()
+            ->assertJsonCount(1, 'data')->assertJsonFragment(['name' => 'Dewi Darwati Agustini', 'selectable' => false])
+            ->assertJsonPath('data.0.unavailable_reason', 'Ada di Core; akses MY PKPA belum tersedia atau belum terkonfirmasi. Periksa Akses Aplikasi User di Core.');
+    }
+
+    public function test_lecturer_candidates_fall_back_to_core_users_and_keep_access_checks(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/internal/directory/users')) {
+                return Http::response(['data' => [$this->lecturer('CORE-DEWI', 'Dewi Darwati Agustini', ['dosen'])]]);
+            }
+            if (str_contains($url, '/internal/apps/kppspa-farmasi/users/CORE-DEWI/access')) {
+                return Http::response(['has_access' => true, 'roles' => [['slug' => 'pembimbing-dalam']]]);
+            }
+
+            return Http::response(['data' => []]);
+        });
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->getJson('/management/core-directory/lecturer-candidates?q=dewi')->assertOk()
+            ->assertJsonCount(1, 'data')->assertJsonFragment(['core_user_id' => 'CORE-DEWI', 'selectable' => true, 'unavailable_reason' => null]);
+        $this->getJson('/management/core-directory/lecturer-candidates?q=d')->assertUnprocessable();
+        $this->getJson('/management/core-directory/lecturer-candidates?q=dewi&limit=999')->assertUnprocessable();
+    }
+
+    public function test_unlinked_lecturer_profile_is_not_treated_as_a_core_user(): void
+    {
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '/internal/directory/lecturers')) {
+                return Http::response(['data' => [['id' => 999, 'user_id' => null, 'name' => 'Dewi Belum Terhubung', 'active' => true]]]);
+            }
+
+            return Http::response(['data' => []]);
+        });
+        $this->actingAs($this->admin)->withSession(['active_role' => 'admin'])
+            ->getJson('/management/core-directory/lecturer-candidates?q=dewi')->assertOk()
+            ->assertJsonFragment(['core_user_id' => null, 'selectable' => false])
+            ->assertJsonPath('data.0.unavailable_reason', 'Profil dosen belum terhubung ke akun Core. Periksa di Core Farmasi.');
+    }
+
     public function test_field_supervisor_directory_only_returns_active_users_with_access(): void
     {
         Http::fake(function ($request) {

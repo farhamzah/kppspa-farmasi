@@ -147,6 +147,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
         Route::middleware('role:admin,koordinator_kp')->prefix('management')->name('management.')->group(function () {
             Route::get('core-directory/lecturers', [PkpaCoreDirectoryController::class, 'lecturers'])->name('core-directory.lecturers');
+            Route::get('core-directory/lecturer-candidates', [PkpaCoreDirectoryController::class, 'lecturerCandidates'])->name('core-directory.lecturer-candidates');
             Route::get('core-directory/field-supervisors', [PkpaCoreDirectoryController::class, 'fieldSupervisors'])->name('core-directory.field-supervisors');
             Route::get('core-directory/students', [PkpaCoreDirectoryController::class, 'students'])->name('core-directory.students');
             Route::get('pkpa-enrollments/import/template', [PkpaEnrollmentController::class, 'template'])->name('pkpa-enrollments.import.template');

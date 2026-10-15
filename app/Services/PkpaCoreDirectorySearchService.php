@@ -37,6 +37,49 @@ class PkpaCoreDirectorySearchService
             ->all();
     }
 
+    public function searchInternalSupervisorCandidates(string $query, int $limit = 10): array
+    {
+        $params = $this->buildParams($query, $limit);
+        $lecturers = collect($this->coreClient->searchLecturers($params)['data'] ?? [])
+            ->map(fn ($item) => array_merge((array) $item, ['_lecturer_directory' => true]));
+        $items = $lecturers->merge($this->coreClient->searchUsers($params)['data'] ?? [])
+            ->merge($this->coreClient->listAppAccessUsers($params + ['role' => 'pembimbing-dalam'])['data'] ?? []);
+
+        return $items->map(function ($item) use ($query) {
+            $item = (array) $item;
+            $person = $this->supervisorResolver->normalize($item);
+            $id = $person['core_user_id'];
+            if (blank($id) || ! collect([$person['name'], $person['email'], $id, $person['lecturer_id']])->filter()
+                ->contains(fn ($value) => str_contains(strtolower((string) $value), strtolower(trim($query))))) {
+                return null;
+            }
+            // Profil dosen tanpa user_id tidak boleh memakai ID profil sebagai ID akun.
+            $unlinked = ($item['_lecturer_directory'] ?? false) && ! filled($item['user_id'] ?? data_get($item, 'user.id') ?? $item['core_user_id'] ?? null);
+            $access = $unlinked ? [] : $this->coreClient->checkUserAppAccess($id);
+            $roleValid = $this->personHasRole($person, ['pembimbing_dalam', 'dosen', 'lecturer', 'academic', 'faculty'])
+                || $this->normalizeRoles($access['roles'] ?? [])->contains('pembimbing_dalam');
+            if (! ($item['_lecturer_directory'] ?? false) && ! $roleValid) {
+                return null;
+            }
+            $reason = match (true) {
+                $unlinked => 'Profil dosen belum terhubung ke akun Core. Periksa di Core Farmasi.',
+                $person['account_status'] !== 'active' || data_get($item, 'user.active') === false => 'Akun Core tidak aktif. Periksa di Core Farmasi.',
+                ($access['has_access'] ?? false) !== true => 'Ada di Core; akses MY PKPA belum tersedia atau belum terkonfirmasi. Periksa Akses Aplikasi User di Core.',
+                ! $roleValid => 'Role dosen/Pembimbing Dalam belum sesuai. Periksa di Core Farmasi.',
+                default => null,
+            };
+
+            return [
+                'core_user_id' => $unlinked ? null : $id, 'label' => $person['name'], 'name' => $person['name'],
+                'email' => $person['email'], 'identifier' => $person['lecturer_id'] ?: ($unlinked ? null : $id),
+                'role_snapshot' => $person['role_snapshot'], 'account_status' => $person['account_status'],
+                'selectable' => $reason === null, 'unavailable_reason' => $reason,
+            ];
+        })->filter()->sortByDesc('selectable')
+            ->unique(fn ($person) => $person['core_user_id'] ?: 'profile:'.$person['name'].'|'.$person['email'])
+            ->take(max(1, min($limit, 20)))->values()->all();
+    }
+
     public function searchFieldSupervisors(?string $query = null, int $limit = 10): array
     {
         $knownAppAccesses = $this->fieldSupervisorAppAccessMap($query, $limit);
