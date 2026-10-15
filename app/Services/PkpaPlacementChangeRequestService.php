@@ -31,6 +31,7 @@ class PkpaPlacementChangeRequestService
         string $reason,
         ?User $actor,
         bool $allStudentDomains = false,
+        bool $allowCompletedReviewHandover = false,
     ): PkpaPlacementChangeRequest {
         if (! $actor?->hasAnyRole(['admin', 'koordinator_kp'])) {
             throw ValidationException::withMessages(['authorization' => 'Hanya Admin atau Koordinator PKPA yang dapat mengganti Pembimbing Dalam.']);
@@ -39,7 +40,7 @@ class PkpaPlacementChangeRequestService
             throw ValidationException::withMessages(['publication' => 'Penggantian hanya dapat dilakukan pada publikasi resmi terkini.']);
         }
 
-        return DB::transaction(function () use ($publication, $assignmentIds, $replacementCoreUserId, $requestedEffectiveDate, $reason, $actor, $allStudentDomains) {
+        return DB::transaction(function () use ($publication, $assignmentIds, $replacementCoreUserId, $requestedEffectiveDate, $reason, $actor, $allStudentDomains, $allowCompletedReviewHandover) {
             $assignments = $publication->assignments()
                 ->with(['supervisors', 'practiceDomain'])
                 ->whereIn('id', array_values(array_unique($assignmentIds)))
@@ -118,7 +119,8 @@ class PkpaPlacementChangeRequestService
                 }
 
                 $effectiveDate = Carbon::parse($requestedEffectiveDate)->max($assignment->start_date)->toDateString();
-                if ($effectiveDate > $assignment->end_date->toDateString()) {
+                $reviewHandover = $effectiveDate > $assignment->end_date->toDateString();
+                if ($reviewHandover && (! $allowCompletedReviewHandover || ! $run)) {
                     throw ValidationException::withMessages(['effective_date' => "Tanggal efektif melewati periode {$assignment->student_name_snapshot}."]);
                 }
 
@@ -130,6 +132,7 @@ class PkpaPlacementChangeRequestService
                     'effective_date' => $effectiveDate,
                     'requested_effective_date' => $requestedEffectiveDate,
                     'transfer_partial_assessment' => $partialAssessment,
+                    'completed_rotation_review_handover' => $reviewHandover,
                     'notes' => $reason,
                 ], $actor);
                 if ($item->validation_status !== 'valid') {
@@ -276,6 +279,9 @@ class PkpaPlacementChangeRequestService
         if ($request->status !== 'approved') {
             throw ValidationException::withMessages(['request' => 'Request harus approved sebelum apply.']);
         }
+        if (! $request->publication->is_current || $request->publication->status !== 'published') {
+            throw ValidationException::withMessages(['publication' => 'Publikasi sudah berubah. Buat ulang pratinjau dari Peserta PKPA.']);
+        }
 
         $replacement = [];
         $supervisorContexts = [];
@@ -337,11 +343,12 @@ class PkpaPlacementChangeRequestService
             ->where('pkpa_rotation_assignment_id', $sourceAssignmentId)
             ->where('supervisor_type', 'internal')
             ->where('status', 'active')
-            ->update([
+            ->get()->each(fn ($supervisor) => $supervisor->update([
                 'status' => 'ended',
-                'effective_end_date' => $effectiveDate->copy()->subDay()->toDateString(),
+                'effective_end_date' => $supervisor->effective_end_date?->min($effectiveDate->copy()->subDay())->toDateString()
+                    ?? $effectiveDate->copy()->subDay()->toDateString(),
                 'updated_by_core_user_id' => $actor?->core_user_id,
-            ]);
+            ]));
 
         PkpaRotationAssignmentSupervisor::create([
             'pkpa_rotation_assignment_id' => $sourceAssignmentId,
@@ -351,7 +358,7 @@ class PkpaPlacementChangeRequestService
             'name_snapshot' => $eligibility->display_name,
             'role_snapshot' => $eligibility->role_snapshot,
             'effective_start_date' => $effectiveDate->toDateString(),
-            'effective_end_date' => $item->oldAssignment?->end_date?->toDateString(),
+            'effective_end_date' => data_get($item->proposed_snapshot, 'completed_rotation_review_handover') ? null : $item->oldAssignment?->end_date?->toDateString(),
             'status' => 'active',
             'is_primary' => true,
             'created_by_core_user_id' => $actor?->core_user_id,

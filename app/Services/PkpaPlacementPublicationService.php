@@ -404,6 +404,7 @@ class PkpaPlacementPublicationService
             ->where('pkpa_program_id', $assignment->publication->pkpa_program_id)
             ->where('practice_domain_id', $assignment->practice_domain_id)
             ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('core_account_status_snapshot')->orWhere('core_account_status_snapshot', '!=', 'inactive'))
             ->first();
 
         if (! $eligibility) {

@@ -5,6 +5,7 @@
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
+    @if($enrollment->currentPublishedAssignments()->exists())<a href="{{ route('management.pkpa-enrollments.supervisor-replacement.create', ['enrollment_ids' => [$enrollment->id]]) }}" class="inline-flex min-h-11 items-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white">Ganti Pembimbing Dalam</a>@endif
     <div class="grid gap-5 xl:grid-cols-[1fr_360px]">
         <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">

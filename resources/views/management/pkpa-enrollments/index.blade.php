@@ -42,6 +42,11 @@
     </section>
 
     <section class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200">
+        <form id="replace-student-supervisors" method="GET" action="{{ route('management.pkpa-enrollments.supervisor-replacement.create') }}" class="flex flex-wrap items-center gap-3 border-b border-slate-200 px-5 py-3">
+            <label class="flex min-h-11 items-center gap-2 text-sm font-bold text-slate-700"><input id="select-student-page" type="checkbox" class="h-4 w-4 rounded border-slate-300">Pilih halaman ini</label>
+            <span id="selected-student-count" class="text-sm text-slate-500" aria-live="polite">0 mahasiswa dipilih</span>
+            <button id="replace-student-button" disabled class="min-h-11 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Ganti Pembimbing Dalam</button>
+        </form>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-black uppercase tracking-widest text-slate-500"><tr><th class="px-5 py-3">Mahasiswa</th><th class="px-4 py-3">Program</th><th class="px-4 py-3">Akun Core</th><th class="px-4 py-3">Status Peserta</th><th class="min-w-56 px-4 py-3">Kemajuan PKPA</th><th class="px-5 py-3 text-right">Aksi</th></tr></thead>
@@ -54,12 +59,12 @@
                         $completionPercentage = $totalRequirements > 0 ? (int) round(($completedRequirements / $totalRequirements) * 100) : 0;
                     @endphp
                     <tr class="align-top hover:bg-slate-50/70">
-                        <td class="px-5 py-4"><div class="font-black text-slate-950">{{ $enrollment->student_name_snapshot ?: '-' }}</div><div class="mt-1 text-xs text-slate-500">NPM {{ $enrollment->student_number ?: '-' }} <span class="text-slate-300">/</span> Core {{ $enrollment->core_user_id }}</div></td>
+                        <td class="px-5 py-4"><label class="flex items-start gap-3"><input type="checkbox" form="replace-student-supervisors" name="enrollment_ids[]" value="{{ $enrollment->id }}" data-student-selection class="mt-1 h-4 w-4 rounded border-slate-300" @disabled(!$enrollment->current_published_assignments_count)><span><span class="block font-black text-slate-950">{{ $enrollment->student_name_snapshot ?: '-' }}</span><span class="mt-1 block text-xs text-slate-500">NPM {{ $enrollment->student_number ?: '-' }} <span class="text-slate-300">/</span> Core {{ $enrollment->core_user_id }}</span></span></label></td>
                         <td class="px-4 py-4"><span class="font-bold text-slate-900">{{ $enrollment->program?->code }}</span><div class="mt-1 max-w-64 text-xs text-slate-500">{{ $enrollment->program?->name }}</div></td>
                         <td class="px-4 py-4"><span class="rounded-full px-2 py-1 text-xs font-black {{ $enrollment->core_account_status_snapshot === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $enrollment->core_account_status_snapshot === 'active' ? 'Aktif' : 'Perlu diperiksa' }}</span><div class="mt-2 text-xs text-slate-500">{{ $enrollment->last_core_synced_at ? 'Diperbarui '.$enrollment->last_core_synced_at->diffForHumans() : 'Belum disinkronkan' }}</div></td>
                         <td class="px-4 py-4"><span class="font-bold text-slate-800">{{ $enrollment->statusLabel() }}</span></td>
                         <td class="px-4 py-4"><div class="flex items-center justify-between gap-4 text-xs"><span class="font-bold text-slate-700">{{ $scheduledRequirements }} dari {{ $totalRequirements }} dijadwalkan</span><span class="text-slate-500">{{ $completedRequirements }} selesai</span></div><div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-emerald-500" style="width: {{ $completionPercentage }}%"></div></div></td>
-                        <td class="px-5 py-4 text-right"><div class="flex flex-wrap justify-end gap-2"><a href="{{ route('management.pkpa-enrollments.show', $enrollment) }}" class="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-black text-white">Lihat Detail</a><form method="POST" action="{{ route('management.pkpa-enrollments.sync', $enrollment) }}">@csrf<button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">Perbarui Core</button></form></div></td>
+                        <td class="px-5 py-4 text-right"><div class="flex flex-wrap justify-end gap-2"><a href="{{ route('management.pkpa-enrollments.show', $enrollment) }}" class="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-black text-white">Lihat Detail</a>@if($enrollment->current_published_assignments_count)<a href="{{ route('management.pkpa-enrollments.supervisor-replacement.create', ['enrollment_ids' => [$enrollment->id]]) }}" class="rounded-lg border border-cyan-200 px-3 py-2 text-xs font-bold text-cyan-700">Ganti Pembimbing</a>@endif<form method="POST" action="{{ route('management.pkpa-enrollments.sync', $enrollment) }}">@csrf<button class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">Perbarui Core</button></form></div></td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="px-4 py-12 text-center"><p class="font-bold text-slate-700">Peserta tidak ditemukan</p><p class="mt-1 text-sm text-slate-500">Ubah kata pencarian atau reset filter yang digunakan.</p></td></tr>
@@ -71,3 +76,21 @@
     </section>
 </div>
 @endsection
+@push('scripts')
+<script>
+(() => {
+    const choices = [...document.querySelectorAll('[data-student-selection]:not(:disabled)')];
+    const all = document.getElementById('select-student-page');
+    const update = () => {
+        const count = choices.filter(input => input.checked).length;
+        document.getElementById('selected-student-count').textContent = `${count} mahasiswa dipilih`;
+        document.getElementById('replace-student-button').disabled = count === 0;
+        all.checked = count > 0 && count === choices.length;
+        all.indeterminate = count > 0 && count < choices.length;
+    };
+    all.addEventListener('change', () => { choices.forEach(input => input.checked = all.checked); update(); });
+    choices.forEach(input => input.addEventListener('change', update));
+    update();
+})();
+</script>
+@endpush

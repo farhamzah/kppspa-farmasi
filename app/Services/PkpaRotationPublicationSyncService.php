@@ -103,7 +103,8 @@ class PkpaRotationPublicationSyncService
                 $current->update([
                     'status' => 'ended',
                     'active_key' => null,
-                    'effective_end_date' => $effectiveStart->copy()->subDay()->toDateString(),
+                    'effective_end_date' => $current->effective_end_date?->min($effectiveStart->copy()->subDay())->toDateString()
+                        ?? $effectiveStart->copy()->subDay()->toDateString(),
                     'change_reason' => $context['reason'] ?? 'Sinkronisasi publikasi current.',
                     'updated_by_core_user_id' => $actor?->core_user_id,
                 ]);
@@ -120,7 +121,7 @@ class PkpaRotationPublicationSyncService
                 'role_snapshot' => $supervisor->role_snapshot,
                 'source_published_assignment_supervisor_id' => $supervisor->id,
                 'effective_start_date' => $effectiveStart->toDateString(),
-                'effective_end_date' => $run->scheduled_end_date?->toDateString(),
+                'effective_end_date' => $effectiveStart->gt($run->scheduled_end_date) ? null : $run->scheduled_end_date?->toDateString(),
                 'status' => 'active',
                 'active_key' => 'RUN:'.$run->id.':'.$supervisor->supervisor_type,
                 'change_reason' => $context['reason'] ?? 'Sinkronisasi publikasi current.',

@@ -266,6 +266,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('pkpa-enrollments/{pkpa_enrollment}/sync', [PkpaEnrollmentController::class, 'sync'])->name('pkpa-enrollments.sync');
             Route::post('pkpa-enrollments/{pkpa_enrollment}/status', [PkpaEnrollmentController::class, 'status'])->name('pkpa-enrollments.status');
             Route::post('pkpa-enrollments/{pkpa_enrollment}/cancel', [PkpaEnrollmentController::class, 'cancel'])->name('pkpa-enrollments.cancel');
+            Route::get('pkpa-enrollments/supervisor-replacement', [\App\Http\Controllers\Management\PkpaStudentSupervisorReplacementController::class, 'create'])->name('pkpa-enrollments.supervisor-replacement.create');
+            Route::post('pkpa-enrollments/supervisor-replacement', [\App\Http\Controllers\Management\PkpaStudentSupervisorReplacementController::class, 'store'])->name('pkpa-enrollments.supervisor-replacement.store');
             Route::resource('pkpa-enrollments', PkpaEnrollmentController::class)->only(['index', 'create', 'store', 'show']);
             Route::post('pkpa-student-groups/{pkpa_student_group}/members', [PkpaStudentGroupController::class, 'addMember'])->name('pkpa-student-groups.members.store');
             Route::post('pkpa-student-groups/{pkpa_student_group}/members/bulk', [PkpaStudentGroupController::class, 'bulkMembers'])->name('pkpa-student-groups.members.bulk');

@@ -6,6 +6,7 @@ use App\Models\PkpaEnrollment;
 use App\Models\PkpaEnrollmentRequirement;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaPlacementPlan;
+use App\Models\PkpaPlacementChangeRequest;
 use App\Models\PkpaProgramSite;
 use App\Models\PkpaRotationAssignment;
 use App\Models\PkpaRotationAssignmentSupervisor;
@@ -36,6 +37,19 @@ class PkpaRotationAssignmentService
 
             $requirement->loadMissing('enrollment.activeGroupMembership.group', 'programDomain.practiceDomain');
             $this->assertRequirementFitsPlan($plan, $requirement);
+            $handover = PkpaPlacementChangeRequest::where('pkpa_program_id', $plan->pkpa_program_id)
+                ->where('status', 'applied')->where('request_type', 'internal_supervisor_replacement')
+                ->whereJsonContains('impact_summary->student_enrollment_ids', (int) $requirement->pkpa_enrollment_id)
+                ->latest('id')->first();
+            if ($handover) {
+                $preferred = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $plan->pkpa_program_id)
+                    ->where('practice_domain_id', $requirement->practice_domain_id)
+                    ->where('core_user_id', data_get($handover->impact_summary, 'replacement_core_user_id'))
+                    ->where('status', 'active')->first();
+                if (! $preferred || (int) ($data['internal_supervisor_eligibility_id'] ?? 0) !== $preferred->id) {
+                    throw ValidationException::withMessages(['internal_supervisor_eligibility_id' => 'Pembimbing mahasiswa sudah diganti menjadi '.data_get($handover->impact_summary, 'replacement_name').'. Pilih dosen tersebut untuk wahana berikutnya; pastikan aktif pada wahana ini.']);
+                }
+            }
 
             $programSite = PkpaProgramSite::with('practiceSite')->findOrFail($data['pkpa_program_site_id']);
             $availability = PkpaSiteAvailabilityPeriod::findOrFail($data['pkpa_site_availability_period_id']);

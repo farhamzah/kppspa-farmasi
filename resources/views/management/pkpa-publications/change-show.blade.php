@@ -97,6 +97,7 @@
                                 <p class="mt-1">Isi draf dari pembimbing lama tetap tersimpan beserta riwayat pembuatnya. Pembimbing baru harus meninjau sebelum mengirim dan mengunci nilai.</p>
                             </div>
                         @endif
+                        @if(data_get($item->proposed_snapshot, 'completed_rotation_review_handover'))<p class="mt-3 text-sm font-semibold text-cyan-800">Rotasi telah berakhir. Penggantian ini mengalihkan tanggung jawab pemeriksaan sejak tanggal serah terima, bukan mengubah periode praktik atau penilaian final sebelumnya.</p>@endif
                     @else
                         <div class="mt-3 grid gap-3 md:grid-cols-2">
                             <div class="rounded-xl bg-slate-50 p-3 text-sm"><p class="font-black text-slate-700">Sebelum</p><pre class="mt-2 whitespace-pre-wrap text-xs text-slate-600">{{ json_encode($item->before_snapshot, JSON_PRETTY_PRINT) }}</pre></div>

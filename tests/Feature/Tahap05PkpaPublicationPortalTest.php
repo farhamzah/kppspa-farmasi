@@ -822,6 +822,68 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         return $publication->fresh('assignments.supervisors');
     }
 
+    public function test_student_supervisor_action_previews_and_applies_finished_rotation_handover(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-STUDENT-HANDOVER');
+        $enrollmentId = $publication->assignments->first()->pkpa_enrollment_id;
+        $runs = PkpaRotationRun::where('pkpa_program_id', $publication->pkpa_program_id)->get();
+        $oldEnds = $runs->mapWithKeys(fn ($r) => [$r->id => $r->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'active')->first()->effective_end_date->toDateString()]);
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/pkpa-enrollments')->assertOk()->assertSee('Ganti Pembimbing Dalam')->assertSee('Ganti Pembimbing');
+        $this->get('/management/pkpa-enrollments/supervisor-replacement?'.http_build_query(['enrollment_ids' => [$enrollmentId]]))
+            ->assertOk()->assertSee('Penggantian seluruh wahana')->assertSee('Tinjau Penggantian');
+        $this->post('/management/pkpa-enrollments/supervisor-replacement', [
+            'enrollment_ids' => [$enrollmentId], 'publication_id' => $publication->id,
+            'replacement_core_user_id' => $this->otherSupervisor->core_user_id, 'effective_date' => '2026-03-01',
+            'reason' => 'Pembimbing mahasiswa diganti untuk seluruh wahana program.', 'include_finished_reviews' => '1',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+        $change = PkpaPlacementChangeRequest::where('request_type', 'internal_supervisor_replacement')->latest('id')->firstOrFail();
+        $this->assertSame(5, $change->items()->count());
+        $this->assertSame([$enrollmentId], $change->impact_summary['student_enrollment_ids']);
+        $this->assertSame('published', $publication->fresh()->status);
+        $this->post("/management/pkpa-change-requests/{$change->id}/confirm-internal-supervisor-replacement")->assertSessionHasNoErrors()->assertRedirect();
+        foreach ($runs as $run) {
+            $current = $run->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'active')->firstOrFail();
+            $this->assertSame($this->otherSupervisor->core_user_id, $current->core_user_id);
+            $this->assertSame('2026-03-01', $current->effective_start_date->toDateString());
+            $this->assertNull($current->effective_end_date);
+            $this->assertSame($oldEnds[$run->id], $run->supervisorHistories()->where('supervisor_type', 'internal')->where('status', 'ended')->firstOrFail()->effective_end_date->toDateString());
+            $this->assertSame($oldEnds[$run->id], $run->fresh()->scheduled_end_date->toDateString());
+        }
+        $currentPublication = PkpaPlacementPublication::current()->where('pkpa_program_id', $publication->pkpa_program_id)->firstOrFail();
+        $nextPlan = app(\App\Services\PkpaPlacementPlanService::class)->clone($publication->plan, ['copy_assignments' => false], $this->koordinator);
+        $source = $publication->assignments->first()->sourceAssignment;
+        $requirement = \App\Models\PkpaEnrollmentRequirement::findOrFail($source->pkpa_enrollment_requirement_id);
+        $programSite = PkpaProgramSite::findOrFail($source->pkpa_program_site_id);
+        $availability = PkpaSiteAvailabilityPeriod::findOrFail($source->pkpa_site_availability_period_id);
+        $oldEligible = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $publication->pkpa_program_id)->where('practice_domain_id', $source->practice_domain_id)->where('core_user_id', $this->internalSupervisor->core_user_id)->firstOrFail();
+        $field = PkpaSiteFieldSupervisor::where('practice_site_id', $source->practice_site_id)->firstOrFail();
+        $payload = $this->assignmentPayload($requirement, $programSite, $availability, $oldEligible, $field, 0);
+        $payload['start_date'] = $payload['end_date'] = '2026-03-02';
+        $this->post("/management/pkpa-placement-plans/{$nextPlan->id}/assignments", $payload)->assertSessionHasErrors('internal_supervisor_eligibility_id');
+        $payload['internal_supervisor_eligibility_id'] = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $publication->pkpa_program_id)->where('practice_domain_id', $source->practice_domain_id)->where('core_user_id', $this->otherSupervisor->core_user_id)->value('id');
+        $this->post("/management/pkpa-placement-plans/{$nextPlan->id}/assignments", $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $this->post('/management/pkpa-enrollments/supervisor-replacement', [
+            'enrollment_ids' => [$enrollmentId], 'publication_id' => $publication->id,
+            'replacement_core_user_id' => $this->internalSupervisor->core_user_id, 'effective_date' => '2026-03-02',
+            'reason' => 'Tidak boleh memakai publikasi yang sudah diganti.', 'include_finished_reviews' => '1',
+        ])->assertSessionHasErrors('publication_id');
+        $this->assertSame($currentPublication->id, PkpaPlacementPublication::current()->where('pkpa_program_id', $publication->pkpa_program_id)->value('id'));
+    }
+
+    public function test_student_supervisor_selection_is_protected_and_cannot_mix_programs(): void
+    {
+        $publication = $this->continuityFixture('PKPA-05-STUDENT-SCOPE');
+        $studentId = $publication->assignments->first()->pkpa_enrollment_id;
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get('/management/pkpa-enrollments/supervisor-replacement?'.http_build_query(['enrollment_ids' => [$studentId]]))->assertForbidden();
+        $otherProgram = $this->createProgram('PKPA-05-OTHER-SCOPE');
+        $otherEnrollment = $this->enroll($otherProgram, $this->otherStudent->core_user_id, '250006');
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/pkpa-enrollments/supervisor-replacement?'.http_build_query(['enrollment_ids' => [$studentId, $otherEnrollment->id]]))
+            ->assertSessionHasErrors('enrollment_ids');
+    }
+
     public function test_dashboard_counts_only_latest_completed_validation_of_current_plans(): void
     {
         $publication = $this->publishedFixture('PKPA-05-DASHBOARD-ISSUES');
