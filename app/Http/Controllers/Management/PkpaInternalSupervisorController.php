@@ -127,16 +127,23 @@ class PkpaInternalSupervisorController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('management.pkpa-internal-supervisors.create', [
             'programs' => PkpaProgram::whereNotIn('status', ['completed', 'archived'])->orderByDesc('id')->get(),
+            'selectedProgramId' => $request->integer('program_id'),
         ]);
     }
 
     public function store(StorePkpaInternalSupervisorRequest $request): RedirectResponse
     {
         $program = PkpaProgram::findOrFail($request->validated('pkpa_program_id'));
+        if ($request->filled('core_user_id')) {
+            $summary = $this->internalService->addToProgram($program, $request->validated('core_user_id'), $request->user());
+
+            return redirect()->route('management.pkpa-internal-supervisors.index', ['program_id' => $program->id])
+                ->with('status', "Pembimbing pilihan berhasil diaktifkan untuk {$summary['total']} wahana program. Penugasan mahasiswa dan pembimbing lain tidak diubah.");
+        }
         $summary = $this->internalService->bootstrapProgram($program, $request->validated(), $request->user(), true);
 
         return redirect()->route('management.pkpa-internal-supervisors.index', ['program_id' => $program->id])

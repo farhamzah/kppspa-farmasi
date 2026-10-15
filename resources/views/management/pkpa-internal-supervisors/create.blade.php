@@ -1,39 +1,20 @@
 @extends('layouts.app')
-@section('title', 'Sinkronkan Pembimbing Dalam - '.config('app.name'))
-@section('page_title', 'Sinkronkan Pembimbing Dalam')
+@section('title', 'Tambah Pembimbing Dalam - '.config('app.name'))
+@section('page_title', 'Tambah Pembimbing Dalam')
 @section('content')
-@php
-    $statusLabels = [
-        'draft' => 'Draf',
-        'active' => 'Aktif',
-        'inactive' => 'Nonaktif',
-        'suspended' => 'Ditangguhkan',
-        'expired' => 'Kedaluwarsa',
-    ];
-@endphp
 <div class="max-w-3xl space-y-5">
-    @if($errors->any())<div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ $errors->first() }}</div>@endif
-    <div class="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-        <div class="mb-5 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 py-3 text-sm leading-6 text-cyan-950">
-            Pilih program, lalu sistem akan menyiapkan semua dosen yang sudah aktif di MY PKPA dengan role Pembimbing Dalam untuk seluruh wahana aktif pada program tersebut. Anda tidak perlu mendaftarkan dosen satu per satu atau per wahana.
-        </div>
-        <form method="POST" action="{{ route('management.pkpa-internal-supervisors.store') }}" class="space-y-4">
-            @csrf
-            <div class="grid gap-4 md:grid-cols-1">
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Program PKPA</label><select name="pkpa_program_id" required class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><option value="">Pilih program</option>@foreach($programs as $program)<option value="{{ $program->id }}" @selected(old('pkpa_program_id') == $program->id)>{{ $program->code }} - {{ $program->name }}</option>@endforeach</select></div>
-            </div>
-            <div class="grid gap-4 md:grid-cols-3">
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Maks. Mahasiswa Aktif</label><input type="number" name="maximum_active_students" min="0" value="{{ old('maximum_active_students', 0) }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-xs text-slate-500">0 atau kosong berarti tidak dibatasi.</p></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Maks. per Program</label><input type="number" name="maximum_students_per_program" min="0" value="{{ old('maximum_students_per_program', 0) }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"><p class="mt-1 text-xs text-slate-500">0 atau kosong berarti tidak dibatasi.</p></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Status</label><select name="status" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">@foreach(\App\Models\PkpaInternalSupervisorEligibility::STATUSES as $status)<option value="{{ $status }}" @selected(old('status', 'active') === $status)>{{ $statusLabels[$status] ?? str($status)->replace('_', ' ')->headline() }}</option>@endforeach</select></div>
-            </div>
-            <div class="grid gap-4 md:grid-cols-2">
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Efektif Mulai</label><input type="date" name="effective_start_date" value="{{ old('effective_start_date') }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
-                <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Efektif Selesai</label><input type="date" name="effective_end_date" value="{{ old('effective_end_date') }}" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm"></div>
-            </div>
-            <div><label class="text-xs font-black uppercase tracking-widest text-slate-500">Catatan</label><textarea name="notes" rows="3" class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">{{ old('notes') }}</textarea></div>
-            <div class="flex flex-wrap gap-2"><button class="rounded-xl bg-cyan-700 px-4 py-2 text-sm font-black text-white">Sinkronkan Program</button><a href="{{ route('management.pkpa-internal-supervisors.index') }}" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold">Batal</a></div>
-        </form>
-    </div>
+    <a href="{{ route('management.pkpa-internal-supervisors.index', ['program_id' => $selectedProgramId]) }}" class="inline-flex min-h-11 items-center text-sm font-bold text-cyan-700">Kembali ke Pembimbing Dalam</a>
+    @if($errors->any())<div role="alert" class="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{{ $errors->first() }}</div>@endif
+    <h2 class="text-xl font-black text-slate-950">Tambah dosen dari Core</h2>
+    <form method="POST" action="{{ route('management.pkpa-internal-supervisors.store') }}" class="space-y-5">
+        @csrf
+        <input type="hidden" name="mode" value="single">
+        <input type="hidden" name="status" value="active">
+        <label class="block text-sm font-bold text-slate-700">Program PKPA<select name="pkpa_program_id" required class="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm"><option value="">Pilih program</option>@foreach($programs as $program)<option value="{{ $program->id }}" @selected(old('pkpa_program_id', $selectedProgramId) == $program->id)>{{ $program->code }} - {{ $program->name }}</option>@endforeach</select></label>
+        <x-management.core-directory-picker field-name="core_user_id" field-label="Dosen dari Core" :search-url="route('management.core-directory.lecturers')" placeholder="Cari nama, email, atau NIDN dosen" :required="true" :value="old('core_user_id')" helper="Akun harus aktif, memiliki identitas dosen, dan mendapat akses MY PKPA dari Core." />
+        <p class="border-l-4 border-cyan-400 bg-cyan-50 p-4 text-sm text-cyan-950">Dosen pilihan akan diaktifkan untuk seluruh wahana aktif program. Penambahan ini tidak mengubah penugasan mahasiswa atau status dosen lain.</p>
+        <p class="text-sm text-slate-600">Jika dosen tidak ditemukan, periksa data dosen, status akun, dan akses MY PKPA di Core Farmasi. Tidak perlu membuat akun duplikat.</p>
+        <div class="flex flex-wrap gap-3"><button class="min-h-11 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-black text-white">Tambahkan ke Semua Wahana</button><a href="{{ route('management.pkpa-internal-supervisors.index', ['program_id' => $selectedProgramId]) }}" class="inline-flex min-h-11 items-center px-3 text-sm font-bold text-slate-600">Batal</a></div>
+    </form>
 </div>
 @endsection

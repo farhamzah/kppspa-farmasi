@@ -21,6 +21,7 @@
             <label class="block text-sm font-bold text-slate-700 lg:col-span-2">Alasan penggantian<textarea name="reason" rows="3" minlength="10" maxlength="2000" required class="mt-2 w-full rounded-lg border border-slate-300 bg-white p-3 text-sm">{{ old('reason') }}</textarea></label>
         </div>
         @if($supervisors->isEmpty())<p role="alert" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Belum ada dosen aktif untuk seluruh wahana terpilih. Periksa menu Pembimbing Dalam.</p>@endif
+        <a href="{{ route('management.pkpa-internal-supervisors.create', ['program_id' => $publication->pkpa_program_id]) }}" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center text-sm font-bold text-cyan-700">Tambah dosen dari Core</a>
         <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
             <table class="min-w-full text-left text-sm">
                 <thead class="border-b border-slate-200 bg-slate-50 text-slate-600"><tr><th class="p-3">Mahasiswa</th><th class="p-3">Wahana / tempat</th><th class="p-3">Pembimbing saat ini</th><th class="p-3">Periode praktik</th></tr></thead>

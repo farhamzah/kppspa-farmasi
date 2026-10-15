@@ -47,6 +47,53 @@ class PkpaInternalSupervisorService
     /**
      * @return array{created:int,updated:int,total:int}
      */
+    public function addToProgram(PkpaProgram $program, string $coreUserId, ?User $actor): array
+    {
+        if (! $actor?->hasAnyRole(['admin', 'koordinator_kp'])) {
+            throw ValidationException::withMessages(['authorization' => 'Hanya Admin atau Koordinator PKPA yang dapat menambahkan pembimbing.']);
+        }
+        if (in_array($program->status, ['completed', 'archived'], true)) {
+            throw ValidationException::withMessages(['pkpa_program_id' => 'Program sudah selesai atau diarsipkan.']);
+        }
+        $resolved = $this->resolver->resolveInternal(['core_user_id' => $coreUserId]);
+        if (! ($resolved['ok'] ?? false)) {
+            throw ValidationException::withMessages(['core_user_id' => $resolved['message'] ?? 'Dosen belum dapat ditambahkan dari Core.']);
+        }
+
+        return DB::transaction(function () use ($program, $actor, $resolved) {
+            $program = PkpaProgram::whereKey($program->id)->lockForUpdate()->firstOrFail();
+            if (in_array($program->status, ['completed', 'archived'], true)) {
+                throw ValidationException::withMessages(['pkpa_program_id' => 'Program sudah selesai atau diarsipkan.']);
+            }
+            $domains = $program->domains()->where('is_active', true)->get();
+            if ($domains->isEmpty()) {
+                throw ValidationException::withMessages(['pkpa_program_id' => 'Program belum memiliki wahana aktif.']);
+            }
+            $payload = $this->payload($resolved['person'], ['status' => 'active'], $actor);
+            $payload['last_core_sync_message'] = null;
+            $created = $updated = 0;
+            foreach ($domains as $domain) {
+                $eligibility = PkpaInternalSupervisorEligibility::withTrashed()->where('pkpa_program_id', $program->id)
+                    ->where('practice_domain_id', $domain->practice_domain_id)->where('core_user_id', $payload['core_user_id'])->first();
+                $before = $eligibility?->only(['status', 'name_snapshot', 'email_snapshot', 'core_account_status_snapshot']);
+                if ($eligibility) {
+                    if ($eligibility->trashed()) {
+                        $eligibility->restore();
+                    }
+                    $eligibility->fill(collect($payload)->except(['maximum_active_students', 'maximum_students_per_program', 'effective_start_date', 'effective_end_date', 'notes', 'created_by_core_user_id'])->all())->save();
+                    $updated++;
+                } else {
+                    $eligibility = PkpaInternalSupervisorEligibility::create($payload + ['pkpa_program_id' => $program->id, 'practice_domain_id' => $domain->practice_domain_id]);
+                    $created++;
+                }
+                $this->audit->record($actor, 'internal_supervisor_added_to_program', $eligibility, $before, $eligibility->only(['status', 'pkpa_program_id', 'practice_domain_id', 'core_user_id']));
+            }
+
+            return ['created' => $created, 'updated' => $updated, 'total' => $domains->count()];
+        });
+    }
+
+    /** @return array{created:int,updated:int,total:int} */
     public function bootstrapProgram(PkpaProgram $program, array $defaults, ?User $actor, bool $strict = false): array
     {
         $this->validatePayload($defaults);

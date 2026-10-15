@@ -255,6 +255,45 @@ class Tahap03PkpaCapacitySupervisorTest extends TestCase
         $this->assertSame($activeDomainCount, PkpaInternalSupervisorEligibility::where('status', 'inactive')->count());
     }
 
+    public function test_selected_core_lecturer_can_be_added_to_all_domains_without_reactivating_others(): void
+    {
+        $program = $this->createProgram('PKPA-03-SELECTED');
+        $service = app(\App\Services\PkpaInternalSupervisorService::class);
+        $service->addToProgram($program, 'CORE-DOSEN-1', $this->koordinator);
+        PkpaInternalSupervisorEligibility::query()->update(['status' => 'inactive']);
+        $this->fakeCore(['CORE-DEWI' => $this->corePerson('CORE-DEWI', 'apt. Dewi Darwati Agustini', ['pembimbing_dalam'])]);
+        $userCount = User::count();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->get('/management/pkpa-internal-supervisors/create?program_id='.$program->id)->assertOk()
+            ->assertSee('Tambah dosen dari Core')->assertSee('Tambahkan ke Semua Wahana');
+        $this->get('/management/core-directory/lecturers?q=Dewi')->assertOk()->assertJsonFragment(['core_user_id' => 'CORE-DEWI', 'name' => 'apt. Dewi Darwati Agustini']);
+        $payload = ['pkpa_program_id' => $program->id, 'core_user_id' => 'CORE-DEWI', 'mode' => 'single', 'status' => 'active'];
+        $this->post('/management/pkpa-internal-supervisors', $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $domainCount = $program->domains()->where('is_active', true)->count();
+        $this->assertSame($domainCount, PkpaInternalSupervisorEligibility::where('core_user_id', 'CORE-DEWI')->where('status', 'active')->count());
+        $this->assertSame($domainCount, PkpaInternalSupervisorEligibility::where('core_user_id', 'CORE-DOSEN-1')->where('status', 'inactive')->count());
+        $lead = PkpaInternalSupervisorEligibility::where('core_user_id', 'CORE-DEWI')->firstOrFail();
+        $lead->update(['maximum_active_students' => 7]);
+        $this->post('/management/pkpa-internal-supervisors', $payload)->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame($domainCount, PkpaInternalSupervisorEligibility::where('core_user_id', 'CORE-DEWI')->count());
+        $this->assertSame(7, $lead->fresh()->maximum_active_students);
+        $this->assertSame($userCount, User::count(), 'Menambahkan pembimbing bukan membuat akun lokal.');
+    }
+
+    public function test_single_supervisor_addition_requires_selection_and_valid_core_access(): void
+    {
+        $program = $this->createProgram('PKPA-03-SELECTED-INVALID');
+        $payload = ['pkpa_program_id' => $program->id, 'mode' => 'single', 'status' => 'active'];
+        $this->actingAs($this->mahasiswa)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/management/pkpa-internal-supervisors', $payload + ['core_user_id' => 'CORE-DOSEN-1'])->assertForbidden();
+        $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])
+            ->post('/management/pkpa-internal-supervisors', $payload)->assertSessionHasErrors('core_user_id');
+        foreach (['CORE-INACTIVE', 'CORE-NOACCESS', 'CORE-FIELD-1', 'CORE-MISSING'] as $coreId) {
+            $this->post('/management/pkpa-internal-supervisors', $payload + ['core_user_id' => $coreId])->assertSessionHasErrors('core_user_id');
+        }
+        $this->assertSame(0, PkpaInternalSupervisorEligibility::count());
+    }
+
     public function test_preceptor_index_shows_global_preceptor_list(): void
     {
         $programSite = $this->createProgramSite('PKPA-03-F', 'APT-03-F');

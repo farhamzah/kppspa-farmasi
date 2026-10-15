@@ -16,12 +16,15 @@
                 <p class="mt-1 text-sm text-slate-600">Setiap Pembimbing Dalam aktif berlaku untuk seluruh lima wahana pada program yang dipilih.</p>
             </div>
             @if($selectedProgram)
+                <div class="flex flex-wrap gap-2">
+                <a href="{{ route('management.pkpa-internal-supervisors.create', ['program_id' => $selectedProgram->id]) }}" class="inline-flex min-h-11 items-center rounded-lg bg-cyan-700 px-4 py-2 text-sm font-black text-white">Tambah Pembimbing Dalam</a>
                 <form method="POST" action="{{ route('management.pkpa-internal-supervisors.store') }}">
                     @csrf
                     <input type="hidden" name="pkpa_program_id" value="{{ $selectedProgram->id }}">
                     <input type="hidden" name="status" value="active">
-                    <button class="rounded-lg bg-cyan-700 px-4 py-2.5 text-sm font-black text-white">Sinkronkan Semua dari Core</button>
+                    <button class="min-h-11 rounded-lg border border-cyan-200 px-4 py-2.5 text-sm font-black text-cyan-700">Sinkronkan Semua dari Core</button>
                 </form>
+                </div>
             @endif
         </div>
 

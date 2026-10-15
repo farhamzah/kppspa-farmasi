@@ -18,8 +18,12 @@ class PkpaCoreDirectorySearchService
     public function searchInternalSupervisors(?string $query = null, int $limit = 10): array
     {
         $items = collect($this->coreClient->searchLecturers($this->buildParams($query, $limit))['data'] ?? []);
+        $items = $items->merge($this->coreClient->listAppAccessUsers($this->buildParams($query, $limit) + ['role' => 'pembimbing-dalam'])['data'] ?? []);
 
         return $this->filterSupervisors($items, 'internal')
+            ->filter(fn ($person) => blank($query) || collect([$person['name'], $person['email'], $person['core_user_id'], $person['lecturer_id']])
+                ->filter()->contains(fn ($value) => str_contains(strtolower((string) $value), strtolower(trim((string) $query)))))
+            ->take($limit)
             ->map(fn (array $person) => [
                 'core_user_id' => $person['core_user_id'],
                 'label' => $person['name'] ?: $person['core_user_id'],

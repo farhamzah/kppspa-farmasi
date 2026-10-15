@@ -17,6 +17,8 @@ class StorePkpaInternalSupervisorRequest extends FormRequest
     {
         return [
             'pkpa_program_id' => ['required', 'exists:pkpa_programs,id'],
+            'core_user_id' => ['nullable', 'required_if:mode,single', 'string', 'max:80'],
+            'mode' => ['sometimes', Rule::in(['single'])],
             'maximum_active_students' => ['nullable', 'integer', 'min:0'],
             'maximum_students_per_program' => ['nullable', 'integer', 'min:0'],
             'effective_start_date' => ['nullable', 'date'],
