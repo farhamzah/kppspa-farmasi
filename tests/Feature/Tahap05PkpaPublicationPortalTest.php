@@ -1060,6 +1060,41 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertSame($count, PkpaPlacementPlan::count());
     }
 
+    public function test_puskesmas_plotting_repairs_only_migrated_legacy_links_and_keeps_existing_names(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $program = $publication->program;
+        $pem = $program->domains()->whereHas('practiceDomain', fn ($q) => $q->where('code', 'PEM'))->firstOrFail();
+        $legacyDomain = PkpaPracticeDomain::withTrashed()->firstOrCreate(['code' => 'PKM'], ['name' => 'Puskesmas', 'is_active' => false]);
+        $legacy = $pem->replicate();
+        $legacy->fill(['practice_domain_id' => $legacyDomain->id, 'is_active' => false])->save();
+        $legacyDomain->delete();
+        $sites = PkpaProgramSite::where('pkpa_program_id', $program->id)->whereHas('practiceSite', fn ($q) => $q->where('name', 'like', 'Puskesmas %'));
+        $sites->update(['pkpa_program_domain_id' => $legacy->id]);
+        foreach (['Farah Sulistiyangtyas' => 'Farah Sulistyaningtyas', 'Novi Elissa Nurhasanah' => 'Novi Elisa Nurhasanah'] as $source => $actual) {
+            PkpaEnrollment::where('student_name_snapshot', $source)->update(['student_name_snapshot' => $actual]);
+        }
+        $before = PkpaEnrollment::orderBy('id')->get(['id', 'student_name_snapshot', 'student_number'])->toArray();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code])->assertSuccessful();
+        $this->assertSame(29, (clone $sites)->where('pkpa_program_domain_id', $legacy->id)->count());
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+        $this->assertSame(29, (clone $sites)->where('pkpa_program_domain_id', $pem->id)->count());
+        $this->assertFalse($legacy->fresh()->is_active);
+        $this->assertNotNull($legacyDomain->fresh()->deleted_at);
+        $this->assertSame($before, PkpaEnrollment::orderBy('id')->get(['id', 'student_name_snapshot', 'student_number'])->toArray());
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+    }
+
+    public function test_puskesmas_plotting_does_not_reactivate_inactive_government_domain(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $program = $publication->program;
+        $program->domains()->whereHas('practiceDomain', fn ($q) => $q->where('code', 'PEM'))->update(['is_active' => false]);
+        $plans = PkpaPlacementPlan::count();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertFailed();
+        $this->assertSame($plans, PkpaPlacementPlan::count());
+    }
+
     private function puskesmasPlottingFixture(): array
     {
         $publication = $this->publishedFixture('PKPA-PKM-PLOT');

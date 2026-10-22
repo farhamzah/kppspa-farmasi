@@ -67,7 +67,7 @@
     },
     {
       "key": "tegalsari",
-      "name": "Puskesmas Tegalsari",
+      "name": "Puskesmas Telagasari",
       "preceptor": "Teja Kusuma Wardani",
       "front_title": "apt.",
       "back_title": "S.Farm.",
@@ -319,6 +319,7 @@
     },
     {
       "name": "Farah Sulistiyangtyas",
+      "aliases": ["Farah Sulistyaningtyas"],
       "site": "telukjambe"
     },
     {
@@ -386,6 +387,7 @@
     },
     {
       "name": "Novi Elissa Nurhasanah",
+      "aliases": ["Novi Elisa Nurhasanah"],
       "site": "cilamaya"
     },
     {

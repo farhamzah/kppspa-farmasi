@@ -55,3 +55,13 @@ Periksa rancangan current melalui Penyusunan Penempatan. Jalankan validasi dan a
 - Suite seluruh aplikasi belum hijau. Percobaan penuh dihentikan setelah sejumlah kegagalan; pengulangan stop-on-failure menghasilkan 112 lulus, 1 gagal, 323 belum dijalankan. Kegagalan pertama adalah assertion lama `IntegrationReviewScreenTest` yang meminta teks `Pratinjau Dokumen KP untuk TU`, sedangkan view pada HEAD sudah bertuliskan `Pratinjau Dokumen PKPA untuk TU`. File integrasi tersebut tidak diubah patch ini; tidak diklaim seluruh regression lulus.
 - Pengujian menggunakan SQLite in-memory; penerapan MySQL di VPS belum dilakukan oleh agen.
 - Status: persiapan lokal, belum deployment. Persetujuan commit/push terpisah; perubahan Core lain di workspace tidak termasuk patch ini.
+
+## Koreksi Berdasarkan Preview VPS
+
+- Output VPS mengonfirmasi 29 profil mitra sudah tersimpan tanpa akun baru.
+- Seluruh tempat Puskesmas aktif, tetapi `pkpa_program_domain_id` tempat masih mengarah ke PKM lama yang sengaja dinonaktifkan migrasi normalisasi. Command kini menampilkan jumlah tautan yang akan diperbaiki di preview, lalu memperbaiki hanya tautan PKM-ke-PEM yang terverifikasi dalam transaksi plotting. PKM lama tidak diaktifkan dan requirement/rotasi lama tidak dipindahkan secara massal.
+- Perbedaan tautan lain, wahana target nonaktif, atau requirement yang tidak cocok tetap menjadi blocker.
+- Telagasari mengikuti nama tempat aplikasi; Core menerima alias institusi Tegalsari yang dahulu diimport dan mengoreksinya tanpa profil baru.
+- Alias mahasiswa terverifikasi dari output VPS: Farah Sulistyaningtyas dan Novi Elisa Nurhasanah. Nama/NIM aplikasi tidak diubah.
+- Tes khusus plotting setelah koreksi: 6 lulus, 271 assertions. Tes Core import: 4 lulus, 21 assertions. Pint dan build frontend lulus.
+- Pengujian seluruh aplikasi sebelumnya belum hijau sebagaimana dicatat di atas; koreksi ini tidak mengklaim menuntaskan kegagalan legacy tersebut.

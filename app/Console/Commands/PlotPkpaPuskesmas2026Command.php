@@ -8,6 +8,7 @@ use App\Models\PkpaPlacementChangeRequest;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
 use App\Models\PkpaProgram;
+use App\Models\PkpaProgramDomain;
 use App\Models\PkpaProgramSite;
 use App\Models\User;
 use App\Services\PkpaAuditService;
@@ -45,6 +46,10 @@ class PlotPkpaPuskesmas2026Command extends Command
             return [$site['name'], $group->count(), $this->formalName($site), $site['phone'], $first['availability'] ? 'Pakai periode existing' : 'Salin konfigurasi periode lama'];
         })->all());
         $this->line('Periode: '.$data['start_date'].' s.d. '.$data['end_date'].'; 36 mahasiswa, 29 tempat. Rancangan sumber: '.$prepared['plan']->code);
+        $relinks = $prepared['rows']->filter(fn ($r) => $r['program_site']->pkpa_program_domain_id !== $r['target_program_domain']->id)->pluck('program_site.id')->unique()->count();
+        if ($relinks) {
+            $this->warn($relinks.' tautan tempat masih ke wahana PKM lama. Saat --apply, tautan diarahkan ke Pemerintahan aktif; wahana lama tetap nonaktif.');
+        }
         if ($prepared['already_applied']) {
             $this->info('Plotting sudah sesuai pada rancangan aktif. Tidak ada data yang diubah.');
 
@@ -86,6 +91,12 @@ class PlotPkpaPuskesmas2026Command extends Command
                     $siteKey = $row['site']['key'];
                     $site = $row['program_site']->practiceSite;
                     if (! isset($availabilityBySite[$siteKey])) {
+                        if ($row['program_site']->pkpa_program_domain_id !== $row['target_program_domain']->id) {
+                            $programSite = $row['program_site'];
+                            $beforeDomain = $programSite->only(['pkpa_program_domain_id']);
+                            $programSite->update(['pkpa_program_domain_id' => $row['target_program_domain']->id, 'updated_by_core_user_id' => $actor->core_user_id]);
+                            $audit->record($actor, 'puskesmas_program_site_domain_relinked', $programSite, $beforeDomain, $programSite->only(['pkpa_program_domain_id']));
+                        }
                         $before = $site->only(['contact_person_name', 'contact_person_phone']);
                         $site->update(['contact_person_name' => $this->formalName($row['site']), 'contact_person_phone' => $row['site']['phone'], 'updated_by_core_user_id' => $actor->core_user_id]);
                         $audit->record($actor, 'puskesmas_preceptor_contact_recorded', $site, $before, $site->only(array_keys($before)));
@@ -141,7 +152,7 @@ class PlotPkpaPuskesmas2026Command extends Command
         }
         $plan = $currentPlans->first();
         $students = PkpaEnrollment::where('pkpa_program_id', $program->id)->whereIn('status', ['active', 'on_hold'])->with('requirements')->get();
-        $sites = PkpaProgramSite::with(['practiceSite', 'practiceDomain', 'practiceDomainOption', 'programDomain', 'availabilityPeriods', 'practiceSite.fieldSupervisors'])
+        $sites = PkpaProgramSite::with(['practiceSite', 'practiceDomain', 'practiceDomainOption', 'programDomain.practiceDomain', 'availabilityPeriods', 'practiceSite.fieldSupervisors'])
             ->where('pkpa_program_id', $program->id)->where('is_active', true)->whereIn('status', ['active', 'ready'])->get()
             ->filter(fn ($s) => $s->practiceDomainOption?->code === 'PUSKESMAS' || in_array($s->practiceDomain?->code, ['PKM', 'PUSKESMAS'], true));
         $siteCounts = collect($data['students'])->countBy('site');
@@ -162,14 +173,28 @@ class PlotPkpaPuskesmas2026Command extends Command
                     $fail($site['name'].': program-tempat Puskesmas aktif tidak ditemukan atau ambigu.');
                 }
                 $programSite = $siteMatches->first();
-                if (! $programSite->practiceSite->is_active || $programSite->practiceSite->status !== 'active' || ! $programSite->programDomain?->is_active) {
-                    $fail($site['name'].': tempat/wahana tidak aktif.');
+                if (! $programSite->practiceSite->is_active || $programSite->practiceSite->status !== 'active') {
+                    $fail($site['name'].': tempat praktik tidak aktif.');
+                }
+                $targetDomains = PkpaProgramDomain::where('pkpa_program_id', $program->id)->where('practice_domain_id', $programSite->practice_domain_id)->where('is_active', true)->get();
+                if ($targetDomains->count() !== 1) {
+                    $fail($site['name'].': konfigurasi wahana program aktif tidak ditemukan atau ambigu.');
+                }
+                $targetDomain = $targetDomains->first();
+                if ($programSite->pkpa_program_domain_id !== $targetDomain->id && ! (
+                    $programSite->practiceDomain?->code === 'PEM'
+                    && $programSite->practiceDomainOption?->code === 'PUSKESMAS'
+                    && $programSite->programDomain?->pkpa_program_id === $program->id
+                    && $programSite->programDomain?->practiceDomain?->code === 'PKM'
+                    && ! $programSite->programDomain->is_active
+                )) {
+                    $fail($site['name'].': tautan wahana program tidak konsisten; bukan sisa migrasi PKM yang dapat diperbaiki otomatis.');
                 }
                 if ($programSite->practiceSite->cooperation_end_date?->lt(today())) {
                     $fail($site['name'].': kerja sama tempat sudah berakhir.');
                 }
                 $requirement = $student->requirements->firstWhere('practice_domain_id', $programSite->practice_domain_id);
-                if (! $requirement || in_array($requirement->status, ['completed', 'cancelled'], true)) {
+                if (! $requirement || $requirement->pkpa_program_domain_id !== $targetDomain->id || in_array($requirement->status, ['completed', 'cancelled'], true)) {
                     $fail($entry['name'].': kewajiban wahana tidak tersedia atau sudah selesai/dibatalkan.');
                 }
                 $handover = PkpaPlacementChangeRequest::where('pkpa_program_id', $program->id)->where('status', 'applied')->where('request_type', 'internal_supervisor_replacement')
@@ -208,7 +233,7 @@ class PlotPkpaPuskesmas2026Command extends Command
                 if ($fieldMatches->count() > 1 || ($fieldMatches->isNotEmpty() && $fieldMatches->first()->status !== 'active')) {
                     $fail($site['name'].': profil preseptor ambigu atau nonaktif.');
                 }
-                $rows->push(compact('student', 'site', 'requirement', 'availability', 'template') + ['program_site' => $programSite, 'internal' => $eligible->first(), 'field' => $fieldMatches->first()]);
+                $rows->push(compact('student', 'site', 'requirement', 'availability', 'template') + ['program_site' => $programSite, 'target_program_domain' => $targetDomain, 'internal' => $eligible->first(), 'field' => $fieldMatches->first()]);
             } catch (ValidationException $e) {
                 $errors[] = collect($e->errors())->flatten()->implode(' ');
             }
@@ -234,7 +259,7 @@ class PlotPkpaPuskesmas2026Command extends Command
                 $fail('Rancangan hasil import sudah diubah. Periksa manual; command tidak menimpa perubahan berikutnya.');
             }
         }
-        $fingerprint = hash('sha256', json_encode([$plan->id, $plan->updated_at, $publication->id, $plan->assignments()->with('supervisors')->get()->toArray(), $rows->map(fn ($r) => [$r['student']->id, $r['internal']->id, $r['availability']?->id, $r['field']?->id])->all()]));
+        $fingerprint = hash('sha256', json_encode([$plan->id, $plan->updated_at, $publication->id, $plan->assignments()->with('supervisors')->get()->toArray(), $rows->map(fn ($r) => [$r['student']->id, $r['internal']->id, $r['availability']?->id, $r['field']?->id, $r['program_site']->pkpa_program_domain_id, $r['target_program_domain']->id])->all()]));
 
         return compact('program', 'publication', 'plan', 'rows', 'marker', 'fingerprint') + ['already_applied' => $already];
     }
