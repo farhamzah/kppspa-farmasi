@@ -9,11 +9,14 @@ use App\Models\KpPlaceQuota;
 use App\Models\PkpaAssessmentComponent;
 use App\Models\PkpaAssessmentScheme;
 use App\Models\PkpaEnrollment;
+use App\Models\PkpaEnrollmentRequirement;
 use App\Models\PkpaInternalSupervisorEligibility;
 use App\Models\PkpaNotificationDelivery;
 use App\Models\PkpaPlacementChangeRequest;
 use App\Models\PkpaPlacementPlan;
 use App\Models\PkpaPlacementPublication;
+use App\Models\PkpaPlacementValidationIssue;
+use App\Models\PkpaPlacementValidationRun;
 use App\Models\PkpaPracticeDomain;
 use App\Models\PkpaPracticeSite;
 use App\Models\PkpaProgram;
@@ -33,7 +36,10 @@ use App\Models\User;
 use App\Services\PkpaAttendanceService;
 use App\Services\PkpaEnrollmentRequirementService;
 use App\Services\PkpaLogbookService;
+use App\Services\PkpaPlacementChangeRequestService;
 use App\Services\PkpaPlacementNotificationService;
+use App\Services\PkpaPlacementPlanService;
+use App\Services\PkpaPlacementPublicationService;
 use App\Services\PkpaProgramService;
 use App\Services\PkpaReportService;
 use App\Services\PkpaRotationRunService;
@@ -703,7 +709,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     {
         $publication = $this->continuityFixture('PKPA-05-CONTINUITY');
         $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
-        $change = app(\App\Services\PkpaPlacementChangeRequestService::class)->createInternalSupervisorReplacement(
+        $change = app(PkpaPlacementChangeRequestService::class)->createInternalSupervisorReplacement(
             $publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02',
             'Pembimbing lama mengundurkan diri untuk seluruh wahana.', $this->koordinator, true,
         );
@@ -715,7 +721,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     public function test_carry_replacement_previews_applies_all_domains_and_is_idempotent(): void
     {
         $publication = $this->continuityFixture('PKPA-05-CARRY');
-        $service = app(\App\Services\PkpaPlacementChangeRequestService::class);
+        $service = app(PkpaPlacementChangeRequestService::class);
         $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
         $change = $service->createInternalSupervisorReplacement($publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02', 'Pergantian awal hanya diterapkan pada Apotek.', $this->koordinator);
         $service->submit($change, $this->koordinator);
@@ -752,7 +758,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $replacement->fill(['core_user_id' => $newEligibility->core_user_id, 'name_snapshot' => $newEligibility->name_snapshot, 'internal_supervisor_eligibility_id' => $newEligibility->id])->save();
         $old->update(['status' => 'ended']);
         $publication->update(['status' => 'superseded', 'is_current' => false, 'current_key' => null]);
-        $current = app(\App\Services\PkpaPlacementPublicationService::class)->syncLockedPlanToPortal($publication->plan, $this->koordinator);
+        $current = app(PkpaPlacementPublicationService::class)->syncLockedPlanToPortal($publication->plan, $this->koordinator);
         $published = $current->assignments()->with('supervisors')->where('pkpa_enrollment_requirement_id', $apt->pkpa_enrollment_requirement_id)->firstOrFail();
         $this->assertCount(1, $published->supervisors->where('supervisor_type', 'internal'));
         $this->assertSame($this->otherSupervisor->core_user_id, $published->supervisors->firstWhere('supervisor_type', 'internal')->core_user_id);
@@ -779,7 +785,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $rs->supervisors()->where('supervisor_type', 'internal')->update(['core_user_id' => 'CORE-ANOTHER-LECTURER']);
         $publication->refresh()->load('assignments.supervisors');
         $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
-        $change = app(\App\Services\PkpaPlacementChangeRequestService::class)->createInternalSupervisorReplacement(
+        $change = app(PkpaPlacementChangeRequestService::class)->createInternalSupervisorReplacement(
             $publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02',
             'Pembimbing lama mengundurkan diri untuk seluruh wahana.', $this->koordinator, true,
         );
@@ -790,7 +796,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     public function test_carry_replacement_blocks_ineligible_target_without_partial_revision(): void
     {
         $publication = $this->continuityFixture('PKPA-05-CARRY-INACTIVE');
-        $service = app(\App\Services\PkpaPlacementChangeRequestService::class);
+        $service = app(PkpaPlacementChangeRequestService::class);
         $apt = $publication->assignments->firstWhere('practice_domain_name_snapshot', 'Apotek');
         $change = $service->createInternalSupervisorReplacement($publication, [$apt->id], $this->otherSupervisor->core_user_id, '2026-02-02', 'Pergantian awal hanya diterapkan pada Apotek.', $this->koordinator);
         $service->submit($change, $this->koordinator);
@@ -851,9 +857,9 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             $this->assertSame($oldEnds[$run->id], $run->fresh()->scheduled_end_date->toDateString());
         }
         $currentPublication = PkpaPlacementPublication::current()->where('pkpa_program_id', $publication->pkpa_program_id)->firstOrFail();
-        $nextPlan = app(\App\Services\PkpaPlacementPlanService::class)->clone($publication->plan, ['copy_assignments' => false], $this->koordinator);
+        $nextPlan = app(PkpaPlacementPlanService::class)->clone($publication->plan, ['copy_assignments' => false], $this->koordinator);
         $source = $publication->assignments->first()->sourceAssignment;
-        $requirement = \App\Models\PkpaEnrollmentRequirement::findOrFail($source->pkpa_enrollment_requirement_id);
+        $requirement = PkpaEnrollmentRequirement::findOrFail($source->pkpa_enrollment_requirement_id);
         $programSite = PkpaProgramSite::findOrFail($source->pkpa_program_site_id);
         $availability = PkpaSiteAvailabilityPeriod::findOrFail($source->pkpa_site_availability_period_id);
         $oldEligible = PkpaInternalSupervisorEligibility::where('pkpa_program_id', $publication->pkpa_program_id)->where('practice_domain_id', $source->practice_domain_id)->where('core_user_id', $this->internalSupervisor->core_user_id)->firstOrFail();
@@ -904,7 +910,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->actingAs($this->koordinator)->withSession(['active_role' => 'koordinator_kp'])->get('/koordinator/dashboard')
             ->assertOk()->assertViewHas('pkpaPlacementPlannerStats', fn ($stats) => $stats['error'] === 1 && $stats['warning'] === 1)
             ->assertSee('Temuan wajib diperbaiki')->assertSee('Total slot kapasitas terdaftar')->assertSee('Peserta tanpa kelompok (opsional)');
-        $this->assertSame(8, \App\Models\PkpaPlacementValidationIssue::whereIn('placement_validation_run_id', [$old->id, $latest->id])->count(), 'Riwayat tidak boleh dihapus untuk menurunkan angka.');
+        $this->assertSame(8, PkpaPlacementValidationIssue::whereIn('placement_validation_run_id', [$old->id, $latest->id])->count(), 'Riwayat tidak boleh dihapus untuk menurunkan angka.');
     }
 
     public function test_dashboard_flags_stale_validation_without_counting_old_findings(): void
@@ -945,7 +951,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     public function test_dashboard_separates_current_notification_backlog_and_failures(): void
     {
         $publication = $this->publishedFixture('PKPA-05-DASHBOARD-NOTIFY');
-        \App\Models\PkpaNotificationDelivery::query()->update(['status' => 'sent']);
+        PkpaNotificationDelivery::query()->update(['status' => 'sent']);
         config()->set('my_pkpa.database_notifications_enabled', true);
         config()->set('my_pkpa.email_notifications_enabled', false);
         $old = $publication->replicate();
@@ -971,20 +977,126 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
             ->assertOk()->assertViewHas('pkpaPlacementReadinessStats', fn ($stats) => $stats['pembimbing_perlu_sync'] === 0);
     }
 
-    private function dashboardValidationRun(PkpaPlacementPlan $plan): \App\Models\PkpaPlacementValidationRun
+    private function dashboardValidationRun(PkpaPlacementPlan $plan): PkpaPlacementValidationRun
     {
-        return \App\Models\PkpaPlacementValidationRun::create([
+        return PkpaPlacementValidationRun::create([
             'pkpa_placement_plan_id' => $plan->id, 'scope_type' => 'full_plan', 'status' => 'completed_with_errors',
             'started_at' => now(), 'completed_at' => now(),
         ]);
     }
 
-    private function dashboardValidationIssue(\App\Models\PkpaPlacementValidationRun $run, string $severity, bool $resolved = false): void
+    private function dashboardValidationIssue(PkpaPlacementValidationRun $run, string $severity, bool $resolved = false): void
     {
-        \App\Models\PkpaPlacementValidationIssue::create([
+        PkpaPlacementValidationIssue::create([
             'placement_validation_run_id' => $run->id, 'issue_code' => 'DASHBOARD_TEST', 'severity' => $severity,
             'category' => 'completeness', 'message' => 'Temuan fixture dashboard.', 'is_resolved' => $resolved,
         ]);
+    }
+
+    public function test_puskesmas_plotting_preserves_publication_and_uses_existing_student_identity_and_latest_supervisor(): void
+    {
+        [$publication, $source, $data] = $this->puskesmasPlottingFixture();
+        $original = $publication->assignments()->with('supervisors')->get()->toArray();
+        $sourceCount = $source->assignments()->count();
+        $users = User::count();
+        $plans = PkpaPlacementPlan::count();
+        $runtime = PkpaRotationRun::count();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $publication->program->code])->assertSuccessful();
+        $this->assertSame($plans, PkpaPlacementPlan::count());
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $publication->program->code, '--apply' => true])->assertSuccessful();
+        $plan = PkpaPlacementPlan::where('is_current', true)->firstOrFail();
+        $this->assertNotSame($source->id, $plan->id);
+        $rows = $plan->assignments()->where('planning_source', 'puskesmas_roster_2026')->with(['supervisors', 'enrollment'])->get();
+        $this->assertCount(36, $rows);
+        foreach ($rows as $row) {
+            $this->assertSame('2026-11-10', $row->start_date->toDateString());
+            $this->assertSame('2026-12-07', $row->end_date->toDateString());
+            $this->assertStringStartsWith('APP-NIM-', $row->enrollment->student_number);
+            $expected = in_array($row->enrollment->student_name_snapshot, ['Laila Nurul Fadhilah', 'Ahmad Fauzi']) ? 'CORE-DEWI-PKM' : $this->internalSupervisor->core_user_id;
+            $this->assertSame($expected, $row->supervisors->firstWhere('supervisor_type', 'internal')->core_user_id);
+            $this->assertNull($row->supervisors->firstWhere('supervisor_type', 'field')->core_user_id);
+        }
+        $this->assertSame($original, $publication->assignments()->with('supervisors')->get()->toArray());
+        $this->assertSame($sourceCount, $source->assignments()->count());
+        $this->assertSame($users, User::count());
+        $this->assertSame($runtime, PkpaRotationRun::count());
+        $this->assertTrue($publication->fresh()->is_current);
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $publication->program->code, '--apply' => true])->assertSuccessful();
+        $this->assertSame($plans + 1, PkpaPlacementPlan::count());
+    }
+
+    public function test_puskesmas_plotting_blocks_ambiguous_students_without_writes(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $this->enroll($publication->program, 'DUPLICATE-PKM', 'OTHER-NIM')->update(['student_name_snapshot' => 'Yadi']);
+        $before = PkpaPlacementPlan::count();
+        $fields = PkpaSiteFieldSupervisor::count();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $publication->program->code, '--apply' => true])->assertFailed();
+        $this->assertSame($before, PkpaPlacementPlan::count());
+        $this->assertSame($fields, PkpaSiteFieldSupervisor::count());
+    }
+
+    public function test_puskesmas_plotting_rolls_back_everything_when_assignment_validation_fails(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $program = $publication->program;
+        $last = PkpaPracticeSite::where('name', 'Puskesmas Klari')->firstOrFail();
+        PkpaSiteFieldSupervisor::create(['practice_site_id' => $last->id, 'name_snapshot' => 'apt. Tintin Murwantini, S.Farm.', 'status' => 'active', 'effective_end_date' => '2026-10-31']);
+        $counts = [PkpaPlacementPlan::count(), PkpaSiteFieldSupervisor::count(), PkpaSiteAvailabilityPeriod::count()];
+        $source = $publication->plan;
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertFailed();
+        $this->assertSame($counts, [PkpaPlacementPlan::count(), PkpaSiteFieldSupervisor::count(), PkpaSiteAvailabilityPeriod::count()]);
+        $this->assertTrue($source->fresh()->is_current);
+        $this->assertNull(PkpaPracticeSite::where('name', 'Puskesmas Cilamaya')->firstOrFail()->contact_person_phone);
+    }
+
+    public function test_puskesmas_plotting_blocks_insufficient_capacity_before_changes(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $site = PkpaProgramSite::whereHas('practiceSite', fn ($q) => $q->where('name', 'Puskesmas Cilamaya'))->firstOrFail();
+        $site->availabilityPeriods()->update(['maximum_students' => 1]);
+        $count = PkpaPlacementPlan::count();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $publication->program->code, '--apply' => true])->assertFailed();
+        $this->assertSame($count, PkpaPlacementPlan::count());
+    }
+
+    private function puskesmasPlottingFixture(): array
+    {
+        $publication = $this->publishedFixture('PKPA-PKM-PLOT');
+        $program = $publication->program;
+        $program->update(['end_date' => '2026-12-31', 'status' => 'active']);
+        $data = json_decode(file_get_contents(database_path('data/pkpa_puskesmas_2026.json')), true);
+        $first = $publication->assignments->first()->enrollment;
+        $pem = PkpaPracticeDomain::where('code', 'PEM')->firstOrFail();
+        $internal = $this->internal($program, $pem->id, $this->internalSupervisor->core_user_id);
+        $dewi = $this->internal($program, $pem->id, 'CORE-DEWI-PKM');
+        PkpaInternalSupervisorEligibility::query()->update(['maximum_active_students' => null, 'maximum_students_per_program' => null]);
+        $templates = $publication->assignments->filter(fn ($a) => in_array($a->practiceDomain->code, ['APT', 'PBF']))->values();
+        foreach ($data['students'] as $index => $entry) {
+            $student = $index === 0 ? $first : $this->enroll($program, 'CORE-PKM-'.$index, 'APP-NIM-'.$index);
+            $student->update(['student_name_snapshot' => $entry['name'], 'student_number' => 'APP-NIM-'.$index]);
+            foreach ($templates as $template) {
+                $copy = $index === 0 ? $template : $template->replicate();
+                $copy->fill(['pkpa_enrollment_id' => $student->id, 'pkpa_enrollment_requirement_id' => $student->requirements()->where('practice_domain_id', $template->practice_domain_id)->firstOrFail()->id, 'student_core_user_id' => $student->core_user_id, 'student_name_snapshot' => $student->student_name_snapshot, 'student_number_snapshot' => $student->student_number])->save();
+                if ($index !== 0) {
+                    foreach ($template->supervisors as $supervisor) {
+                        $new = $supervisor->replicate();
+                        $new->pkpa_published_assignment_id = $copy->id;
+                        $new->save();
+                    }
+                }
+                $copy->supervisors()->where('supervisor_type', 'internal')->update(['core_user_id' => $internal->core_user_id]);
+            }
+            if (in_array($entry['name'], ['Laila Nurul Fadhilah', 'Ahmad Fauzi'])) {
+                PkpaPlacementChangeRequest::create(['pkpa_program_id' => $program->id, 'pkpa_placement_publication_id' => $publication->id, 'request_number' => 'PKM-REPLACE-'.$index, 'request_type' => 'internal_supervisor_replacement', 'status' => 'applied', 'reason' => 'Fixture pergantian terakhir', 'impact_summary' => ['student_enrollment_ids' => [$student->id], 'replacement_core_user_id' => $dewi->core_user_id, 'replacement_name' => 'Dewi Darwati Agustini']]);
+            }
+        }
+        foreach ($data['sites'] as $index => $site) {
+            $programSite = $this->createProgramSite($program, 'PEM', 'PKM-PLOT-'.$index, 2);
+            $programSite->practiceSite->update(['name' => $site['name']]);
+        }
+
+        return [$publication->refresh(), $publication->plan, $data];
     }
 
     private function publishedFixture(string $code): PkpaPlacementPublication
