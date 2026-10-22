@@ -55,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withCommands([
         \App\Console\Commands\PlotPkpaPuskesmas2026Command::class,
+        \App\Console\Commands\PublishPkpaPuskesmas2026Command::class,
         \App\Console\Commands\AuditPkpaSupervisorContinuityCommand::class,
         \App\Console\Commands\CarryPkpaSupervisorReplacementCommand::class,
         SwitchPkpaInternalValidationCommand::class,

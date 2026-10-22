@@ -74,3 +74,31 @@ Periksa rancangan current melalui Penyusunan Penempatan. Jalankan validasi dan a
 - Pembaruan periode ikut transaksi plotting dan audit before/after; kegagalan pada assignment berikutnya mengembalikan tanggal periode juga. Baris availability dikunci dan snapshot konfigurasi dimasukkan dalam pemeriksaan stale preview.
 - Beberapa periode, tanggal lain yang belum terverifikasi, atau kapasitas tidak cukup tetap ditolak untuk pemeriksaan manual. Core tidak perlu diubah lagi untuk koreksi ini.
 - Verifikasi koreksi periode: 8 tes plotting lulus (306 assertions), seluruh file tes publikasi terkait 32 lulus (824 assertions), Pint dan build frontend lulus. Data VPS belum diubah oleh patch lokal ini.
+
+## Publikasi Khusus Puskesmas
+
+- Validasi VPS rancangan V4 menghasilkan 72 error `ASSIGNMENT_MISSING`, seluruhnya untuk RS/Industri, serta 19 warning `SUPERVISOR_LIMIT_MISSING`. Tidak ada temuan tanggal/kapasitas/bentrok pada laporan tersebut.
+- Command `pkpa:publish-puskesmas-2026` menerbitkan hanya 36 assignment dari plotting terverifikasi. Validasi seluruh rancangan tetap dijalankan; hanya requirement RS/Industri yang belum ditempatkan boleh ditunda dalam publikasi khusus ini. Warning batas beban tetap ditampilkan, tidak diisi angka buatan.
+- Preview menjalankan pemeriksaan di transaksi yang selalu di-rollback, termasuk status/hasil validasi sementara. Apply tetap menolak error lain, warning lain, perubahan roster, atau runtime yang membutuhkan review.
+- Publikasi baru adalah revisi dari publikasi resmi current: snapshot selain requirement Puskesmas disalin persis. Snapshot resmi sebelumnya tidak dihapus. Tanggal, pembimbing, aktivitas dan runtime Apotek/PBF yang tidak berubah dipertahankan.
+- Runtime baru hanya dibentuk untuk Puskesmas; sinkronisasi publikasi dan pembentukan runtime berada di transaksi yang sama. Gagal sinkronisasi membatalkan publikasi.
+- Kebutuhan RS/Industri tidak dinonaktifkan, dihapus, atau dinyatakan selesai. Rancangan global dapat tetap berstatus perlu revisi sampai wahana berikutnya disusun. Tidak memakai kunci/publikasi global sebagai jalan pintas.
+- Publikasi menyimpan snapshot validasi scoped: jumlah error global yang ditunda, requirement RS/Industri terkait, dan jumlah warning batas beban. Notifikasi akun melewati preseptor manual yang tidak memiliki Core user ID; tidak membuat akun otomatis.
+- Menjalankan ulang mendeteksi publikasi yang sama dan tidak membuat revisi tambahan. Perbedaan rancangan sesudah publikasi ditolak untuk alur revisi terpisah.
+- QA publikasi khusus: 4 tes khusus lulus (68 assertions); seluruh file tes publikasi/plotting terkait 36 lulus (892 assertions). Build frontend dan Pint lulus. Suite seluruh aplikasi tetap memiliki kegagalan legacy terpisah yang telah dicatat sebelumnya; tidak diklaim seluruh suite lulus. Publikasi VPS belum dijalankan oleh agen.
+
+Setelah update kode di VPS, jalankan preview:
+
+```sh
+cd /var/www/kppspa-farmasi
+git pull --ff-only origin main
+php artisan optimize:clear
+php artisan pkpa:publish-puskesmas-2026
+```
+
+Setelah backup dan pemeriksaan preview:
+
+```sh
+php artisan pkpa:publish-puskesmas-2026 --apply
+php artisan pkpa:publish-puskesmas-2026
+```

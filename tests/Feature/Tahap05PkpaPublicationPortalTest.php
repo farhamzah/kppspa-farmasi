@@ -48,6 +48,7 @@ use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -1136,6 +1137,106 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertFailed();
         $this->assertSame($plans, PkpaPlacementPlan::count());
         $this->assertSame('2026-11-27', $period->fresh()->end_date->toDateString());
+    }
+
+    public function test_puskesmas_scoped_publication_preserves_other_snapshots_and_runtime_and_is_idempotent(): void
+    {
+        $source = $this->puskesmasPublicationFixture();
+        $program = $source->program;
+        $program->update(['code' => 'PKPA-2026-G1']);
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+        app(PkpaRotationRunService::class)->createFromPublication($source, $this->koordinator);
+        $others = $source->assignments()->whereHas('practiceDomain', fn ($q) => $q->whereIn('code', ['APT', 'PBF']))->with('supervisors')->get();
+        $runtime = PkpaRotationRun::whereIn('pkpa_enrollment_requirement_id', $others->pluck('pkpa_enrollment_requirement_id'))->orderBy('id')->get()->toArray();
+        $normalize = fn ($items) => $items->map(fn ($a) => [
+            'assignment' => collect($a->attributesToArray())->only(array_values(array_diff($a->getFillable(), ['pkpa_placement_publication_id'])))->all(),
+            'supervisors' => $a->supervisors->map(fn ($s) => $s->only(array_values(array_diff($s->getFillable(), ['pkpa_published_assignment_id']))))->all(),
+        ])->keyBy('assignment.pkpa_enrollment_requirement_id')->sortKeys()->all();
+        $before = $normalize($others);
+        $publications = PkpaPlacementPublication::count();
+        $validationRuns = PkpaPlacementValidationRun::count();
+        $exit = Artisan::call('pkpa:publish-puskesmas-2026');
+        $this->assertSame(0, $exit, Artisan::output());
+        $this->assertSame($publications, PkpaPlacementPublication::count());
+        $this->assertSame($validationRuns, PkpaPlacementValidationRun::count());
+        $this->assertTrue($source->fresh()->is_current);
+        $this->artisan('pkpa:publish-puskesmas-2026', ['--apply' => true])->assertSuccessful();
+        $current = PkpaPlacementPublication::where('is_current', true)->firstOrFail();
+        $this->assertNotSame($source->id, $current->id);
+        $this->assertSame(36, $current->assignments()->whereHas('sourceAssignment', fn ($q) => $q->where('planning_source', 'puskesmas_roster_2026'))->count());
+        $this->assertSame($before, $normalize($current->assignments()->whereIn('pkpa_enrollment_requirement_id', $others->pluck('pkpa_enrollment_requirement_id'))->with('supervisors')->get()));
+        $this->assertSame($runtime, PkpaRotationRun::whereIn('pkpa_enrollment_requirement_id', $others->pluck('pkpa_enrollment_requirement_id'))->orderBy('id')->get()->toArray());
+        $plan = PkpaPlacementPlan::where('is_current', true)->firstOrFail();
+        $this->assertGreaterThan(0, PkpaPlacementValidationIssue::whereHas('run', fn ($q) => $q->where('pkpa_placement_plan_id', $plan->id))->where('issue_code', 'ASSIGNMENT_MISSING')->count());
+        app(PkpaPlacementNotificationService::class)->createPublicationNotifications($current, 'test_puskesmas_manual_preceptor');
+        $this->assertSame(0, PkpaNotificationDelivery::whereNull('recipient_core_user_id')->count());
+        $this->artisan('pkpa:publish-puskesmas-2026', ['--apply' => true])->assertSuccessful();
+        $this->assertSame($publications + 1, PkpaPlacementPublication::count());
+    }
+
+    public function test_puskesmas_scoped_publication_does_not_ignore_capacity_errors(): void
+    {
+        $source = $this->puskesmasPublicationFixture();
+        $program = $source->program;
+        $program->update(['code' => 'PKPA-2026-G1']);
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+        PkpaProgramSite::whereHas('practiceSite', fn ($q) => $q->where('name', 'Puskesmas Cilamaya'))->firstOrFail()->availabilityPeriods()->update(['maximum_students' => 0]);
+        $count = PkpaPlacementPublication::count();
+        $validations = PkpaPlacementValidationRun::count();
+        $this->artisan('pkpa:publish-puskesmas-2026', ['--apply' => true])->assertFailed();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+        $this->assertSame($validations, PkpaPlacementValidationRun::count());
+        $this->assertTrue($source->fresh()->is_current);
+    }
+
+    public function test_puskesmas_scoped_publication_rolls_back_when_existing_runtime_needs_review(): void
+    {
+        $source = $this->puskesmasPublicationFixture();
+        $program = $source->program;
+        $program->update(['code' => 'PKPA-2026-G1']);
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+        app(PkpaRotationRunService::class)->createFromPublication($source, $this->koordinator);
+        $run = PkpaRotationRun::where('practice_domain_id', PkpaPracticeDomain::where('code', 'APT')->value('id'))->firstOrFail();
+        $run->update(['status' => 'active', 'scheduled_start_date' => '2026-02-01']);
+        $count = PkpaPlacementPublication::count();
+        $this->artisan('pkpa:publish-puskesmas-2026', ['--apply' => true])->assertFailed();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+        $this->assertTrue($source->fresh()->is_current);
+        $this->assertSame('current', $run->fresh()->publication_sync_status);
+    }
+
+    public function test_puskesmas_scoped_publication_does_not_ignore_missing_apotek_assignments(): void
+    {
+        $source = $this->puskesmasPublicationFixture();
+        $source->program->update(['code' => 'PKPA-2026-G1']);
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--apply' => true])->assertSuccessful();
+        PkpaPlacementPlan::where('is_current', true)->firstOrFail()->assignments()->whereHas('practiceDomain', fn ($q) => $q->where('code', 'APT'))->firstOrFail()->delete();
+        $count = PkpaPlacementPublication::count();
+        $this->artisan('pkpa:publish-puskesmas-2026', ['--apply' => true])->assertFailed();
+        $this->assertSame($count, PkpaPlacementPublication::count());
+        $this->assertTrue($source->fresh()->is_current);
+    }
+
+    private function puskesmasPublicationFixture(): PkpaPlacementPublication
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        PkpaSiteFieldSupervisor::query()->update(['maximum_active_students' => 36]);
+        foreach ($publication->assignments()->whereHas('practiceDomain', fn ($q) => $q->whereIn('code', ['APT', 'PBF']))->get() as $published) {
+            $template = $published->sourceAssignment;
+            $template->availabilityPeriod->update(['maximum_students' => 36]);
+            if ($template->pkpa_enrollment_id === $published->pkpa_enrollment_id) {
+                continue;
+            }
+            $copy = $template->replicate();
+            $copy->fill(['pkpa_enrollment_id' => $published->pkpa_enrollment_id, 'pkpa_enrollment_requirement_id' => $published->pkpa_enrollment_requirement_id])->save();
+            foreach ($template->supervisors as $supervisor) {
+                $new = $supervisor->replicate();
+                $new->pkpa_rotation_assignment_id = $copy->id;
+                $new->save();
+            }
+        }
+
+        return $publication;
     }
 
     private function puskesmasPlottingFixture(): array

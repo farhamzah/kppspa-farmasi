@@ -11,9 +11,7 @@ use Throwable;
 
 class PkpaPlacementNotificationService
 {
-    public function __construct(private readonly PkpaAuditService $audit)
-    {
-    }
+    public function __construct(private readonly PkpaAuditService $audit) {}
 
     public function createPublicationNotifications(PkpaPlacementPublication $publication, string $eventType = 'placement_published'): void
     {
@@ -27,6 +25,9 @@ class PkpaPlacementNotificationService
                 'type' => 'student',
             ]);
             foreach ($assignment->supervisors as $supervisor) {
+                if (blank($supervisor->core_user_id)) {
+                    continue;
+                }
                 $recipients->push([
                     'core_user_id' => $supervisor->core_user_id,
                     'email' => $supervisor->email_snapshot ?: $this->emailForCoreUser($supervisor->core_user_id),
@@ -70,16 +71,19 @@ class PkpaPlacementNotificationService
             if ($delivery->channel === 'database' && ! config('my_pkpa.database_notifications_enabled')) {
                 $delivery->update(['status' => 'skipped', 'last_attempt_at' => now(), 'attempt_count' => $delivery->attempt_count + 1]);
                 $skipped++;
+
                 return;
             }
             if ($delivery->channel === 'mail' && ! config('my_pkpa.email_notifications_enabled')) {
                 $delivery->update(['status' => 'skipped', 'last_attempt_at' => now(), 'attempt_count' => $delivery->attempt_count + 1, 'failure_code' => 'email_disabled']);
                 $skipped++;
+
                 return;
             }
             if ($delivery->channel === 'mail' && blank($delivery->recipient_email_snapshot)) {
                 $delivery->update(['status' => 'skipped', 'last_attempt_at' => now(), 'attempt_count' => $delivery->attempt_count + 1, 'failure_code' => 'email_missing']);
                 $skipped++;
+
                 return;
             }
 

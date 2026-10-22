@@ -253,13 +253,56 @@ class PkpaPlacementPublicationService
         return $publication;
     }
 
-    private function snapshotAssignments(PkpaPlacementPublication $publication, PkpaPlacementPlan $plan, bool $validOnly = false): void
+    public function createPuskesmas2026Revision(PkpaPlacementPublication $source, PkpaPlacementPlan $plan, array $assignmentIds, User $actor): PkpaPlacementPublication
+    {
+        return DB::transaction(function () use ($source, $plan, $assignmentIds, $actor) {
+            if (! config('my_pkpa.publication_enabled') || ! $actor->hasRole('koordinator_kp')) {
+                throw ValidationException::withMessages(['publication' => 'Publikasi harus aktif dan dijalankan Koordinator PKPA.']);
+            }
+            $source = PkpaPlacementPublication::whereKey($source->id)->lockForUpdate()->firstOrFail();
+            $plan = PkpaPlacementPlan::with('program')->whereKey($plan->id)->lockForUpdate()->firstOrFail();
+            $rows = $plan->assignments()->whereIn('id', $assignmentIds)->with('practiceDomain', 'selectedOption')->get();
+            if (! $source->is_current || $source->status !== 'published' || ! $plan->is_current
+                || $plan->pkpa_program_id !== $source->pkpa_program_id || $plan->program->code !== 'PKPA-2026-G1'
+                || $rows->count() !== 36 || $rows->pluck('pkpa_enrollment_id')->unique()->count() !== 36
+                || $rows->contains(fn ($a) => $a->planning_source !== 'puskesmas_roster_2026'
+                    || $a->practiceDomain?->code !== 'PEM' || $a->selectedOption?->code !== 'PUSKESMAS'
+                    || $a->start_date?->toDateString() !== '2026-11-10' || $a->end_date?->toDateString() !== '2026-12-07'
+                    || ! in_array($a->validation_status, ['valid', 'warning'], true))) {
+                throw ValidationException::withMessages(['scope' => 'Publikasi khusus harus tepat 36 penempatan Puskesmas terverifikasi dari rancangan current.']);
+            }
+            $revision = $this->createRevisionFromPublication($source, [], $actor, 'placement_puskesmas_2026_published');
+            // Hanya salinan dalam revisi baru yang diganti. Snapshot resmi sebelumnya tetap utuh.
+            $copies = $revision->assignments()->whereIn('pkpa_enrollment_requirement_id', $rows->pluck('pkpa_enrollment_requirement_id'))->get();
+            foreach ($copies as $copy) {
+                $copy->supervisors()->delete();
+                $copy->delete();
+            }
+            $this->snapshotAssignments($revision, $plan, false, $assignmentIds);
+            $revision->update([
+                'pkpa_placement_plan_id' => $plan->id,
+                'title' => 'Publikasi Puskesmas 10 November-07 Desember 2026',
+                'summary' => array_merge($revision->summary ?? [], [
+                    'puskesmas_source_plan_id' => $plan->id, 'puskesmas_assignments' => 36,
+                    'scope' => 'Puskesmas; publikasi wahana lain dipertahankan',
+                    'assignments' => $revision->assignments()->count(),
+                ]),
+            ]);
+            $this->audit->record($actor, 'puskesmas_scoped_publication_created', $revision, ['source_publication_id' => $source->id], ['plan_id' => $plan->id, 'assignments' => 36]);
+            $revision->unsetRelation('assignments');
+
+            return $revision;
+        });
+    }
+
+    private function snapshotAssignments(PkpaPlacementPublication $publication, PkpaPlacementPlan $plan, bool $validOnly = false, ?array $assignmentIds = null): void
     {
         $assignments = $plan->assignments()
             ->whereHas('programDomain', fn ($query) => $query->where('is_active', true))
             ->with(['enrollment.activeGroupMembership.group', 'requirement', 'practiceDomain', 'selectedOption', 'practiceSite', 'programSite', 'availabilityPeriod', 'supervisors.internalEligibility', 'supervisors.fieldSupervisor'])
             ->whereNotIn('status', ['cancelled', 'superseded'])
             ->when($validOnly, fn ($query) => $query->whereIn('validation_status', ['valid', 'warning']))
+            ->when($assignmentIds !== null, fn ($query) => $query->whereIn('id', $assignmentIds))
             ->get();
 
         foreach ($assignments as $assignment) {
