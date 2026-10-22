@@ -1040,6 +1040,9 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
     {
         [$publication] = $this->puskesmasPlottingFixture();
         $program = $publication->program;
+        $program->update(['code' => 'PKPA-2026-G1']);
+        $early = PkpaProgramSite::whereHas('practiceSite', fn ($q) => $q->where('name', 'Puskesmas Cilamaya'))->firstOrFail()->availabilityPeriods()->firstOrFail();
+        $early->update(['start_date' => '2026-11-10', 'end_date' => '2026-11-27']);
         $last = PkpaPracticeSite::where('name', 'Puskesmas Klari')->firstOrFail();
         PkpaSiteFieldSupervisor::create(['practice_site_id' => $last->id, 'name_snapshot' => 'apt. Tintin Murwantini, S.Farm.', 'status' => 'active', 'effective_end_date' => '2026-10-31']);
         $counts = [PkpaPlacementPlan::count(), PkpaSiteFieldSupervisor::count(), PkpaSiteAvailabilityPeriod::count()];
@@ -1048,6 +1051,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertSame($counts, [PkpaPlacementPlan::count(), PkpaSiteFieldSupervisor::count(), PkpaSiteAvailabilityPeriod::count()]);
         $this->assertTrue($source->fresh()->is_current);
         $this->assertNull(PkpaPracticeSite::where('name', 'Puskesmas Cilamaya')->firstOrFail()->contact_person_phone);
+        $this->assertSame('2026-11-27', $early->fresh()->end_date->toDateString());
     }
 
     public function test_puskesmas_plotting_blocks_insufficient_capacity_before_changes(): void
@@ -1093,6 +1097,45 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $plans = PkpaPlacementPlan::count();
         $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertFailed();
         $this->assertSame($plans, PkpaPlacementPlan::count());
+    }
+
+    public function test_puskesmas_plotting_extends_verified_split_windows_without_new_periods_or_changing_capacity(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $program = $publication->program;
+        $program->update(['code' => 'PKPA-2026-G1']);
+        $early = PkpaProgramSite::whereHas('practiceSite', fn ($q) => $q->where('name', 'Puskesmas Cilamaya'))->firstOrFail()->availabilityPeriods()->firstOrFail();
+        $late = PkpaProgramSite::whereHas('practiceSite', fn ($q) => $q->where('name', 'Puskesmas Klari'))->firstOrFail()->availabilityPeriods()->firstOrFail();
+        $early->update(['start_date' => '2026-11-10', 'end_date' => '2026-11-27']);
+        $late->update(['start_date' => '2026-11-30', 'end_date' => '2026-12-17']);
+        $before = $early->only(['minimum_students', 'maximum_students', 'reserved_slots', 'operational_days', 'daily_start_time', 'daily_end_time']);
+        $published = $publication->assignments()->with('supervisors')->get()->toArray();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code])->assertSuccessful();
+        $this->assertSame('2026-11-27', $early->fresh()->end_date->toDateString());
+        $this->assertSame('2026-11-30', $late->fresh()->start_date->toDateString());
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+        $this->assertSame(['2026-11-10', '2026-12-07'], [$early->fresh()->start_date->toDateString(), $early->fresh()->end_date->toDateString()]);
+        $this->assertSame(['2026-11-10', '2026-12-17'], [$late->fresh()->start_date->toDateString(), $late->fresh()->end_date->toDateString()]);
+        $this->assertSame($before, $early->fresh()->only(array_keys($before)));
+        $this->assertSame(1, $early->programSite->availabilityPeriods()->count());
+        $this->assertSame(1, $late->programSite->availabilityPeriods()->count());
+        $this->assertSame($published, $publication->assignments()->with('supervisors')->get()->toArray());
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
+    }
+
+    public function test_puskesmas_plotting_does_not_choose_between_overlapping_availability_periods(): void
+    {
+        [$publication] = $this->puskesmasPlottingFixture();
+        $program = $publication->program;
+        $program->update(['code' => 'PKPA-2026-G1']);
+        $period = PkpaProgramSite::whereHas('practiceSite', fn ($q) => $q->where('name', 'Puskesmas Cilamaya'))->firstOrFail()->availabilityPeriods()->firstOrFail();
+        $period->update(['start_date' => '2026-11-10', 'end_date' => '2026-11-27']);
+        $copy = $period->replicate();
+        $copy->fill(['start_date' => '2026-11-20', 'end_date' => '2026-12-17'])->save();
+        $plans = PkpaPlacementPlan::count();
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertFailed();
+        $this->assertSame($plans, PkpaPlacementPlan::count());
+        $this->assertSame('2026-11-27', $period->fresh()->end_date->toDateString());
     }
 
     private function puskesmasPlottingFixture(): array

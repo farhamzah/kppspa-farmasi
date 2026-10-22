@@ -65,3 +65,12 @@ Periksa rancangan current melalui Penyusunan Penempatan. Jalankan validasi dan a
 - Alias mahasiswa terverifikasi dari output VPS: Farah Sulistyaningtyas dan Novi Elisa Nurhasanah. Nama/NIM aplikasi tidak diubah.
 - Tes khusus plotting setelah koreksi: 6 lulus, 271 assertions. Tes Core import: 4 lulus, 21 assertions. Pint dan build frontend lulus.
 - Pengujian seluruh aplikasi sebelumnya belum hijau sebagaimana dicatat di atas; koreksi ini tidak mengklaim menuntaskan kegagalan legacy tersebut.
+
+## Periode Putaran Lama dari VPS
+
+- Data VPS menunjukkan satu periode per tempat, bukan duplikasi. Sebanyak 22 tempat belum mencakup seluruh rotasi karena memakai 10-27 November atau 30 November-17 Desember 2026.
+- Untuk program PKPA-2026-G1 dan hanya satu periode dengan tanggal lama tersebut, command menampilkan rencana perluasan di preview. Saat apply, periode yang sama diperluas dengan gabungan batas lama dan 10 November-7 Desember. Periode yang sudah mencakup rotasi tidak dipersempit.
+- ID periode, kapasitas, reserved slots, hari/jam operasional tetap dipertahankan. Tanggal assignment/publikasi/runtime lama tidak ditulis ulang. Tidak dibuat periode tambahan yang bertumpuk.
+- Pembaruan periode ikut transaksi plotting dan audit before/after; kegagalan pada assignment berikutnya mengembalikan tanggal periode juga. Baris availability dikunci dan snapshot konfigurasi dimasukkan dalam pemeriksaan stale preview.
+- Beberapa periode, tanggal lain yang belum terverifikasi, atau kapasitas tidak cukup tetap ditolak untuk pemeriksaan manual. Core tidak perlu diubah lagi untuk koreksi ini.
+- Verifikasi koreksi periode: 8 tes plotting lulus (306 assertions), seluruh file tes publikasi terkait 32 lulus (824 assertions), Pint dan build frontend lulus. Data VPS belum diubah oleh patch lokal ini.
