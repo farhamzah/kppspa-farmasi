@@ -18,4 +18,9 @@ class PkpaLogbookReview extends Model
     {
         return $this->belongsTo(PkpaLogbookEntry::class, 'pkpa_logbook_entry_id');
     }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewer_core_user_id', 'core_user_id');
+    }
 }

@@ -44,6 +44,9 @@
             <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $run->practiceDomain?->name }}</p>
             <h2 class="mt-1 text-xl font-black text-slate-950">{{ $run->practiceSite?->name }}</h2>
             <p class="mt-2 text-sm text-slate-500">{{ $run->scheduled_start_date?->format('d M Y') }} - {{ $run->scheduled_end_date?->format('d M Y') }}</p>
+            @if($run->logbook_revision_count || $run->attendance_revision_count)
+                <p class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-900">Perlu revisi: {{ $run->logbook_revision_count }} logbook, {{ $run->attendance_revision_count }} presensi</p>
+            @endif
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <div class="rounded-xl bg-slate-50 px-4 py-3 text-sm">
                     <p class="text-xs font-black uppercase tracking-widest text-slate-500">Presensi</p>

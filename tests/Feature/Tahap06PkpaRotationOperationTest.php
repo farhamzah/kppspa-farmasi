@@ -751,6 +751,51 @@ class Tahap06PkpaRotationOperationTest extends TestCase
         $this->assertDatabaseHas('pkpa_logbook_entries', ['id' => $entry->id, 'status' => 'draft', 'deleted_at' => null]);
     }
 
+    public function test_student_can_find_internal_revision_comment_and_resubmit_without_losing_review_history(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $run = $this->activatedRun();
+        $this->internalSupervisor->update(['name' => 'Diany Astuti']);
+        $service = app(PkpaLogbookService::class);
+        $payload = ['entry_date' => '2026-07-14', 'title' => 'Pengelolaan sediaan', 'activity_summary' => 'Menerima dan memeriksa obat.', 'learning_outcomes' => 'Penerimaan obat', 'reflection' => 'Perlu belajar dokumentasi', 'practice_minutes' => 420];
+        $entry = $service->save($run, $payload, $this->student);
+        $service->submit($entry, $this->student);
+        $comment = "Lengkapi nomor batch dan tanggal kedaluwarsa.\n<script>alert('revisi')</script>";
+        $service->internalReview($entry->fresh(), 'revision_requested', $comment, $this->internalSupervisor);
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('student.pkpa-operations.index'))->assertOk()->assertSee('Perlu revisi: 1 logbook, 0 presensi');
+        $this->get(route('student.pkpa-operations.show', $run))->assertOk()
+            ->assertSee('Catatan Revisi Pembimbing')->assertSee('Diany Astuti')->assertSee($comment)
+            ->assertDontSee("<script>alert('revisi')</script>", false)
+            ->assertSee('Perbaiki Logbook')->assertSee('href="#logbook-'.$entry->id.'"', false)
+            ->assertSee('Catatan dan Riwayat Pemeriksaan');
+        $this->actingAs($this->otherStudent)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('student.pkpa-operations.show', $run))->assertForbidden()->assertDontSee($comment);
+        $service->save($run, $payload + ['id' => $entry->id], $this->student);
+        $service->submit($entry->fresh(), $this->student);
+        $this->assertSame('submitted', $entry->fresh()->status);
+        $this->assertSame($comment, $entry->reviews()->firstOrFail()->comments);
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('student.pkpa-operations.show', $run))->assertOk()->assertSee($comment)->assertDontSee('id="revision-heading"', false);
+    }
+
+    public function test_student_can_see_attendance_revision_and_reviews_from_preceptor_or_missing_local_reviewer(): void
+    {
+        $run = $this->activatedRun();
+        $attendance = app(PkpaAttendanceService::class)->save($run, ['attendance_date' => '2026-07-14', 'attendance_type' => 'present', 'check_in_time' => '08:00', 'check_out_time' => '15:00'], $this->student);
+        app(PkpaAttendanceService::class)->submit($attendance, $this->student);
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        app(PkpaAttendanceService::class)->review($attendance->fresh(), 'revision_requested', 'Sesuaikan jam pulang dengan kegiatan.', $this->internalSupervisor);
+        $entry = PkpaLogbookEntry::create(['pkpa_rotation_run_id' => $run->id, 'entry_date' => '2026-07-15', 'title' => 'Revisi lama', 'activity_summary' => 'Penerimaan obat.', 'learning_outcomes' => 'Memahami prosedur.', 'reflection' => 'Perlu perbaikan.', 'status' => 'revision_requested']);
+        $entry->reviews()->create(['reviewer_type' => 'field', 'reviewer_core_user_id' => 'CORE-NOT-CACHED', 'action' => 'revision_requested', 'comments' => 'Lengkapi uraian kegiatan lama.', 'reviewed_at' => now()]);
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->get(route('student.pkpa-operations.index'))->assertOk()->assertSee('Perlu revisi: 1 logbook, 1 presensi');
+        $this->get(route('student.pkpa-operations.show', $run))->assertOk()
+            ->assertSee('Sesuaikan jam pulang dengan kegiatan.')->assertSee('Catatan Pemeriksa Presensi')
+            ->assertSee('href="#presensi-'.$attendance->id.'"', false)->assertSee('Perbaiki Presensi')
+            ->assertSee('Lengkapi uraian kegiatan lama.')->assertSee('Preseptor');
+    }
+
     private function activatedRun(): PkpaRotationRun
     {
         $fixture = $this->publishedFixture();

@@ -45,10 +45,34 @@
     $editableAttendanceStatuses = ['draft', 'revision_requested'];
     $attendanceList = $run->attendanceRecords->sortByDesc(fn ($record) => sprintf('%d-%s', $record->submission_status === 'submitted' ? 2 : ($record->submission_status === 'draft' ? 0 : 1), optional($record->attendance_date)->format('Y-m-d')))->values();
     $logbookList = $run->logbookEntries->sortByDesc(fn ($entry) => optional($entry->entry_date)->format('Y-m-d'))->values();
+    $revisionLogbooks = $logbookList->where('status', 'revision_requested');
+    $revisionAttendance = $attendanceList->where('submission_status', 'revision_requested');
 @endphp
 <div class="space-y-5">
     @if(session('status'))<div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{{ session('status') }}</div>@endif
     @if($errors->any())<div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{{ $errors->first() }}</div>@endif
+    @if($revisionLogbooks->isNotEmpty() || $revisionAttendance->isNotEmpty())
+        <section id="catatan-revisi" class="scroll-mt-6 border-l-4 border-amber-500 bg-amber-50 p-5" aria-labelledby="revision-heading">
+            <h2 id="revision-heading" class="text-lg font-black text-amber-950">Catatan Revisi Pembimbing</h2>
+            <p class="mt-1 text-sm text-amber-900">{{ $revisionLogbooks->count() }} logbook dan {{ $revisionAttendance->count() }} presensi perlu diperbaiki.</p>
+            <ul class="mt-3 divide-y divide-amber-200">
+                @foreach($revisionLogbooks as $revisionEntry)
+                    @php($latestRevision = $revisionEntry->reviews->sortByDesc('id')->firstWhere('action', 'revision_requested'))
+                    <li class="py-3">
+                        <a href="#logbook-{{ $revisionEntry->id }}" class="font-bold text-cyan-800 underline">Logbook {{ $revisionEntry->entry_date?->format('d M Y') }}: {{ $revisionEntry->title }}</a>
+                        <p class="mt-1 text-xs text-amber-900">{{ $latestRevision?->reviewer_type === 'field' ? 'Preseptor' : 'Pembimbing Dalam' }}{{ $latestRevision?->reviewer ? ' · '.$latestRevision->reviewer->name : '' }}{{ $latestRevision?->reviewed_at ? ' · '.$latestRevision->reviewed_at->format('d M Y H:i') : '' }}</p>
+                        <p class="mt-2 whitespace-pre-wrap break-words text-sm text-amber-950">{{ $latestRevision?->comments ?: 'Catatan revisi belum tersedia. Hubungi pembimbing untuk rincian perbaikan.' }}</p>
+                    </li>
+                @endforeach
+                @foreach($revisionAttendance as $revisionRecord)
+                    <li class="py-3">
+                        <a href="#presensi-{{ $revisionRecord->id }}" class="font-bold text-cyan-800 underline">Presensi {{ $revisionRecord->attendance_date?->format('d M Y') }}</a>
+                        <p class="mt-2 whitespace-pre-wrap break-words text-sm text-amber-950">{{ $revisionRecord->field_supervisor_notes ?: 'Hubungi pembimbing untuk rincian perbaikan presensi.' }}</p>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
     <section class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-sky-100">
         <p class="text-xs font-black uppercase tracking-widest text-cyan-700">{{ $run->practiceDomain?->name }}</p>
         <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $run->practiceSite?->name }}</h2>
@@ -149,7 +173,7 @@
             </div>
             <div class="mt-4 space-y-3">
                 @forelse($attendanceList as $record)
-                    <details class="group rounded-2xl {{ $record->submission_status === 'draft' ? 'border border-dashed border-slate-300 bg-slate-50 p-3' : 'bg-white p-4 ring-1 ring-slate-200' }}">
+                    <details id="presensi-{{ $record->id }}" @if($record->submission_status === 'revision_requested') open @endif class="group scroll-mt-6 rounded-2xl {{ $record->submission_status === 'draft' ? 'border border-dashed border-slate-300 bg-slate-50 p-3' : 'bg-white p-4 ring-1 ring-slate-200' }}">
                         <summary class="flex cursor-pointer list-none flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
@@ -166,7 +190,7 @@
                                         data-type="{{ $record->attendance_type }}"
                                         data-check-in="{{ $record->check_in_time ? substr((string) $record->check_in_time, 0, 5) : '' }}"
                                         data-check-out="{{ $record->check_out_time ? substr((string) $record->check_out_time, 0, 5) : '' }}"
-                                        data-notes="{{ e($record->student_notes ?? '') }}">Edit Draft</button>
+                                        data-notes="{{ e($record->student_notes ?? '') }}">{{ $record->submission_status === 'revision_requested' ? 'Perbaiki Presensi' : 'Edit Draft' }}</button>
                                     <form method="POST" action="{{ route('student.pkpa-attendance.destroy', $record) }}" onsubmit="return confirm('Hapus presensi draft ini?');">
                                         @csrf
                                         @method('DELETE')
@@ -205,6 +229,12 @@
                                 <p class="text-xs font-black uppercase tracking-widest text-slate-500">Catatan Presensi</p>
                                 <p class="mt-2 text-sm leading-6 text-slate-800">{{ $record->student_notes ?: 'Belum ada catatan.' }}</p>
                             </div>
+                            @if(filled($record->field_supervisor_notes))
+                                <div class="border-l-4 border-amber-400 bg-amber-50 p-4 lg:col-span-2">
+                                    <p class="text-sm font-black text-slate-900">Catatan Pemeriksa Presensi</p>
+                                    <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">{{ $record->field_supervisor_notes }}</p>
+                                </div>
+                            @endif
                         </div>
                     </details>
                 @empty
@@ -229,6 +259,10 @@
         <form method="POST" action="{{ route('student.pkpa-logbooks.store', $run) }}" class="mt-6 grid gap-5" id="logbook-form">
             @csrf
             <input type="hidden" name="id" id="logbook_id">
+            <div id="logbook-edit-review" hidden class="border-l-4 border-amber-400 bg-amber-50 p-4">
+                <p class="font-bold text-amber-950">Catatan Pemeriksa</p>
+                <p id="logbook-edit-review-text" class="mt-2 whitespace-pre-wrap break-words text-sm text-amber-950"></p>
+            </div>
             <div class="grid gap-5 lg:grid-cols-2">
                 <label class="grid gap-2">
                     <span class="text-sm font-black text-slate-700">Tanggal</span>
@@ -324,7 +358,7 @@
             </div>
             <div class="mt-4 space-y-3">
                 @forelse($logbookList as $entry)
-                    <details class="group rounded-2xl {{ $entry->status === 'draft' ? 'border border-dashed border-slate-300 bg-slate-50 p-3' : 'bg-white p-4 ring-1 ring-slate-200' }}">
+                    <details id="logbook-{{ $entry->id }}" @if($entry->status === 'revision_requested') open @endif class="group scroll-mt-6 rounded-2xl {{ $entry->status === 'draft' ? 'border border-dashed border-slate-300 bg-slate-50 p-3' : 'bg-white p-4 ring-1 ring-slate-200' }}">
                         <summary class="flex cursor-pointer list-none flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
@@ -343,7 +377,8 @@
                                         data-activity-summary="{{ e($entry->activity_summary) }}"
                                         data-learning-outcomes="{{ e($entry->learning_outcomes) }}"
                                         data-reflection="{{ e($entry->reflection) }}"
-                                        data-practice-minutes="{{ $entry->practice_minutes ?? '' }}">Edit Draft</button>
+                                        data-review-comments="{{ $entry->reviews->sortByDesc('id')->first()?->comments ?? '' }}"
+                                        data-practice-minutes="{{ $entry->practice_minutes ?? '' }}">{{ $entry->status === 'revision_requested' ? 'Perbaiki Logbook' : 'Edit Draft' }}</button>
                                     <form method="POST" action="{{ route('student.pkpa-logbooks.destroy', $entry) }}" onsubmit="return confirm('Hapus logbook draft ini?');">
                                         @csrf
                                         @method('DELETE')
@@ -354,10 +389,22 @@
                             </div>
                         </summary>
                         <div class="mt-4 grid gap-4 border-t border-dashed border-slate-200 pt-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-                            <div class="rounded-xl {{ $entry->status === 'draft' ? 'bg-amber-50 text-amber-900' : ($entry->status === 'submitted' ? 'bg-cyan-50 text-cyan-900' : ($entry->status === 'field_approved' ? 'bg-sky-50 text-sky-900' : 'bg-emerald-50 text-emerald-900')) }} px-4 py-3 xl:col-span-2">
+                            <div class="rounded-xl {{ in_array($entry->status, ['draft', 'revision_requested', 'rejected'], true) ? 'bg-amber-50 text-amber-900' : ($entry->status === 'submitted' ? 'bg-cyan-50 text-cyan-900' : ($entry->status === 'field_approved' ? 'bg-sky-50 text-sky-900' : 'bg-emerald-50 text-emerald-900')) }} px-4 py-3 xl:col-span-2">
                                 <p class="font-black">{{ $entry->status === 'draft' ? 'Draf belum dikirim' : ($entry->status === 'submitted' ? 'Sudah terkirim ke Pembimbing Dalam' : ($entry->status === 'field_approved' ? 'Sudah disetujui Preseptor, menunggu Pembimbing Dalam' : ($entry->status === 'internal_approved' ? 'Tervalidasi final oleh Pembimbing Dalam' : 'Memerlukan tindak lanjut mahasiswa'))) }}</p>
                                 <p class="mt-1 text-sm">{{ $entry->status === 'draft' ? 'Edit atau tambahkan bukti, lalu kirim ketika isi sudah lengkap.' : ($entry->submitted_at ? 'Dikirim pada '.$entry->submitted_at->format('d M Y H:i') : 'Status dicatat oleh sistem.') }}</p>
                             </div>
+                            @if($entry->reviews->isNotEmpty())
+                                <section class="min-w-0 border-l-4 border-amber-400 bg-amber-50 p-4 xl:col-span-2" aria-label="Catatan pemeriksa logbook">
+                                    <h5 class="font-black text-slate-950">Catatan dan Riwayat Pemeriksaan</h5>
+                                    @foreach($entry->reviews->sortByDesc('id') as $review)
+                                        <div class="mt-3 border-t border-amber-200 pt-3">
+                                            <p class="text-sm font-bold text-slate-800">{{ $review->reviewer_type === 'internal' ? 'Pembimbing Dalam' : 'Preseptor' }}{{ $review->reviewer ? ' · '.$review->reviewer->name : '' }} · {{ ['approved' => 'Disetujui', 'revision_requested' => 'Minta Revisi', 'rejected' => 'Ditolak'][$review->action] ?? 'Diperiksa' }}</p>
+                                            <p class="mt-1 text-xs text-slate-600">{{ $review->reviewed_at?->format('d M Y H:i') }}</p>
+                                            <p class="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">{{ $review->comments ?: 'Tidak ada catatan tambahan.' }}</p>
+                                        </div>
+                                    @endforeach
+                                </section>
+                            @endif
                             <div class="space-y-4">
                                 <div class="grid gap-3 lg:grid-cols-2">
                                     <div class="rounded-xl bg-slate-50 px-4 py-3">
@@ -459,6 +506,12 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const openLinkedEntry = () => {
+        const linkedEntry = document.getElementById(window.location.hash.slice(1));
+        if (linkedEntry instanceof HTMLDetailsElement) linkedEntry.open = true;
+    };
+    openLinkedEntry();
+    window.addEventListener('hashchange', openLinkedEntry);
     const attendanceForm = document.getElementById('attendance-form');
     const attendanceRecordId = document.getElementById('attendance_record_id');
     const attendanceDate = document.getElementById('attendance_date');
@@ -544,6 +597,8 @@ document.addEventListener('DOMContentLoaded', () => {
             logbookLearningOutcomes.value = button.dataset.learningOutcomes || '';
             logbookReflection.value = button.dataset.reflection || '';
             logbookPracticeMinutes.value = button.dataset.practiceMinutes || '';
+            document.getElementById('logbook-edit-review-text').textContent = button.dataset.reviewComments || '';
+            document.getElementById('logbook-edit-review').hidden = !button.dataset.reviewComments;
             logbookSubmitButton.textContent = 'Perbarui dan Kirim ke Pembimbing Dalam';
             logbookDraftButton.textContent = 'Simpan Perubahan Draf';
             logbookForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -553,6 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logbookResetButton?.addEventListener('click', () => {
         logbookForm.reset();
         logbookId.value = '';
+        document.getElementById('logbook-edit-review').hidden = true;
         evidenceLinkList?.querySelectorAll('[data-evidence-link-row]').forEach((row, index) => {
             if (index > 0) {
                 row.remove();
