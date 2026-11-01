@@ -17,6 +17,7 @@ use App\Support\PkpaHealthOfficePortfolio;
 use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaLokaPomPortfolio;
+use App\Support\PkpaPbfCasePrivacy;
 use App\Support\PkpaPbfPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Support\PkpaPuskesmasPortfolio;
@@ -363,7 +364,7 @@ class PkpaPortfolioBuilderService
             ->filter(fn (mixed $drug): bool => is_array($drug) && collect($drug)->contains(fn (mixed $value): bool => filled($value)))
             ->values()
             ->all();
-        $warnings = $this->patientPrivacyWarnings($data);
+        $warnings = $this->patientPrivacyWarnings($data, PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code));
         if ($warnings !== []) {
             throw ValidationException::withMessages(['privacy' => implode(' ', $warnings)]);
         }
@@ -880,8 +881,11 @@ class PkpaPortfolioBuilderService
         };
     }
 
-    private function patientPrivacyWarnings(array $data): array
+    private function patientPrivacyWarnings(array $data, bool $isPbf = false): array
     {
+        if ($isPbf) {
+            return PkpaPbfCasePrivacy::warnings($data);
+        }
         $warnings = [];
         $text = collect($data)->flatten()->filter(fn ($value) => is_scalar($value))->implode(' ');
         foreach (self::PATIENT_IDENTIFIER_PATTERNS as $pattern) {
@@ -899,7 +903,9 @@ class PkpaPortfolioBuilderService
 
     private function portfolioPrivacyFindings(PkpaRotationPortfolio $portfolio): array
     {
-        return $portfolio->caseReports->flatMap(fn ($case) => $this->patientPrivacyWarnings($case->toArray()))->unique()->values()->all();
+        $isPbf = PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code);
+
+        return $portfolio->caseReports->flatMap(fn ($case) => $this->patientPrivacyWarnings($case->toArray(), $isPbf))->unique()->values()->all();
     }
 
     private function requiredReflectionCount(PkpaRotationRun $run): int

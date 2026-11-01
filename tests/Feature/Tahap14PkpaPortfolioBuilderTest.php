@@ -1074,6 +1074,40 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         }
     }
 
+    public function test_pbf_case_with_surat_jalan_saves_without_false_patient_warning(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->fixtureRun('PBF', 'PBFPRIV'), $this->admin);
+        $url = '/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/studi-kasus';
+        $data = ['case_code' => 'PBF-PRIVACY', 'complaint' => 'Nomor faktur berbeda dengan surat jalan.', 'history' => 'Alur distribusi berjalan sesuai CDOB. Nama pasien tidak dicantumkan.', 'anonymization_confirmed' => '1'];
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])->post($url, $data)->assertRedirect()->assertSessionHasNoErrors();
+        $case = $portfolio->caseReports()->firstOrFail();
+        $this->assertSame($data['complaint'], $case->complaint);
+        $this->assertSame([], $case->privacy_warnings);
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])->post($url, array_replace($data, ['complaint' => 'Nama pasien: Budi Santoso']))->assertRedirect()->assertSessionHasErrors('privacy');
+        $this->assertSame($data['complaint'], $case->fresh()->complaint);
+        $this->assertSame(1, $portfolio->caseReports()->count());
+    }
+
+    public function test_pbf_privacy_check_is_consistent_during_internal_review(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $service = app(PkpaPortfolioBuilderService::class);
+        $portfolio = $service->ensureForRun($this->fixtureRun('PBF', 'PBFREVPRIV'), $this->admin);
+        $service->acknowledgeIntegrity($portfolio, $this->student);
+        foreach (['site_profile', 'distribution'] as $code) {
+            $payload = collect(PkpaPbfPortfolio::sectionDefinition($code)['fields'])->mapWithKeys(fn ($field) => [$field['name'] => 'Analisis distribusi dan surat jalan sesuai CDOB.'])->all();
+            $service->saveSectionRecord($portfolio->fresh(), $code, $payload, $this->student);
+        }
+        $service->saveCase($portfolio->fresh(), ['case_code' => 'PBF-REVIEW', 'complaint' => 'Verifikasi surat jalan dan faktur.', 'anonymization_confirmed' => true], $this->student);
+        $service->saveReflection($portfolio->fresh(), ['week_number' => 1, 'target' => 'Memahami distribusi', 'achievement' => 'Memahami dokumen distribusi', 'next_plan' => 'Mendalami CDOB'], $this->student);
+        $service->saveSelfAssessment($portfolio->fresh(), ['aspect' => 'Distribusi', 'score' => 4, 'evidence_experience' => 'Pemeriksaan dokumen'], $this->student);
+        $service->saveDocumentation($portfolio->fresh(), ['activity' => 'Distribusi', 'anonymization_confirmed' => true, 'consent_confirmed' => true], null, $this->student);
+        $service->submit($portfolio->fresh(), $this->student);
+        $service->review($portfolio->fresh(), 'internal', 'approve', 'Sesuai CDOB.', $this->internalSupervisor);
+        $this->assertSame('approved', $portfolio->fresh()->status);
+    }
+
     private function fixtureRun(string $domainCode = 'APT', string $suffix = '14', ?string $domainOptionCode = null): PkpaRotationRun
     {
         $program = app(PkpaProgramService::class)->create(['code' => 'PKPA-'.$suffix, 'name' => 'Program Tahap '.$suffix, 'academic_year' => '2026/2027', 'cohort_name' => 'Demo', 'start_date' => '2026-07-01', 'end_date' => '2026-07-31'], $this->admin);
