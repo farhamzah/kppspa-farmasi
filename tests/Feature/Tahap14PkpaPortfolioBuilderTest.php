@@ -34,6 +34,8 @@ use App\Support\PkpaLokaPomPortfolio;
 use App\Support\PkpaPbfPortfolio;
 use App\Support\PkpaPortfolioTextFormatter;
 use App\Support\PkpaPuskesmasPortfolio;
+use App\Support\PkpaPuskesmasPortfolioRevision;
+use App\Support\SimplePdfReport;
 use Database\Seeders\PkpaMasterSeeder;
 use Database\Seeders\PkpaPortfolioTemplateSeeder;
 use Database\Seeders\RoleSeeder;
@@ -305,7 +307,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
 
     private function signedPdfFixture(): UploadedFile
     {
-        return UploadedFile::fake()->createWithContent('nama-file-bebas.pdf', \App\Support\SimplePdfReport::table('Scan fixture', [], ['Tanda tangan'], [['Fixture mahasiswa dan Preseptor']]));
+        return UploadedFile::fake()->createWithContent('nama-file-bebas.pdf', SimplePdfReport::table('Scan fixture', [], ['Tanda tangan'], [['Fixture mahasiswa dan Preseptor']]));
     }
 
     public function test_incomplete_portfolio_cannot_be_verified_and_coordinator_can_reopen_it(): void
@@ -437,7 +439,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $docx->update(['metadata' => ['generator_version' => 1]]);
         $regeneratedDocx = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
         $this->assertNotSame($docx->id, $regeneratedDocx->id);
-        $this->assertSame(4, data_get($regeneratedDocx->metadata, 'generator_version'));
+        $this->assertSame(5, data_get($regeneratedDocx->metadata, 'generator_version'));
         $regeneratedXml = $this->docxDocumentXml(Storage::disk($regeneratedDocx->disk)->path($regeneratedDocx->path));
         $this->assertStringContainsString('Tanda Tangan Mahasiswa', $regeneratedXml);
         $this->assertStringContainsString('Tanda Tangan Preseptor', $regeneratedXml);
@@ -947,6 +949,129 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
             ->assertOk()
             ->assertSee('Sudah disetujui secara elektronik')
             ->assertSee('Scan untuk mengecek keaslian lembar persetujuan ini.');
+    }
+
+    public function test_puskesmas_revision_reference_is_retained_and_criteria_match_source(): void
+    {
+        $reference = PkpaPuskesmasPortfolioRevision::reference();
+        $this->assertSame($reference['sha256'], hash_file('sha256', base_path('docs/referensi-portofolio/'.$reference['source'])));
+        $this->assertCount(20, $reference['self_assessment']);
+        $this->assertCount(22, $reference['preceptor_assessment']);
+        $this->assertCount(13, $reference['internal_assessment']);
+        $this->assertStringContainsString('VISI PSPPA', implode(' ', $reference['vision_mission']));
+        $this->assertStringNotContainsString('IDENTITAS MAHASISWA', implode(' ', $reference['rules']));
+    }
+
+    public function test_puskesmas_revision_command_is_preview_first_and_preserves_old_records_and_grades(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('PEM', 'REV', 'PUSKESMAS');
+        $portfolio = $service->ensureForRun($run, $this->admin);
+        $old = $service->saveSectionRecord($portfolio, 'site_profile', ['overview' => 'Profil lama tetap disimpan'], $this->student);
+        $grade = $run->gradeResults()->first()->toArray();
+        $this->artisan('pkpa:setup-puskesmas-portfolio-revision', ['--program' => 'PKPA-REV', '--upgrade-drafts' => true])->assertExitCode(0);
+        $this->assertDatabaseMissing('pkpa_portfolio_templates', ['code' => 'PORT-PKM-v2']);
+        $this->artisan('pkpa:setup-puskesmas-portfolio-revision', ['--program' => 'PKPA-REV', '--upgrade-drafts' => true, '--apply' => true])->assertExitCode(0);
+        $this->assertSame('PORT-PKM-v2', $portfolio->fresh()->template->code);
+        $this->assertSame('Profil lama tetap disimpan', $old->fresh()->manual_payload['overview']);
+        $this->assertSame($grade, $run->gradeResults()->first()->toArray());
+        $this->assertDatabaseHas('pkpa_portfolio_section_records', ['pkpa_rotation_portfolio_id' => $portfolio->id, 'section_code' => 'clinical_services']);
+        $this->assertSame('PORT-APT-v1', $service->ensureForRun($this->run)->template->code);
+        $this->artisan('pkpa:setup-puskesmas-portfolio-revision', ['--program' => 'PKPA-REV', '--upgrade-drafts' => true, '--apply' => true])->assertExitCode(0);
+        $this->assertSame(1, PkpaPortfolioTemplate::where('code', 'PORT-PKM-v2')->count());
+    }
+
+    public function test_puskesmas_revision_does_not_retemplate_submitted_portfolios_on_view(): void
+    {
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('PEM', 'SAFE', 'PUSKESMAS');
+        $portfolio = $service->ensureForRun($run, $this->admin);
+        $portfolio->update(['status' => 'submitted_to_internal_supervisor', 'submitted_at' => now()]);
+        $this->artisan('pkpa:setup-puskesmas-portfolio-revision', ['--program' => 'PKPA-SAFE', '--upgrade-drafts' => true, '--apply' => true])->assertExitCode(0);
+        $this->assertSame('PORT-PKM-v1', $service->ensureForRun($run)->template->code);
+        $this->assertSame('submitted_to_internal_supervisor', $portfolio->fresh()->status);
+    }
+
+    public function test_puskesmas_revision_self_assessment_uses_four_point_scale_and_excludes_na(): void
+    {
+        $class = PkpaPuskesmasPortfolioRevision::class;
+        $payload = [];
+        foreach ($class::reference()['self_assessment'] as $index => $criterion) {
+            $payload['ratings'][$criterion['code']] = $index === 0 ? ['score' => '4', 'evidence' => 'Praktik pelayanan tersamarkan'] : ['score' => 'NA', 'reason' => 'Kegiatan tidak tersedia'];
+        }
+        foreach (['strength', 'weakness', 'meaningful_experience', 'obstacles'] as $key) {
+            $payload[$key] = 'Refleksi mahasiswa';
+        }
+        $payload['improvement_plan'] = [['Pelayanan', 'Belajar bersama pembimbing', 'Desember 2026', 'Mampu menjelaskan']];
+        $payload['_result'] = ['score' => 1];
+        $clean = $class::clean('puskesmas_self_assessment', $payload);
+        $this->assertSame(100.0, $clean['_result']['score']);
+        $this->assertSame(1, $clean['_result']['assessed']);
+        $this->assertTrue($class::completed('puskesmas_self_assessment', $clean));
+        $clean['ratings']['item_02']['reason'] = '';
+        $this->assertFalse($class::completed('puskesmas_self_assessment', $clean));
+        $payload['ratings']['item_01']['score'] = '5';
+        $this->expectException(ValidationException::class);
+        $class::clean('puskesmas_self_assessment', $payload);
+    }
+
+    public function test_puskesmas_revision_tables_require_complete_rows_or_na_reason_and_reject_unknown_keys(): void
+    {
+        $class = PkpaPuskesmasPortfolioRevision::class;
+        $payload = ['regulations' => [['Permenkes', 'Pelayanan kefarmasian']], 'organization' => 'Organisasi Puskesmas', 'roles' => [['Farmasi', 'Pelayanan', 'Pengkajian resep']], 'pharmacy_roles_na' => 'Tidak ada struktur terpisah'];
+        $this->assertTrue($class::completed('regulation_organization', $class::clean('regulation_organization', $payload)));
+        $payload['regulations'][0][1] = '';
+        $this->assertFalse($class::completed('regulation_organization', $class::clean('regulation_organization', $payload)));
+        $payload['regulations'][0]['unexpected'] = 'not allowed';
+        $this->expectException(ValidationException::class);
+        $class::clean('regulation_organization', $payload);
+    }
+
+    public function test_puskesmas_revision_student_supervisor_and_word_use_revised_sections(): void
+    {
+        config()->set('my_pkpa.preceptor_document_validation_enabled', false);
+        $service = app(PkpaPortfolioBuilderService::class);
+        $run = $this->fixtureRun('PEM', 'WORDREV', 'PUSKESMAS');
+        $this->artisan('pkpa:setup-puskesmas-portfolio-revision', ['--program' => 'PKPA-WORDREV', '--apply' => true])->assertExitCode(0);
+        $portfolio = $service->ensureForRun($run, $this->admin);
+        $this->assertSame('PORT-PKM-v2', $portfolio->template->code);
+        $record = $service->saveSectionRecord($portfolio, 'regulation_organization', ['regulations' => [['Acuan pelayanan', 'Uraian regulasi anonim']], 'organization' => "Struktur organisasi\nRuang farmasi", 'roles_na' => 'Tidak tersedia', 'pharmacy_roles_na' => 'Tidak terpisah'], $this->student);
+        $this->assertSame('completed', $record->status);
+        $progress = $service->completeness($portfolio->fresh());
+        $this->assertNull(collect($progress['checks'])->firstWhere('key', 'reflection'));
+        $response = $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])->get('/mahasiswa/portofolio-pkpa/'.$portfolio->id)
+            ->assertOk()->assertSee('PORTOFOLIO VII')->assertSee('Acuan pelayanan')->assertSee('20 kompetensi')->assertDontSee('Skor 1-5');
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/infection_prevention', ['_pkm_complete' => '1', 'pharmacist_role' => 'Pencegahan infeksi secara aman'])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame('Pencegahan infeksi secara aman', $portfolio->sectionRecords()->where('section_code', 'infection_prevention')->first()->manual_payload['pharmacist_role']);
+        $this->actingAs($this->student)->withSession(['active_role' => 'mahasiswa'])
+            ->post('/mahasiswa/portofolio-pkpa/'.$portfolio->id.'/bagian/infection_prevention', ['pharmacist_role' => 'Tidak lengkap'])->assertSessionHasErrors('_pkm_complete');
+        $this->assertSame('Pencegahan infeksi secara aman', $portfolio->sectionRecords()->where('section_code', 'infection_prevention')->first()->manual_payload['pharmacist_role']);
+        $this->actingAs($this->internalSupervisor)->withSession(['active_role' => 'pembimbing_dalam'])->get('/pembimbing-dalam/review-portofolio/'.$portfolio->id)
+            ->assertOk()->assertSee('Uraian regulasi anonim')->assertSee('PORTOFOLIO VII');
+        $export = $service->export($portfolio->fresh(), 'docx', $this->koordinator);
+        $path = Storage::disk($export->disk)->path($export->path);
+        $this->assertDocx($path);
+        $text = $this->docxDocumentXml($path);
+        foreach (['PORTOFOLIO VII', 'Uraian regulasi anonim', 'Lembar Penilaian Preseptor', 'Lembar Penilaian Dosen', '60%', '40%', 'N/A'] as $expected) {
+            $this->assertStringContainsString($expected, $text);
+        }
+        $this->assertStringNotContainsString('Skor 1-5', $text);
+        $this->assertStringNotContainsString('divalidasi oleh Preseptor', $text);
+        $this->assertStringContainsString('Portofolio PKPA Puskesmas', $text);
+        $pdf = $service->export($portfolio->fresh(), 'pdf', $this->koordinator);
+        $this->assertStringStartsWith('%PDF-', Storage::disk($pdf->disk)->get($pdf->path));
+        if (getenv('PKPA_REVISION_QA_DIR')) {
+            $directory = getenv('PKPA_REVISION_QA_DIR');
+            if (! is_dir($directory)) {
+                mkdir($directory, 0777, true);
+            }
+            copy($path, $directory.'/puskesmas-revision-qa.docx');
+            $html = $response->getContent();
+            $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
+            $css = file_get_contents(public_path('build/'.$manifest['resources/css/app.css']['file']));
+            file_put_contents($directory.'/puskesmas-revision-qa.html', str_replace('</head>', '<style>'.$css.'</style></head>', $html));
+        }
     }
 
     private function fixtureRun(string $domainCode = 'APT', string $suffix = '14', ?string $domainOptionCode = null): PkpaRotationRun

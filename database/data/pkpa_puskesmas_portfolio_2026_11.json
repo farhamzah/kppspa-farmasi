@@ -1,0 +1,1648 @@
+{
+  "source": "PORTOFOLIO_PUSKESMAS_REVISI_2026-11-01.docx",
+  "sha256": "d4c29b36e9841d71259475e3a2b770e4577d47f2b21ecbf54fd6b0325867f721",
+  "revision": "2026-11-01",
+  "self_assessment": [
+    {
+      "code": "item_01",
+      "title": "Regulasi dan tata kelola",
+      "indicator": "Memahami regulasi kefarmasian, struktur organisasi, serta peran apoteker."
+    },
+    {
+      "code": "item_02",
+      "title": "Perencanaan perbekalan farmasi",
+      "indicator": "Mengidentifikasi data kebutuhan dan metode perencanaan obat, alkes, dan BMHP."
+    },
+    {
+      "code": "item_03",
+      "title": "Permintaan dan pengadaan",
+      "indicator": "Memahami alur permintaan rutin/khusus dan pengadaan sesuai prosedur."
+    },
+    {
+      "code": "item_04",
+      "title": "Penerimaan perbekalan farmasi",
+      "indicator": "Memeriksa jenis, jumlah, kondisi, bets, kedaluwarsa, dokumen, dan pengiriman."
+    },
+    {
+      "code": "item_05",
+      "title": "Penyimpanan perbekalan farmasi",
+      "indicator": "Menerapkan FEFO/FIFO, pengendalian suhu, keamanan, dan penyimpanan obat khusus."
+    },
+    {
+      "code": "item_06",
+      "title": "Distribusi perbekalan farmasi",
+      "indicator": "Memahami distribusi ke unit pelayanan serta pencatatan dan ketertelusuran."
+    },
+    {
+      "code": "item_07",
+      "title": "Pengendalian dan administrasi",
+      "indicator": "Memahami kartu stok, stok opname, serta pengendalian obat rusak/kedaluwarsa."
+    },
+    {
+      "code": "item_08",
+      "title": "Pemusnahan dan penarikan",
+      "indicator": "Memahami alasan, prosedur, dokumentasi, dan tindak lanjut."
+    },
+    {
+      "code": "item_09",
+      "title": "Pengkajian resep",
+      "indicator": "Mengkaji aspek administratif, farmasetik, klinis, dan masalah terkait obat."
+    },
+    {
+      "code": "item_10",
+      "title": "Dispensing dan penyerahan obat",
+      "indicator": "Menyiapkan obat, memberi etiket, pemeriksaan akhir, dan informasi obat."
+    },
+    {
+      "code": "item_11",
+      "title": "Pelayanan Informasi Obat",
+      "indicator": "Mengidentifikasi pertanyaan, mencari referensi tepercaya, dan mendokumentasikan PIO."
+    },
+    {
+      "code": "item_12",
+      "title": "Konseling pasien",
+      "indicator": "Melakukan komunikasi dua arah, edukasi penggunaan obat, dan konfirmasi pemahaman."
+    },
+    {
+      "code": "item_13",
+      "title": "Pemantauan terapi dan ESO",
+      "indicator": "Mengidentifikasi masalah terapi/dugaan ESO dan menyampaikan rekomendasi sesuai kewenangan."
+    },
+    {
+      "code": "item_14",
+      "title": "Visite/kolaborasi klinis",
+      "indicator": "Berpartisipasi dalam visite/koordinasi klinis apabila tersedia di wahana."
+    },
+    {
+      "code": "item_15",
+      "title": "Evaluasi penggunaan obat dan mutu",
+      "indicator": "Memahami indikator penggunaan obat, kesesuaian Fornas, dan evaluasi mutu."
+    },
+    {
+      "code": "item_16",
+      "title": "Keselamatan pasien dan PPI",
+      "indicator": "Mengenali risiko/insiden terkait obat dan menerapkan prinsip keselamatan pasien serta PPI."
+    },
+    {
+      "code": "item_17",
+      "title": "Komunikasi dan kerja sama",
+      "indicator": "Berkomunikasi profesional dengan pasien, preseptor, dan tenaga kesehatan lain."
+    },
+    {
+      "code": "item_18",
+      "title": "Etika dan profesionalisme",
+      "indicator": "Menjaga kerahasiaan, disiplin, tanggung jawab, dan mematuhi tata tertib."
+    },
+    {
+      "code": "item_19",
+      "title": "Analisis dan pemecahan masalah",
+      "indicator": "Menganalisis masalah kefarmasian dan mengusulkan solusi berbasis data/referensi."
+    },
+    {
+      "code": "item_20",
+      "title": "Dokumentasi dan refleksi",
+      "indicator": "Mengisi logbook/portofolio lengkap, menerima umpan balik, dan memperbaiki kinerja."
+    }
+  ],
+  "preceptor_assessment": [
+    {
+      "code": "item_01",
+      "title": "Kedisiplinan dan tanggung jawab",
+      "indicator": "Kehadiran, ketepatan waktu, kepatuhan terhadap jadwal dan penyelesaian tugas."
+    },
+    {
+      "code": "item_02",
+      "title": "Etika dan profesionalisme",
+      "indicator": "Menjaga kerahasiaan pasien, sopan santun, integritas, dan kepatuhan terhadap kode etik serta aturan Puskesmas."
+    },
+    {
+      "code": "item_03",
+      "title": "Komunikasi dan kerja sama",
+      "indicator": "Komunikasi efektif dengan pasien, keluarga, preseptor, dan tenaga kesehatan lain; mampu bekerja dalam tim."
+    },
+    {
+      "code": "item_04",
+      "title": "Pemahaman regulasi dan organisasi",
+      "indicator": "Memahami regulasi kefarmasian yang relevan, struktur organisasi, tugas dan fungsi pelayanan kefarmasian."
+    },
+    {
+      "code": "item_05",
+      "title": "Perencanaan perbekalan farmasi",
+      "indicator": "Mengumpulkan dan menganalisis data kebutuhan; memahami metode perencanaan dan evaluasi kebutuhan obat, alkes, dan BMHP."
+    },
+    {
+      "code": "item_06",
+      "title": "Permintaan dan pengadaan",
+      "indicator": "Memahami alur permintaan rutin/khusus dan pengadaan sesuai prosedur serta kewenangan."
+    },
+    {
+      "code": "item_07",
+      "title": "Penerimaan perbekalan farmasi",
+      "indicator": "Memeriksa jenis, jumlah, kondisi, nomor bets, tanggal kedaluwarsa, dokumen, dan persyaratan penyimpanan/pengiriman."
+    },
+    {
+      "code": "item_08",
+      "title": "Penyimpanan perbekalan farmasi",
+      "indicator": "Menerapkan prinsip penyimpanan, FEFO/FIFO, pengendalian suhu, keamanan, serta penyimpanan obat khusus."
+    },
+    {
+      "code": "item_09",
+      "title": "Distribusi perbekalan farmasi",
+      "indicator": "Memahami dan/atau melaksanakan distribusi ke unit pelayanan sesuai prosedur dan dokumentasi."
+    },
+    {
+      "code": "item_10",
+      "title": "Pengendalian dan administrasi",
+      "indicator": "Menggunakan kartu stok, stok opname, pencatatan, pelaporan, serta pengendalian obat rusak/kedaluwarsa dan obat khusus."
+    },
+    {
+      "code": "item_11",
+      "title": "Pemusnahan dan penarikan",
+      "indicator": "Memahami alur, alasan, dokumen, dan tindak lanjut pemusnahan atau penarikan perbekalan farmasi."
+    },
+    {
+      "code": "item_12",
+      "title": "Pengkajian resep",
+      "indicator": "Melakukan pengkajian administratif, farmasetik, dan klinis serta mengidentifikasi masalah terkait obat."
+    },
+    {
+      "code": "item_13",
+      "title": "Dispensing dan penyerahan obat",
+      "indicator": "Menyiapkan obat secara benar, memberi etiket, melakukan pemeriksaan akhir, dan menyerahkan obat dengan informasi yang tepat."
+    },
+    {
+      "code": "item_14",
+      "title": "Pelayanan Informasi Obat",
+      "indicator": "Mengidentifikasi kebutuhan informasi, mencari sumber tepercaya, menyusun jawaban, dan mendokumentasikan PIO."
+    },
+    {
+      "code": "item_15",
+      "title": "Konseling pasien",
+      "indicator": "Menggali pemahaman dan hambatan pasien, menjelaskan penggunaan obat, melakukan konfirmasi pemahaman, dan mendokumentasikan konseling."
+    },
+    {
+      "code": "item_16",
+      "title": "Pemantauan terapi dan efek samping",
+      "indicator": "Mengidentifikasi masalah terapi/ESO, mengumpulkan data pasien, menyusun rekomendasi, dan melakukan tindak lanjut sesuai kewenangan."
+    },
+    {
+      "code": "item_17",
+      "title": "Visite/kolaborasi klinis",
+      "indicator": "Berpartisipasi dalam visite atau koordinasi klinis bila tersedia; menyampaikan temuan kefarmasian secara tepat."
+    },
+    {
+      "code": "item_18",
+      "title": "Evaluasi penggunaan obat dan mutu",
+      "indicator": "Memahami indikator penggunaan obat, evaluasi kesesuaian Fornas, serta kegiatan pemantauan mutu pelayanan."
+    },
+    {
+      "code": "item_19",
+      "title": "Keselamatan pasien dan PPI",
+      "indicator": "Mengidentifikasi risiko/insiden terkait obat, menerapkan prinsip keselamatan pasien dan pencegahan/pengendalian infeksi."
+    },
+    {
+      "code": "item_20",
+      "title": "Analisis masalah dan pemecahan masalah",
+      "indicator": "Mampu mengidentifikasi masalah di wahana, menganalisis penyebab, dan mengusulkan solusi yang realistis berbasis bukti."
+    },
+    {
+      "code": "item_21",
+      "title": "Kelengkapan portofolio dan logbook",
+      "indicator": "Catatan kegiatan lengkap, akurat, sistematis, disertai bukti yang relevan dan validasi preseptor."
+    },
+    {
+      "code": "item_22",
+      "title": "Kemandirian dan inisiatif belajar",
+      "indicator": "Aktif mencari pengalaman belajar, menerima umpan balik, dan menunjukkan perbaikan kinerja."
+    }
+  ],
+  "internal_assessment": [
+    {
+      "code": "item_01",
+      "title": "Kelengkapan dan sistematika portofolio",
+      "indicator": "Seluruh bagian portofolio terisi sesuai kegiatan; sistematika, identitas, pengesahan, dan lampiran tertata."
+    },
+    {
+      "code": "item_02",
+      "title": "Akurasi dan validitas data",
+      "indicator": "Data kegiatan, tabel, perhitungan, dan dokumentasi konsisten, dapat ditelusuri, serta menjaga kerahasiaan pasien."
+    },
+    {
+      "code": "item_03",
+      "title": "Analisis regulasi dan tata kelola",
+      "indicator": "Mampu menjelaskan keterkaitan regulasi, struktur organisasi, serta peran apoteker di Puskesmas."
+    },
+    {
+      "code": "item_04",
+      "title": "Analisis pengelolaan perbekalan farmasi",
+      "indicator": "Analisis perencanaan, permintaan, penerimaan, penyimpanan, distribusi, pengendalian, administrasi, dan evaluasi."
+    },
+    {
+      "code": "item_05",
+      "title": "Analisis pelayanan farmasi klinik",
+      "indicator": "Ketepatan pengkajian resep, perhitungan dosis, identifikasi masalah obat, dispensing, PIO, konseling, PTO, dan ESO."
+    },
+    {
+      "code": "item_06",
+      "title": "Penerapan evidence-based practice",
+      "indicator": "Menggunakan referensi/pedoman yang relevan dan mutakhir serta mencantumkan sumber secara benar."
+    },
+    {
+      "code": "item_07",
+      "title": "Analisis sumber daya kefarmasian",
+      "indicator": "Mampu mengolah data tenaga dan beban pelayanan serta menyampaikan analisis kebutuhan secara logis."
+    },
+    {
+      "code": "item_08",
+      "title": "Analisis mutu pelayanan kefarmasian",
+      "indicator": "Mampu menguraikan indikator, target, hasil evaluasi, kesenjangan, dan peluang perbaikan mutu."
+    },
+    {
+      "code": "item_09",
+      "title": "Analisis keselamatan pasien dan PPI",
+      "indicator": "Mampu mengklasifikasikan risiko/insiden dan menjelaskan upaya pencegahan serta pengendalian infeksi."
+    },
+    {
+      "code": "item_10",
+      "title": "Pemecahan masalah dan rekomendasi",
+      "indicator": "Rekomendasi sesuai masalah, realistis, terukur, dan mempertimbangkan keselamatan pasien serta sumber daya."
+    },
+    {
+      "code": "item_11",
+      "title": "Refleksi dan pengembangan diri",
+      "indicator": "Mampu mengevaluasi capaian kompetensi, mengenali keterbatasan, dan menyusun rencana tindak lanjut."
+    },
+    {
+      "code": "item_12",
+      "title": "Komunikasi ilmiah dan presentasi",
+      "indicator": "Penyampaian runtut, bahasa profesional, penggunaan media efektif, dan mampu menjawab pertanyaan."
+    },
+    {
+      "code": "item_13",
+      "title": "Sikap akademik dan integritas",
+      "indicator": "Kejujuran akademik, sitasi yang tepat, tidak memanipulasi data, dan menjaga kerahasiaan informasi."
+    }
+  ],
+  "general_rubric": [
+    [
+      "Tingkat Skor",
+      "Deskripsi Kinerja Umum"
+    ],
+    [
+      "4 – Sangat Baik / Mandiri",
+      "Melaksanakan kegiatan secara tepat, runtut, aman, dan konsisten; mampu menjelaskan alasan ilmiah; mengenali risiko/masalah; mengambil inisiatif yang sesuai; dokumentasi lengkap; hanya memerlukan supervisi minimal."
+    ],
+    [
+      "3 – Baik / Sedikit Arahan",
+      "Melaksanakan sebagian besar kegiatan dengan benar dan aman; pemahaman memadai; mampu mengenali masalah umum; masih memerlukan arahan kecil atau pemeriksaan pada beberapa tahap; dokumentasi cukup lengkap."
+    ],
+    [
+      "2 – Cukup / Perlu Bimbingan",
+      "Melaksanakan kegiatan tetapi masih terdapat kekeliruan atau bagian yang terlewat; penjelasan ilmiah belum kuat; memerlukan arahan dan supervisi berulang; dokumentasi belum konsisten."
+    ],
+    [
+      "1 – Kurang / Belum Kompeten",
+      "Belum mampu melaksanakan kegiatan sesuai prosedur; terdapat kesalahan mendasar atau risiko terhadap keselamatan; tidak mampu menjelaskan dasar tindakan; memerlukan pendampingan intensif dan perbaikan."
+    ]
+  ],
+  "product_rubric": [
+    [
+      "Aspek",
+      "Skor 4",
+      "Skor 3",
+      "Skor 2",
+      "Skor 1"
+    ],
+    [
+      "Kelengkapan bukti",
+      "Semua tugas relevan terisi; bukti/dokumen pendukung memadai dan tervalidasi.",
+      "Sebagian besar tugas terisi; bukti utama tersedia.",
+      "Beberapa tugas/bukti penting tidak tersedia.",
+      "Sebagian besar tugas kosong/tanpa bukti."
+    ],
+    [
+      "Ketepatan isi dan data",
+      "Isi akurat, konsisten, sesuai praktik wahana, dan tidak melanggar kerahasiaan.",
+      "Ada kekurangan kecil yang tidak mengubah makna.",
+      "Terdapat beberapa ketidaktepatan yang memengaruhi analisis.",
+      "Data/isi tidak dapat dipercaya atau banyak kesalahan mendasar."
+    ],
+    [
+      "Kedalaman analisis",
+      "Analisis kritis menghubungkan data, teori, pedoman, risiko, dan implikasi praktik.",
+      "Analisis cukup logis dengan dukungan teori/pedoman.",
+      "Analisis cenderung deskriptif dan hubungan teori-praktik terbatas.",
+      "Tidak ada analisis atau kesimpulan tidak didukung data."
+    ],
+    [
+      "Rekomendasi/tindak lanjut",
+      "Spesifik, realistis, terukur, berbasis bukti, dan berorientasi keselamatan pasien.",
+      "Rekomendasi relevan tetapi belum seluruhnya terukur.",
+      "Rekomendasi umum dan kurang terkait temuan.",
+      "Tidak memberikan rekomendasi atau tidak sesuai masalah."
+    ],
+    [
+      "Bahasa dan sistematika",
+      "Bahasa ilmiah jelas, sistematis, konsisten, dan sitasi tertib.",
+      "Mudah dipahami dengan sedikit kesalahan teknis.",
+      "Terdapat masalah sistematika/bahasa yang mengganggu sebagian isi.",
+      "Tidak sistematis dan sulit dipahami."
+    ]
+  ],
+  "vision_mission": [
+    "VISI PSPPA",
+    "” Menjadi Program Studi Profesi Apoteker berwawasan kebangsaan yang unggul dalam praktik kefarmasian profesional, inovatif, dan berorientasi pada keselamatan pasien, mutu sediaan farmasi, serta peningkatan kesehatan masyarakat”",
+    "MISI",
+    "Menyelenggarakan pendidikan profesi apoteker yang unggul, berorientasi pada kompetensi, etika profesi, dan wawasan kebangsaan. ",
+    "Melaksanakan pembelajaran, penelitian, dan pengabdian kepada masyarakat yang inovatif untuk mendukung pengembangan praktik kefarmasian dan peningkatan kesehatan masyarakat. ",
+    "Menghasilkan apoteker yang profesional, inovatif, berintegritas, serta mengutamakan keselamatan pasien dan mutu sediaan farmasi. ",
+    "Mengembangkan kemitraan strategis dengan berbagai institusi dalam mendukung pendidikan profesi, penelitian, dan pelayanan kefarmasian. ",
+    "Mewujudkan tata kelola program studi yang berkualitas, adaptif, dan berkelanjutan melalui sistem penjaminan mutu yang berkesinambungan.",
+    "TUJUAN",
+    "Menghasilkan lulusan Apoteker yang memiliki kompetensi profesional sesuai Standar Kompetensi Apoteker Indonesia, beretika, berintegritas, dan berwawasan kebangsaan. ",
+    "Menghasilkan lulusan yang mampu memberikan pelayanan kefarmasian (pharmaceutical care) secara profesional, berpusat pada pasien (patient-centered care), serta mengutamakan keselamatan pasien (patient safety). ",
+    "Menghasilkan lulusan yang mampu menjamin mutu, keamanan, khasiat, dan penggunaan sediaan farmasi secara rasional berdasarkan prinsip evidence-based practice. ",
+    "Mengembangkan kemampuan lulusan dalam berpikir kritis, melakukan inovasi, memanfaatkan teknologi digital, serta menyelesaikan permasalahan di bidang praktik kefarmasian. ",
+    "Menghasilkan lulusan yang mampu bekerja sama secara interprofesional, berkomunikasi secara efektif, dan menunjukkan kepemimpinan dalam pelayanan kesehatan. ",
+    "Mengembangkan penelitian terapan dan pengabdian kepada masyarakat yang berkontribusi terhadap peningkatan mutu pelayanan kefarmasian dan derajat kesehatan masyarakat. ",
+    "Meningkatkan jejaring kerja sama dengan fasilitas pelayanan kesehatan, industri farmasi, pemerintah, organisasi profesi, serta institusi pendidikan di tingkat nasional maupun internasional untuk mendukung penyelenggaraan tridharma perguruan tinggi. ",
+    "Mewujudkan tata kelola Program Studi yang efektif, transparan, akuntabel, dan berkelanjutan melalui penerapan Sistem Penjaminan Mutu Internal (SPMI). ",
+    "Menghasilkan lulusan yang memiliki jiwa kepemimpinan, kewirausahaan, profesionalisme, serta komitmen terhadap pembelajaran sepanjang hayat. ",
+    "Mendukung peningkatan kesehatan masyarakat melalui praktik kefarmasian yang bermutu, inovatif, dan berorientasi pada kebutuhan masyarakat."
+  ],
+  "rules": [
+    "Persiapan",
+    "Peserta PKPA adalah mahasiswa PSPPA aktif dan memenuhi persyaratan administratif.",
+    "Calon peserta PKPA wajib mengikuti pembekalan sesuai jadwal.",
+    "Mahasiswa yang tidak mengikuti pembekalan, tidak berhak melaksanakan PKPA.",
+    "Selama mengikuti pembekalan, mahasiswa wajib menjaga ketertiban dan mengikuti ketentuan seperti kegiatan perkuliahan.",
+    "Melapor kepada Dosen Pembimbing PKPA Fakultas sehubungan dengan kegiatan PKPA yang akan dilaksanakan.",
+    "Pelaksanaan",
+    "Selama mengikuti PKPA, mahasiswa wajib:",
+    "Menjaga nama baik almamater.",
+    "Mengikuti seluruh kegiatan PKPA sesuai dengan jadwal yang telah ditentukan dari masing-masing tempat PKPA.",
+    "Melaksanakan PKPA dengan penuh rasa tanggung jawab dan berdedikasi tinggi.",
+    "Membina kerjasama yang baik antar peserta PKPA maupun dengan lingkungan di tempat PKPA.",
+    "Menyusun laporan PKPA dan mendapat pengesahan dari Pembimbing di tempat PKPA (Preceptor) maupun Dosen Pembimbing Fakultas.",
+    "Wajib menyelesaikan laporan sebelum pindah ke bidang PKPA yang lain.",
+    "Mahasiswa wajib mengisi lembar Dokumentasi yang terdapat pada bagian lampiran dari panduan ini, dan harus disahkan oleh pembimbing di tempat PKPA dan/atau Dosen Pembimbing Fakultas.",
+    "Peserta PKPA berhak mendapatkan bimbingan dari Dosen Pembimbing Fakultas sampai persiapan ujian PKPA.",
+    "Apabila karena suatu hal terpaksa tidak dapat mengikuti ketentuan yang berlaku, peserta PKPA wajib melapor kepada Ketua Program Studi Profesi Apoteker.",
+    "Pelanggaran terhadap ketentuan di atas dapat menyebabkan peserta PKPA ditunda kelulusannya.",
+    "7.   Jika mahasiswa berhalangan masuk pada saat PKPA maka wajib mohon ijin tertulis kepada pembimbing di tempat PKPA (Preceptor) dan tembusan kepada Ketua Program Stud"
+  ],
+  "integrity_pact": [
+    "Dengan ini menyatakan bahwa :",
+    "Merahasiakan segala sesuatu yang saya ketahui sehubungan dengan tugas di tempat PKPA yang dipercayakan kepada saya kecuali untuk kepentingan akademik.",
+    "Menjalankan tugas PKPA di tempat PKPA dengan sebaik-baiknya dan berikhtiar dengan sungguh-sungguh agar tidak terpengaruh dengan pertimbangan keagamaan, kebangsaaan, kesukuan, politik kepartaian atau kedudukan sosial.",
+    "Memelihara hubungan baik dan menghormati pembimbing saya, rekan sesama mahasiswa, apoteker dan tenaga kesehatan lainnya.",
+    "Apabila saya melanggar hal-hal yang telah saya nyatakan dalam pakta integritas ini, saya bersedia dikenakan sanksi moral, sanksi administratif, dan tuntutan hukum sesuai dengan ketentuan perundang-undangan yang berlaku."
+  ],
+  "reference_tables": {
+    "182": [
+      [
+        "No.",
+        "Nama/No. Peraturan",
+        "Mengatur Tentang"
+      ],
+      [
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ],
+    "207": [
+      [
+        "No.",
+        "Nama bidang",
+        "Tugaspokokdan fungsi",
+        "Uraian kegiatan yang berhubungan dengan pelayanan kefarmasian"
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "212": [
+      [
+        "No.",
+        "Nama bidang",
+        "Tugaspokokdan fungsi",
+        "Uraian kegiatan yang berhubungan dengan pelayanan kefarmasian"
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "225": [
+      [
+        "No",
+        "Kegiatan",
+        "Uraian"
+      ],
+      [
+        "1.",
+        "Pemilihan",
+        ""
+      ],
+      [
+        "",
+        "a.",
+        "Acuan pemilihan obat dalam rangka perencanaan di Puskesmas",
+        "1) …2) …3) …4) …"
+      ],
+      [
+        "",
+        "b.",
+        "Formularium Puskesmas",
+        "Ada / tidak ada (coret yang tidak sesuai)Bila ada, cantumkan link Google Drive untuk membuka formularium tersebutLink: …Peninjauan formularium terakhir dilaksanakan pada …Perubahan formularium Puskesmas dibandingkan formularium sebelumnya terletak padaa)  …b) …c)  …d) …e)  …"
+      ],
+      [
+        "2.",
+        "Perencanaan",
+        ""
+      ],
+      [
+        "",
+        "a.",
+        "Metode yang digunakan dalam perencanaan",
+        ""
+      ],
+      [
+        "",
+        "b.",
+        "Data yang dibutuhkan untuk menghitung perencanaan",
+        ""
+      ],
+      [
+        "",
+        "c.",
+        "Frekuensi pengadaan dalam setahun",
+        "….. kali"
+      ],
+      [
+        "",
+        "d.",
+        "Melakukan perencanaan dengan data simulasi yang diambil dari LPLPO",
+        "Dapat dikerjakan terpisah dari tabel ini"
+      ],
+      [
+        "3.",
+        "Evaluasi perencanaan",
+        ""
+      ],
+      [
+        "",
+        "a.",
+        "Metode evaluasi yang digunakan",
+        "Lingkari yang dilakukan di PuskesmasAnalisa ABCKriteria VENKombinasi"
+      ],
+      [
+        "",
+        "b.",
+        "Melakukan evaluasi perencanaan dengan data simulasi",
+        "Dapat dikerjakan terpisah dari tabel ini"
+      ]
+    ],
+    "230": [
+      [
+        "No",
+        "Nama obat",
+        "Penggunaan obat bulan",
+        "Total penggunaan obat",
+        "Rata-rata penggunaan obat tiap bulan",
+        "Sisa obat sekarang",
+        "Jumlah obat yang direncanakan"
+      ],
+      [
+        "",
+        "",
+        "…",
+        "…",
+        "…",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "236": [
+      [
+        "1.",
+        "Metode permintaan yang digunakan",
+        "Lingkari yang dilakukan di PuskesmasPermintaan ke Dinas Kesehatan Kabupaten/KotaPermintaan rutinPermintaan khususPengadaan mandiri"
+      ],
+      [
+        "2.",
+        "10 contoh obat, alkes, atau BMHP yang diadakan melalui permintaan rutin",
+        ""
+      ],
+      [
+        "3.",
+        "10 contoh obat, alkes, atau BMHP yang diadakan melalui permintaan mandiri",
+        ""
+      ],
+      [
+        "4.",
+        "Contoh obat, alkes, atau BMHP yang diadakan melalui program tertentu",
+        ""
+      ]
+    ],
+    "248": [
+      [
+        "1. ",
+        "Obat diterima Puskesmas dari",
+        "a.  …b.  …c.  …"
+      ],
+      [
+        "2.",
+        "Aspek yang diperhatikan dalam",
+        "a.  …"
+      ],
+      [
+        "",
+        "penerimaan",
+        "b.  …"
+      ],
+      [
+        "",
+        "",
+        "c.  …"
+      ],
+      [
+        "",
+        "",
+        "d.  …"
+      ],
+      [
+        "",
+        "",
+        "e.  …"
+      ],
+      [
+        "",
+        "",
+        "f.…"
+      ]
+    ],
+    "258": [
+      [
+        "No",
+        "Nama barang",
+        "Jenis",
+        "Jumlah",
+        "ED",
+        "Suhu pengiriman"
+      ],
+      [
+        "",
+        "",
+        "Sesuai",
+        "Tidak sesuai",
+        "Sesuai",
+        "Tidak sesuai",
+        "Sesuai",
+        "Tidak sesuai",
+        "Sesuai",
+        "Tidak sesuai"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "4.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "265": [
+      [
+        "1.",
+        "Metode penyimpanan sediaan farmasi, alkes, dan BMHP",
+        ""
+      ],
+      [
+        "2.",
+        "Lemari penyimpanan narkotika",
+        "Lampirkan foto lemari penyimpanan narkotika"
+      ],
+      [
+        "3.",
+        "Lemari penyimpanan psikotropika",
+        "Lampirkan foto lemari penyimpanan psikotropika"
+      ]
+    ],
+    "270": [
+      [
+        "No",
+        "Tempat penyimpanan",
+        "Nama obat"
+      ],
+      [
+        "1.",
+        "",
+        "a.  …b.  …c.  …d.  …e.  …dst"
+      ],
+      [
+        "2.",
+        "",
+        "…………… dst"
+      ]
+    ],
+    "279": [
+      [
+        "No",
+        "Nama obat",
+        "Masalah penyimpanan",
+        "Solusi"
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "287": [
+      [
+        "Jaringan tempat didistribusikannya sediaan farmasi, alkes, dan BMHP",
+        "1.  …2.  …3.  …4.  …5.  …"
+      ],
+      [
+        "Sistem distribusi dari Puskesmas ke jaringan",
+        "…"
+      ],
+      [
+        "Sub unit Puskesmas tempat didistribusikannya sediaan farmasi, alkes, dan BMHP",
+        "1.  …2.  …3.  …4.  …5.  …"
+      ],
+      [
+        "Sistem distribusi ke sub unit Puskesmas",
+        "…"
+      ]
+    ],
+    "297": [
+      [
+        "Alasan pemusnahan sediaan farmasi, alkes, dan BMHP",
+        "1.  …2.  …3.  …4.  …"
+      ],
+      [
+        "Metode pemusnahan sediaan farmasi, alkes, dan BMHP",
+        "1.  …2.  …3.  …4.  …"
+      ]
+    ],
+    "301": [
+      [
+        "No",
+        "Nama barang",
+        "Jumlah",
+        "Alasan pemusnahan barang",
+        "Metode pemusnahan"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "312": [
+      [
+        "Alasan penarikan sediaan farmasi, alkes, dan BMHP",
+        "1.  …2.  …3.  …4.  …"
+      ]
+    ],
+    "337": [
+      [
+        "No",
+        "Permasalahan yang ditemui setelah melakukan stok opname",
+        "Tindak lanjut atas permasalahan yang ditemukan"
+      ],
+      [
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ],
+    "343": [
+      [
+        "No",
+        "Tanggal",
+        "Nama narkotika",
+        "BS O",
+        "Jml",
+        "Dokter penulis R/",
+        "Nama pasien",
+        "Umur",
+        "JK",
+        "Alamat",
+        "No Telp"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "349": [
+      [
+        "No",
+        "Tanggal",
+        "Nama psikotropika",
+        "BSO",
+        "Jml",
+        "Dokter penulis R/",
+        "Nama pasien",
+        "Umur",
+        "JK",
+        "Alamat",
+        "No Telp"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "354": [
+      [
+        "No",
+        "Tanggal",
+        "Nama prekursor",
+        "BSO",
+        "Jml",
+        "Dokter penulis R/",
+        "Nama pasien",
+        "Umur",
+        "J K",
+        "Alamat",
+        "No Telp"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "359": [
+      [
+        "No",
+        "Tanggal",
+        "Nama obat",
+        "BSO",
+        "Jml",
+        "Dokter penulis R/",
+        "Nama pasien",
+        "Umur",
+        "JK",
+        "Alamat",
+        "No Telp"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "364": [
+      [
+        "No",
+        "Tanggal",
+        "Nama obat",
+        "BSO",
+        "Jml",
+        "Dokter penulis R/",
+        "Nama pasien",
+        "Umur",
+        "JK",
+        "Alamat",
+        "No Telp"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "369": [
+      [
+        "No",
+        "Nama obat",
+        "BSO",
+        "Keadaan",
+        "Jumlah",
+        "Tindak lanjut"
+      ],
+      [
+        "",
+        "",
+        "",
+        "Rusak",
+        "Kadaluarsa",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "380": [
+      [
+        "Tahun …"
+      ],
+      [
+        "Jumlah item obat di Puskesmas yang sesuai Fornas",
+        "Jumlah item obat yang tersedia di Puskesmas",
+        "Persentase kesesuaian obat di Puskesmas dengan Fornas"
+      ],
+      [
+        "",
+        "",
+        ""
+      ]
+    ],
+    "404": [
+      [
+        "No",
+        "Aspek kajian",
+        "Permasalahan pengkajian resep",
+        "Uraian permasalahan",
+        "Penyelesaian masalah"
+      ],
+      [
+        "",
+        "",
+        "Ya",
+        "Tidak",
+        "",
+        ""
+      ],
+      [
+        "1.",
+        "Administratif",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "Farmasetis",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "Klinis",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "409": [
+      [
+        "No",
+        "Nama obat",
+        "Aturan pakai dalam resep",
+        "Dosis dan pemakaian sekali",
+        "Dosisdanpemakaian sehari"
+      ],
+      [
+        "",
+        "",
+        "",
+        "Pemakaian sekali",
+        "Dosis standar",
+        "Ket",
+        "Pemakaian sekali",
+        "Dosis standar",
+        "Ket"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "414": [
+      [
+        "No",
+        "Nama obat / barang",
+        "Satuan",
+        "Jumlah",
+        "Harga satuan",
+        "Sub total harga"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "Total harga",
+        ""
+      ]
+    ],
+    "419": [
+      [
+        "No",
+        "Nama obat",
+        "Komposisi",
+        "Indikasi",
+        "Mekanisme aksi",
+        "KI",
+        "Interaksi",
+        "Bentuk sediaan",
+        "Kekuatan dosis"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "424": [
+      [
+        "No.",
+        "Nama obat",
+        "Warna etiket",
+        "Foto etiket"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "444": [
+      [
+        "Tgl resep",
+        "Tgl pemberian",
+        "Nama obat",
+        "Aturan pakai",
+        "Lama pemakaian",
+        "Nama dokter"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "454": [
+      [
+        "No PIO:Tanggal:Jam:Metode PIO : (lingkari yang sesuai)LisanTertulisTeleponMedia lain, yaitu …."
+      ],
+      [
+        "Identitas penanyaNama:No telp:Status penanya (lingkari yang sesuai)PasienKeluarga pasienPetugas kesehatan, yaitu …Lainnya, yaitu …"
+      ],
+      [
+        "Data pasienNama:Umur:TB:BB:Jenis kelamin :Kehamilan: hamil / tidak hamil (coret yang tidak sesuai)"
+      ]
+    ],
+    "456": [
+      [
+        "g.  Menyusui: menyusui / tidak menyusui (coret yang tidak sesuai)"
+      ],
+      [
+        "3. Pertanyaan Uraian pertanyaan",
+        ""
+      ],
+      [
+        "Jenis pertanyaan (lingkari yang sesuai)"
+      ],
+      [
+        "Identifikasi obatInteraksi obatHarga obatKontraindikasiCara pemakaianStabilitas obatDosis",
+        "KeracunanEfek samping obatPenggunaan terapeutikFarmakokinetikaFarmakodinamikaKetersediaan obatLain-lain, yaitu …"
+      ],
+      [
+        "4.  Jawaban"
+      ],
+      [
+        "5.  Referensi"
+      ],
+      [
+        "Penyampaian jawaban (lingkari yang sesuai)SegeraDalam 24 jamLebih dari 24 jam"
+      ],
+      [
+        "Identitas penjawabNama apoteker:Tanggal menjawab:Jam menjawab:Media penyampaian jawaban (lingkari yang sesuai)LisanTertulisTeleponMedia lainnya, yaitu…"
+      ]
+    ],
+    "462": [
+      [
+        "Puskesmas:Alamat:"
+      ],
+      [
+        "Nama pasien:Jenis kelamin:Tanggal lahir:Alamat:Tanggal konseling: Nama dokter:Diagnosa:"
+      ],
+      [
+        "Nama obat, dosis, dan cara pemakaian"
+      ],
+      [
+        "Riwayat alergi:"
+      ],
+      [
+        "Keluhan:"
+      ],
+      [
+        "Riwayat konseling pasien:pernah konseling / belum pernah konseling (coret yang tidak sesuai)"
+      ]
+    ],
+    "464": [
+      [
+        "Tindak lanjut"
+      ],
+      [
+        "Pasien….",
+        "Apoteker…"
+      ]
+    ],
+    "475": [
+      [
+        "Tanggal visite :Jenis visite:Visite mandiriVisite bersama nakes lain yaitu …"
+      ],
+      [
+        "Identitas pasien yang divisite Nama:Ruang:Umur:TB:BB:Jenis kelamin : Diagnosa:"
+      ],
+      [
+        "Uraian kegiatan yang dilakukan saat visite"
+      ]
+    ],
+    "487": [
+      [
+        "Puskesmas: Alamat:"
+      ],
+      [
+        "Nama pasien:Jenis kelamin:Tanggal lahir:Alamat:Tanggal PTO:Nama dokter:Diagnosa:Riwayat alergi: Riwayat penyakit: Riwayat penggunaan obat:"
+      ],
+      [
+        "Keluhan:"
+      ],
+      [
+        "Subjective Objective AssessmentPlan"
+      ],
+      [
+        "Apoteker…"
+      ]
+    ],
+    "524": [
+      [
+        "No",
+        "Uraian kasus",
+        "Klasifikasi Insiden",
+        "Keterangan"
+      ],
+      [
+        "1.",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2.",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3.",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "568": [
+      [
+        "No.",
+        "Kompetensi yang Ditingkatkan",
+        "Rencana Kegiatan/Strategi",
+        "Target Waktu",
+        "Indikator Keberhasilan"
+      ],
+      [
+        "1",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "2",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "3",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ],
+    "669": [
+      [
+        "Tanggal",
+        "Aspek/Kompetensi",
+        "Umpan Balik Preseptor/Dosen",
+        "Rencana Perbaikan Mahasiswa",
+        "Target Waktu",
+        "Paraf"
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      [
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    ]
+  }
+}

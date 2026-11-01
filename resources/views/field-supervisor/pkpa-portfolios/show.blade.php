@@ -9,7 +9,7 @@
     $isPbf = \App\Support\PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code);
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
-    $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
+    $isPuskesmas = \App\Support\PkpaPuskesmasPortfolio::isTemplate($portfolio->template?->code);
     $isHealthOffice = $portfolio->template?->code === \App\Support\PkpaHealthOfficePortfolio::TEMPLATE_CODE;
     $isLokaPom = $portfolio->template?->code === \App\Support\PkpaLokaPomPortfolio::TEMPLATE_CODE;
     $editableSections = $isApotek
@@ -19,7 +19,7 @@
             : ($isHospital
             ? \App\Support\PkpaHospitalPortfolio::editableSections()
             : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections()
-                : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections()
+                : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections($portfolio->template?->code)
                     : ($isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections()
                         : ($isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : []))))));
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
@@ -79,12 +79,14 @@
                 @foreach($editableSections as $code => $definition)
                     @php
                         $record = $sectionRecords->get($code);
-                        $lines = $isApotek
+                        $lines = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE && isset(\App\Support\PkpaPuskesmasPortfolioRevision::sections()[$code])
+                            ? \App\Support\PkpaPuskesmasPortfolioRevision::lines($code, $record?->manual_payload ?? [])
+                            : ($isApotek
                             ? \App\Support\PkpaApotekPortfolio::summaryLines($code, $record?->manual_payload ?? [])
                             : collect($definition['fields'] ?? [])->map(function ($field) use ($record) {
                                 $value = data_get($record?->manual_payload, $field['name']);
                                 return filled($value) ? $field['label'].': '.$value : null;
-                            })->filter()->values()->all();
+                            })->filter()->values()->all());
                     @endphp
                     <article class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
                         <div class="flex items-start justify-between gap-3">

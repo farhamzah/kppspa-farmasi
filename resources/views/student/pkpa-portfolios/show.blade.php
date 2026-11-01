@@ -8,7 +8,8 @@
     $isPbf = \App\Support\PkpaPbfPortfolio::isPbfCode($portfolio->practiceDomain?->code);
     $isHospital = \App\Support\PkpaHospitalPortfolio::isHospitalCode($portfolio->practiceDomain?->code);
     $isIndustry = \App\Support\PkpaIndustryPortfolio::isIndustryCode($portfolio->practiceDomain?->code);
-    $isPuskesmas = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolio::TEMPLATE_CODE;
+    $isPuskesmas = \App\Support\PkpaPuskesmasPortfolio::isTemplate($portfolio->template?->code);
+    $isPuskesmasRevision = $portfolio->template?->code === \App\Support\PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE;
     $isHealthOffice = $portfolio->template?->code === \App\Support\PkpaHealthOfficePortfolio::TEMPLATE_CODE;
     $isLokaPom = $portfolio->template?->code === \App\Support\PkpaLokaPomPortfolio::TEMPLATE_CODE;
     $canEdit = in_array($portfolio->status, ['draft', 'in_progress', 'field_revision_requested', 'internal_revision_requested'], true);
@@ -16,14 +17,14 @@
     $hospitalSections = $isHospital ? \App\Support\PkpaHospitalPortfolio::editableSections() : [];
     $industrySections = $isIndustry ? \App\Support\PkpaIndustryPortfolio::editableSections() : [];
     $pbfSections = $isPbf ? \App\Support\PkpaPbfPortfolio::editableSections() : [];
-    $puskesmasSections = $isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections() : [];
+    $puskesmasSections = $isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::editableSections($portfolio->template?->code) : [];
     $healthOfficeSections = $isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::editableSections() : [];
     $lokaPomSections = $isLokaPom ? \App\Support\PkpaLokaPomPortfolio::editableSections() : [];
     $sectionRecords = $portfolio->sectionRecords->keyBy('section_code');
     $reportCodes = \App\Support\PkpaApotekPortfolio::reportSectionCodes();
     $manualSections = $isApotek
         ? collect($editableSections)->keys()
-        : $portfolio->template->sections->where('source_type', 'structured_form')->pluck('code');
+        : $portfolio->template->sections->where('source_type', 'structured_form')->when($isPuskesmasRevision, fn ($sections) => $sections->where('is_required', true))->pluck('code');
     $completedSections = $manualSections
         ->filter(fn ($code) => ($sectionRecords->get($code)?->status === 'completed'))
         ->count();
@@ -169,7 +170,7 @@
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <p class="text-sm font-bold uppercase tracking-wide text-cyan-700">Portofolio PKPA</p>
-                <h1 class="mt-2 text-3xl font-black text-slate-950">{{ data_get($portfolio->placement_snapshot, 'practice_domain') }}</h1>
+                <h1 class="mt-2 text-3xl font-black text-slate-950">{{ $isPuskesmas ? 'Puskesmas' : data_get($portfolio->placement_snapshot, 'practice_domain') }}</h1>
                 <p class="mt-2 max-w-3xl text-sm text-slate-600">{{ data_get($portfolio->placement_snapshot, 'practice_site') }} - {{ data_get($portfolio->placement_snapshot, 'start_date') }} s.d. {{ data_get($portfolio->placement_snapshot, 'end_date') }}</p>
             </div>
             <span class="rounded-full bg-cyan-50 px-4 py-2 text-sm font-bold text-cyan-700">{{ $portfolio->statusLabel() }}</span>
@@ -206,12 +207,12 @@
             <p class="mt-2 text-2xl font-black text-slate-950">{{ $completedSections }} / {{ $manualSections->count() }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <p class="text-xs font-bold uppercase text-slate-500">Studi Kasus</p>
-            <p class="mt-2 text-2xl font-black text-slate-950">{{ data_get($portfolio->progress_snapshot, 'counts.cases', 0) }}</p>
+            <p class="text-xs font-bold uppercase text-slate-500">{{ $isPuskesmasRevision ? 'Resep Dikaji' : 'Studi Kasus' }}</p>
+            <p class="mt-2 text-2xl font-black text-slate-950">{{ $isPuskesmasRevision ? count($sectionRecords->get('clinical_services')?->manual_payload['prescriptions'] ?? []) : data_get($portfolio->progress_snapshot, 'counts.cases', 0) }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-            <p class="text-xs font-bold uppercase text-slate-500">Refleksi</p>
-            <p class="mt-2 text-2xl font-black text-slate-950">{{ data_get($portfolio->progress_snapshot, 'counts.reflections', 0) }}</p>
+            <p class="text-xs font-bold uppercase text-slate-500">{{ $isPuskesmasRevision ? 'Penilaian Diri / 100' : 'Refleksi' }}</p>
+            <p class="mt-2 text-2xl font-black text-slate-950">{{ $isPuskesmasRevision ? data_get($sectionRecords->get('puskesmas_self_assessment')?->manual_payload, '_result.score', '-') : data_get($portfolio->progress_snapshot, 'counts.reflections', 0) }}</p>
         </div>
         <div class="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
             <p class="text-xs font-bold uppercase text-slate-500">Dokumentasi</p>
@@ -629,6 +630,7 @@
                                     <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 4 }}" class="min-h-28 resize-y rounded-xl border-slate-200 text-sm" @if($field['required'] ?? true) required @endif>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
                                 </label>
                             @endforeach
+                            @if($isPuskesmasRevision)<input type="hidden" name="_pkm_complete" value="1">@endif
                             <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $definition['title'] }}</button></div>
                         </form>
                     </details>
@@ -642,7 +644,7 @@
             $specialSections = $isHospital ? $hospitalSections : ($isIndustry ? $industrySections : ($isPuskesmas ? $puskesmasSections : ($isHealthOffice ? $healthOfficeSections : $lokaPomSections)));
             $specialReportCodes = $isHospital ? \App\Support\PkpaHospitalPortfolio::reportSectionCodes()
                 : ($isIndustry ? \App\Support\PkpaIndustryPortfolio::reportSectionCodes()
-                    : ($isPuskesmas ? \App\Support\PkpaPuskesmasPortfolio::reportSectionCodes()
+                    : ($isPuskesmas ? ($isPuskesmasRevision ? array_slice(array_keys(\App\Support\PkpaPuskesmasPortfolioRevision::sections()), 0, 7) : \App\Support\PkpaPuskesmasPortfolio::reportSectionCodes())
                         : ($isHealthOffice ? \App\Support\PkpaHealthOfficePortfolio::reportSectionCodes() : \App\Support\PkpaLokaPomPortfolio::reportSectionCodes())));
             $specialCompletedReports = collect($specialReportCodes)
                 ->filter(fn ($code) => $sectionRecords->get($code)?->status === 'completed')
@@ -654,12 +656,12 @@
                 <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                         <p class="text-xs font-black uppercase tracking-wide text-cyan-700">Portofolio {{ $specialDomainLabel }}</p>
-                        <h2 class="mt-1 text-xl font-black text-slate-950">Profil dan Laporan Kegiatan</h2>
-                        <p class="mt-2 max-w-3xl text-sm text-slate-600">Isi profil tempat PKPA, lalu lengkapi unit yang benar-benar Anda ikuti. Tidak semua unit wajib tersedia; minimal satu laporan kegiatan harus lengkap.</p>
+                        <h2 class="mt-1 text-xl font-black text-slate-950">{{ $isPuskesmasRevision ? 'Portofolio Puskesmas Revisi November 2026' : 'Profil dan Laporan Kegiatan' }}</h2>
+                        @unless($isPuskesmasRevision)<p class="mt-2 max-w-3xl text-sm text-slate-600">Isi profil tempat PKPA, lalu lengkapi unit yang benar-benar Anda ikuti. Tidak semua unit wajib tersedia; minimal satu laporan kegiatan harus lengkap.</p>@endunless
                     </div>
                     <div class="flex gap-3 text-sm">
-                        <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $specialCompletedReports }}</p><p class="text-xs text-slate-500">unit terisi</p></div>
-                        <div class="border-l-2 border-slate-300 pl-3"><p class="font-black text-slate-950">{{ count($specialReportCodes) }}</p><p class="text-xs text-slate-500">unit tersedia</p></div>
+                        <div class="border-l-2 border-cyan-600 pl-3"><p class="font-black text-slate-950">{{ $specialCompletedReports }}</p><p class="text-xs text-slate-500">{{ $isPuskesmasRevision ? 'aspek lengkap' : 'unit terisi' }}</p></div>
+                        <div class="border-l-2 border-slate-300 pl-3"><p class="font-black text-slate-950">{{ count($specialReportCodes) }}</p><p class="text-xs text-slate-500">{{ $isPuskesmasRevision ? 'aspek wajib' : 'unit tersedia' }}</p></div>
                     </div>
                 </div>
             </header>
@@ -685,12 +687,13 @@
                         </summary>
                         <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.sections.store', [$portfolio, $sectionCode]) }}" class="grid gap-4 border-t border-slate-200 bg-white p-4 sm:p-5">
                             @csrf
-                            @foreach($definition['fields'] as $field)
-                                <label class="grid gap-2">
-                                    <span class="text-sm font-bold text-slate-700">{{ $field['label'] }}</span>
-                                    <textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 4 }}" class="min-h-28 resize-y rounded-xl border-slate-200 text-sm" @if($field['required'] ?? true) required @endif>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea>
-                                </label>
-                            @endforeach
+                            @if($isPuskesmasRevision)
+                                @include('student.pkpa-portfolios.puskesmas-revision-fields')
+                            @else
+                                @foreach($definition['fields'] as $field)
+                                    <label class="grid gap-2"><span class="text-sm font-bold text-slate-700">{{ $field['label'] }}</span><textarea name="{{ $field['name'] }}" rows="{{ $field['rows'] ?? 4 }}" class="min-h-28 resize-y rounded-xl border-slate-200 text-sm" @if($field['required'] ?? true) required @endif>{{ old($field['name'], $payload[$field['name']] ?? '') }}</textarea></label>
+                                @endforeach
+                            @endif
                             <div class="flex justify-end"><button class="rounded-xl bg-cyan-700 px-4 py-3 text-sm font-bold text-white">Simpan {{ $definition['title'] }}</button></div>
                         </form>
                     </details>
@@ -699,6 +702,7 @@
         </section>
     @endif
 
+    @unless($isPuskesmasRevision)
     <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-black text-slate-950">{{ $isLokaPom ? 'Studi Kasus Loka POM' : ($isHealthOffice ? 'Studi Kasus Dinas Kesehatan' : ($isIndustry ? 'Studi Kasus Industri Farmasi' : ($isPbf ? 'Studi Kasus PBF' : 'Studi Kasus'))) }}</h2>
         <p class="mt-2 text-sm text-slate-600">{{ $isLokaPom ? 'Analisis satu temuan pengawasan obat atau makanan berdasarkan regulasi yang berlaku.' : ($isHealthOffice ? 'Analisis satu permasalahan nyata dalam pengelolaan obat, BMHP, distribusi, pelaporan, atau program kesehatan.' : ($isIndustry ? 'Dokumentasikan satu masalah mutu atau proses, misalnya deviasi, OOS, OOT, CAPA, change control, validasi, keluhan, atau penarikan produk.' : ($isPbf ? 'Dokumentasikan satu kasus operasional PBF, misalnya suhu CCP, retur, recall, selisih stok, atau penyimpangan dokumen. Jangan menulis identitas personal yang tidak diperlukan.' : 'Isi satu case report tanpa identitas langsung pasien. Bagian yang tersimpan akan digunakan dalam keluaran portofolio.'))) }}</p>
@@ -890,7 +894,9 @@
         @endif
     </section>
 
+    @endunless
     <section class="grid gap-6 xl:grid-cols-3">
+        @unless($isPuskesmasRevision)
         <form method="POST" data-portfolio-edit-form action="{{ route('student.pkpa-portfolios.reflections.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             @csrf
             <h2 class="text-lg font-black text-slate-950">Refleksi Mingguan</h2>
@@ -928,6 +934,7 @@
             </div>
         </form>
 
+        @endunless
         <form method="POST" data-portfolio-edit-form enctype="multipart/form-data" action="{{ route('student.pkpa-portfolios.documentation.store', $portfolio) }}" class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
             @csrf
             <h2 class="text-lg font-black text-slate-950">Dokumentasi Kegiatan</h2>

@@ -2,9 +2,11 @@
 
 use App\Console\Commands\AcademicUnitCleanupCommand;
 use App\Console\Commands\AssignmentCancelReconcileCommand;
+use App\Console\Commands\AuditPkpaSupervisorContinuityCommand;
 use App\Console\Commands\AuthBridgeCheckCommand;
 use App\Console\Commands\AuthBridgeSmokeTestCommand;
 use App\Console\Commands\AuthModeCommand;
+use App\Console\Commands\CarryPkpaSupervisorReplacementCommand;
 use App\Console\Commands\CoreAcademicUnitCheckCommand;
 use App\Console\Commands\CoreHealthCheckCommand;
 use App\Console\Commands\CoreMappingCoverageCommand;
@@ -18,9 +20,11 @@ use App\Console\Commands\PkpaE2ePrepareCommand;
 use App\Console\Commands\PkpaHypercareStatusCommand;
 use App\Console\Commands\PkpaIntegrityAuditCommand;
 use App\Console\Commands\PkpaQueueHealthCommand;
+use App\Console\Commands\PlotPkpaPuskesmas2026Command;
 use App\Console\Commands\ProductionReadinessGateCommand;
 use App\Console\Commands\ProvisionCoreBridgeUserCommand;
 use App\Console\Commands\ProvisionCoreBridgeUsersCommand;
+use App\Console\Commands\PublishPkpaPuskesmas2026Command;
 use App\Console\Commands\ReleaseCandidateGateCommand;
 use App\Console\Commands\ReleaseSensitiveScanCommand;
 use App\Console\Commands\ReopenPkpaPortfolioCommand;
@@ -28,6 +32,8 @@ use App\Console\Commands\RepairPkpaRotationDatesCommand;
 use App\Console\Commands\RevisePkpaPbfPlacement2026Command;
 use App\Console\Commands\SafaPublicInfoPreviewCommand;
 use App\Console\Commands\SetupPkpaApotekAssessmentCommand;
+use App\Console\Commands\SetupPkpaPreceptorAssessmentCommand;
+use App\Console\Commands\SetupPuskesmasPortfolioRevisionCommand;
 use App\Console\Commands\StagingRehearsalCheckCommand;
 use App\Console\Commands\SwitchPkpaInternalValidationCommand;
 use App\Console\Commands\SyncCoreMappingCommand;
@@ -54,10 +60,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withCommands([
-        \App\Console\Commands\PlotPkpaPuskesmas2026Command::class,
-        \App\Console\Commands\PublishPkpaPuskesmas2026Command::class,
-        \App\Console\Commands\AuditPkpaSupervisorContinuityCommand::class,
-        \App\Console\Commands\CarryPkpaSupervisorReplacementCommand::class,
+        PlotPkpaPuskesmas2026Command::class,
+        PublishPkpaPuskesmas2026Command::class,
+        SetupPuskesmasPortfolioRevisionCommand::class,
+        AuditPkpaSupervisorContinuityCommand::class,
+        CarryPkpaSupervisorReplacementCommand::class,
         SwitchPkpaInternalValidationCommand::class,
         AcademicUnitCleanupCommand::class,
         AssignmentCancelReconcileCommand::class,
@@ -82,7 +89,7 @@ return Application::configure(basePath: dirname(__DIR__))
         RevisePkpaPbfPlacement2026Command::class,
         ReopenPkpaPortfolioCommand::class,
         SetupPkpaApotekAssessmentCommand::class,
-        \App\Console\Commands\SetupPkpaPreceptorAssessmentCommand::class,
+        SetupPkpaPreceptorAssessmentCommand::class,
         ProvisionCoreBridgeUserCommand::class,
         ProvisionCoreBridgeUsersCommand::class,
         ReleaseCandidateGateCommand::class,

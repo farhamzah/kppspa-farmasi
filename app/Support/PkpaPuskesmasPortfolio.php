@@ -6,8 +6,16 @@ class PkpaPuskesmasPortfolio
 {
     public const TEMPLATE_CODE = 'PORT-PKM-v1';
 
-    public static function editableSections(): array
+    public static function isTemplate(?string $code): bool
     {
+        return in_array($code, [self::TEMPLATE_CODE, PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE], true);
+    }
+
+    public static function editableSections(?string $templateCode = null): array
+    {
+        if ($templateCode === PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE) {
+            return PkpaPuskesmasPortfolioRevision::sections() + array_intersect_key(self::editableSections(), array_flip(['bibliography', 'attachments']));
+        }
         $sections = ['site_profile' => [
             'title' => 'Profil Tempat PKPA Puskesmas',
             'description' => 'Lengkapi profil Puskesmas dan ruang farmasi sesuai format resmi.',
@@ -36,8 +44,15 @@ class PkpaPuskesmasPortfolio
         return $sections;
     }
 
-    public static function reportSectionCodes(): array { return array_keys(self::reportDefinitions()); }
-    public static function sectionDefinition(string $code): ?array { return self::editableSections()[$code] ?? null; }
+    public static function reportSectionCodes(): array
+    {
+        return array_keys(self::reportDefinitions());
+    }
+
+    public static function sectionDefinition(string $code): ?array
+    {
+        return self::editableSections()[$code] ?? null;
+    }
 
     public static function templateSections(): array
     {
@@ -48,7 +63,10 @@ class PkpaPuskesmasPortfolio
             ['table_of_contents', 'Daftar Isi', 'static_content', 'all', false], ['site_profile', 'Profil Tempat PKPA Puskesmas', 'structured_form', 'field_internal', true],
             ['daily_logbook', 'Logbook Harian', 'auto_logbook', 'field', true],
         ];
-        foreach (self::reportDefinitions() as $code => $definition) $sections[] = [$code, $definition['title'], 'structured_form', 'field', false];
+        foreach (self::reportDefinitions() as $code => $definition) {
+            $sections[] = [$code, $definition['title'], 'structured_form', 'field', false];
+        }
+
         return array_merge($sections, [
             ['weekly_reflection', 'Refleksi Mingguan', 'weekly_reflection', 'internal', true], ['case_report', 'Studi Kasus', 'repeatable_case', 'field', true],
             ['self_assessment', 'Self Assessment Puskesmas', 'self_assessment', 'internal', true], ['documentation', 'Dokumentasi Kegiatan PKPA Puskesmas', 'evidence_gallery', 'field', true],
@@ -67,7 +85,18 @@ class PkpaPuskesmasPortfolio
         ];
     }
 
-    private static function report(string $name): array { return ['title' => 'Laporan Kegiatan: '.$name, 'description' => 'Isi tujuan, dasar teori, kegiatan, dan hasil pembelajaran pada unit ini.']; }
-    private static function reportFields(): array { return [self::field('purpose', 'Tujuan', 4), self::field('theory', 'Dasar Teori', 5), self::field('activity', 'Kegiatan yang Dilaksanakan', 6), self::field('result', 'Hasil dan Pembelajaran', 5)]; }
-    private static function field(string $name, string $label, int $rows, bool $required = true): array { return compact('name', 'label', 'rows', 'required') + ['type' => 'textarea']; }
+    private static function report(string $name): array
+    {
+        return ['title' => 'Laporan Kegiatan: '.$name, 'description' => 'Isi tujuan, dasar teori, kegiatan, dan hasil pembelajaran pada unit ini.'];
+    }
+
+    private static function reportFields(): array
+    {
+        return [self::field('purpose', 'Tujuan', 4), self::field('theory', 'Dasar Teori', 5), self::field('activity', 'Kegiatan yang Dilaksanakan', 6), self::field('result', 'Hasil dan Pembelajaran', 5)];
+    }
+
+    private static function field(string $name, string $label, int $rows, bool $required = true): array
+    {
+        return compact('name', 'label', 'rows', 'required') + ['type' => 'textarea'];
+    }
 }

@@ -14,6 +14,7 @@ use App\Support\PkpaHospitalPortfolio;
 use App\Support\PkpaIndustryPortfolio;
 use App\Support\PkpaLokaPomPortfolio;
 use App\Support\PkpaPuskesmasPortfolio;
+use App\Support\PkpaPuskesmasPortfolioRevision;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -40,7 +41,7 @@ class PkpaPortfolioController extends Controller
                     ->where('practice_domain_id', $run->practice_domain_id)
                     ->where('is_current', true)
                     ->where('status', 'active')
-                    ->when($run->practiceDomainOption?->code === 'PUSKESMAS', fn ($query) => $query->where('code', PkpaPuskesmasPortfolio::TEMPLATE_CODE))
+                    ->when($run->practiceDomainOption?->code === 'PUSKESMAS', fn ($query) => $query->whereIn('code', [PkpaPuskesmasPortfolio::TEMPLATE_CODE, PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE]))
                     ->when($run->practiceDomainOption?->code === 'DINKES', fn ($query) => $query->where('code', PkpaHealthOfficePortfolio::TEMPLATE_CODE))
                     ->when($run->practiceDomainOption?->code === 'LOKAPOM', fn ($query) => $query->where('code', PkpaLokaPomPortfolio::TEMPLATE_CODE))
                     ->where(function ($query) use ($run) {
@@ -112,6 +113,9 @@ class PkpaPortfolioController extends Controller
         $portfolio->loadMissing('template.sections');
         $section = $portfolio->template?->sections->firstWhere('code', $sectionCode);
         abort_unless($section && in_array($section->source_type, ['structured_form', 'attachment_list'], true), 404);
+        if ($portfolio->template?->code === PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE) {
+            $request->validate(['_pkm_complete' => ['required', Rule::in(['1'])]], ['_pkm_complete.required' => 'Isian tidak terkirim lengkap. Kurangi jumlah entri atau hubungi pengelola; data tersimpan tidak diubah.']);
+        }
 
         $rules = [];
         foreach (data_get($section->content_schema, 'fields', []) as $field) {
@@ -125,7 +129,8 @@ class PkpaPortfolioController extends Controller
             $rules[$field['name']] = ['nullable', 'string'];
         }
 
-        $data = $request->validate($rules);
+        $data = $portfolio->template?->code === PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE && isset(PkpaPuskesmasPortfolioRevision::sections()[$sectionCode])
+            ? PkpaPuskesmasPortfolioRevision::clean($sectionCode, $request->all()) : $request->validate($rules);
         $this->portfolios->saveSectionRecord($portfolio, $sectionCode, $data, $request->user());
 
         return back()->with('status', $section->title.' tersimpan.');
