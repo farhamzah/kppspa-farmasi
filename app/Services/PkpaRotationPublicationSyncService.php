@@ -79,6 +79,19 @@ class PkpaRotationPublicationSyncService
         if (in_array($changeType, ['supervisor', 'site_or_date'], true)) {
             $this->replaceSupervisors($run->refresh(), $assignment, $actor, $supervisorContext);
         }
+        if ($changeType === 'site_or_date' && $run->practiceDomainOption?->code === 'PUSKESMAS') {
+            $run->supervisorHistories()->where('status', 'active')
+                ->whereDate('effective_end_date', $before['scheduled_end_date'])
+                ->update(['effective_end_date' => $run->scheduled_end_date, 'updated_by_core_user_id' => $actor?->core_user_id]);
+            $portfolio = $run->currentPortfolio()->whereIn('status', ['draft', 'in_progress'])->whereNull('submitted_at')
+                ->whereDoesntHave('signedDocuments')->first();
+            if ($portfolio) {
+                $portfolio->update(['placement_snapshot' => array_replace($portfolio->placement_snapshot ?? [], [
+                    'start_date' => $run->scheduled_start_date->toDateString(),
+                    'end_date' => $run->scheduled_end_date->toDateString(),
+                ])]);
+            }
+        }
         $this->log($run, $assignment, $changeType, 'applied', 'medium', 'Perubahan publikasi diterapkan ke runtime.', $actor, $before, $run->refresh()->only(array_keys($before)));
         $this->audit->record($actor, 'pkpa_rotation_publication_synced', $run, $before, ['change_type' => $changeType]);
     }

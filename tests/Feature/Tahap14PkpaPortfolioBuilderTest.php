@@ -1053,7 +1053,7 @@ class Tahap14PkpaPortfolioBuilderTest extends TestCase
         $path = Storage::disk($export->disk)->path($export->path);
         $this->assertDocx($path);
         $text = $this->docxDocumentXml($path);
-        foreach (['PORTOFOLIO VII', 'Uraian regulasi anonim', 'Lembar Penilaian Preseptor', 'Lembar Penilaian Dosen', '60%', '40%', 'N/A'] as $expected) {
+        foreach (['PORTOFOLIO VII', 'Uraian regulasi anonim', 'Lembar Penilaian Preseptor', 'Lembar Penilaian Dosen', '60%', '40%', 'N/A', 'Formulir Bimbingan Preseptor', 'Formulir Bimbingan Dosen Pembimbing', 'Ketua Program Studi Pendidikan Profesi Apoteker'] as $expected) {
             $this->assertStringContainsString($expected, $text);
         }
         $this->assertStringNotContainsString('Skor 1-5', $text);

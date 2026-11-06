@@ -25,7 +25,7 @@ class PlotPkpaPuskesmas2026Command extends Command
 {
     protected $signature = 'pkpa:plot-puskesmas-2026 {--program=PKPA-2026-G1} {--apply : Buat rancangan revisi setelah preview diperiksa}';
 
-    protected $description = 'Plotting 36 mahasiswa ke 29 Puskesmas, 10 November-07 Desember 2026; NIM dan pembimbing mengikuti aplikasi.';
+    protected $description = 'Plotting 36 mahasiswa ke 29 Puskesmas, 10 November-17 Desember 2026; NIM dan pembimbing mengikuti aplikasi.';
 
     public function handle(PkpaPlacementPlanService $plans, PkpaRotationAssignmentService $assignments, PkpaFieldSupervisorService $fields, PkpaAuditService $audit): int
     {
@@ -47,7 +47,7 @@ class PlotPkpaPuskesmas2026Command extends Command
             $label = $first['availability'] ? 'Pakai periode existing' : 'Salin konfigurasi periode lama';
             if ($first['availability_extension']) {
                 $label = 'Perluas ID '.$first['availability']->id.': '.$first['availability']->start_date->toDateString().' s.d. '.$first['availability']->end_date->toDateString()
-                    .' -> '.$first['availability_extension']['start_date'].' s.d. '.$first['availability_extension']['end_date'];
+                    .' -> '.($first['availability_extension']['start_date'] ?? $first['availability']->start_date->toDateString()).' s.d. '.($first['availability_extension']['end_date'] ?? $first['availability']->end_date->toDateString()).' (Senin-Jumat)';
             }
 
             return [$site['name'], $group->count(), $this->formalName($site), $site['phone'], $label];
@@ -83,7 +83,7 @@ class PlotPkpaPuskesmas2026Command extends Command
                     throw ValidationException::withMessages(['stale' => 'Sumber plotting berubah. Jalankan ulang preview.']);
                 }
                 $plan = $plans->clone($fresh['plan'], [
-                    'name' => 'Plotting Puskesmas 10 November-07 Desember 2026',
+                    'name' => 'Plotting Puskesmas 10 November-17 Desember 2026',
                     'description' => $fresh['marker'], 'copy_assignments' => true,
                 ], $actor);
                 // Hanya salinan draft target yang diganti; rancangan dan publikasi asal tetap utuh.
@@ -101,9 +101,9 @@ class PlotPkpaPuskesmas2026Command extends Command
                     if (! isset($availabilityBySite[$siteKey])) {
                         if ($row['availability_extension']) {
                             $period = $row['availability'];
-                            $beforePeriod = $period->only(['start_date', 'end_date']);
+                            $beforePeriod = $period->only(['start_date', 'end_date', 'operational_days']);
                             $period->update($row['availability_extension'] + ['updated_by_core_user_id' => $actor->core_user_id]);
-                            $audit->record($actor, 'puskesmas_availability_extended', $period, $beforePeriod, $period->only(['start_date', 'end_date']));
+                            $audit->record($actor, 'puskesmas_availability_extended', $period, $beforePeriod, $period->only(['start_date', 'end_date', 'operational_days']));
                         }
                         if ($row['program_site']->pkpa_program_domain_id !== $row['target_program_domain']->id) {
                             $programSite = $row['program_site'];
@@ -120,7 +120,7 @@ class PlotPkpaPuskesmas2026Command extends Command
                             'notes' => $row['site']['external_number'].'; kontak '.$row['site']['phone'].'; mitra eksternal tanpa akun baru.',
                         ], $actor);
                         $availabilityBySite[$siteKey] = $row['availability'] ?: $row['program_site']->availabilityPeriods()->create(array_merge(
-                            $row['template']->only(['minimum_students', 'maximum_students', 'reserved_slots', 'operational_days', 'daily_start_time', 'daily_end_time']),
+                            $row['template']->only(['minimum_students', 'maximum_students', 'reserved_slots', 'daily_start_time', 'daily_end_time']) + ['operational_days' => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']],
                             ['start_date' => $data['start_date'], 'end_date' => $data['end_date'], 'status' => 'available', 'notes' => $fresh['marker'], 'created_by_core_user_id' => $actor->core_user_id, 'updated_by_core_user_id' => $actor->core_user_id]
                         ));
                     }
@@ -157,7 +157,7 @@ class PlotPkpaPuskesmas2026Command extends Command
         }
         $program = PkpaProgram::where('code', $this->option('program'))->whereIn('status', ['active', 'ready'])->first();
         if (! $program || $program->start_date->toDateString() > $data['start_date'] || $program->end_date->toDateString() < $data['end_date']) {
-            $fail('Program aktif atau rentang tanggal program tidak sesuai dengan 10 November-07 Desember 2026.');
+            $fail('Program aktif atau rentang tanggal program tidak sesuai dengan 10 November-17 Desember 2026.');
         }
         $publication = PkpaPlacementPublication::current()->where('pkpa_program_id', $program->id)->where('status', 'published')->with(['assignments.supervisors', 'assignments.practiceDomain'])->first();
         $currentPlans = PkpaPlacementPlan::where('pkpa_program_id', $program->id)->where('is_current', true)->get();
@@ -236,16 +236,16 @@ class PlotPkpaPuskesmas2026Command extends Command
                 $covering = $periods->filter(fn ($a) => $a->start_date->toDateString() <= $data['start_date'] && $a->end_date->toDateString() >= $data['end_date']);
                 $overlap = $periods->filter(fn ($a) => $a->start_date->toDateString() <= $data['end_date'] && $a->end_date->toDateString() >= $data['start_date']);
                 $availabilityExtension = null;
-                if ($covering->count() > 1 || ($covering->isNotEmpty() && $overlap->count() > 1)) {
+                if ($overlap->count() > 1) {
                     $fail($site['name'].': beberapa periode ketersediaan tumpang tindih. Periksa manual.');
                 }
                 $availability = $covering->first();
                 if (! $availability && $overlap->isNotEmpty()) {
                     $old = $overlap->first();
                     $knownSplitWindow = in_array([$old->start_date->toDateString(), $old->end_date->toDateString()], [
-                        ['2026-11-10', '2026-11-27'], ['2026-11-30', '2026-12-17'],
+                        ['2026-11-10', '2026-11-27'], ['2026-11-30', '2026-12-17'], ['2026-11-10', '2026-12-07'],
                     ], true);
-                    if ($program->code !== 'PKPA-2026-G1' || $programSite->availabilityPeriods->count() !== 1 || ! $knownSplitWindow) {
+                    if ($program->code !== 'PKPA-2026-G1' || ! $knownSplitWindow) {
                         $fail($site['name'].': periode belum mencakup rotasi dan tidak cocok dengan satu periode putaran lama yang terverifikasi. Periksa manual.');
                     }
                     $availability = $old;
@@ -253,6 +253,10 @@ class PlotPkpaPuskesmas2026Command extends Command
                         'start_date' => min($old->start_date->toDateString(), $data['start_date']),
                         'end_date' => max($old->end_date->toDateString(), $data['end_date']),
                     ];
+                }
+                $workdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+                if ($availability && $availability->operational_days !== $workdays) {
+                    $availabilityExtension = ($availabilityExtension ?? []) + ['operational_days' => $workdays];
                 }
                 $template = $availability ?: $periods->sortByDesc('start_date')->first();
                 if (! $template || empty($template->operational_days) || $template->plannedAvailableSlots() < $siteCounts[$entry['site']]) {
@@ -273,14 +277,14 @@ class PlotPkpaPuskesmas2026Command extends Command
         if ($rows->pluck('student.id')->unique()->count() !== 36 || $rows->pluck('student.student_number')->unique()->count() !== 36) {
             $fail('Identitas atau NIM aplikasi tidak unik. Tidak ada pencocokan berdasarkan NIM gambar.');
         }
-        $marker = 'PUSKESMAS-2026-11-10-2026-12-07:'.hash('sha256', json_encode($data));
+        $marker = 'PUSKESMAS-2026-11-10-2026-12-17:'.hash('sha256', json_encode($data));
         $already = false;
         if ($plan->description === $marker) {
             $existing = $plan->assignments()->with('supervisors')->whereIn('pkpa_enrollment_requirement_id', $rows->pluck('requirement.id'))->get()->keyBy('pkpa_enrollment_requirement_id');
             $already = $rows->every(function ($r) use ($existing, $data) {
                 $a = $existing->get($r['requirement']->id);
 
-                return $a && $a->practice_site_id === $r['program_site']->practice_site_id && $a->start_date->toDateString() === $data['start_date'] && $a->end_date->toDateString() === $data['end_date']
+                return $a && ! $r['availability_extension'] && $a->practice_site_id === $r['program_site']->practice_site_id && $a->start_date->toDateString() === $data['start_date'] && $a->end_date->toDateString() === $data['end_date']
                     && $a->supervisors->contains(fn ($s) => $s->supervisor_type === 'internal' && $s->status === 'active' && (string) $s->core_user_id === (string) $r['internal']->core_user_id)
                     && $a->supervisors->contains(fn ($s) => $s->supervisor_type === 'field' && $s->status === 'active' && $this->personKey($s->name_snapshot) === $this->personKey($this->formalName($r['site'])));
             });

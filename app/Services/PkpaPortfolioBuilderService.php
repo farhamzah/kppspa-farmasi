@@ -619,6 +619,8 @@ class PkpaPortfolioBuilderService
             throw ValidationException::withMessages(['authorization' => 'Tidak berwenang mengakses portofolio.']);
         }
 
+        $generatorVersion = $format === 'docx' && $portfolio->template?->code === PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE
+            ? 6 : self::EXPORT_GENERATOR_VERSIONS[$format];
         $publication = $portfolio->publications()->latest('publication_number')->first();
         if ($publication) {
             $existing = $portfolio->exportVersions()
@@ -627,7 +629,7 @@ class PkpaPortfolioBuilderService
                 ->latest('version_number')
                 ->get()
                 ->first(fn (PkpaPortfolioExportVersion $export) => $format === 'pdf'
-                    || (int) data_get($export->metadata, 'generator_version') === self::EXPORT_GENERATOR_VERSIONS[$format]);
+                    || (int) data_get($export->metadata, 'generator_version') === $generatorVersion);
 
             if ($existing) {
                 return $existing;
@@ -654,7 +656,7 @@ class PkpaPortfolioBuilderService
             'checksum' => hash('sha256', $bytes),
             'metadata' => [
                 'label' => $publication ? 'Unduhan versi terbit' : 'Draf unduhan internal',
-                'generator_version' => self::EXPORT_GENERATOR_VERSIONS[$format],
+                'generator_version' => $generatorVersion,
             ],
             'generated_at' => now(),
             'generated_by_core_user_id' => $actor->core_user_id,
@@ -1239,6 +1241,22 @@ class PkpaPortfolioBuilderService
         ];
 
         if ($isPuskesmasRevision) {
+            foreach (['Preseptor' => 'field_supervisor', 'Dosen Pembimbing' => 'internal_supervisor'] as $role => $key) {
+                $identity = [
+                    'Nama Mahasiswa: '.data_get($portfolio->identity_snapshot, 'student_name'),
+                    'NIM: '.data_get($portfolio->identity_snapshot, 'student_number'),
+                    'Tempat PKPA: '.data_get($portfolio->placement_snapshot, 'practice_site'),
+                    'Periode PKPA: '.$this->portfolioPeriod($portfolio),
+                    'Nama '.$role.': '.(data_get($portfolio->placement_snapshot, $key) ?: '____________________'),
+                ];
+                $rows = array_map(fn ($number) => [(string) $number, '____________________', '____________________'], range(1, 8));
+                $signatures = ['Mengetahui,', 'Ketua Program Studi Pendidikan Profesi Apoteker', '(____________________________)'];
+                $sections[] = [
+                    'title' => 'Formulir Bimbingan '.$role,
+                    'lines' => array_merge($identity, ['No. | Kegiatan | Tanda Tangan'], array_map(fn ($row) => implode(' | ', $row), $rows), $signatures),
+                    'mentoring_form' => compact('identity', 'rows', 'signatures'),
+                ];
+            }
             $front = ['Lembar Pengesahan', 'Visi, Misi, Tujuan, dan Sasaran', 'Tata Tertib PKPA', 'Identitas Mahasiswa', 'Pakta Integritas', 'Daftar Isi'];
             $sections = array_merge(collect($front)->map(fn ($title) => collect($sections)->firstWhere('title', $title))->filter()->all(), collect($sections)->reject(fn ($section) => in_array($section['title'], array_merge($front, ['Ringkasan Dokumen']), true))->values()->all());
         }
@@ -1341,7 +1359,7 @@ class PkpaPortfolioBuilderService
         if ($portfolio->template?->code === PkpaPuskesmasPortfolioRevision::TEMPLATE_CODE) {
             return collect(['Sampul', 'Lembar Pengesahan', 'Visi, Misi, Tujuan, dan Sasaran', 'Tata Tertib PKPA', 'Identitas Mahasiswa', 'Pakta Integritas Mahasiswa PKPA', 'Daftar Isi'])
                 ->merge(array_column(PkpaPuskesmasPortfolioRevision::sections(), 'title'))
-                ->merge(['Logbook Harian', 'Lembar Penilaian Preseptor', 'Lembar Penilaian Dosen Pembimbing', 'Rubrik Penilaian Umum', 'Rubrik Penilaian Produk', 'Rekap Penilaian Puskesmas', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan'])
+                ->merge(['Logbook Harian', 'Lembar Penilaian Preseptor', 'Lembar Penilaian Dosen Pembimbing', 'Rubrik Penilaian Umum', 'Rubrik Penilaian Produk', 'Rekap Penilaian Puskesmas', 'Umpan Balik dan Rencana Perbaikan', 'Dokumentasi Kegiatan', 'Daftar Pustaka', 'Lampiran', 'Status Pemeriksaan', 'Formulir Bimbingan Preseptor', 'Formulir Bimbingan Dosen Pembimbing'])
                 ->map(fn ($title, $i) => ($i + 1).'. '.$title)->all();
         }
         if ($portfolio->template?->code === PkpaPuskesmasPortfolio::TEMPLATE_CODE) {
@@ -1724,6 +1742,15 @@ class PkpaPortfolioBuilderService
                 $paragraphs[] = $this->docxRevisionTable(['Aspek dan indikator', 'Skor', 'Bukti / catatan'], collect(PkpaPuskesmasPortfolioRevision::reference()[$section['assessment_key']])->map(fn ($criterion) => [$criterion['title']."\n".$criterion['indicator'], '', ''])->all(), [4300, 1100, 2537]);
                 $paragraphs[] = $this->docxParagraph('Nama penilai: ____________________');
                 $paragraphs[] = $this->docxParagraph('Tanggal dan tanda tangan: ____________________');
+            } elseif (isset($section['mentoring_form'])) {
+                $form = $section['mentoring_form'];
+                foreach ($form['identity'] as $line) {
+                    $paragraphs[] = $this->docxParagraph($line, 'meta');
+                }
+                $paragraphs[] = $this->docxRevisionTable(['No.', 'Kegiatan', 'Tanda Tangan'], array_map(fn ($row) => [$row[0], "\n", "\n"], $form['rows']), [620, 4800, 2517]);
+                foreach ($form['signatures'] as $line) {
+                    $paragraphs[] = $this->docxParagraph($line);
+                }
             } elseif (isset($section['feedback_table'])) {
                 $paragraphs[] = $this->docxKeyValueTable($section['lines']);
             } elseif (isset($section['rubric_key'])) {
@@ -1767,7 +1794,7 @@ class PkpaPortfolioBuilderService
             ['NIM: '.data_get($portfolio->identity_snapshot, 'student_number'), 'SIPA: ____________________', 'NIP: ____________________'],
         ]);
         $xml .= $this->docxParagraph('Mengetahui', 'subheading');
-        $xml .= $this->docxRevisionTable(['Dekan Fakultas Farmasi', 'Ketua Program Studi PSPPA'], [
+        $xml .= $this->docxRevisionTable(['Dekan Fakultas Farmasi', 'Ketua Program Studi Pendidikan Profesi Apoteker'], [
             ["Tanda tangan:\n\n\n____________________", "Tanda tangan:\n\n\n____________________"],
             ['Nama: ____________________', 'Nama: ____________________'],
             ['NIP: ____________________', 'NIP: ____________________'],
@@ -1953,7 +1980,7 @@ class PkpaPortfolioBuilderService
 
     private function sectionStartsNewPage(string $title): bool
     {
-        return str_starts_with($title, 'PORTOFOLIO ') || str_starts_with($title, 'Lembar Penilaian ') || $title === 'Self Assessment dan Refleksi Diri Puskesmas' || in_array($title, [
+        return str_starts_with($title, 'PORTOFOLIO ') || str_starts_with($title, 'Lembar Penilaian ') || str_starts_with($title, 'Formulir Bimbingan ') || $title === 'Self Assessment dan Refleksi Diri Puskesmas' || in_array($title, [
             'Visi, Misi, Tujuan, dan Sasaran',
             'Daftar Isi',
             'Logbook Harian',

@@ -267,9 +267,21 @@ class PkpaPlacementPublicationService
                 || $rows->count() !== 36 || $rows->pluck('pkpa_enrollment_id')->unique()->count() !== 36
                 || $rows->contains(fn ($a) => $a->planning_source !== 'puskesmas_roster_2026'
                     || $a->practiceDomain?->code !== 'PEM' || $a->selectedOption?->code !== 'PUSKESMAS'
-                    || $a->start_date?->toDateString() !== '2026-11-10' || $a->end_date?->toDateString() !== '2026-12-07'
+                    || $a->start_date?->toDateString() !== '2026-11-10' || $a->end_date?->toDateString() !== '2026-12-17'
                     || ! in_array($a->validation_status, ['valid', 'warning'], true))) {
                 throw ValidationException::withMessages(['scope' => 'Publikasi khusus harus tepat 36 penempatan Puskesmas terverifikasi dari rancangan current.']);
+            }
+            $previous = $source->assignments()->whereHas('sourceAssignment', fn ($q) => $q->where('planning_source', 'puskesmas_roster_2026'))->with('supervisors')->get();
+            if ($previous->isNotEmpty()) {
+                $supervisorKeys = fn ($supervisors) => $supervisors->map(fn ($s) => $s->supervisor_type.':'.($s->core_user_id ?: $s->name_snapshot))->sort()->values()->all();
+                if ($previous->count() !== $rows->count() || $previous->contains(function ($old) use ($rows, $supervisorKeys) {
+                    $next = $rows->firstWhere('pkpa_enrollment_requirement_id', $old->pkpa_enrollment_requirement_id);
+
+                    return ! $next || $next->practice_site_id !== $old->practice_site_id
+                        || $supervisorKeys($old->supervisors->where('status', 'assigned')) !== $supervisorKeys($next->supervisors->where('status', 'active'));
+                })) {
+                    throw ValidationException::withMessages(['scope' => 'Lokasi, peserta, atau pembimbing Puskesmas berbeda dari publikasi aktif. Periksa sebelum revisi tanggal.']);
+                }
             }
             $revision = $this->createRevisionFromPublication($source, [], $actor, 'placement_puskesmas_2026_published');
             // Hanya salinan dalam revisi baru yang diganti. Snapshot resmi sebelumnya tetap utuh.
@@ -281,7 +293,7 @@ class PkpaPlacementPublicationService
             $this->snapshotAssignments($revision, $plan, false, $assignmentIds);
             $revision->update([
                 'pkpa_placement_plan_id' => $plan->id,
-                'title' => 'Publikasi Puskesmas 10 November-07 Desember 2026',
+                'title' => 'Publikasi Puskesmas 10 November-17 Desember 2026',
                 'summary' => array_merge($revision->summary ?? [], [
                     'puskesmas_source_plan_id' => $plan->id, 'puskesmas_assignments' => 36,
                     'scope' => 'Puskesmas; publikasi wahana lain dipertahankan',

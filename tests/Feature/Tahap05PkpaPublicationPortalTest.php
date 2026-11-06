@@ -1011,7 +1011,8 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertCount(36, $rows);
         foreach ($rows as $row) {
             $this->assertSame('2026-11-10', $row->start_date->toDateString());
-            $this->assertSame('2026-12-07', $row->end_date->toDateString());
+            $this->assertSame('2026-12-17', $row->end_date->toDateString());
+            $this->assertSame(28, (int) $row->calculated_effective_days);
             $this->assertStringStartsWith('APP-NIM-', $row->enrollment->student_number);
             $expected = in_array($row->enrollment->student_name_snapshot, ['Laila Nurul Fadhilah', 'Ahmad Fauzi']) ? 'CORE-DEWI-PKM' : $this->internalSupervisor->core_user_id;
             $this->assertSame($expected, $row->supervisors->firstWhere('supervisor_type', 'internal')->core_user_id);
@@ -1115,7 +1116,7 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertSame('2026-11-27', $early->fresh()->end_date->toDateString());
         $this->assertSame('2026-11-30', $late->fresh()->start_date->toDateString());
         $this->artisan('pkpa:plot-puskesmas-2026', ['--program' => $program->code, '--apply' => true])->assertSuccessful();
-        $this->assertSame(['2026-11-10', '2026-12-07'], [$early->fresh()->start_date->toDateString(), $early->fresh()->end_date->toDateString()]);
+        $this->assertSame(['2026-11-10', '2026-12-17'], [$early->fresh()->start_date->toDateString(), $early->fresh()->end_date->toDateString()]);
         $this->assertSame(['2026-11-10', '2026-12-17'], [$late->fresh()->start_date->toDateString(), $late->fresh()->end_date->toDateString()]);
         $this->assertSame($before, $early->fresh()->only(array_keys($before)));
         $this->assertSame(1, $early->programSite->availabilityPeriods()->count());
@@ -1172,6 +1173,33 @@ class Tahap05PkpaPublicationPortalTest extends TestCase
         $this->assertSame(0, PkpaNotificationDelivery::whereNull('recipient_core_user_id')->count());
         $this->artisan('pkpa:publish-puskesmas-2026', ['--apply' => true])->assertSuccessful();
         $this->assertSame($publications + 1, PkpaPlacementPublication::count());
+    }
+
+    public function test_puskesmas_can_extend_an_existing_publication_without_recreating_runtime(): void
+    {
+        $source = $this->puskesmasPublicationFixture();
+        $source->program->update(['code' => 'PKPA-2026-G1']);
+        $this->artisan('pkpa:plot-puskesmas-2026', ['--apply' => true])->assertSuccessful();
+        $exit = Artisan::call('pkpa:publish-puskesmas-2026', ['--apply' => true]);
+        $this->assertSame(0, $exit, Artisan::output());
+        $previous = PkpaPlacementPublication::where('is_current', true)->firstOrFail();
+        $published = $previous->assignments()->whereHas('sourceAssignment', fn ($q) => $q->where('planning_source', 'puskesmas_roster_2026'))->get();
+        $runs = PkpaRotationRun::whereIn('pkpa_enrollment_requirement_id', $published->pluck('pkpa_enrollment_requirement_id'));
+        $ids = (clone $runs)->orderBy('id')->pluck('id')->all();
+        $previous->assignments()->whereKey($published->modelKeys())->update(['end_date' => '2026-12-07']);
+        (clone $runs)->update(['status' => 'scheduled', 'scheduled_end_date' => '2026-12-07']);
+        \App\Models\PkpaRotationSupervisorHistory::whereIn('pkpa_rotation_run_id', $ids)->update(['effective_end_date' => '2026-12-07']);
+        PkpaPlacementPlan::where('is_current', true)->update(['description' => 'PUSKESMAS-2026-11-10-2026-12-07:fixture']);
+        \App\Models\PkpaSiteAvailabilityPeriod::whereIn('id', $published->pluck('availability_period_id'))->update(['start_date' => '2026-11-10', 'end_date' => '2026-12-07']);
+
+        $exit = Artisan::call('pkpa:plot-puskesmas-2026', ['--apply' => true]);
+        $this->assertSame(0, $exit, Artisan::output());
+        $exit = Artisan::call('pkpa:publish-puskesmas-2026', ['--apply' => true]);
+        $this->assertSame(0, $exit, Artisan::output());
+        $this->assertSame($ids, (clone $runs)->orderBy('id')->pluck('id')->all());
+        $this->assertSame(36, (clone $runs)->whereDate('scheduled_end_date', '2026-12-17')->count());
+        $this->assertSame(36, $previous->assignments()->whereDate('end_date', '2026-12-07')->count());
+        $this->assertSame(72, \App\Models\PkpaRotationSupervisorHistory::whereIn('pkpa_rotation_run_id', $ids)->where('status', 'active')->whereDate('effective_end_date', '2026-12-17')->count());
     }
 
     public function test_puskesmas_scoped_publication_does_not_ignore_capacity_errors(): void

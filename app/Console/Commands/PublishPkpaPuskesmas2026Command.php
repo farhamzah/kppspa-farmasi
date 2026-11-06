@@ -33,10 +33,10 @@ class PublishPkpaPuskesmas2026Command extends Command
             }
             $rows = $plan->assignments()->where('planning_source', 'puskesmas_roster_2026')->with(['practiceDomain', 'selectedOption', 'supervisors'])->get();
             if ($rows->count() !== 36 || $rows->pluck('pkpa_enrollment_id')->unique()->count() !== 36
-                || ! str_starts_with((string) $plan->description, 'PUSKESMAS-2026-11-10-2026-12-07:')
+                || ! str_starts_with((string) $plan->description, 'PUSKESMAS-2026-11-10-2026-12-17:')
                 || $rows->contains(fn ($a) => $a->practiceDomain?->code !== 'PEM' || $a->selectedOption?->code !== 'PUSKESMAS'
-                    || $a->start_date?->toDateString() !== '2026-11-10' || $a->end_date?->toDateString() !== '2026-12-07')) {
-                throw ValidationException::withMessages(['scope' => 'Rancangan current harus hasil plotting tepat 36 mahasiswa Puskesmas 10 November-07 Desember 2026.']);
+                    || $a->start_date?->toDateString() !== '2026-11-10' || $a->end_date?->toDateString() !== '2026-12-17')) {
+                throw ValidationException::withMessages(['scope' => 'Rancangan current harus hasil plotting tepat 36 mahasiswa Puskesmas 10 November-17 Desember 2026.']);
             }
             if ((int) data_get($source->summary, 'puskesmas_source_plan_id') === $plan->id) {
                 $published = $source->assignments()->with('supervisors')->whereIn('pkpa_enrollment_requirement_id', $rows->pluck('pkpa_enrollment_requirement_id'))->get();
@@ -76,7 +76,7 @@ class PublishPkpaPuskesmas2026Command extends Command
             }
             $revision = $publications->createPuskesmas2026Revision($source, $plan->fresh(), $rows->pluck('id')->all(), $actor);
             $revision->update(['validation_snapshot' => [
-                'scope' => 'Puskesmas 10 November-07 Desember 2026', 'plan_id' => $plan->id,
+                'scope' => 'Puskesmas 10 November-17 Desember 2026', 'plan_id' => $plan->id,
                 'blocking_errors' => 0, 'full_plan_error_count' => $result->error_count,
                 'deferred_rs_ind_requirement_ids' => $deferred->pluck('pkpa_enrollment_requirement_id')->all(),
                 'supervisor_limit_warnings' => $result->warning_count, 'validated_at' => now()->toDateTimeString(),

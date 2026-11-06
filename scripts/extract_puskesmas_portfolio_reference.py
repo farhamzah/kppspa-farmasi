@@ -27,7 +27,7 @@ def criteria(index):
 data = {
     'source': source.name,
     'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
-    'revision': '2026-11-01',
+    'revision': source.stem.rsplit('_', 1)[-1],
     'self_assessment': criteria(548),
     'preceptor_assessment': criteria(602),
     'internal_assessment': criteria(621),
